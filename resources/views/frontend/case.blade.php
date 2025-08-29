@@ -29,10 +29,19 @@
         <!-- Tabs Content -->
         <div class="tab-content mt-3" id="dataTableTabsContent">
 
-            <!-- Tab 1 -->
             <div class="tab-pane fade show active" id="tab1" role="tabpanel" aria-labelledby="tab1-tab">
                 <div class="card shadow mb-4">
                     <div class="card-body">
+
+                        <!-- Success Message -->
+                        @if(session('success'))
+                            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                                {{ session('success') }}
+                                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+                        @endif
 
                         <!-- Search + Buttons Row -->
                         <div class="d-flex justify-content-between align-items-center mb-3">
@@ -66,58 +75,39 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <tr>
-                                        <td>CASE-001</td>
-                                        <td>Active</td>
-                                        <td>Civil Case</td>
-                                        <td>John Doe</td>
-                                        <td>Jane Smith</td>
-                                        <td>Property dispute case</td>
-                                        <td>2024-01-15</td>
-                                        <td>
-                                            <button class="btn btn-sm btn-warning" data-toggle="modal" data-target="#addCaseModal" data-mode="edit">Edit</button>
-                                            <button class="btn btn-sm btn-danger">Delete</button>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>CASE-002</td>
-                                        <td>Pending</td>
-                                        <td>Criminal Case</td>
-                                        <td>Mary Johnson</td>
-                                        <td>Bob Wilson</td>
-                                        <td>Theft case investigation</td>
-                                        <td>2024-02-10</td>
-                                        <td>
-                                            <button class="btn btn-sm btn-warning" data-toggle="modal" data-target="#addCaseModal" data-mode="edit">Edit</button>
-                                            <button class="btn btn-sm btn-danger">Delete</button>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>CASE-003</td>
-                                        <td>Closed</td>
-                                        <td>Family Case</td>
-                                        <td>Alice Brown</td>
-                                        <td>Charlie Davis</td>
-                                        <td>Custody arrangement</td>
-                                        <td>2024-01-20</td>
-                                        <td>
-                                            <button class="btn btn-sm btn-warning" data-toggle="modal" data-target="#addCaseModal" data-mode="edit">Edit</button>
-                                            <button class="btn btn-sm btn-danger">Delete</button>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>CASE-004</td>
-                                        <td>Active</td>
-                                        <td>Commercial Case</td>
-                                        <td>Tech Corp Ltd</td>
-                                        <td>Retail Inc</td>
-                                        <td>Contract breach dispute</td>
-                                        <td>2024-03-05</td>
-                                        <td>
-                                            <button class="btn btn-sm btn-warning" data-toggle="modal" data-target="#addCaseModal" data-mode="edit">Edit</button>
-                                            <button class="btn btn-sm btn-danger">Delete</button>
-                                        </td>
-                                    </tr>
+                                    @if(isset($cases) && $cases->count() > 0)
+                                        @foreach($cases as $case)
+                                            <tr>
+                                                <td>{{ $case->case_number }}</td>
+                                                <td>
+                                                    <span class="badge 
+                                                        @if($case->case_status == 'Active') badge-success
+                                                        @elseif($case->case_status == 'Pending') badge-warning
+                                                        @elseif($case->case_status == 'Closed') badge-secondary
+                                                        @else badge-info
+                                                        @endif
+                                                    ">{{ $case->case_status }}</span>
+                                                </td>
+                                                <td>{{ $case->case_type }}</td>
+                                                <td>{{ $case->complainant }}</td>
+                                                <td>{{ $case->respondent }}</td>
+                                                <td>{{ Str::limit($case->case_details, 50) }}</td>
+                                                <td>{{ \Carbon\Carbon::parse($case->date_filed)->format('Y-m-d') }}</td>
+                                                <td>
+                                                    <button class="btn btn-sm btn-warning" data-toggle="modal" data-target="#addCaseModal" data-mode="edit" data-case-id="{{ $case->id }}" title="Edit Case">
+                                                        <i class="fas fa-edit"></i>
+                                                    </button>
+                                                    <button class="btn btn-sm btn-danger delete-btn" data-case-id="{{ $case->id }}" title="Delete Case">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        @endforeach
+                                    @else
+                                        <tr>
+                                            <td colspan="8" class="text-center">No cases found. Click "Add Case" to create your first case.</td>
+                                        </tr>
+                                    @endif
                                 </tbody>
                             </table>
                         </div>
@@ -388,19 +378,16 @@ $(document).ready(function() {
     $('#customSearch1').on('keyup input change', function() {
         var searchValue = this.value;
         tables.table1.search(searchValue).draw();
-        console.log('Searching table1 for: ' + searchValue); // Debug log
     });
     
     $('#customSearch2').on('keyup input change', function() {
         var searchValue = this.value;
         tables.table2.search(searchValue).draw();
-        console.log('Searching table2 for: ' + searchValue); // Debug log
     });
     
     $('#customSearch3').on('keyup input change', function() {
         var searchValue = this.value;
         tables.table3.search(searchValue).draw();
-        console.log('Searching table3 for: ' + searchValue); // Debug log
     });
 
     // Clear search when switching tabs
@@ -416,127 +403,32 @@ $(document).ready(function() {
         });
     });
 
-    // Modal handling
+    // Modal handling for Add/Edit
     $('#addCaseModal').on('show.bs.modal', function(event) {
         var button = $(event.relatedTarget);
         var mode = button.data('mode') || 'add';
         var modal = $(this);
         
-        // Update modal title and button text
+        // Update modal title
         modal.find('#addCaseModalLabel').text(mode === 'add' ? 'Add New Case' : 'Edit Case');
-        modal.find('#saveCaseBtn').text(mode === 'add' ? 'Save Case' : 'Update Case');
 
         if (mode === 'edit') {
-            // Get data from the row for editing
-            var row = button.closest('tr');
-            var tableElement = row.closest('table');
-            var tableId = tableElement.attr('id');
-            var tableName = 'table' + tableId.replace('dataTable', '');
-            var table = tables[tableName];
-            
-            if (table) {
-                var data = table.row(row).data();
-                var rowIndex = table.row(row).index();
-                
-                // Populate form with existing data
-                modal.find('#rowIndex').val(rowIndex);
-                modal.find('#tableId').val(tableId);
-                modal.find('#caseNumber').val(data[0]);
-                modal.find('#caseStatus').val(data[1]);
-                modal.find('#caseType').val(data[2]);
-                modal.find('#complainantInfo').val(data[3]);
-                modal.find('#respondentInfo').val(data[4]);
-                modal.find('#caseDetails').val(data[5]);
-                modal.find('#dateFiled').val(data[6]);
-            }
+            // For edit mode, you can populate the form with existing data
+            // This would require additional AJAX call to get the specific case data
+            var caseId = button.data('case-id');
+            // You can implement AJAX here to fetch case details by ID if needed
         } else {
             // Reset form for add mode
             modal.find('#caseForm')[0].reset();
-            modal.find('#rowIndex').val('');
-            // Set default table based on active tab
-            var activeTab = $('.nav-tabs .nav-link.active').attr('href');
-            var defaultTable = 'dataTable1';
-            if (activeTab === '#tab2') defaultTable = 'dataTable2';
-            if (activeTab === '#tab3') defaultTable = 'dataTable3';
-            modal.find('#tableId').val(defaultTable);
         }
     });
 
-    // Save case functionality
-    $('#saveCaseBtn').on('click', function() {
-        var modal = $('#addCaseModal');
-        var mode = modal.find('#saveCaseBtn').text() === 'Save Case' ? 'add' : 'edit';
-        var tableId = modal.find('#tableId').val() || 'dataTable1';
-        var tableName = 'table' + tableId.replace('dataTable', '');
-        var table = tables[tableName];
-        
-        if (!table) {
-            alert('Error: Table not found');
-            return;
-        }
+    // Auto-dismiss alerts after 5 seconds
+    setTimeout(function() {
+        $('.alert').fadeOut('slow');
+    }, 5000);
 
-        // Get current page to maintain pagination
-        var currentPage = table.page.info().page;
-
-        // Collect form data
-        var rowData = [
-            modal.find('#caseNumber').val(),
-            modal.find('#caseStatus').val(),
-            modal.find('#caseType').val(),
-            modal.find('#complainantInfo').val(),
-            modal.find('#respondentInfo').val(),
-            modal.find('#caseDetails').val(),
-            modal.find('#dateFiled').val(),
-            '<button class="btn btn-sm btn-warning" data-toggle="modal" data-target="#addCaseModal" data-mode="edit">Edit</button> ' +
-            '<button class="btn btn-sm btn-danger delete-btn">Delete</button>'
-        ];
-
-        if (mode === 'edit') {
-            // Update existing row
-            var rowIndex = parseInt(modal.find('#rowIndex').val());
-            table.row(rowIndex).data(rowData).draw(false);
-        } else {
-            // Add new row
-            table.row.add(rowData).draw(false);
-        }
-
-        // Return to the same page
-        table.page(currentPage).draw('page');
-        modal.modal('hide');
-        
-        // Show success message
-        alert(mode === 'add' ? 'Case added successfully!' : 'Case updated successfully!');
-    });
-
-    // Delete functionality with event delegation
-    function setupDeleteHandler(tableId, table) {
-        $(tableId).on('click', '.delete-btn, .btn-danger', function(e) {
-            e.preventDefault();
-            if (confirm('Are you sure you want to delete this case?')) {
-                var currentPage = table.page.info().page;
-                var row = table.row($(this).parents('tr'));
-                row.remove().draw(false);
-                
-                // Stay on current page if possible
-                var info = table.page.info();
-                if (currentPage >= info.pages && info.pages > 0) {
-                    table.page(info.pages - 1).draw('page');
-                } else {
-                    table.page(currentPage).draw('page');
-                }
-                
-                alert('Case deleted successfully!');
-            }
-        });
-    }
-
-    // Setup delete handlers for all tables
-    setupDeleteHandler('#dataTable1', tables.table1);
-    setupDeleteHandler('#dataTable2', tables.table2);
-    setupDeleteHandler('#dataTable3', tables.table3);
-
-    console.log('DataTables initialized successfully with search functionality');
+    console.log('DataTables initialized successfully with database data');
 });
 </script>
-
 @stop
