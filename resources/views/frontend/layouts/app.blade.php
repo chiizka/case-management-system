@@ -44,9 +44,9 @@
             <!-- Sidebar - Brand -->
             <a class="sidebar-brand d-flex align-items-center justify-content-center" href="{{ route('home') }}">
                 <div class="sidebar-brand-icon rotate-n-15">
-                    <i class="fas fa-laugh-wink"></i>
+                    {{-- <i class="fas fa-laugh-wink"></i> --}}
                 </div>
-                <div class="sidebar-brand-text mx-3">SB Admin <sup>2</sup></div>
+                <div class="sidebar-brand-text mx-3">CMS<sup></sup></div>
             </a>
 
             <!-- Divider -->
@@ -409,25 +409,49 @@
     <script src="js/demo/datatables-demo.js"></script>
 
     <script>
-    $(document).ready(function () {
+
+            $(document).ready(function () {
         $('#dataTable1, #dataTable2, #dataTable3').DataTable({
             "pageLength": 10,
             "lengthChange": false, // removes "Show 25/50/100 entries" dropdown
             "paging": true,
-            "searching": true,
+            "searching": false,
             "info": true
         });
     });
 
-    document.addEventListener("DOMContentLoaded", function () {
-        const toggleBtn = document.getElementById("toggleEdit");
-        const actionCols = document.querySelectorAll("#dataTable1 .action-col");
 
-        toggleBtn.addEventListener("click", function () {
+document.addEventListener("DOMContentLoaded", function () {
+    // Single function to handle all toggle edit buttons
+    document.addEventListener("click", function(e) {
+        // Check if clicked element is a toggle edit button
+        if (e.target.id === "toggleEdit" || e.target.id === "toggleEdit2" || e.target.id === "toggleEdit3") {
+            let tableId;
+            
+            // Determine which table to target based on button clicked
+            switch(e.target.id) {
+                case "toggleEdit":
+                    tableId = "#dataTable1";
+                    break;
+                case "toggleEdit2":
+                    tableId = "#dataTable2";
+                    break;
+                case "toggleEdit3":
+                    tableId = "#dataTable3";
+                    break;
+            }
+            
+            // Toggle action columns for the specific table
+            const actionCols = document.querySelectorAll(`${tableId} .action-col`);
             actionCols.forEach(col => col.classList.toggle("d-none"));
-        });
+            
+            // Adjust DataTable columns if initialized
+            if (typeof $ !== 'undefined' && $.fn.DataTable && $.fn.DataTable.isDataTable(tableId)) {
+                $(tableId).DataTable().columns.adjust().draw();
+            }
+        }
     });
-
+});
     
     </script>
 </body>
