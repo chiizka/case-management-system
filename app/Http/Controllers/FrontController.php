@@ -10,9 +10,6 @@ class FrontController extends Controller
         return view('frontend.index');
     }
 
-    public function page(){
-        return view('frontend.case');
-    }
 
     public function login(){
         return view('frontend.login');

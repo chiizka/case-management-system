@@ -284,18 +284,20 @@
       </div>
       <div class="modal-body">
         <!-- Form -->
-        <form id="caseForm">
+        <form id="caseForm" method="post" action=" {{ route('case.store') }}">
+            @csrf
+            @method('post')
             <!-- Hidden fields for edit mode -->
             <input type="hidden" id="rowIndex" value="">
             <input type="hidden" id="tableId" value="">
             
             <div class="form-group">
                 <label for="caseNumber">Case No.</label>
-                <input type="text" class="form-control" id="caseNumber" placeholder="Enter case number">
+                <input type="text" class="form-control" id="caseNumber" name="case_number" placeholder="Enter case number">
             </div>
             <div class="form-group">
                 <label for="caseStatus">Case Status</label>
-                <select class="form-control" id="caseStatus">
+                <select class="form-control" id="caseStatus" name="case_status">
                     <option value="">Select status</option>
                     <option value="Active">Active</option>
                     <option value="Pending">Pending</option>
@@ -304,30 +306,31 @@
             </div>
             <div class="form-group">
                 <label for="caseType">Type of Case</label>
-                <input type="text" class="form-control" id="caseType" placeholder="Enter type of case">
+                <input type="text" class="form-control" id="caseType" name="case_type" placeholder="Enter type of case">
             </div>
             <div class="form-group">
                 <label for="complainantInfo">Complainant Information</label>
-                <textarea class="form-control" id="complainantInfo" rows="3" placeholder="Enter complainant information"></textarea>
+                <textarea class="form-control" id="complainantInfo" name="complainant" rows="3" placeholder="Enter complainant information"></textarea>
             </div>
             <div class="form-group">
                 <label for="respondentInfo">Respondent Information</label>
-                <textarea class="form-control" id="respondentInfo" rows="3" placeholder="Enter respondent information"></textarea>
+                <textarea class="form-control" id="respondentInfo" name="respondent" rows="3" placeholder="Enter respondent information"></textarea>
             </div>
             <div class="form-group">
                 <label for="caseDetails">Case Details</label>
-                <textarea class="form-control" id="caseDetails" rows="3" placeholder="Enter case details"></textarea>
+                <textarea class="form-control" id="caseDetails" name="case_details" rows="3" placeholder="Enter case details"></textarea>
             </div>
             <div class="form-group">
                 <label for="dateFiled">Date Filed</label>
-                <input type="date" class="form-control" id="dateFiled">
+                <input type="date" class="form-control"  name="date_filed" id="dateFiled">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                <button type="submit" class="btn btn-primary">Save Case</button>
             </div>
         </form>
       </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-        <button type="button" class="btn btn-primary" id="saveCaseBtn">Save Case</button>
-      </div>
+
     </div>
   </div>
 </div>
