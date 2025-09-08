@@ -11,13 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('cases', function (Blueprint $table) {
+        Schema::create('inspections', function (Blueprint $table) {
             $table->id();
-            $table->string('inspection_id');
-            $table->string('case_no')->nullable();
-            $table->string('establishment_name');
-            $table->integer('current_stage')->unsigned()->between(1, 7);
-            $table->enum('overall_status', ['Active', 'Completed', 'Dismissed']);
             $table->timestamps();
         });
     }
@@ -27,6 +22,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('cases');
+        Schema::dropIfExists('inspections');
     }
 };

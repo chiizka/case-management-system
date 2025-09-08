@@ -3,6 +3,7 @@
 use App\Http\Controllers\CasesController;
 use App\Http\Controllers\FrontController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\ArchivedController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [FrontController::class, 'index'])->name('home');
@@ -10,7 +11,12 @@ Route::get('/', [FrontController::class, 'index'])->name('home');
 //cases
 Route::get('/case', [CasesController::class, 'case'])->name('case.index');
 Route::post('/case', [CasesController::class, 'store'])->name('case.store');
+Route::put('/case/{id}', [CasesController::class, 'update'])->name('case.update');
+Route::delete('/case/{id}', [CasesController::class, 'destroy'])->name('case.destroy');
+Route::get('/case/{id}', [CasesController::class, 'show'])->name('case.show');
+Route::get('/case/{id}/edit', [CasesController::class, 'edit'])->name('case.edit');
 
+Route::get('/archive', [ArchivedController::class, 'index'])->name('archive');
 
 //login and user routes
 Route::get('/login', [FrontController::class, 'login'])->name('login');

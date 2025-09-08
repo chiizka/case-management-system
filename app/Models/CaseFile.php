@@ -9,12 +9,15 @@ class CaseFile extends Model
     protected $table = 'cases'; 
     
     protected $fillable = [
-        'case_number',
-        'case_status', 
-        'case_type',
-        'complainant',
-        'respondent',
-        'case_details',
-        'date_filed',
+        'inspection_id',
+        'case_no',
+        'establishment_name',
+        'current_stage',
+        'overall_status',
+    ];
+
+    protected $casts = [
+        'current_stage' => 'integer',
+        'overall_status' => 'string',
     ];
 }
