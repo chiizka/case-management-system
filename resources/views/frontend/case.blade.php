@@ -167,6 +167,7 @@
                 </div>
             </div>
 
+
             <!-- Tab 1: Inspection -->
             <div class="tab-pane fade" id="tab1" role="tabpanel" aria-labelledby="tab1-tab">
                 <div class="card shadow mb-4">
@@ -175,6 +176,15 @@
                         @if(session('success'))
                             <div class="alert alert-success alert-dismissible fade show" role="alert">
                                 {{ session('success') }}
+                                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+                        @endif
+                        <!-- Error Message -->
+                        @if(session('error'))
+                            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                                {{ session('error') }}
                                 <button type="button" class="close" data-dismiss="alert" aria-label="Close">
                                     <span aria-hidden="true">&times;</span>
                                 </button>

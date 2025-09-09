@@ -124,13 +124,21 @@ public function index()
     /**
      * Remove the specified inspection from storage.
      */
-    public function destroy($id)
-    {
+public function destroy($id)
+{
+    try {
         $inspection = Inspection::findOrFail($id);
         $inspection->delete();
-
-        return redirect()->route('frontend.case')
+        Log::info('Inspection ID: ' . $id . ' deleted successfully.');
+        
+        return redirect()->route('case.index')
             ->with('success', 'Inspection deleted successfully.')
             ->with('active_tab', 'inspections');
+    } catch (\Exception $e) {
+        Log::error('Error deleting inspection ID: ' . $id . ' - ' . $e->getMessage());
+        return redirect()->route('case.index')
+            ->with('error', 'Failed to delete inspection: ' . $e->getMessage())
+            ->with('active_tab', 'inspections');
     }
+}
 }
