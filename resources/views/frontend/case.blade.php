@@ -13,7 +13,6 @@
     position: relative;
 }
 
-
 /* Smaller text and compact spacing */
 .compact-table {
     font-size: 0.75rem;
@@ -63,12 +62,12 @@
         <!-- Tabs Navigation -->
         <ul class="nav nav-tabs" id="dataTableTabs" role="tablist">
             <li class="nav-item">
-                <a class="nav-link active" id="tab0-tab" data-toggle="tab" href="#tab0" role="tab" aria-controls="tab8" aria-selected="false">
+                <a class="nav-link active" id="tab0-tab" data-toggle="tab" href="#tab0" role="tab" aria-controls="tab0" aria-selected="true">
                     All Active Cases
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link " id="tab1-tab" data-toggle="tab" href="#tab1" role="tab" aria-controls="tab1" aria-selected="true">
+                <a class="nav-link" id="tab1-tab" data-toggle="tab" href="#tab1" role="tab" aria-controls="tab1" aria-selected="false">
                     Inspection
                 </a>
             </li>
@@ -102,107 +101,28 @@
                     Appeals & Resolution
                 </a>
             </li>
-
         </ul>
-        
 
         <!-- Tabs Content -->
-        <!-- All Active Cases -->
         <div class="tab-content mt-3" id="dataTableTabsContent">
-            <div class="tab-pane fade" id="tab0" role="tabpanel" aria-labelledby="tab0-tab">
+            
+            <!-- Tab 0: All Active Cases -->
+            <div class="tab-pane fade show active" id="tab0" role="tabpanel" aria-labelledby="tab0-tab">
                 <div class="card shadow mb-4">
                     <div class="card-body">
-
                         <!-- Search + Buttons Row -->
                         <div class="d-flex justify-content-between align-items-center mb-3 custom-search-container">
                             <div class="d-flex align-items-center">
                                 <label class="mr-2 mb-0" style="font-size: 0.8rem;">Search:</label>
-                                <input type="search" class="form-control form-control-sm" id="customSearch2" placeholder="Search docketing records..." style="width: 200px;">
+                                <input type="search" class="form-control form-control-sm" id="customSearch0" placeholder="Search all active cases..." style="width: 200px;">
                             </div>
                         </div>
 
                         <!-- Table Container -->
                         <div class="table-container">
-                        <table class="table table-bordered compact-table sticky-table" id="dataTable1" width="100%" cellspacing="0">
-                            <thead>
-                                <tr>
-                                    <th>Inspection ID</th>
-                                    <th>Case No.</th>
-                                    <th>Establishment Name</th>
-                                    <th>Current Stage</th>
-                                    <th>Overall Status</th>
-                                    <th>Created At</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @if(isset($cases) && $cases->count() > 0)
-                                    @foreach($cases as $case)
-                                        <tr>
-                                            <td>{{ $case->inspection_id }}</td>
-                                            <td>{{ $case->case_no ?? '-' }}</td>
-                                            <td title="{{ $case->establishment_name }}">{{ Str::limit($case->establishment_name, 25) }}</td>
-                                            <td>{{ $case->current_stage }}</td>
-                                            <td>{{ $case->overall_status }}</td>
-                                            <td>{{ $case->created_at ? \Carbon\Carbon::parse($case->created_at)->format('Y-m-d') : '-' }}</td>
-                                            <td>
-                                                <button class="btn btn-warning" data-toggle="modal" data-target="#addCaseModal" data-mode="edit" data-case-id="{{ $case->id }}" title="Edit">
-                                                    <i class="fas fa-edit"></i>
-                                                </button>
-                                                <button class="btn btn-danger delete-btn" data-case-id="{{ $case->id }}" title="Delete">
-                                                    <i class="fas fa-trash"></i>
-                                                </button>
-                                                <button class="btn btn-info" title="View">
-                                                    <i class="fas fa-eye"></i>
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    @endforeach
-                                @else
-                                    <tr>
-                                        <td colspan="8" class="text-center">No cases found. Click "Add Case" to create your first case.</td>
-                                    </tr>
-                                @endif
-                            </tbody>
-                        </table>
-                    </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Inspection Tab -->
-            <div class="tab-pane fade show active" id="tab1" role="tabpanel" aria-labelledby="tab1-tab">
-                <div class="card shadow mb-4">
-                    <div class="card-body">
-                        <!-- Success Message -->
-                        @if(session('success'))
-                            <div class="alert alert-success alert-dismissible fade show" role="alert">
-                                {{ session('success') }}
-                                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                                    <span aria-hidden="true">&times;</span>
-                                </button>
-                            </div>
-                        @endif
-
-                        <!-- Search + Buttons Row -->
-                        <div class="d-flex justify-content-between align-items-center mb-3 custom-search-container">
-                            <div class="d-flex align-items-center">
-                                <label class="mr-2 mb-0" style="font-size: 0.8rem;">Search:</label>
-                                <input type="search" class="form-control form-control-sm" id="customSearch1" placeholder="Search cases..." style="width: 200px;">
-                            </div>
-                            <div>
-                                <button class="btn btn-primary btn-sm" data-toggle="modal" data-target="#addCaseModal" data-mode="add">
-                                    + Add Case
-                                </button>
-                            </div>
-                        </div>
-
-                        <!-- Table Container -->
-                        <div class="table-container">
-                            <table class="table table-bordered compact-table sticky-table" id="dataTable1" width="100%" cellspacing="0">
+                            <table class="table table-bordered compact-table sticky-table" id="dataTable0" width="100%" cellspacing="0">
                                 <thead>
                                     <tr>
-                                      
                                         <th>Inspection ID</th>
                                         <th>Case No.</th>
                                         <th>Establishment Name</th>
@@ -216,7 +136,6 @@
                                     @if(isset($cases) && $cases->count() > 0)
                                         @foreach($cases as $case)
                                             <tr>
-                                                
                                                 <td>{{ $case->inspection_id }}</td>
                                                 <td>{{ $case->case_no ?? '-' }}</td>
                                                 <td title="{{ $case->establishment_name }}">{{ Str::limit($case->establishment_name, 25) }}</td>
@@ -238,24 +157,103 @@
                                         @endforeach
                                     @else
                                         <tr>
-                                            <td colspan="8" class="text-center">No cases found. Click "Add Case" to create your first case.</td>
+                                            <td colspan="7" class="text-center">No cases found. Click "Add Case" to create your first case.</td>
                                         </tr>
                                     @endif
                                 </tbody>
                             </table>
                         </div>
-                        
                     </div>
                 </div>
             </div>
 
-            
+            <!-- Tab 1: Inspection -->
+            <div class="tab-pane fade" id="tab1" role="tabpanel" aria-labelledby="tab1-tab">
+                <div class="card shadow mb-4">
+                    <div class="card-body">
+                        <!-- Success Message -->
+                        @if(session('success'))
+                            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                                {{ session('success') }}
+                                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+                        @endif
 
-            <!-- Docketing Tab -->
+                        <!-- Search + Buttons Row -->
+                        <div class="d-flex justify-content-between align-items-center mb-3 custom-search-container">
+                            <div class="d-flex align-items-center">
+                                <label class="mr-2 mb-0" style="font-size: 0.8rem;">Search:</label>
+                                <input type="search" class="form-control form-control-sm" id="customSearch1" placeholder="Search inspections..." style="width: 200px;">
+                            </div>
+                        </div>
+
+                        <!-- Table Container -->
+                        <div class="table-container">
+                            <table class="table table-bordered compact-table sticky-table" id="dataTable1" width="100%" cellspacing="0">
+                                <thead>
+                                    <tr>
+                                        <th>Case</th>
+                                        <th>Inspection ID</th>
+                                        <th>Name of Establishment</th>
+                                        <th>PO Office</th>
+                                        <th>Inspector Name</th>
+                                        <th>Inspector Authority No</th>
+                                        <th>Date of Inspection</th>
+                                        <th>Date of NR</th>
+                                        <th>Lapse 20 Day Period</th>
+                                        <th>TWG ALI</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @if(isset($inspections) && $inspections->count() > 0)
+                                        @foreach($inspections as $inspection)
+                                            <tr>
+                                                <td>{{ $inspection->case->establishment_name ?? '-' }}</td>
+                                                <td>{{ $inspection->inspection_id }}</td>
+                                                <td title="{{ $inspection->name_of_establishment }}">{{ Str::limit($inspection->name_of_establishment, 25) }}</td>
+                                                <td>{{ $inspection->po_office ?? '-' }}</td>
+                                                <td>{{ $inspection->inspector_name ?? '-' }}</td>
+                                                <td>{{ $inspection->inspector_authority_no ?? '-' }}</td>
+                                                <td>{{ $inspection->date_of_inspection ? \Carbon\Carbon::parse($inspection->date_of_inspection)->format('Y-m-d') : '-' }}</td>
+                                                <td>{{ $inspection->date_of_nr ? \Carbon\Carbon::parse($inspection->date_of_nr)->format('Y-m-d') : '-' }}</td>
+                                                <td>{{ $inspection->lapse_20_day_period ? \Carbon\Carbon::parse($inspection->lapse_20_day_period)->format('Y-m-d') : '-' }}</td>
+                                                <td>{{ $inspection->twg_ali ?? '-' }}</td>
+                                                <td>
+                                                    <a href="{{ route('inspection.show', $inspection->id) }}" class="btn btn-info btn-sm" title="View">
+                                                        <i class="fas fa-eye"></i>
+                                                    </a>
+                                                    <a href="{{ route('inspection.edit', $inspection->id) }}" class="btn btn-warning btn-sm" title="Edit">
+                                                        <i class="fas fa-edit"></i>
+                                                    </a>
+                                                    <form action="{{ route('inspection.destroy', $inspection->id) }}" method="POST" style="display:inline;">
+                                                        @csrf
+                                                        @method('DELETE')
+                                                        <button type="submit" class="btn btn-danger btn-sm delete-btn" title="Delete" onclick="return confirm('Are you sure you want to delete this inspection?')">
+                                                            <i class="fas fa-trash"></i>
+                                                        </button>
+                                                    </form>
+                                                </td>
+                                            </tr>
+                                        @endforeach
+                                    @else
+                                        <tr>
+                                            <td colspan="11" class="text-center">No inspections found. Click "Add Inspection" to create your first inspection.</td>
+                                        </tr>
+                                    @endif
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab 2: Docketing -->
             <div class="tab-pane fade" id="tab2" role="tabpanel" aria-labelledby="tab2-tab">
                 <div class="card shadow mb-4">
                     <div class="card-body">
-
                         <!-- Search + Buttons Row -->
                         <div class="d-flex justify-content-between align-items-center mb-3 custom-search-container">
                             <div class="d-flex align-items-center">
@@ -285,22 +283,22 @@
                                         @foreach($docketingRecords as $record)
                                             <tr>
                                                 <td>{{ $record->no ?? '-' }}</td>
-                                                <td>{{ $record->case_id ?? '-' }}</td>
-                                                <td>{{ $record->docket_no ?? '-' }}</td>
                                                 <td title="{{ $record->name_of_establishment }}">{{ Str::limit($record->name_of_establishment ?? '-', 25) }}</td>
+                                                <td>{{ $record->pct_for_docketing ?? '-' }}</td>
                                                 <td>{{ $record->date_docketed ? \Carbon\Carbon::parse($record->date_docketed)->format('Y-m-d') : '-' }}</td>
-                                                <td>{{ $record->hearing_date ? \Carbon\Carbon::parse($record->hearing_date)->format('Y-m-d') : '-' }}</td>
+                                                <td>{{ $record->aging_docket ?? '-' }}</td>
                                                 <td>
                                                     <span class="badge badge-{{ $record->status == 'Pending' ? 'warning' : ($record->status == 'Completed' ? 'success' : 'secondary') }}">
                                                         {{ $record->status ?? 'Pending' }}
                                                     </span>
                                                 </td>
-                                                <td>{{ $record->assigned_officer ?? '-' }}</td>
+                                                <td>{{ $record->case_no ?? '-' }}</td>
+                                                <td>{{ $record->hearing_officer ?? '-' }}</td>
                                                 <td>
-                                                    <button class="btn btn-warning" data-toggle="modal" data-target="#addDocketingModal" data-mode="edit" data-record-id="{{ $record->id }}" title="Edit">
+                                                    <button class="btn btn-warning" title="Edit">
                                                         <i class="fas fa-edit"></i>
                                                     </button>
-                                                    <button class="btn btn-danger delete-docketing-btn" data-record-id="{{ $record->id }}" title="Delete">
+                                                    <button class="btn btn-danger" title="Delete">
                                                         <i class="fas fa-trash"></i>
                                                     </button>
                                                     <button class="btn btn-info" title="View">
@@ -311,7 +309,7 @@
                                         @endforeach
                                     @else
                                         <tr>
-                                            <td colspan="10" class="text-center">No docketing records found. Click "Add Docketing Record" to create your first record.</td>
+                                            <td colspan="9" class="text-center">No docketing records found.</td>
                                         </tr>
                                     @endif
                                 </tbody>
@@ -320,23 +318,22 @@
                     </div>
                 </div>
             </div>
-            
-            {{-- Hearing Process Tab --}}
+
+            <!-- Tab 3: Hearing Process -->
             <div class="tab-pane fade" id="tab3" role="tabpanel" aria-labelledby="tab3-tab">
                 <div class="card shadow mb-4">
                     <div class="card-body">
-
                         <!-- Search + Buttons Row -->
                         <div class="d-flex justify-content-between align-items-center mb-3 custom-search-container">
                             <div class="d-flex align-items-center">
                                 <label class="mr-2 mb-0" style="font-size: 0.8rem;">Search:</label>
-                                <input type="search" class="form-control form-control-sm" id="customSearch2" placeholder="Search docketing records..." style="width: 200px;">
+                                <input type="search" class="form-control form-control-sm" id="customSearch3" placeholder="Search hearing records..." style="width: 200px;">
                             </div>
                         </div>
 
                         <!-- Table Container -->
                         <div class="table-container">
-                            <table class="table table-bordered compact-table sticky-table" id="dataTable2" width="100%" cellspacing="0">
+                            <table class="table table-bordered compact-table sticky-table" id="dataTable3" width="100%" cellspacing="0">
                                 <thead>
                                     <tr>
                                         <th>Inspection ID</th>
@@ -345,57 +342,25 @@
                                         <th>1st MC PCT (15 days after lapse)</th>
                                         <th>Status (1st MC)</th>
                                         <th>Date of 2nd/Last MC (Actual)</th>
-                                        <th>2nd/Last MC PCT (30 days from 1st MC) </th>
+                                        <th>2nd/Last MC PCT (30 days from 1st MC)</th>
                                         <th>Status (2nd MC)</th>
-
                                         <th>Case Folder forwarded to RO (Actual)</th>
                                         <th>Complete case folder? (Y/N)</th>
                                         <th>Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @if(isset($docketingRecords) && $docketingRecords->count() > 0)
-                                        @foreach($docketingRecords as $record)
-                                            <tr>
-                                                <td>{{ $record->no ?? '-' }}</td>
-                                                <td>{{ $record->case_id ?? '-' }}</td>
-                                                <td>{{ $record->docket_no ?? '-' }}</td>
-                                                <td title="{{ $record->name_of_establishment }}">{{ Str::limit($record->name_of_establishment ?? '-', 25) }}</td>
-                                                <td>{{ $record->date_docketed ? \Carbon\Carbon::parse($record->date_docketed)->format('Y-m-d') : '-' }}</td>
-                                                <td>{{ $record->hearing_date ? \Carbon\Carbon::parse($record->hearing_date)->format('Y-m-d') : '-' }}</td>
-                                                <td>
-                                                    <span class="badge badge-{{ $record->status == 'Pending' ? 'warning' : ($record->status == 'Completed' ? 'success' : 'secondary') }}">
-                                                        {{ $record->status ?? 'Pending' }}
-                                                    </span>
-                                                </td>
-                                                <td>{{ $record->assigned_officer ?? '-' }}</td>
-                                                <td>{{ $record->assigned_officer ?? '-' }}</td>
-                                                <td>{{ $record->assigned_officer ?? '-' }}</td>
-                                                <td>
-                                                    <button class="btn btn-warning" data-toggle="modal" data-target="#addDocketingModal" data-mode="edit" data-record-id="{{ $record->id }}" title="Edit">
-                                                        <i class="fas fa-edit"></i>
-                                                    </button>
-                                                    <button class="btn btn-danger delete-docketing-btn" data-record-id="{{ $record->id }}" title="Delete">
-                                                        <i class="fas fa-trash"></i>
-                                                    </button>
-                                                    <button class="btn btn-info" title="View">
-                                                        <i class="fas fa-eye"></i>
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                        @endforeach
-                                    @else
-                                        <tr>
-                                            <td colspan="10" class="text-center">No docketing records found. Click "Add Docketing Record" to create your first record.</td>
-                                        </tr>
-                                    @endif
+                                    <tr>
+                                        <td colspan="11" class="text-center">No hearing process records found.</td>
+                                    </tr>
                                 </tbody>
                             </table>
                         </div>
                     </div>
                 </div>
             </div>
-            {{-- Review & Drafting --}}
+
+            <!-- Tab 4: Review & Drafting -->
             <div class="tab-pane fade" id="tab4" role="tabpanel" aria-labelledby="tab4-tab">
                 <div class="card shadow mb-4">
                     <div class="card-body">
@@ -403,13 +368,13 @@
                         <div class="d-flex justify-content-between align-items-center mb-3 custom-search-container">
                             <div class="d-flex align-items-center">
                                 <label class="mr-2 mb-0" style="font-size: 0.8rem;">Search:</label>
-                                <input type="search" class="form-control form-control-sm" id="customSearch2" placeholder="Search docketing records..." style="width: 200px;">
+                                <input type="search" class="form-control form-control-sm" id="customSearch4" placeholder="Search review records..." style="width: 200px;">
                             </div>
                         </div>
 
                         <!-- Table Container -->
                         <div class="table-container">
-                            <table class="table table-bordered compact-table sticky-table" id="dataTable2" width="100%" cellspacing="0">
+                            <table class="table table-bordered compact-table sticky-table" id="dataTable4" width="100%" cellspacing="0">
                                 <thead>
                                     <tr>
                                         <th>Inspection ID</th>
@@ -422,83 +387,42 @@
                                         <th>Date Received from PO</th>
                                         <th>Reviewer/Drafter</th>
                                         <th>Date Received by Reviewer/Drafter</th>
-
                                         <th>Date returned from Drafter to Case Mngt</th>
                                         <th>Aging (10 days for TSSD Reviewer)</th>
                                         <th>Status (Reviewer/Drafter)</th>
-                                        <th>Draft Order of TSSD Reviewer/Drafter </th>
+                                        <th>Draft Order of TSSD Reviewer/Drafter</th>
                                         <th>Final Review (Date received)</th>
                                         <th>Date Received by Drafter for Finalization</th>
-                                        <th>Date Returned to Case Mngt for Signature </th>
-
+                                        <th>Date Returned to Case Mngt for Signature</th>
                                         <th>Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @if(isset($docketingRecords) && $docketingRecords->count() > 0)
-                                        @foreach($docketingRecords as $record)
-                                            <tr>
-                                                <td>{{ $record->no ?? '-' }}</td>
-                                                <td>{{ $record->case_id ?? '-' }}</td>
-                                                <td>{{ $record->docket_no ?? '-' }}</td>
-                                                <td title="{{ $record->name_of_establishment }}">{{ Str::limit($record->name_of_establishment ?? '-', 25) }}</td>
-                                                <td>{{ $record->date_docketed ? \Carbon\Carbon::parse($record->date_docketed)->format('Y-m-d') : '-' }}</td>
-                                                <td>{{ $record->hearing_date ? \Carbon\Carbon::parse($record->hearing_date)->format('Y-m-d') : '-' }}</td>
-                                                <td>
-                                                    <span class="badge badge-{{ $record->status == 'Pending' ? 'warning' : ($record->status == 'Completed' ? 'success' : 'secondary') }}">
-                                                        {{ $record->status ?? 'Pending' }}
-                                                    </span>
-                                                </td>
-                                                <td>{{ $record->assigned_officer ?? '-' }}</td>
-                                                <td>{{ $record->assigned_officer ?? '-' }}</td>
-                                                <td>{{ $record->assigned_officer ?? '-' }}</td>
-                                                <td>{{ $record->assigned_officer ?? '-' }}</td>
-                                                <td>{{ $record->assigned_officer ?? '-' }}</td>
-                                                <td>{{ $record->assigned_officer ?? '-' }}</td>
-                                                <td>{{ $record->assigned_officer ?? '-' }}</td>
-                                                <td>{{ $record->assigned_officer ?? '-' }}</td>
-                                                <td>{{ $record->assigned_officer ?? '-' }}</td>
-                                                <td>{{ $record->assigned_officer ?? '-' }}</td>
-                                                <td>
-                                                    <button class="btn btn-warning" data-toggle="modal" data-target="#addDocketingModal" data-mode="edit" data-record-id="{{ $record->id }}" title="Edit">
-                                                        <i class="fas fa-edit"></i>
-                                                    </button>
-                                                    <button class="btn btn-danger delete-docketing-btn" data-record-id="{{ $record->id }}" title="Delete">
-                                                        <i class="fas fa-trash"></i>
-                                                    </button>
-                                                    <button class="btn btn-info" title="View">
-                                                        <i class="fas fa-eye"></i>
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                        @endforeach
-                                    @else
-                                        <tr>
-                                            <td colspan="10" class="text-center">No docketing records found. Click "Add Docketing Record" to create your first record.</td>
-                                        </tr>
-                                    @endif
+                                    <tr>
+                                        <td colspan="18" class="text-center">No review & drafting records found.</td>
+                                    </tr>
                                 </tbody>
                             </table>
                         </div>
                     </div>
                 </div>
             </div>
-            {{-- Order and Disposition Tab --}}
+
+            <!-- Tab 5: Orders & Disposition -->
             <div class="tab-pane fade" id="tab5" role="tabpanel" aria-labelledby="tab5-tab">
                 <div class="card shadow mb-4">
                     <div class="card-body">
-
                         <!-- Search + Buttons Row -->
                         <div class="d-flex justify-content-between align-items-center mb-3 custom-search-container">
                             <div class="d-flex align-items-center">
                                 <label class="mr-2 mb-0" style="font-size: 0.8rem;">Search:</label>
-                                <input type="search" class="form-control form-control-sm" id="customSearch2" placeholder="Search docketing records..." style="width: 200px;">
+                                <input type="search" class="form-control form-control-sm" id="customSearch5" placeholder="Search orders..." style="width: 200px;">
                             </div>
                         </div>
 
                         <!-- Table Container -->
                         <div class="table-container">
-                            <table class="table table-bordered compact-table sticky-table" id="dataTable2" width="100%" cellspacing="0">
+                            <table class="table table-bordered compact-table sticky-table" id="dataTable5" width="100%" cellspacing="0">
                                 <thead>
                                     <tr>
                                         <th>Inspection ID</th>
@@ -514,236 +438,107 @@
                                         <th>Disposition (Actual)</th>
                                         <th>Findings to be complied in the Order</th>
                                         <th>Date of Order (Actual)</th>
-                                        <th>Released Date (Actual stamped by Records) </th>
-
-                                        <th>Final Review (Date received)</th>
-                                        <th>Date Received by Drafter for Finalization</th>
-                                        <th>Date Returned to Case Mngt for Signature </th>
-
+                                        <th>Released Date (Actual stamped by Records)</th>
                                         <th>Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @if(isset($docketingRecords) && $docketingRecords->count() > 0)
-                                        @foreach($docketingRecords as $record)
-                                            <tr>
-                                                <td>{{ $record->no ?? '-' }}</td>
-                                                <td>{{ $record->case_id ?? '-' }}</td>
-                                                <td>{{ $record->docket_no ?? '-' }}</td>
-                                                <td title="{{ $record->name_of_establishment }}">{{ Str::limit($record->name_of_establishment ?? '-', 25) }}</td>
-                                                <td>{{ $record->date_docketed ? \Carbon\Carbon::parse($record->date_docketed)->format('Y-m-d') : '-' }}</td>
-                                                <td>{{ $record->hearing_date ? \Carbon\Carbon::parse($record->hearing_date)->format('Y-m-d') : '-' }}</td>
-                                                <td>
-                                                    <span class="badge badge-{{ $record->status == 'Pending' ? 'warning' : ($record->status == 'Completed' ? 'success' : 'secondary') }}">
-                                                        {{ $record->status ?? 'Pending' }}
-                                                    </span>
-                                                </td>
-                                                <td>{{ $record->assigned_officer ?? '-' }}</td>
-                                                <td>{{ $record->assigned_officer ?? '-' }}</td>
-                                                <td>{{ $record->assigned_officer ?? '-' }}</td>
-                                                <td>{{ $record->assigned_officer ?? '-' }}</td>
-                                                <td>{{ $record->assigned_officer ?? '-' }}</td>
-                                                <td>{{ $record->assigned_officer ?? '-' }}</td>
-                                                <td>{{ $record->assigned_officer ?? '-' }}</td>
-                               
-                                                <td>
-                                                    <button class="btn btn-warning" data-toggle="modal" data-target="#addDocketingModal" data-mode="edit" data-record-id="{{ $record->id }}" title="Edit">
-                                                        <i class="fas fa-edit"></i>
-                                                    </button>
-                                                    <button class="btn btn-danger delete-docketing-btn" data-record-id="{{ $record->id }}" title="Delete">
-                                                        <i class="fas fa-trash"></i>
-                                                    </button>
-                                                    <button class="btn btn-info" title="View">
-                                                        <i class="fas fa-eye"></i>
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                        @endforeach
-                                    @else
-                                        <tr>
-                                            <td colspan="10" class="text-center">No docketing records found. Click "Add Docketing Record" to create your first record.</td>
-                                        </tr>
-                                    @endif
+                                    <tr>
+                                        <td colspan="15" class="text-center">No orders & disposition records found.</td>
+                                    </tr>
                                 </tbody>
                             </table>
                         </div>
                     </div>
                 </div>
             </div>
-            {{-- Compliance & Monetary Awards --}}
+
+            <!-- Tab 6: Compliance & Awards -->
             <div class="tab-pane fade" id="tab6" role="tabpanel" aria-labelledby="tab6-tab">
                 <div class="card shadow mb-4">
                     <div class="card-body">
-
                         <!-- Search + Buttons Row -->
                         <div class="d-flex justify-content-between align-items-center mb-3 custom-search-container">
                             <div class="d-flex align-items-center">
                                 <label class="mr-2 mb-0" style="font-size: 0.8rem;">Search:</label>
-                                <input type="search" class="form-control form-control-sm" id="customSearch2" placeholder="Search docketing records..." style="width: 200px;">
+                                <input type="search" class="form-control form-control-sm" id="customSearch6" placeholder="Search compliance records..." style="width: 200px;">
                             </div>
                         </div>
 
                         <!-- Table Container -->
                         <div class="table-container">
-                            <table class="table table-bordered compact-table sticky-table" id="dataTable2" width="100%" cellspacing="0">
+                            <table class="table table-bordered compact-table sticky-table" id="dataTable6" width="100%" cellspacing="0">
                                 <thead>
                                     <tr>
                                         <th>Inspection ID</th>
                                         <th>Name of Establishment</th>
                                         <th>Compliance Order Monetary Award (Actual)</th>
                                         <th>OSH Penalty</th>
-                                        <th>Affected Male </th>
+                                        <th>Affected Male</th>
                                         <th>Affected Female</th>
                                         <th>1st Order Dismissal - CNPC</th>
-                                        <th>TAVable? (Less than 10 workers) </th>
-                                        <th>Scanned Order (1st Order) </th>
+                                        <th>TAVable? (Less than 10 workers)</th>
+                                        <th>Scanned Order (1st Order)</th>
                                         <th>With DEPOSITED Monetary Claims in DOLE 5?</th>
                                         <th>Amount Deposited (DOLE 5 Cashier)</th>
                                         <th>With Order of Payment/Notice to Claim Award?</th>
                                         <th>Status (if all affected employees received claim)</th>
-                                        <th>Status of Case after 1st Order </th>
-
-                                        <th>Date of Notice of Finality (Dismissed)</th>
-                                        <th>Released Date of Notice of Finality</th>
-                                        <th>Scanned Notice of Finality (Dismissed)</th>
-                                        <th>Updated/Ticked in MIS?</th>
-                                        <th>2nd Order Drafter (C&T/CNPC)</th>
-                                        <th>Date Received by Drafter (C&T/CNPC) </th>
-
+                                        <th>Status of Case after 1st Order</th>
                                         <th>Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @if(isset($docketingRecords) && $docketingRecords->count() > 0)
-                                        @foreach($docketingRecords as $record)
-                                            <tr>
-                                                <td>{{ $record->no ?? '-' }}</td>
-                                                <td>{{ $record->case_id ?? '-' }}</td>
-                                                <td>{{ $record->docket_no ?? '-' }}</td>
-                                                <td title="{{ $record->name_of_establishment }}">{{ Str::limit($record->name_of_establishment ?? '-', 25) }}</td>
-                                                <td>{{ $record->date_docketed ? \Carbon\Carbon::parse($record->date_docketed)->format('Y-m-d') : '-' }}</td>
-                                                <td>{{ $record->hearing_date ? \Carbon\Carbon::parse($record->hearing_date)->format('Y-m-d') : '-' }}</td>
-                                                <td>
-                                                    <span class="badge badge-{{ $record->status == 'Pending' ? 'warning' : ($record->status == 'Completed' ? 'success' : 'secondary') }}">
-                                                        {{ $record->status ?? 'Pending' }}
-                                                    </span>
-                                                </td>
-                                                <td>{{ $record->assigned_officer ?? '-' }}</td>
-                                                <td>{{ $record->assigned_officer ?? '-' }}</td>
-                                                <td>{{ $record->assigned_officer ?? '-' }}</td>
-                                                <td>{{ $record->assigned_officer ?? '-' }}</td>
-                                                <td>{{ $record->assigned_officer ?? '-' }}</td>
-                                                <td>{{ $record->assigned_officer ?? '-' }}</td>
-                                                <td>{{ $record->assigned_officer ?? '-' }}</td>
-                                                <td>{{ $record->assigned_officer ?? '-' }}</td>
-                                                <td>{{ $record->assigned_officer ?? '-' }}</td>
-                                                <td>{{ $record->assigned_officer ?? '-' }}</td>
-                               
-                                                <td>
-                                                    <button class="btn btn-warning" data-toggle="modal" data-target="#addDocketingModal" data-mode="edit" data-record-id="{{ $record->id }}" title="Edit">
-                                                        <i class="fas fa-edit"></i>
-                                                    </button>
-                                                    <button class="btn btn-danger delete-docketing-btn" data-record-id="{{ $record->id }}" title="Delete">
-                                                        <i class="fas fa-trash"></i>
-                                                    </button>
-                                                    <button class="btn btn-info" title="View">
-                                                        <i class="fas fa-eye"></i>
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                        @endforeach
-                                    @else
-                                        <tr>
-                                            <td colspan="10" class="text-center">No docketing records found. Click "Add Docketing Record" to create your first record.</td>
-                                        </tr>
-                                    @endif
+                                    <tr>
+                                        <td colspan="15" class="text-center">No compliance & awards records found.</td>
+                                    </tr>
                                 </tbody>
                             </table>
                         </div>
                     </div>
                 </div>
             </div>
-            {{-- Appeals & Final Resolution --}}
+
+            <!-- Tab 7: Appeals & Resolution -->
             <div class="tab-pane fade" id="tab7" role="tabpanel" aria-labelledby="tab7-tab">
                 <div class="card shadow mb-4">
                     <div class="card-body">
-
                         <!-- Search + Buttons Row -->
                         <div class="d-flex justify-content-between align-items-center mb-3 custom-search-container">
                             <div class="d-flex align-items-center">
                                 <label class="mr-2 mb-0" style="font-size: 0.8rem;">Search:</label>
-                                <input type="search" class="form-control form-control-sm" id="customSearch2" placeholder="Search docketing records..." style="width: 200px;">
+                                <input type="search" class="form-control form-control-sm" id="customSearch7" placeholder="Search appeals..." style="width: 200px;">
                             </div>
                         </div>
 
                         <!-- Table Container -->
                         <div class="table-container">
-                            <table class="table table-bordered compact-table sticky-table" id="dataTable2" width="100%" cellspacing="0">
+                            <table class="table table-bordered compact-table sticky-table" id="dataTable7" width="100%" cellspacing="0">
                                 <thead>
                                     <tr>
                                         <th>Inspection ID</th>
                                         <th>Name of Establishment</th>
                                         <th>Date Returned to Case Mngt (C&T/CNPC)</th>
                                         <th>Review (C&T/CNPC)</th>
-                                        <th>Date Received by Drafter for Finalization (2nd Order) </th>
+                                        <th>Date Received by Drafter for Finalization (2nd Order)</th>
                                         <th>Date Returned to Case Mngt for Signature (2nd Order)</th>
                                         <th>Date of Order (2nd Order/CNPC)</th>
                                         <th>Released Date (2nd Order/CNPC)</th>
                                         <th>Scanned Order (2nd Order/CNPC)</th>
                                         <th>Date forwarded to MALSU</th>
-                                        <th>Scanned Copy of Indorsement to MALSU </th>
+                                        <th>Scanned Copy of Indorsement to MALSU</th>
                                         <th>Motion for Reconsideration (Date received)</th>
-                                        <th>Date Received by MALSU </th>
+                                        <th>Date Received by MALSU</th>
                                         <th>Date of Resolution (MR)</th>
-
-                                        <th>Released Date of Resolution (MR) </th>
+                                        <th>Released Date of Resolution (MR)</th>
                                         <th>Scanned Resolution (MR)</th>
                                         <th>Date of Appeal (Date received by Records unit)</th>
-
                                         <th>Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @if(isset($docketingRecords) && $docketingRecords->count() > 0)
-                                        @foreach($docketingRecords as $record)
-                                            <tr>
-                                                <td>{{ $record->no ?? '-' }}</td>
-                                                <td>{{ $record->case_id ?? '-' }}</td>
-                                                <td>{{ $record->docket_no ?? '-' }}</td>
-                                                <td title="{{ $record->name_of_establishment }}">{{ Str::limit($record->name_of_establishment ?? '-', 25) }}</td>
-                                                <td>{{ $record->date_docketed ? \Carbon\Carbon::parse($record->date_docketed)->format('Y-m-d') : '-' }}</td>
-                                                <td>{{ $record->hearing_date ? \Carbon\Carbon::parse($record->hearing_date)->format('Y-m-d') : '-' }}</td>
-                                                <td>
-                                                    <span class="badge badge-{{ $record->status == 'Pending' ? 'warning' : ($record->status == 'Completed' ? 'success' : 'secondary') }}">
-                                                        {{ $record->status ?? 'Pending' }}
-                                                    </span>
-                                                </td>
-                                                <td>{{ $record->assigned_officer ?? '-' }}</td>
-                                                <td>{{ $record->assigned_officer ?? '-' }}</td>
-                                                <td>{{ $record->assigned_officer ?? '-' }}</td>
-                                                <td>{{ $record->assigned_officer ?? '-' }}</td>
-                                                <td>{{ $record->assigned_officer ?? '-' }}</td>
-                                                <td>{{ $record->assigned_officer ?? '-' }}</td>
-                                                <td>{{ $record->assigned_officer ?? '-' }}</td>
-                               
-                                                <td>
-                                                    <button class="btn btn-warning" data-toggle="modal" data-target="#addDocketingModal" data-mode="edit" data-record-id="{{ $record->id }}" title="Edit">
-                                                        <i class="fas fa-edit"></i>
-                                                    </button>
-                                                    <button class="btn btn-danger delete-docketing-btn" data-record-id="{{ $record->id }}" title="Delete">
-                                                        <i class="fas fa-trash"></i>
-                                                    </button>
-                                                    <button class="btn btn-info" title="View">
-                                                        <i class="fas fa-eye"></i>
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                        @endforeach
-                                    @else
-                                        <tr>
-                                            <td colspan="10" class="text-center">No docketing records found. Click "Add Docketing Record" to create your first record.</td>
-                                        </tr>
-                                    @endif
+                                    <tr>
+                                        <td colspan="18" class="text-center">No appeals & resolution records found.</td>
+                                    </tr>
                                 </tbody>
                             </table>
                         </div>
@@ -751,9 +546,8 @@
                 </div>
             </div>
 
-
         </div>
-         <!-- End Tabs Content -->
+        <!-- End Tabs Content -->
     </div>
     <!-- /.container-fluid -->
 </div>
@@ -834,6 +628,9 @@ $(document).ready(function() {
     }
 
     // Destroy existing DataTables if they exist
+    if ($.fn.DataTable.isDataTable('#dataTable0')) {
+        $('#dataTable0').DataTable().destroy();
+    }
     if ($.fn.DataTable.isDataTable('#dataTable1')) {
         $('#dataTable1').DataTable().destroy();
     }
@@ -841,7 +638,32 @@ $(document).ready(function() {
         $('#dataTable2').DataTable().destroy();
     }
 
-    // Initialize DataTable for Inspection Tab
+    // Initialize DataTable for All Active Cases Tab (tab0)
+    var table0 = $('#dataTable0').DataTable({
+        pageLength: 10,
+        lengthChange: false,
+        paging: true,
+        searching: false,
+        info: true,
+        dom: 'tip',
+        order: [[0, "asc"]],
+        scrollX: true,
+        scrollY: '400px',
+        scrollCollapse: true,
+        drawCallback: function() {
+            // Re-apply sticky positioning after DataTables redraw
+            $('.sticky-table thead th').css({
+                'position': 'sticky',
+                'top': 0,
+                'z-index': 12
+            });
+            $('.sticky-table thead th:nth-child(-n+5)').css({
+                'z-index': 13
+            });
+        }
+    });
+
+    // Initialize DataTable for Inspection Tab (tab1)
     var table1 = $('#dataTable1').DataTable({
         pageLength: 10,
         lengthChange: false,
@@ -866,7 +688,7 @@ $(document).ready(function() {
         }
     });
 
-    // Initialize DataTable for Docketing Tab
+    // Initialize DataTable for Docketing Tab (tab2)
     var table2 = $('#dataTable2').DataTable({
         pageLength: 10,
         lengthChange: false,
@@ -889,6 +711,11 @@ $(document).ready(function() {
                 'z-index': 13
             });
         }
+    });
+
+    // Custom search functionality for All Active Cases Tab
+    $('#customSearch0').on('keyup input change', function() {
+        table0.search(this.value).draw();
     });
 
     // Custom search functionality for Inspection Tab
@@ -1032,28 +859,121 @@ $(document).ready(function() {
     // Handle tab switching - reinitialize DataTables when switching tabs
     $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
         var target = $(e.target).attr("href");
-        if (target === '#tab1') {
+        if (target === '#tab0') {
+            table0.columns.adjust().draw();
+        } else if (target === '#tab1') {
             table1.columns.adjust().draw();
         } else if (target === '#tab2') {
             table2.columns.adjust().draw();
         } else if (target === '#tab3') {
-            table2.columns.adjust().draw();
+            // Add table3 initialization if needed
         } else if (target === '#tab4') {
-            table2.columns.adjust().draw();
+            // Add table4 initialization if needed
         } else if (target === '#tab5') {
-            table2.columns.adjust().draw();
-        }  else if (target === '#tab6') {
-            table2.columns.adjust().draw();
-        }  else if (target === '#tab7') {
-            table2.columns.adjust().draw();
-        } else if (target === '#tab0') {
-            table2.columns.adjust().draw();
+            // Add table5 initialization if needed
+        } else if (target === '#tab6') {
+            // Add table6 initialization if needed
+        } else if (target === '#tab7') {
+            // Add table7 initialization if needed
         }
-        
-        
     });
 
-    console.log('DataTables initialized successfully for both tabs with sticky columns and headers');
+    console.log('Delete script loaded');
+    
+    // Handle delete button click
+    $(document).on('click', '.delete-btn', function(e) {
+        e.preventDefault();
+        console.log('Delete button clicked');
+        
+        const caseId = $(this).data('case-id');
+        console.log('Case ID:', caseId);
+        
+        const row = $(this).closest('tr');
+        
+        // Check if CSRF token exists
+        const csrfToken = $('meta[name="csrf-token"]').attr('content');
+        console.log('CSRF Token:', csrfToken);
+        
+        // Show confirmation dialog
+        if (confirm('Are you sure you want to delete this case? This action cannot be undone.')) {
+            console.log('User confirmed deletion');
+            
+            // Show loading state
+            $(this).prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i>');
+            
+            // Make AJAX request to delete
+            $.ajax({
+                url: `/cases/${caseId}`,
+                type: 'DELETE',
+                headers: {
+                    'X-CSRF-TOKEN': csrfToken
+                },
+                beforeSend: function() {
+                    console.log('AJAX request starting...');
+                },
+                success: function(response) {
+                    console.log('Success response:', response);
+                    
+                    // Remove the row from table
+                    row.fadeOut(300, function() {
+                        $(this).remove();
+                        
+                        // Check if table is empty and show message
+                        if ($('#dataTable0 tbody tr:visible').length === 0) {
+                            $('#dataTable0 tbody').html(
+                                '<tr><td colspan="7" class="text-center">No cases found. Click "Add Case" to create your first case.</td></tr>'
+                            );
+                        }
+                    });
+                    
+                    // Show success message
+                    showAlert('success', 'Case deleted successfully!');
+                },
+                error: function(xhr, status, error) {
+                    console.log('Error occurred:', xhr, status, error);
+                    console.log('Response Text:', xhr.responseText);
+                    
+                    // Re-enable button
+                    $(this).prop('disabled', false).html('<i class="fas fa-trash"></i>');
+                    
+                    // Show error message
+                    let errorMessage = 'Failed to delete case.';
+                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                        errorMessage = xhr.responseJSON.message;
+                    } else if (xhr.status === 404) {
+                        errorMessage = 'Case not found.';
+                    } else if (xhr.status === 500) {
+                        errorMessage = 'Server error occurred.';
+                    }
+                    showAlert('error', errorMessage);
+                }.bind(this)
+            });
+        } else {
+            console.log('User cancelled deletion');
+        }
+    });
 });
+
+// Function to show alert messages
+function showAlert(type, message) {
+    console.log('Showing alert:', type, message);
+    const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
+    const alertHtml = `
+        <div class="alert ${alertClass} alert-dismissible fade show" role="alert">
+            ${message}
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+    `;
+    
+    // Add alert to the top of the page
+    $('.card-body').prepend(alertHtml);
+    
+    // Auto-remove after 5 seconds
+    setTimeout(function() {
+        $('.alert').fadeOut();
+    }, 5000);
+}
 </script>
 @stop

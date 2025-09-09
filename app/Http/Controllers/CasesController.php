@@ -4,14 +4,17 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\CaseFile;
+use App\Models\Inspection;
 
 class CasesController extends Controller
 {
-    public function case()
-    {
-        $cases = CaseFile::all();
-        return view('frontend.case', compact('cases'));
-    }
+public function case()
+{
+    $cases = CaseFile::all();
+    $inspections = Inspection::with('case')->get(); // Add this line
+    
+    return view('frontend.case', compact('cases', 'inspections')); // Add 'inspections' here
+}
 
     public function store(Request $request)
     {
@@ -45,12 +48,32 @@ class CasesController extends Controller
     }
 
     public function destroy($id)
-    {
+{
+    try {
         $case = CaseFile::findOrFail($id);
         $case->delete();
         
+        // Check if request expects JSON (AJAX)
+        if (request()->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Case deleted successfully!'
+            ]);
+        }
+        
         return redirect()->route('case.index')->with('success', 'Case deleted successfully!');
+        
+    } catch (\Exception $e) {
+        if (request()->expectsJson()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to delete case: ' . $e->getMessage()
+            ], 500);
+        }
+        
+        return redirect()->route('case.index')->with('error', 'Failed to delete case.');
     }
+}
 
     public function show($id)
     {

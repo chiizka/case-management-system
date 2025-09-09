@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class CaseFile extends Model
 {
     protected $table = 'cases'; 
-    
+
     protected $fillable = [
         'inspection_id',
         'case_no',
@@ -20,4 +20,10 @@ class CaseFile extends Model
         'current_stage' => 'integer',
         'overall_status' => 'string',
     ];
+
+    // Define the one-to-many relationship with inspections
+    public function inspections()
+    {
+        return $this->hasMany(inspection::class, 'case_id');
+    }
 }

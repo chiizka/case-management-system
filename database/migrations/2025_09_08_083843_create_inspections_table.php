@@ -13,6 +13,16 @@ return new class extends Migration
     {
         Schema::create('inspections', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('case_id')->constrained('cases')->onDelete('cascade');
+            $table->string('inspection_id');
+            $table->string('name_of_establishment');
+            $table->string('po_office')->nullable();
+            $table->string('inspector_name')->nullable();
+            $table->string('inspector_authority_no')->nullable();
+            $table->date('date_of_inspection')->nullable();
+            $table->date('date_of_nr')->nullable();
+            $table->date('lapse_20_day_period')->nullable()->storedAs('DATE_ADD(date_of_inspection, INTERVAL 20 DAY)');
+            $table->string('twg_ali')->nullable();
             $table->timestamps();
         });
     }
