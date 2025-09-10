@@ -154,7 +154,7 @@
                                                         @csrf
                                                         @method('DELETE')
                                                         <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Delete this case?')" title="Delete">
-                                                            <i class="fas fa-trash"></i> Test Delete
+                                                            <i class="fas fa-trash"></i>  
                                                         </button>
                                                     </form>
                                                     <button class="btn btn-info" title="View">
@@ -231,7 +231,8 @@
                                             <tr>
                                                 <td>{{ $inspection->case->establishment_name ?? '-' }}</td>
                                                 <td>{{ $inspection->case->inspection_id ?? '-' }}</td>
-                                                <td title="{{ $inspection->case->establishment_name ?? '' }}">{{ $inspection->case ? Str::limit($inspection->case->establishment_name, 25) : '-' }}</td>
+                                                <td title="{{ $inspection->case->establishment_name ?? '' }}">
+                                                {{ $inspection->case ? Str::limit($inspection->case->establishment_name, 25) : '-' }}</td>
                                                 <td>{{ $inspection->po_office ?? '-' }}</td>
                                                 <td>{{ $inspection->inspector_name ?? '-' }}</td>
                                                 <td>{{ $inspection->inspector_authority_no ?? '-' }}</td>
@@ -268,7 +269,7 @@
                 </div>
             </div>
 
-            <!-- Tab 2: Docketing -->
+             <!-- Tab 2: Docketing -->
             <div class="tab-pane fade" id="tab2" role="tabpanel" aria-labelledby="tab2-tab">
                 <div class="card shadow mb-4">
                     <div class="card-body">
@@ -291,43 +292,46 @@
                                         <th>Date Scheduled/Docketed</th>
                                         <th>Aging (Docket)</th>
                                         <th>Status (Docket)</th>
-                                        <th>Case No.</th>
                                         <th>Hearing Officer (MIS)</th>
                                         <th>Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @if(isset($docketingRecords) && $docketingRecords->count() > 0)
-                                        @foreach($docketingRecords as $record)
+                                    @if(isset($docketing) && $docketing->count() > 0)
+                                        @foreach($docketing as $record)
                                             <tr>
-                                                <td>{{ $record->no ?? '-' }}</td>
-                                                <td title="{{ $record->name_of_establishment }}">{{ Str::limit($record->name_of_establishment ?? '-', 25) }}</td>
+                                                <td>{{ $record->case->inspection_id ?? '-' }}</td>
+                                                <td title="{{ $record->case->establishment_name ?? '' }}">
+                                                {{ $record->case ? Str::limit($record->case->establishment_name, 25) : '-' }}</td>
                                                 <td>{{ $record->pct_for_docketing ?? '-' }}</td>
-                                                <td>{{ $record->date_docketed ? \Carbon\Carbon::parse($record->date_docketed)->format('Y-m-d') : '-' }}</td>
+                                                <td>{{ $record->date_scheduled_docketed ? \Carbon\Carbon::parse($record->date_scheduled_docketed)->format('Y-m-d') : '-' }}</td>
                                                 <td>{{ $record->aging_docket ?? '-' }}</td>
                                                 <td>
-                                                    <span class="badge badge-{{ $record->status == 'Pending' ? 'warning' : ($record->status == 'Completed' ? 'success' : 'secondary') }}">
-                                                        {{ $record->status ?? 'Pending' }}
+                                                    <span class="badge badge-{{ $record->status_docket == 'Pending' ? 'warning' : ($record->status_docket == 'Completed' ? 'success' : 'secondary') }}">
+                                                        {{ $record->status_docket ?? 'Pending' }}
                                                     </span>
                                                 </td>
-                                                <td>{{ $record->case_no ?? '-' }}</td>
-                                                <td>{{ $record->hearing_officer ?? '-' }}</td>
+                                                <td>{{ $record->hearing_officer_mis ?? '-' }}</td>
                                                 <td>
-                                                    <button class="btn btn-warning" title="Edit">
-                                                        <i class="fas fa-edit"></i>
-                                                    </button>
-                                                    <button class="btn btn-danger" title="Delete">
-                                                        <i class="fas fa-trash"></i>
-                                                    </button>
-                                                    <button class="btn btn-info" title="View">
+                                                    <a href="{{ route('docketing.show', $record->id) }}" class="btn btn-info btn-sm" title="View">
                                                         <i class="fas fa-eye"></i>
-                                                    </button>
+                                                    </a>
+                                                    <a href="{{ route('docketing.edit', $record->id) }}" class="btn btn-warning btn-sm" title="Edit">
+                                                        <i class="fas fa-edit"></i>
+                                                    </a>
+                                                    <form action="{{ route('docketing.destroy', $record->id) }}" method="POST" style="display:inline;">
+                                                        @csrf
+                                                        @method('DELETE')
+                                                        <button type="submit" class="btn btn-danger btn-sm delete-btn" title="Delete" onclick="return confirm('Are you sure you want to delete this docketing record?')">
+                                                            <i class="fas fa-trash"></i>
+                                                        </button>
+                                                    </form>
                                                 </td>
                                             </tr>
                                         @endforeach
                                     @else
                                         <tr>
-                                            <td colspan="9" class="text-center">No docketing records found.</td>
+                                            <td colspan="8" class="text-center">No docketing records found.</td>
                                         </tr>
                                     @endif
                                 </tbody>

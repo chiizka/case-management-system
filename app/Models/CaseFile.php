@@ -26,4 +26,10 @@ class CaseFile extends Model
     {
         return $this->hasMany(inspection::class, 'case_id');
     }
+
+    // Define the one-to-many relationship with docketing
+    public function docketing()
+    {
+        return $this->hasMany(docketing::class, 'case_id');
+    }
 }
