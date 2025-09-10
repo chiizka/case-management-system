@@ -5,16 +5,17 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\CaseFile;
 use App\Models\Inspection;
+use Illuminate\Support\Facades\Log;
 
 class CasesController extends Controller
 {
-public function case()
-{
-    $cases = CaseFile::all();
-    $inspections = Inspection::with('case')->get(); // Add this line
-    
-    return view('frontend.case', compact('cases', 'inspections')); // Add 'inspections' here
-}
+    public function case()
+    {
+        $cases = CaseFile::all();
+        $inspections = Inspection::with('case')->get();
+        
+        return view('frontend.case', compact('cases', 'inspections'));
+    }
 
     public function store(Request $request)
     {
@@ -22,7 +23,7 @@ public function case()
             'inspection_id' => 'required|string|max:255',
             'case_no' => 'nullable|string|max:255',
             'establishment_name' => 'required|string|max:255',
-            'current_stage' => 'required|in:1: Inspections,2: Docketing,3: Hearing,4: Stage4Name,5: Stage5Name,6: Stage6Name,7: Stage7Name',
+            'current_stage' => 'required|integer|min:1|max:7', // Fixed: should be integer, not string
             'overall_status' => 'required|in:Active,Completed,Dismissed',
         ]);
 
@@ -37,7 +38,7 @@ public function case()
             'inspection_id' => 'required|string|max:255',
             'case_no' => 'nullable|string|max:255',
             'establishment_name' => 'required|string|max:255',
-            'current_stage' => 'required|in:1: Inspections,2: Docketing,3: Hearing,4: Stage4Name,5: Stage5Name,6: Stage6Name,7: Stage7Name',
+            'current_stage' => 'required|integer|min:1|max:7', // Fixed: should be integer, not string
             'overall_status' => 'required|in:Active,Completed,Dismissed',
         ]);
 
@@ -47,13 +48,26 @@ public function case()
         return redirect()->route('case.index')->with('success', 'Case updated successfully!');
     }
 
-    public function destroy($id)
+public function destroy($id)
 {
+    // Force logging to work
+    error_log("DELETE REQUEST RECEIVED FOR ID: " . $id);
+    file_put_contents(storage_path('logs/debug.log'), date('Y-m-d H:i:s') . " - Delete request for ID: " . $id . "\n", FILE_APPEND);
+    
     try {
-        $case = CaseFile::findOrFail($id);
-        $case->delete();
+        $case = CaseFile::find($id);
         
-        // Check if request expects JSON (AJAX)
+        if (!$case) {
+            error_log("CASE NOT FOUND: " . $id);
+            if (request()->expectsJson()) {
+                return response()->json(['error' => 'Case not found'], 404);
+            }
+        }
+        
+        error_log("CASE FOUND: " . $case->establishment_name);
+        $deleted = $case->delete();
+        error_log("DELETE RESULT: " . ($deleted ? 'SUCCESS' : 'FAILED'));
+        
         if (request()->expectsJson()) {
             return response()->json([
                 'success' => true,
@@ -64,6 +78,8 @@ public function case()
         return redirect()->route('case.index')->with('success', 'Case deleted successfully!');
         
     } catch (\Exception $e) {
+        error_log("DELETE ERROR: " . $e->getMessage());
+        
         if (request()->expectsJson()) {
             return response()->json([
                 'success' => false,

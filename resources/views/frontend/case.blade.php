@@ -150,9 +150,13 @@
                                                     <button class="btn btn-warning" data-toggle="modal" data-target="#addCaseModal" data-mode="edit" data-case-id="{{ $case->id }}" title="Edit">
                                                         <i class="fas fa-edit"></i>
                                                     </button>
-                                                    <button class="btn btn-danger delete-btn" data-case-id="{{ $case->id }}" title="Delete">
-                                                        <i class="fas fa-trash"></i>
-                                                    </button>
+                                                    <form action="/case/{{ $case->id }}" method="POST" style="display:inline;">
+                                                        @csrf
+                                                        @method('DELETE')
+                                                        <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Delete this case?')" title="Delete">
+                                                            <i class="fas fa-trash"></i> Test Delete
+                                                        </button>
+                                                    </form>
                                                     <button class="btn btn-info" title="View">
                                                         <i class="fas fa-eye"></i>
                                                     </button>
@@ -665,7 +669,6 @@ $(document).ready(function() {
         scrollY: '400px',
         scrollCollapse: true,
         drawCallback: function() {
-            // Re-apply sticky positioning after DataTables redraw
             $('.sticky-table thead th').css({
                 'position': 'sticky',
                 'top': 0,
@@ -690,7 +693,6 @@ $(document).ready(function() {
         scrollY: '400px',
         scrollCollapse: true,
         drawCallback: function() {
-            // Re-apply sticky positioning after DataTables redraw
             $('.sticky-table thead th').css({
                 'position': 'sticky',
                 'top': 0,
@@ -715,7 +717,6 @@ $(document).ready(function() {
         scrollY: '400px',
         scrollCollapse: true,
         drawCallback: function() {
-            // Re-apply sticky positioning after DataTables redraw
             $('.sticky-table thead th').css({
                 'position': 'sticky',
                 'top': 0,
@@ -752,69 +753,95 @@ $(document).ready(function() {
 
         if (mode === 'edit') {
             var caseId = button.data('case-id');
-            // You can implement AJAX to fetch case details if needed
-            // For now, just reset the form
             modal.find('#caseForm')[0].reset();
         } else {
             modal.find('#caseForm')[0].reset();
         }
     });
 
-    // Modal handling for Add/Edit Docketing Records
-    $('#addDocketingModal').on('show.bs.modal', function(event) {
-        var button = $(event.relatedTarget);
-        var mode = button.data('mode') || 'add';
-        var modal = $(this);
+    // FIXED: Single delete handler for ALL delete buttons
+    $(document).on('click', '.delete-btn', function(e) {
+        e.preventDefault();
+        console.log('Delete button clicked');
         
-        modal.find('#addDocketingModalLabel').text(mode === 'add' ? 'Add New Docketing Record' : 'Edit Docketing Record');
-
-        if (mode === 'edit') {
-            var recordId = button.data('record-id');
-            // You can implement AJAX to fetch record details if needed
-            // For now, just reset the form
-            modal.find('#docketingForm')[0].reset();
+        const button = $(this);
+        const caseId = button.data('case-id');
+        const row = button.closest('tr');
+        
+        console.log('Case ID:', caseId);
+        
+        // Check if CSRF token exists
+        const csrfToken = $('meta[name="csrf-token"]').attr('content');
+        console.log('CSRF Token:', csrfToken);
+        
+        if (!csrfToken) {
+            showAlert('error', 'CSRF token not found. Please refresh the page.');
+            return;
+        }
+        
+        // Show confirmation dialog
+        if (confirm('Are you sure you want to delete this case? This action cannot be undone.')) {
+            console.log('User confirmed deletion');
+            
+            // Show loading state
+            button.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i>');
+            
+            // FIXED: Use correct URL format to match your routes
+            // Your route is: Route::delete('/case/{id}', ...)
+            $.ajax({
+                url: `/case/${caseId}`, // Matches your route: /case/{id}
+                type: 'DELETE',
+                headers: {
+                    'X-CSRF-TOKEN': csrfToken,
+                    'Accept': 'application/json'
+                },
+                beforeSend: function() {
+                    console.log('AJAX request starting...');
+                },
+                success: function(response) {
+                    console.log('Success response:', response);
+                    
+                    // Remove the row from table
+                    row.fadeOut(300, function() {
+                        $(this).remove();
+                        
+                        // Check if table is empty and show message
+                        const tableBody = $('#dataTable0 tbody, #dataTable1 tbody').filter(':visible');
+                        if (tableBody.find('tr:visible').length === 0) {
+                            const colspan = tableBody.closest('table').find('thead th').length;
+                            tableBody.html(
+                                `<tr><td colspan="${colspan}" class="text-center">No records found.</td></tr>`
+                            );
+                        }
+                    });
+                    
+                    // Show success message
+                    showAlert('success', response.message || 'Record deleted successfully!');
+                },
+                error: function(xhr, status, error) {
+                    console.log('=== ERROR RESPONSE ===');
+                    console.log('Error occurred:', xhr, status, error);
+                    console.log('Status Code:', xhr.status);
+                    console.log('Response Text:', xhr.responseText);
+                    console.log('Response Headers:', xhr.getAllResponseHeaders());
+                    
+                    // Re-enable button
+                    button.prop('disabled', false).html('<i class="fas fa-trash"></i>');
+                    
+                    // Show error message
+                    let errorMessage = 'Failed to delete record.';
+                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                        errorMessage = xhr.responseJSON.message;
+                    } else if (xhr.status === 404) {
+                        errorMessage = 'Record not found.';
+                    } else if (xhr.status === 500) {
+                        errorMessage = 'Server error occurred.';
+                    }
+                    showAlert('error', errorMessage);
+                }
+            });
         } else {
-            modal.find('#docketingForm')[0].reset();
-        }
-    });
-
-    // Delete functionality for Cases
-    $(document).on('click', '.delete-btn', function() {
-        var caseId = $(this).data('case-id');
-        if (confirm('Are you sure you want to delete this case?')) {
-            $.ajax({
-                url: '/case/' + caseId,
-                type: 'DELETE',
-                data: {
-                    _token: $('meta[name="csrf-token"]').attr('content')
-                },
-                success: function(result) {
-                    location.reload();
-                },
-                error: function(xhr) {
-                    alert('Error deleting case');
-                }
-            });
-        }
-    });
-
-    // Delete functionality for Docketing Records
-    $(document).on('click', '.delete-docketing-btn', function() {
-        var recordId = $(this).data('record-id');
-        if (confirm('Are you sure you want to delete this docketing record?')) {
-            $.ajax({
-                url: '/docketing/' + recordId,
-                type: 'DELETE',
-                data: {
-                    _token: $('meta[name="csrf-token"]').attr('content')
-                },
-                success: function(result) {
-                    location.reload();
-                },
-                error: function(xhr) {
-                    alert('Error deleting docketing record');
-                }
-            });
+            console.log('User cancelled deletion');
         }
     });
 
@@ -824,43 +851,15 @@ $(document).ready(function() {
         if (caseId) {
             $.get('/case/' + caseId + '/edit', function(data) {
                 // Populate form fields with existing data
-                $('#no').val(data.no);
-                $('#po').val(data.po);
-                $('#inspectionId').val(data.inspection_id);
-                $('#nameOfEstablishment').val(data.name_of_establishment);
-                $('#dateOfInspection').val(data.date_of_inspection);
-                $('#nameOfInspector').val(data.name_of_inspector);
-                $('#authorityNo').val(data.authority_no);
-                $('#dateOfNr').val(data.date_of_nr);
-                $('#lapseCorrectionPeriod').val(data.lapse_20day_correction_period);
-                $('#pctForDocketing').val(data.pct_for_docketing);
+                $('#inspection_id').val(data.inspection_id);
+                $('#case_no').val(data.case_no);
+                $('#establishment_name').val(data.establishment_name);
+                $('#current_stage').val(data.current_stage);
+                $('#overall_status').val(data.overall_status);
                 
                 // Change form action to update
                 $('#caseForm').attr('action', '/case/' + caseId);
-                $('#caseForm').append('<input type="hidden" name="_method" value="PUT">');
-            });
-        }
-    });
-
-    // Handle edit button click for Docketing Records
-    $(document).on('click', '.btn-warning[data-target="#addDocketingModal"]', function() {
-        var recordId = $(this).data('record-id');
-        if (recordId) {
-            $.get('/docketing/' + recordId + '/edit', function(data) {
-                // Populate form fields with existing data
-                $('#docketingNo').val(data.no);
-                $('#caseId').val(data.case_id);
-                $('#docketNo').val(data.docket_no);
-                $('#docketingEstablishmentName').val(data.name_of_establishment);
-                $('#dateDocketed').val(data.date_docketed);
-                $('#hearingDate').val(data.hearing_date);
-                $('#status').val(data.status);
-                $('#assignedOfficer').val(data.assigned_officer);
-                $('#remarks').val(data.remarks);
-                
-                // Change form action to update
-                $('#docketingForm').attr('action', '/docketing/' + recordId);
-                $('#docketingForm').append('<input type="hidden" name="_method" value="PUT">');
+                $('#formMethod').val('PUT');
             });
         }
     });
@@ -879,91 +878,6 @@ $(document).ready(function() {
             table1.columns.adjust().draw();
         } else if (target === '#tab2') {
             table2.columns.adjust().draw();
-        } else if (target === '#tab3') {
-            // Add table3 initialization if needed
-        } else if (target === '#tab4') {
-            // Add table4 initialization if needed
-        } else if (target === '#tab5') {
-            // Add table5 initialization if needed
-        } else if (target === '#tab6') {
-            // Add table6 initialization if needed
-        } else if (target === '#tab7') {
-            // Add table7 initialization if needed
-        }
-    });
-
-    console.log('Delete script loaded');
-    
-    // Handle delete button click
-    $(document).on('click', '.delete-btn', function(e) {
-        e.preventDefault();
-        console.log('Delete button clicked');
-        
-        const caseId = $(this).data('case-id');
-        console.log('Case ID:', caseId);
-        
-        const row = $(this).closest('tr');
-        
-        // Check if CSRF token exists
-        const csrfToken = $('meta[name="csrf-token"]').attr('content');
-        console.log('CSRF Token:', csrfToken);
-        
-        // Show confirmation dialog
-        if (confirm('Are you sure you want to delete this case? This action cannot be undone.')) {
-            console.log('User confirmed deletion');
-            
-            // Show loading state
-            $(this).prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i>');
-            
-            // Make AJAX request to delete
-            $.ajax({
-                url: `/cases/${caseId}`,
-                type: 'DELETE',
-                headers: {
-                    'X-CSRF-TOKEN': csrfToken
-                },
-                beforeSend: function() {
-                    console.log('AJAX request starting...');
-                },
-                success: function(response) {
-                    console.log('Success response:', response);
-                    
-                    // Remove the row from table
-                    row.fadeOut(300, function() {
-                        $(this).remove();
-                        
-                        // Check if table is empty and show message
-                        if ($('#dataTable0 tbody tr:visible').length === 0) {
-                            $('#dataTable0 tbody').html(
-                                '<tr><td colspan="7" class="text-center">No cases found. Click "Add Case" to create your first case.</td></tr>'
-                            );
-                        }
-                    });
-                    
-                    // Show success message
-                    showAlert('success', 'Case deleted successfully!');
-                },
-                error: function(xhr, status, error) {
-                    console.log('Error occurred:', xhr, status, error);
-                    console.log('Response Text:', xhr.responseText);
-                    
-                    // Re-enable button
-                    $(this).prop('disabled', false).html('<i class="fas fa-trash"></i>');
-                    
-                    // Show error message
-                    let errorMessage = 'Failed to delete case.';
-                    if (xhr.responseJSON && xhr.responseJSON.message) {
-                        errorMessage = xhr.responseJSON.message;
-                    } else if (xhr.status === 404) {
-                        errorMessage = 'Case not found.';
-                    } else if (xhr.status === 500) {
-                        errorMessage = 'Server error occurred.';
-                    }
-                    showAlert('error', errorMessage);
-                }.bind(this)
-            });
-        } else {
-            console.log('User cancelled deletion');
         }
     });
 });
@@ -981,8 +895,8 @@ function showAlert(type, message) {
         </div>
     `;
     
-    // Add alert to the top of the page
-    $('.card-body').prepend(alertHtml);
+    // Add alert to the active tab's card-body
+    $('.tab-pane.active .card-body').prepend(alertHtml);
     
     // Auto-remove after 5 seconds
     setTimeout(function() {

@@ -13,7 +13,7 @@ Route::get('/', [FrontController::class, 'index'])->name('home');
 Route::get('/case', [CasesController::class, 'case'])->name('case.index');
 Route::post('/case', [CasesController::class, 'store'])->name('case.store');
 Route::put('/case/{id}', [CasesController::class, 'update'])->name('case.update');
-Route::delete('/cases/{id}', [CasesController::class, 'destroy'])->name('cases.destroy');
+Route::delete('/case/{id}', [CasesController::class, 'destroy'])->name('case.destroy');
 Route::get('/case/{id}', [CasesController::class, 'show'])->name('case.show');
 Route::get('/case/{id}/edit', [CasesController::class, 'edit'])->name('case.edit');
 
@@ -29,3 +29,7 @@ Route::get('/users', [FrontController::class, 'users'])->name('users');
 Route::post('/post', [UserController::class, 'store'])->name('user.post');
 Route::post('/login', [UserController::class, 'login'])->name('login.post');
 
+Route::get('/debug-test/{id}', function($id) {
+    error_log("DEBUG TEST HIT: " . $id);
+    return "Test works for ID: " . $id;
+});
