@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class CaseFile extends Model
 {
-    protected $table = 'cases'; 
+    protected $table = 'cases';
 
     protected $fillable = [
         'inspection_id',
@@ -17,19 +17,19 @@ class CaseFile extends Model
     ];
 
     protected $casts = [
-        'current_stage' => 'integer',
+        'current_stage' => 'string', // Fixed: enum values are strings
         'overall_status' => 'string',
     ];
 
     // Define the one-to-many relationship with inspections
     public function inspections()
     {
-        return $this->hasMany(inspection::class, 'case_id');
+        return $this->hasMany(Inspection::class, 'case_id');
     }
 
-    // Define the one-to-many relationship with docketing
+    // Define the one-to-many relationship with docketing (use hasOne if one docketing per case)
     public function docketing()
     {
-        return $this->hasMany(docketing::class, 'case_id');
+        return $this->hasMany(Docketing::class, 'case_id'); // or hasOne(Docketing::class, 'case_id')
     }
 }

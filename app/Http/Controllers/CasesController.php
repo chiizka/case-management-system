@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\CaseFile;
 use App\Models\Inspection;
-use App\Models\docketing; // Added docketing model
+use App\Models\Docketing; // Fixed capitalization for consistency
 use Illuminate\Support\Facades\Log;
 
 class CasesController extends Controller
@@ -14,7 +14,7 @@ class CasesController extends Controller
     {
         $cases = CaseFile::all();
         $inspections = Inspection::with('case')->get();
-        $docketing = docketing::with('case')->get(); // Added docketing data
+        $docketing = Docketing::with('case')->get(); // Fixed capitalization
         
         return view('frontend.case', compact('cases', 'inspections', 'docketing'));
     }
@@ -25,7 +25,7 @@ class CasesController extends Controller
             'inspection_id' => 'required|string|max:255',
             'case_no' => 'nullable|string|max:255',
             'establishment_name' => 'required|string|max:255',
-            'current_stage' => 'required|integer|min:1|max:7', // Fixed: should be integer, not string
+            'current_stage' => 'required|in:1: Inspections,2: Docketing,3: Hearing,4: Review & Drafting,5: Orders & Disposition,6: Compliance & Awards,7: Appeals & Resolution', // Updated for enum
             'overall_status' => 'required|in:Active,Completed,Dismissed',
         ]);
 
@@ -40,7 +40,7 @@ class CasesController extends Controller
             'inspection_id' => 'required|string|max:255',
             'case_no' => 'nullable|string|max:255',
             'establishment_name' => 'required|string|max:255',
-            'current_stage' => 'required|integer|min:1|max:7', // Fixed: should be integer, not string
+            'current_stage' => 'required|in:1: Inspections,2: Docketing,3: Hearing,4: Stage4Name,5: Stage5Name,6: Stage6Name,7: Stage7Name', // Updated for enum
             'overall_status' => 'required|in:Active,Completed,Dismissed',
         ]);
 

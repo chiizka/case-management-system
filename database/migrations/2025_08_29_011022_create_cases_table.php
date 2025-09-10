@@ -20,10 +20,10 @@ return new class extends Migration
                 '1: Inspections',
                 '2: Docketing', 
                 '3: Hearing',
-                '4: Stage4Name',  // Replace with actual stage 4 name
-                '5: Stage5Name',  // Replace with actual stage 5 name
-                '6: Stage6Name',  // Replace with actual stage 6 name
-                '7: Stage7Name'   // Replace with actual stage 7 name
+                '4: Review & Drafting',  // Replace with actual stage 4 name
+                '5: Order & Disposition',  // Replace with actual stage 5 name
+                '6: Compliance & Awards',  // Replace with actual stage 6 name
+                '7: Appeals & Resolution'   // Replace with actual stage 7 name
             ]);
             $table->enum('overall_status', ['Active', 'Completed', 'Dismissed']);
             $table->timestamps();

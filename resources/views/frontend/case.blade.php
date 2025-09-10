@@ -143,7 +143,7 @@
                                                 <td>{{ $case->inspection_id }}</td>
                                                 <td>{{ $case->case_no ?? '-' }}</td>
                                                 <td title="{{ $case->establishment_name }}">{{ Str::limit($case->establishment_name, 25) }}</td>
-                                                <td>{{ $case->current_stage }}</td>
+                                                <td>{{ explode(': ', $case->current_stage)[1] ?? $case->current_stage }}</td>
                                                 <td>{{ $case->overall_status }}</td>
                                                 <td>{{ $case->created_at ? \Carbon\Carbon::parse($case->created_at)->format('Y-m-d') : '-' }}</td>
                                                 <td>
