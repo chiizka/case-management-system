@@ -22,7 +22,7 @@ public function case()
             'inspection_id' => 'required|string|max:255',
             'case_no' => 'nullable|string|max:255',
             'establishment_name' => 'required|string|max:255',
-            'current_stage' => 'required|integer|between:1,7',
+            'current_stage' => 'required|in:1: Inspections,2: Docketing,3: Hearing,4: Stage4Name,5: Stage5Name,6: Stage6Name,7: Stage7Name',
             'overall_status' => 'required|in:Active,Completed,Dismissed',
         ]);
 
@@ -37,7 +37,7 @@ public function case()
             'inspection_id' => 'required|string|max:255',
             'case_no' => 'nullable|string|max:255',
             'establishment_name' => 'required|string|max:255',
-            'current_stage' => 'required|integer|between:1,7',
+            'current_stage' => 'required|in:1: Inspections,2: Docketing,3: Hearing,4: Stage4Name,5: Stage5Name,6: Stage6Name,7: Stage7Name',
             'overall_status' => 'required|in:Active,Completed,Dismissed',
         ]);
 

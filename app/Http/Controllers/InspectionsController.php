@@ -46,8 +46,6 @@ public function index()
     {
         $validator = Validator::make($request->all(), [
             'case_id' => 'required|exists:cases,id',
-            'inspection_id' => 'required|string|max:255|unique:inspections,inspection_id',
-            'name_of_establishment' => 'required|string|max:255',
             'po_office' => 'nullable|string|max:255',
             'inspector_name' => 'nullable|string|max:255',
             'inspector_authority_no' => 'nullable|string|max:255',
@@ -74,6 +72,11 @@ public function index()
     public function show($id)
     {
         $inspection = Inspection::with('case')->findOrFail($id);
+        
+        // Access case data through the relationship
+        $inspectionId = $inspection->case->inspection_id;
+        $establishmentName = $inspection->case->establishment_name;
+        
         $cases = CaseFile::all();
         $inspections = Inspection::with('case')->get();
         return view('frontend.case', compact('cases', 'inspections', 'inspection'));
@@ -84,7 +87,12 @@ public function index()
      */
     public function edit($id)
     {
-        $inspection = Inspection::findOrFail($id);
+        $inspection = Inspection::with('case')->findOrFail($id);
+        
+        // Access case data through the relationship
+        $inspectionId = $inspection->case->inspection_id;
+        $establishmentName = $inspection->case->establishment_name;
+        
         $cases = CaseFile::all();
         $inspections = Inspection::with('case')->get();
         return view('frontend.case', compact('cases', 'inspections', 'inspection'));
@@ -99,8 +107,6 @@ public function index()
 
         $validator = Validator::make($request->all(), [
             'case_id' => 'required|exists:cases,id',
-            'inspection_id' => 'required|string|max:255|unique:inspections,inspection_id,' . $inspection->id,
-            'name_of_establishment' => 'required|string|max:255',
             'po_office' => 'nullable|string|max:255',
             'inspector_name' => 'nullable|string|max:255',
             'inspector_authority_no' => 'nullable|string|max:255',

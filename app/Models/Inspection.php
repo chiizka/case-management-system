@@ -10,8 +10,6 @@ class Inspection extends Model
 
     protected $fillable = [
         'case_id',
-        'inspection_id',
-        'name_of_establishment',
         'po_office',
         'inspector_name',
         'inspector_authority_no',
@@ -31,5 +29,16 @@ class Inspection extends Model
     public function case()
     {
         return $this->belongsTo(CaseFile::class, 'case_id');
+    }
+
+    // Optional: Add accessor methods for convenience
+    public function getInspectionIdAttribute()
+    {
+        return $this->case ? $this->case->inspection_id : null;
+    }
+
+    public function getEstablishmentNameAttribute()
+    {
+        return $this->case ? $this->case->establishment_name : null;
     }
 }

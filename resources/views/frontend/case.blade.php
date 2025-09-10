@@ -116,8 +116,12 @@
                                 <label class="mr-2 mb-0" style="font-size: 0.8rem;">Search:</label>
                                 <input type="search" class="form-control form-control-sm" id="customSearch0" placeholder="Search all active cases..." style="width: 200px;">
                             </div>
+                            <div>
+                                <button class="btn btn-primary btn-sm" data-toggle="modal" data-target="#addCaseModal" data-mode="add">
+                                    + Add Case
+                                </button>
+                            </div>
                         </div>
-
                         <!-- Table Container -->
                         <div class="table-container">
                             <table class="table table-bordered compact-table sticky-table" id="dataTable0" width="100%" cellspacing="0">
@@ -222,8 +226,8 @@
                                         @foreach($inspections as $inspection)
                                             <tr>
                                                 <td>{{ $inspection->case->establishment_name ?? '-' }}</td>
-                                                <td>{{ $inspection->inspection_id }}</td>
-                                                <td title="{{ $inspection->name_of_establishment }}">{{ Str::limit($inspection->name_of_establishment, 25) }}</td>
+                                                <td>{{ $inspection->case->inspection_id ?? '-' }}</td>
+                                                <td title="{{ $inspection->case->establishment_name ?? '' }}">{{ $inspection->case ? Str::limit($inspection->case->establishment_name, 25) : '-' }}</td>
                                                 <td>{{ $inspection->po_office ?? '-' }}</td>
                                                 <td>{{ $inspection->inspector_name ?? '-' }}</td>
                                                 <td>{{ $inspection->inspector_authority_no ?? '-' }}</td>

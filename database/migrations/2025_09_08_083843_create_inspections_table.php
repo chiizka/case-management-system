@@ -14,8 +14,8 @@ return new class extends Migration
         Schema::create('inspections', function (Blueprint $table) {
             $table->id();
             $table->foreignId('case_id')->constrained('cases')->onDelete('cascade');
-            $table->string('inspection_id');
-            $table->string('name_of_establishment');
+            // $table->string('inspection_id');
+            // $table->string('name_of_establishment');
             $table->string('po_office')->nullable();
             $table->string('inspector_name')->nullable();
             $table->string('inspector_authority_no')->nullable();

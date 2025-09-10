@@ -16,7 +16,15 @@ return new class extends Migration
             $table->string('inspection_id');
             $table->string('case_no')->nullable();
             $table->string('establishment_name');
-            $table->integer('current_stage')->unsigned()->between(1, 7);
+            $table->enum('current_stage', [
+                '1: Inspections',
+                '2: Docketing', 
+                '3: Hearing',
+                '4: Stage4Name',  // Replace with actual stage 4 name
+                '5: Stage5Name',  // Replace with actual stage 5 name
+                '6: Stage6Name',  // Replace with actual stage 6 name
+                '7: Stage7Name'   // Replace with actual stage 7 name
+            ]);
             $table->enum('overall_status', ['Active', 'Completed', 'Dismissed']);
             $table->timestamps();
         });
