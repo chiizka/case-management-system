@@ -30,5 +30,11 @@ Route::resource('docketing', DocketingController::class);
 //login and user routes
 Route::get('/login', [FrontController::class, 'login'])->name('login');
 Route::get('/users', [FrontController::class, 'users'])->name('users');
-Route::post('/post', [UserController::class, 'store'])->name('user.post');
+
+// User creation and login - CLEANED UP
+Route::post('/user', [UserController::class, 'store'])->name('user.post');
 Route::post('/login', [UserController::class, 'login'])->name('login.post');
+
+// Password reset routes
+Route::get('/password/reset/{token}', [App\Http\Controllers\Auth\ResetPasswordController::class, 'showResetForm'])->name('password.reset');
+Route::post('/password/reset', [App\Http\Controllers\Auth\ResetPasswordController::class, 'reset'])->name('password.update');
