@@ -342,45 +342,92 @@
             </div>
 
             <!-- Tab 3: Hearing Process -->
-            <div class="tab-pane fade" id="tab3" role="tabpanel" aria-labelledby="tab3-tab">
-                <div class="card shadow mb-4">
-                    <div class="card-body">
-                        <!-- Search + Buttons Row -->
-                        <div class="d-flex justify-content-between align-items-center mb-3 custom-search-container">
-                            <div class="d-flex align-items-center">
-                                <label class="mr-2 mb-0" style="font-size: 0.8rem;">Search:</label>
-                                <input type="search" class="form-control form-control-sm" id="customSearch3" placeholder="Search hearing records..." style="width: 200px;">
-                            </div>
-                        </div>
-
-                        <!-- Table Container -->
-                        <div class="table-container">
-                            <table class="table table-bordered compact-table sticky-table" id="dataTable3" width="100%" cellspacing="0">
-                                <thead>
-                                    <tr>
-                                        <th>Inspection ID</th>
-                                        <th>Name of Establishment</th>
-                                        <th>Date of 1st MC (Actual)</th>
-                                        <th>1st MC PCT (15 days after lapse)</th>
-                                        <th>Status (1st MC)</th>
-                                        <th>Date of 2nd/Last MC (Actual)</th>
-                                        <th>2nd/Last MC PCT (30 days from 1st MC)</th>
-                                        <th>Status (2nd MC)</th>
-                                        <th>Case Folder forwarded to RO (Actual)</th>
-                                        <th>Complete case folder? (Y/N)</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr>
-                                        <td colspan="11" class="text-center">No hearing process records found.</td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
+<!-- Tab 3: Hearing Process -->
+<div class="tab-pane fade" id="tab3" role="tabpanel" aria-labelledby="tab3-tab">
+    <div class="card shadow mb-4">
+        <div class="card-body">
+            <!-- Search + Buttons Row -->
+            <div class="d-flex justify-content-between align-items-center mb-3 custom-search-container">
+                <div class="d-flex align-items-center">
+                    <label class="mr-2 mb-0" style="font-size: 0.8rem;">Search:</label>
+                    <input type="search" class="form-control form-control-sm" id="customSearch3" placeholder="Search hearing records..." style="width: 200px;">
                 </div>
             </div>
+
+            <!-- Table Container -->
+            <div class="table-container">
+                <table class="table table-bordered compact-table sticky-table" id="dataTable3" width="100%" cellspacing="0">
+                    <thead>
+                        <tr>
+                            <th>Inspection ID</th>
+                            <th>Name of Establishment</th>
+                            <th>Date of 1st MC (Actual)</th>
+                            <th>1st MC PCT</th>
+                            <th>Status (1st MC)</th>
+                            <th>Date of 2nd/Last MC (Actual)</th>
+                            <th>2nd/Last MC PCT</th>
+                            <th>Status (2nd MC)</th>
+                            <th>Case Folder forwarded to RO</th>
+                            <th>Complete case folder? (Y/N)</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if(isset($hearingProcess) && $hearingProcess->count() > 0)
+                            @foreach($hearingProcess as $record)
+                                <tr>
+                                    <td>{{ $record->case->inspection_id ?? '-' }}</td>
+                                    <td title="{{ $record->case->establishment_name ?? '' }}">
+                                        {{ $record->case ? Str::limit($record->case->establishment_name, 25) : '-' }}
+                                    </td>
+                                    <td>{{ $record->date_1st_mc_actual ? \Carbon\Carbon::parse($record->date_1st_mc_actual)->format('Y-m-d') : '-' }}</td>
+                                    <td>{{ $record->first_mc_pct ?? '-' }}</td>
+                                    <td>
+                                        <span class="badge badge-{{ $record->status_1st_mc == 'Completed' ? 'success' : ($record->status_1st_mc == 'Ongoing' ? 'warning' : 'secondary') }}">
+                                            {{ $record->status_1st_mc ?? 'Pending' }}
+                                        </span>
+                                    </td>
+                                    <td>{{ $record->date_2nd_last_mc ? \Carbon\Carbon::parse($record->date_2nd_last_mc)->format('Y-m-d') : '-' }}</td>
+                                    <td>{{ $record->second_last_mc_pct ?? '-' }}</td>
+                                    <td>
+                                        <span class="badge badge-{{ $record->status_2nd_mc == 'Completed' ? 'success' : ($record->status_2nd_mc == 'In Progress' ? 'warning' : 'secondary') }}">
+                                            {{ $record->status_2nd_mc ?? 'Pending' }}
+                                        </span>
+                                    </td>
+                                    <td>{{ $record->case_folder_forwarded_to_ro ?? '-' }}</td>
+                                    <td>
+                                        <span class="badge badge-{{ $record->complete_case_folder == 'Y' ? 'success' : 'warning' }}">
+                                            {{ $record->complete_case_folder ?? 'N' }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <a href="{{ route('hearing-process.show', $record->id) }}" class="btn btn-info btn-sm" title="View">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        <a href="{{ route('hearing-process.edit', $record->id) }}" class="btn btn-warning btn-sm" title="Edit">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <form action="{{ route('hearing-process.destroy', $record->id) }}" method="POST" style="display:inline;">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="btn btn-danger btn-sm delete-btn" title="Delete" onclick="return confirm('Are you sure you want to delete this hearing process record?')">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            @endforeach
+                        @else
+                            <tr>
+                                <td colspan="11" class="text-center">No hearing process records found.</td>
+                            </tr>
+                        @endif
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
 
             <!-- Tab 4: Review & Drafting -->
             <div class="tab-pane fade" id="tab4" role="tabpanel" aria-labelledby="tab4-tab">

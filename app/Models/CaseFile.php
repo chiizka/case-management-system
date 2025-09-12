@@ -32,4 +32,8 @@ class CaseFile extends Model
     {
         return $this->hasMany(Docketing::class, 'case_id'); // or hasOne(Docketing::class, 'case_id')
     }
+
+    public function hearing_process(){
+        return $this->hasMany(HearingProcess::class, 'case_id'); // or hasOne(Docketing::class, 'case_id')
+    }
 }

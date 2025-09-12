@@ -6,6 +6,7 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\ArchivedController;
 use App\Http\Controllers\InspectionsController;
 use App\Http\Controllers\DocketingController;
+use App\Http\Controllers\HearingProcessController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [FrontController::class, 'index'])->name('home');
@@ -38,3 +39,10 @@ Route::post('/login', [UserController::class, 'login'])->name('login.post');
 // Password reset routes
 Route::get('/password/reset/{token}', [App\Http\Controllers\Auth\ResetPasswordController::class, 'showResetForm'])->name('password.reset');
 Route::post('/password/reset', [App\Http\Controllers\Auth\ResetPasswordController::class, 'reset'])->name('password.update');
+
+//hearing_process
+Route::post('hearing-process', [HearingProcessController::class, 'store'])->name('hearing-process.store');
+Route::get('hearing-process/{id}', [HearingProcessController::class, 'show'])->name('hearing-process.show');
+Route::get('hearing-process/{id}/edit', [HearingProcessController::class, 'edit'])->name('hearing-process.edit');
+Route::put('hearing-process/{id}', [HearingProcessController::class, 'update'])->name('hearing-process.update');
+Route::delete('hearing-process/{id}', [HearingProcessController::class, 'destroy'])->name('hearing-process.destroy');

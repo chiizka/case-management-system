@@ -18,13 +18,6 @@ class DocketingController extends Controller
         $cases = CaseFile::all();
         $docketing = docketing::with('case')->get(); // Changed to singular to match view
 
-        // Optional: Debugging data
-        // dd([
-        //     'cases_count' => $cases->count(),
-        //     'docketing_count' => $docketing->count(),
-        //     'docketing_data' => $docketing->toArray()
-        // ]);
-
         return view('frontend.case', compact('cases', 'docketing'));
     }
 
