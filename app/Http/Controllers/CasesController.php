@@ -5,8 +5,9 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\CaseFile;
 use App\Models\Inspection;
-use App\Models\Docketing; // Fixed capitalization for consistency
-use App\Models\HearingProcess; // Added HearingProcess model
+use App\Models\Docketing;
+use App\Models\HearingProcess;
+use App\Models\ReviewAndDrafting; // Added ReviewAndDrafting model
 use Illuminate\Support\Facades\Log;
 
 class CasesController extends Controller
@@ -15,10 +16,11 @@ class CasesController extends Controller
     {
         $cases = CaseFile::all();
         $inspections = Inspection::with('case')->get();
-        $docketing = Docketing::with('case')->get(); // Fixed capitalization
-        $hearingProcess = HearingProcess::with('case')->get(); // Added hearing process
-        
-        return view('frontend.case', compact('cases', 'inspections', 'docketing', 'hearingProcess'));
+        $docketing = Docketing::with('case')->get();
+        $hearingProcess = HearingProcess::with('case')->get();
+        $reviewAndDrafting = ReviewAndDrafting::with('case')->get();
+            
+        return view('frontend.case', compact('cases', 'inspections', 'docketing', 'hearingProcess', 'reviewAndDrafting'));
     }
 
     public function store(Request $request)
@@ -27,7 +29,7 @@ class CasesController extends Controller
             'inspection_id' => 'required|string|max:255',
             'case_no' => 'nullable|string|max:255',
             'establishment_name' => 'required|string|max:255',
-            'current_stage' => 'required|in:1: Inspections,2: Docketing,3: Hearing,4: Review & Drafting,5: Orders & Disposition,6: Compliance & Awards,7: Appeals & Resolution', // Updated for enum
+            'current_stage' => 'required|in:1: Inspections,2: Docketing,3: Hearing,4: Review & Drafting,5: Orders & Disposition,6: Compliance & Awards,7: Appeals & Resolution',
             'overall_status' => 'required|in:Active,Completed,Dismissed',
         ]);
 
@@ -42,7 +44,7 @@ class CasesController extends Controller
             'inspection_id' => 'required|string|max:255',
             'case_no' => 'nullable|string|max:255',
             'establishment_name' => 'required|string|max:255',
-            'current_stage' => 'required|in:1: Inspections,2: Docketing,3: Hearing,4: Review & Drafting,5: Orders & Disposition,6: Compliance & Awards,7: Appeals & Resolution', // Fixed to match store validation
+            'current_stage' => 'required|in:1: Inspections,2: Docketing,3: Hearing,4: Review & Drafting,5: Orders & Disposition,6: Compliance & Awards,7: Appeals & Resolution',
             'overall_status' => 'required|in:Active,Completed,Dismissed',
         ]);
 

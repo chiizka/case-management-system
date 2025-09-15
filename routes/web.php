@@ -7,6 +7,7 @@ use App\Http\Controllers\ArchivedController;
 use App\Http\Controllers\InspectionsController;
 use App\Http\Controllers\DocketingController;
 use App\Http\Controllers\HearingProcessController;
+use App\Http\Controllers\ReviewAndDraftingController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [FrontController::class, 'index'])->name('home');
@@ -46,3 +47,6 @@ Route::get('hearing-process/{id}', [HearingProcessController::class, 'show'])->n
 Route::get('hearing-process/{id}/edit', [HearingProcessController::class, 'edit'])->name('hearing-process.edit');
 Route::put('hearing-process/{id}', [HearingProcessController::class, 'update'])->name('hearing-process.update');
 Route::delete('hearing-process/{id}', [HearingProcessController::class, 'destroy'])->name('hearing-process.destroy');
+
+//review and drafting
+Route::resource('review-and-drafting', ReviewAndDraftingController::class);
