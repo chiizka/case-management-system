@@ -9,6 +9,7 @@ use App\Http\Controllers\DocketingController;
 use App\Http\Controllers\HearingProcessController;
 use App\Http\Controllers\ReviewAndDraftingController;
 use App\Http\Controllers\OrderAndDispositionController;
+use App\Http\Controllers\ComplianceAndAwardController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [FrontController::class, 'index'])->name('home');
@@ -54,3 +55,6 @@ Route::resource('review-and-drafting', ReviewAndDraftingController::class);
 
 //order and disposition
 Route::resource('orders-and-disposition', OrderAndDispositionController::class);
+
+//compliance and awards
+Route::resource('compliance-and-awards', ComplianceAndAwardController::class);

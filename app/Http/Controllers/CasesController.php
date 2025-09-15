@@ -9,6 +9,8 @@ use App\Models\Docketing;
 use App\Models\HearingProcess;
 use App\Models\ReviewAndDrafting; 
 use App\Models\OrderAndDisposition; 
+use App\Models\ComplianceAndAward;   // ✅ NEW
+
 use Illuminate\Support\Facades\Log;
 
 class CasesController extends Controller
@@ -21,6 +23,7 @@ class CasesController extends Controller
         $hearingProcess = HearingProcess::with('case')->get();
         $reviewAndDrafting = ReviewAndDrafting::with('case')->get();
         $ordersAndDisposition = OrderAndDisposition::with('case')->get();
+        $complianceAndAwards = ComplianceAndAward::with('case')->get(); // ✅ NEW
 
         return view('frontend.case', compact(
             'cases',
@@ -28,10 +31,9 @@ class CasesController extends Controller
             'docketing',
             'hearingProcess',
             'reviewAndDrafting',
-            'ordersAndDisposition' 
+            'ordersAndDisposition',
+            'complianceAndAwards' // ✅ NEW
         ));
-
-
     }
 
     public function store(Request $request)
@@ -67,7 +69,6 @@ class CasesController extends Controller
 
     public function destroy($id)
     {
-        // Force logging to work
         error_log("DELETE REQUEST RECEIVED FOR ID: " . $id);
         file_put_contents(storage_path('logs/debug.log'), date('Y-m-d H:i:s') . " - Delete request for ID: " . $id . "\n", FILE_APPEND);
         

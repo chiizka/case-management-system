@@ -640,25 +640,69 @@
                                     <tr>
                                         <th>Inspection ID</th>
                                         <th>Name of Establishment</th>
-                                        <th>Compliance Order Monetary Award (Actual)</th>
+                                        <th>Compliance Order Monetary Award</th>
                                         <th>OSH Penalty</th>
                                         <th>Affected Male</th>
                                         <th>Affected Female</th>
                                         <th>1st Order Dismissal - CNPC</th>
-                                        <th>TAVable? (Less than 10 workers)</th>
-                                        <th>Scanned Order (1st Order)</th>
-                                        <th>With DEPOSITED Monetary Claims in DOLE 5?</th>
-                                        <th>Amount Deposited (DOLE 5 Cashier)</th>
-                                        <th>With Order of Payment/Notice to Claim Award?</th>
-                                        <th>Status (if all affected employees received claim)</th>
-                                        <th>Status of Case after 1st Order</th>
+                                        <th>TAVable? (&lt; 10 workers)</th>
+                                        <th>With Deposited Monetary Claims?</th>
+                                        <th>Amount Deposited</th>
+                                        <th>With Order Payment/Notice?</th>
+                                        <th>Status (Employees Received)</th>
+                                        <th>Status of Case (After 1st Order)</th>
+                                        <th>Date Notice Finality Dismissed</th>
+                                        <th>Released Date Notice Finality</th>
                                         <th>Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <tr>
-                                        <td colspan="15" class="text-center">No compliance & awards records found.</td>
-                                    </tr>
+                                    @if(isset($complianceAndAwards) && $complianceAndAwards->count() > 0)
+                                        @foreach($complianceAndAwards as $record)
+                                            <tr>
+                                                <td>{{ $record->inspection_id ?? '-' }}</td>
+                                                <td title="{{ $record->establishment_name ?? '' }}">
+                                                    {{ $record->establishment_name ? Str::limit($record->establishment_name, 25) : '-' }}
+                                                </td>
+                                                <td>{{ $record->compliance_order_monetary_award ?? '-' }}</td>
+                                                <td>{{ $record->osh_penalty ?? '-' }}</td>
+                                                <td>{{ $record->affected_male ?? 0 }}</td>
+                                                <td>{{ $record->affected_female ?? 0 }}</td>
+                                                <td>{{ $record->first_order_dismissal_cnpc ?? '-' }}</td>
+                                                <td>{{ $record->tavable_less_than_10_workers ? 'Yes' : 'No' }}</td>
+                                                <td>{{ $record->with_deposited_monetary_claims ? 'Yes' : 'No' }}</td>
+                                                <td>{{ $record->amount_deposited ?? '-' }}</td>
+                                                <td>{{ $record->with_order_payment_notice ? 'Yes' : 'No' }}</td>
+                                                <td>
+                                                    <span class="badge badge-{{ $record->status_all_employees_received == 'Yes' ? 'success' : 'warning' }}">
+                                                        {{ $record->status_all_employees_received ?? 'Pending' }}
+                                                    </span>
+                                                </td>
+                                                <td>{{ $record->status_case_after_first_order ?? '-' }}</td>
+                                                <td>{{ $record->date_notice_finality_dismissed ? \Carbon\Carbon::parse($record->date_notice_finality_dismissed)->format('Y-m-d') : '-' }}</td>
+                                                <td>{{ $record->released_date_notice_finality ? \Carbon\Carbon::parse($record->released_date_notice_finality)->format('Y-m-d') : '-' }}</td>
+                                                <td>
+                                                    <a href="{{ route('compliance-and-awards.show', $record->id) }}" class="btn btn-info btn-sm" title="View">
+                                                        <i class="fas fa-eye"></i>
+                                                    </a>
+                                                    <a href="{{ route('compliance-and-awards.edit', $record->id) }}" class="btn btn-warning btn-sm" title="Edit">
+                                                        <i class="fas fa-edit"></i>
+                                                    </a>
+                                                    <form action="{{ route('compliance-and-awards.destroy', $record->id) }}" method="POST" style="display:inline;">
+                                                        @csrf
+                                                        @method('DELETE')
+                                                        <button type="submit" class="btn btn-danger btn-sm delete-btn" title="Delete" onclick="return confirm('Are you sure you want to delete this compliance & awards record?')">
+                                                            <i class="fas fa-trash"></i>
+                                                        </button>
+                                                    </form>
+                                                </td>
+                                            </tr>
+                                        @endforeach
+                                    @else
+                                        <tr>
+                                            <td colspan="16" class="text-center">No compliance & awards records found.</td>
+                                        </tr>
+                                    @endif
                                 </tbody>
                             </table>
                         </div>
