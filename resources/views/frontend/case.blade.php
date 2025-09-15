@@ -548,31 +548,78 @@
                                     <tr>
                                         <th>Inspection ID</th>
                                         <th>Name of Establishment</th>
-                                        <th>Aging (2 days for finalization)</th>
+                                        <th>Aging (2 days for Finalization)</th>
                                         <th>Status (Finalization)</th>
-                                        <th>PCT (96 days from date of NR)</th>
+                                        <th>PCT (96 days from NR)</th>
                                         <th>Date Signed (MIS)</th>
                                         <th>Status (PCT)</th>
                                         <th>Reference Date (PCT)</th>
-                                        <th>Aging (PCT) - Must be less than 75 days</th>
+                                        <th>Aging (PCT)</th>
                                         <th>Disposition (MIS)</th>
                                         <th>Disposition (Actual)</th>
-                                        <th>Findings to be complied in the Order</th>
+                                        <th>Findings to be Complied</th>
                                         <th>Date of Order (Actual)</th>
-                                        <th>Released Date (Actual stamped by Records)</th>
+                                        <th>Released Date (Actual)</th>
                                         <th>Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <tr>
-                                        <td colspan="15" class="text-center">No orders & disposition records found.</td>
-                                    </tr>
+                                    @if(isset($ordersAndDisposition) && $ordersAndDisposition->count() > 0)
+                                        @foreach($ordersAndDisposition as $record)
+                                            <tr>
+                                                <td>{{ $record->case->inspection_id ?? '-' }}</td>
+                                                <td title="{{ $record->case->establishment_name ?? '' }}">
+                                                    {{ $record->case ? Str::limit($record->case->establishment_name, 25) : '-' }}
+                                                </td>
+                                                <td>{{ $record->aging_2_days_finalization ?? '-' }}</td>
+                                                <td>
+                                                    <span class="badge badge-{{ $record->status_finalization == 'Completed' ? 'success' : ($record->status_finalization == 'Pending' ? 'warning' : 'secondary') }}">
+                                                        {{ $record->status_finalization ?? 'Pending' }}
+                                                    </span>
+                                                </td>
+                                                <td>{{ $record->pct_96_days ?? '-' }}</td>
+                                                <td>{{ $record->date_signed_mis ? \Carbon\Carbon::parse($record->date_signed_mis)->format('Y-m-d') : '-' }}</td>
+                                                <td>
+                                                    <span class="badge badge-{{ $record->status_pct == 'Completed' ? 'success' : ($record->status_pct == 'Ongoing' ? 'warning' : 'secondary') }}">
+                                                        {{ $record->status_pct ?? 'Pending' }}
+                                                    </span>
+                                                </td>
+                                                <td>{{ $record->reference_date_pct ? \Carbon\Carbon::parse($record->reference_date_pct)->format('Y-m-d') : '-' }}</td>
+                                                <td>{{ $record->aging_pct ?? '-' }}</td>
+                                                <td>{{ $record->disposition_mis ?? '-' }}</td>
+                                                <td>{{ $record->disposition_actual ?? '-' }}</td>
+                                                <td>{{ Str::limit($record->findings_to_comply, 40) ?? '-' }}</td>
+                                                <td>{{ $record->date_of_order_actual ? \Carbon\Carbon::parse($record->date_of_order_actual)->format('Y-m-d') : '-' }}</td>
+                                                <td>{{ $record->released_date_actual ? \Carbon\Carbon::parse($record->released_date_actual)->format('Y-m-d') : '-' }}</td>
+                                                <td>
+                                                    <a href="{{ route('orders-and-disposition.show', $record->id) }}" class="btn btn-info btn-sm" title="View">
+                                                        <i class="fas fa-eye"></i>
+                                                    </a>
+                                                    <a href="{{ route('orders-and-disposition.edit', $record->id) }}" class="btn btn-warning btn-sm" title="Edit">
+                                                        <i class="fas fa-edit"></i>
+                                                    </a>
+                                                    <form action="{{ route('orders-and-disposition.destroy', $record->id) }}" method="POST" style="display:inline;">
+                                                        @csrf
+                                                        @method('DELETE')
+                                                        <button type="submit" class="btn btn-danger btn-sm delete-btn" title="Delete" onclick="return confirm('Are you sure you want to delete this order & disposition record?')">
+                                                            <i class="fas fa-trash"></i>
+                                                        </button>
+                                                    </form>
+                                                </td>
+                                            </tr>
+                                        @endforeach
+                                    @else
+                                        <tr>
+                                            <td colspan="15" class="text-center">No orders & disposition records found.</td>
+                                        </tr>
+                                    @endif
                                 </tbody>
                             </table>
                         </div>
                     </div>
                 </div>
             </div>
+
 
             <!-- Tab 6: Compliance & Awards -->
             <div class="tab-pane fade" id="tab6" role="tabpanel" aria-labelledby="tab6-tab">

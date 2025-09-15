@@ -7,7 +7,8 @@ use App\Models\CaseFile;
 use App\Models\Inspection;
 use App\Models\Docketing;
 use App\Models\HearingProcess;
-use App\Models\ReviewAndDrafting; // Added ReviewAndDrafting model
+use App\Models\ReviewAndDrafting; 
+use App\Models\OrderAndDisposition; 
 use Illuminate\Support\Facades\Log;
 
 class CasesController extends Controller
@@ -19,8 +20,18 @@ class CasesController extends Controller
         $docketing = Docketing::with('case')->get();
         $hearingProcess = HearingProcess::with('case')->get();
         $reviewAndDrafting = ReviewAndDrafting::with('case')->get();
-            
-        return view('frontend.case', compact('cases', 'inspections', 'docketing', 'hearingProcess', 'reviewAndDrafting'));
+        $ordersAndDisposition = OrderAndDisposition::with('case')->get();
+
+        return view('frontend.case', compact(
+            'cases',
+            'inspections',
+            'docketing',
+            'hearingProcess',
+            'reviewAndDrafting',
+            'ordersAndDisposition' 
+        ));
+
+
     }
 
     public function store(Request $request)
