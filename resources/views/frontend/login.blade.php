@@ -115,7 +115,7 @@
                                                 <input type="checkbox" class="custom-control-input" id="customCheck">
                                                 <label class="custom-control-label" for="customCheck">Remember
                                                     Me</label>
-                                            </div>
+                                            </div> 
                                         </div>
                                         <button class="btn btn-primary btn-user btn-block"> Login</button>
                                         <hr>
@@ -148,6 +148,12 @@
     <!-- Custom scripts for all pages-->
     <script src="js/sb-admin-2.min.js"></script>
     
+    <!-- Add this script to your login blade -->
+    <script>
+    $('.user').on('submit', function() {
+        $('button[type="submit"]').html('<i class="fas fa-spinner fa-spin"></i> Signing in...');
+    });
+    </script>
 
 </body>
 
