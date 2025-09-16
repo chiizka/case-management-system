@@ -17,9 +17,21 @@ class CaseFile extends Model
     ];
 
     protected $casts = [
-        'current_stage' => 'string', // Fixed: enum values are strings
+        'current_stage' => 'string',
         'overall_status' => 'string',
     ];
+
+    // ADD THIS METHOD
+    protected static function booted()
+    {
+        static::created(function ($case) {
+            // Automatically create an inspection record when a case is created
+            $case->inspections()->create([
+                'case_id' => $case->id,
+                // All other fields will be null as per your migration
+            ]);
+        });
+    }
 
     // Define the one-to-many relationship with inspections
     public function inspections()
@@ -27,13 +39,13 @@ class CaseFile extends Model
         return $this->hasMany(Inspection::class, 'case_id');
     }
 
-    // Define the one-to-many relationship with docketing (use hasOne if one docketing per case)
+    // Define the one-to-many relationship with docketing
     public function docketing()
     {
-        return $this->hasMany(Docketing::class, 'case_id'); // or hasOne(Docketing::class, 'case_id')
+        return $this->hasMany(Docketing::class, 'case_id');
     }
 
     public function hearing_process(){
-        return $this->hasMany(HearingProcess::class, 'case_id'); // or hasOne(Docketing::class, 'case_id')
+        return $this->hasMany(HearingProcess::class, 'case_id');
     }
 }
