@@ -123,4 +123,25 @@ class CasesController extends Controller
         $case = CaseFile::findOrFail($id);
         return response()->json($case);
     }
+
+    public function moveToNextStage(Request $request, $id)
+{
+    $case = CaseFile::findOrFail($id);
+    
+    // Check if current stage is Inspections
+    if ($case->current_stage === '1: Inspections') {
+        // Create docketing record
+        $case->docketing()->create([
+            'case_id' => $case->id,
+            // All other fields will be null
+        ]);
+        
+        // Update case stage to Docketing
+        $case->update(['current_stage' => '2: Docketing']);
+        
+        return redirect()->back()->with('success', 'Case successfully moved to Docketing stage');
+    }
+    
+    return redirect()->back()->with('error', 'Cannot move to next stage from current stage');
+}   
 }

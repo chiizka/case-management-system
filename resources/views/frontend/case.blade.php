@@ -206,6 +206,7 @@
                             </div>
                         </div>
 
+                        
                         <!-- Table Container -->
                         <div class="table-container">
                             <table class="table table-bordered compact-table sticky-table" id="dataTable1" width="100%" cellspacing="0">
@@ -252,6 +253,16 @@
                                                             <i class="fas fa-trash"></i>
                                                         </button>
                                                     </form>
+                                                    
+                                                    <!-- ADD THIS BUTTON -->
+                                                    @if($inspection->case && $inspection->case->current_stage === '1: Inspections')
+                                                        <form action="{{ route('case.nextStage', $inspection->case->id) }}" method="POST" style="display:inline;">
+                                                            @csrf
+                                                            <button type="submit" class="btn btn-success btn-sm ml-1" title="Move to Docketing" onclick="return confirm('Complete inspection and move to Docketing?')">
+                                                                <i class="fas fa-arrow-right"></i> Next
+                                                            </button>
+                                                        </form>
+                                                    @endif
                                                 </td>
                                             </tr>
                                         @endforeach

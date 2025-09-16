@@ -78,4 +78,7 @@ Route::middleware('auth')->group(function () {
 
     //appeals and resolution routes
     Route::resource('appeals-and-resolution', AppealsAndResolutionController::class);
+
+    //
+    Route::post('/case/{id}/next-stage', [CasesController::class, 'moveToNextStage'])->name('case.nextStage');
 });
