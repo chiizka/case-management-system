@@ -211,7 +211,6 @@
                             <table class="table table-bordered compact-table sticky-table" id="dataTable1" width="100%" cellspacing="0">
                                 <thead>
                                     <tr>
-                                        <th>Case</th>
                                         <th>Inspection ID</th>
                                         <th>Name of Establishment</th>
                                         <th>PO Office</th>
@@ -228,7 +227,7 @@
                                     @if(isset($inspections) && $inspections->count() > 0)
                                         @foreach($inspections as $inspection)
                                             <tr>
-                                                <td>{{ $inspection->case->establishment_name ?? '-' }}</td>
+                                               
                                                 <td>{{ $inspection->case->inspection_id ?? '-' }}</td>
                                                 <td title="{{ $inspection->case->establishment_name ?? '' }}">
                                                 {{ $inspection->case ? Str::limit($inspection->case->establishment_name, 25) : '-' }}</td>
@@ -838,16 +837,11 @@
                         <div class="col-md-6">
                             <div class="form-group">
                                 <label for="current_stage">Current Stage</label>
-                                <select class="form-control" id="current_stage" name="current_stage" required>
-                                    <option value="">Select Stage</option>
-                                    <option value="1: Inspections">1: Inspections</option>
-                                    <option value="2: Docketing">2: Docketing</option>
-                                    <option value="3: Hearing">3: Hearing</option>
-                                    <option value="4: Review & Drafting">4: Review & Drafting</option>
-                                    <option value="5: Orders & Disposition">5: Orders & Disposition</option>
-                                    <option value="6: Compliance & Awards">6: Compliance & Awards</option>
-                                    <option value="7: Appeals & Resolution">7: Appeals & Resolution</option>
+                                <select class="form-control" id="current_stage" name="current_stage" required disabled>
+                                    <option value="1: Inspections" selected>1: Inspections</option>
                                 </select>
+                                <!-- Hidden input to ensure the value is submitted -->
+                                <input type="hidden" name="current_stage" value="1: Inspections">
                             </div>
                         </div>
                         <div class="col-md-6">
@@ -871,7 +865,6 @@
         </div>
     </div>
 </div>
-
 
 
 <script>
