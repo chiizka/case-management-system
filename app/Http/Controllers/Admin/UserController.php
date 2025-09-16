@@ -13,7 +13,8 @@ class UserController extends Controller
     {
         // Validate input
         $validator = Validator::make($request->all(), [
-            'name' => 'required|string|max:255',
+            'fname' => 'required|string|max:255',
+            'lname' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
         ]);
 
@@ -23,10 +24,11 @@ class UserController extends Controller
 
         // Create user with null password
         $user = User::create([
-            'name' => $request->name,
+            'fname' => $request->fname,
+            'lname' => $request->lname,
             'email' => $request->email,
             'password' => null, // No password initially
-            'two_factor_enabled' => false, // Default to false
+            'two_factor_enabled' => true, // Enable 2FA by default for new users
         ]);
 
         // Send password reset notification
