@@ -711,7 +711,7 @@
             </div>
 
             <!-- Tab 7: Appeals & Resolution -->
-            <div class="tab-pane fade" id="tab7" role="tabpanel" aria-labelledby="tab7-tab">
+                        <div class="tab-pane fade" id="tab7" role="tabpanel" aria-labelledby="tab7-tab">
                 <div class="card shadow mb-4">
                     <div class="card-body">
                         <!-- Search + Buttons Row -->
@@ -729,28 +729,63 @@
                                     <tr>
                                         <th>Inspection ID</th>
                                         <th>Name of Establishment</th>
-                                        <th>Date Returned to Case Mngt (C&T/CNPC)</th>
-                                        <th>Review (C&T/CNPC)</th>
-                                        <th>Date Received by Drafter for Finalization (2nd Order)</th>
-                                        <th>Date Returned to Case Mngt for Signature (2nd Order)</th>
-                                        <th>Date of Order (2nd Order/CNPC)</th>
-                                        <th>Released Date (2nd Order/CNPC)</th>
-                                        <th>Scanned Order (2nd Order/CNPC)</th>
-                                        <th>Date forwarded to MALSU</th>
-                                        <th>Scanned Copy of Indorsement to MALSU</th>
-                                        <th>Motion for Reconsideration (Date received)</th>
-                                        <th>Date Received by MALSU</th>
-                                        <th>Date of Resolution (MR)</th>
-                                        <th>Released Date of Resolution (MR)</th>
-                                        <th>Scanned Resolution (MR)</th>
-                                        <th>Date of Appeal (Date received by Records unit)</th>
+                                        <th>Date Returned Case Mgmt</th>
+                                        <th>Review CT CNPC</th>
+                                        <th>Date Received Drafter Finalization (2nd)</th>
+                                        <th>Date Returned Case Mgmt Signature (2nd)</th>
+                                        <th>Date Order (2nd CNPC)</th>
+                                        <th>Released Date (2nd CNPC)</th>
+                                        <th>Date Forwarded MALSU</th>
+                                        <th>Motion Reconsideration Date</th>
+                                        <th>Date Received MALSU</th>
+                                        <th>Date Resolution MR</th>
+                                        <th>Released Date Resolution MR</th>
+                                        <th>Date Appeal Received Records</th>
                                         <th>Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <tr>
-                                        <td colspan="18" class="text-center">No appeals & resolution records found.</td>
-                                    </tr>
+                                    @if(isset($appealsAndResolutions) && $appealsAndResolutions->count() > 0)
+                                        @foreach($appealsAndResolutions as $record)
+                                            <tr>
+                                                <td>{{ $record->inspection_id ?? '-' }}</td>
+                                                <td title="{{ $record->establishment_name ?? '' }}">
+                                                    {{ $record->establishment_name ? Str::limit($record->establishment_name, 25) : '-' }}
+                                                </td>
+                                                <td>{{ $record->date_returned_case_mgmt ? \Carbon\Carbon::parse($record->date_returned_case_mgmt)->format('Y-m-d') : '-' }}</td>
+                                                <td>{{ $record->review_ct_cnpc ?? '-' }}</td>
+                                                <td>{{ $record->date_received_drafter_finalization_2nd ? \Carbon\Carbon::parse($record->date_received_drafter_finalization_2nd)->format('Y-m-d') : '-' }}</td>
+                                                <td>{{ $record->date_returned_case_mgmt_signature_2nd ? \Carbon\Carbon::parse($record->date_returned_case_mgmt_signature_2nd)->format('Y-m-d') : '-' }}</td>
+                                                <td>{{ $record->date_order_2nd_cnpc ? \Carbon\Carbon::parse($record->date_order_2nd_cnpc)->format('Y-m-d') : '-' }}</td>
+                                                <td>{{ $record->released_date_2nd_cnpc ? \Carbon\Carbon::parse($record->released_date_2nd_cnpc)->format('Y-m-d') : '-' }}</td>
+                                                <td>{{ $record->date_forwarded_malsu ? \Carbon\Carbon::parse($record->date_forwarded_malsu)->format('Y-m-d') : '-' }}</td>
+                                                <td>{{ $record->motion_reconsideration_date ? \Carbon\Carbon::parse($record->motion_reconsideration_date)->format('Y-m-d') : '-' }}</td>
+                                                <td>{{ $record->date_received_malsu ? \Carbon\Carbon::parse($record->date_received_malsu)->format('Y-m-d') : '-' }}</td>
+                                                <td>{{ $record->date_resolution_mr ? \Carbon\Carbon::parse($record->date_resolution_mr)->format('Y-m-d') : '-' }}</td>
+                                                <td>{{ $record->released_date_resolution_mr ? \Carbon\Carbon::parse($record->released_date_resolution_mr)->format('Y-m-d') : '-' }}</td>
+                                                <td>{{ $record->date_appeal_received_records ? \Carbon\Carbon::parse($record->date_appeal_received_records)->format('Y-m-d') : '-' }}</td>
+                                                <td>
+                                                    <a href="{{ route('appeals-and-resolution.show', $record->id) }}" class="btn btn-info btn-sm" title="View">
+                                                        <i class="fas fa-eye"></i>
+                                                    </a>
+                                                    <a href="{{ route('appeals-and-resolution.edit', $record->id) }}" class="btn btn-warning btn-sm" title="Edit">
+                                                        <i class="fas fa-edit"></i>
+                                                    </a>
+                                                    <form action="{{ route('appeals-and-resolution.destroy', $record->id) }}" method="POST" style="display:inline;">
+                                                        @csrf
+                                                        @method('DELETE')
+                                                        <button type="submit" class="btn btn-danger btn-sm delete-btn" title="Delete" onclick="return confirm('Are you sure you want to delete this appeals & resolution record?')">
+                                                            <i class="fas fa-trash"></i>
+                                                        </button>
+                                                    </form>
+                                                </td>
+                                            </tr>
+                                        @endforeach
+                                    @else
+                                        <tr>
+                                            <td colspan="15" class="text-center">No appeals & resolution records found.</td>
+                                        </tr>
+                                    @endif
                                 </tbody>
                             </table>
                         </div>

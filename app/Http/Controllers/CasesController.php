@@ -9,7 +9,8 @@ use App\Models\Docketing;
 use App\Models\HearingProcess;
 use App\Models\ReviewAndDrafting; 
 use App\Models\OrderAndDisposition; 
-use App\Models\ComplianceAndAward;   // ✅ NEW
+use App\Models\ComplianceAndAward;
+use App\Models\AppealsAndResolution;   // ✅ NEW - Add this import
 
 use Illuminate\Support\Facades\Log;
 
@@ -23,7 +24,8 @@ class CasesController extends Controller
         $hearingProcess = HearingProcess::with('case')->get();
         $reviewAndDrafting = ReviewAndDrafting::with('case')->get();
         $ordersAndDisposition = OrderAndDisposition::with('case')->get();
-        $complianceAndAwards = ComplianceAndAward::with('case')->get(); // ✅ NEW
+        $complianceAndAwards = ComplianceAndAward::with('case')->get();
+        $appealsAndResolutions = AppealsAndResolution::with('case')->get(); // ✅ NEW - Add this line
 
         return view('frontend.case', compact(
             'cases',
@@ -32,7 +34,8 @@ class CasesController extends Controller
             'hearingProcess',
             'reviewAndDrafting',
             'ordersAndDisposition',
-            'complianceAndAwards' // ✅ NEW
+            'complianceAndAwards',
+            'appealsAndResolutions' // ✅ NEW - Add this to compact
         ));
     }
 
