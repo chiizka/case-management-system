@@ -10,7 +10,7 @@ use App\Models\HearingProcess;
 use App\Models\ReviewAndDrafting; 
 use App\Models\OrderAndDisposition; 
 use App\Models\ComplianceAndAward;
-use App\Models\AppealsAndResolution;   // ✅ NEW - Add this import
+use App\Models\AppealsAndResolution;  
 
 use Illuminate\Support\Facades\Log;
 
@@ -35,7 +35,7 @@ class CasesController extends Controller
             'reviewAndDrafting',
             'ordersAndDisposition',
             'complianceAndAwards',
-            'appealsAndResolutions' // ✅ NEW - Add this to compact
+            'appealsAndResolutions' 
         ));
     }
 

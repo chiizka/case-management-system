@@ -175,7 +175,6 @@
                 </div>
             </div>
 
-
             <!-- Tab 1: Inspection -->
             <div class="tab-pane fade" id="tab1" role="tabpanel" aria-labelledby="tab1-tab">
                 <div class="card shadow mb-4">
@@ -839,7 +838,16 @@
                         <div class="col-md-6">
                             <div class="form-group">
                                 <label for="current_stage">Current Stage</label>
-                                <input type="number" class="form-control" id="current_stage" name="current_stage" min="1" max="7" placeholder="Enter stage (1-7)" required>
+                                <select class="form-control" id="current_stage" name="current_stage" required>
+                                    <option value="">Select Stage</option>
+                                    <option value="1: Inspections">1: Inspections</option>
+                                    <option value="2: Docketing">2: Docketing</option>
+                                    <option value="3: Hearing">3: Hearing</option>
+                                    <option value="4: Review & Drafting">4: Review & Drafting</option>
+                                    <option value="5: Orders & Disposition">5: Orders & Disposition</option>
+                                    <option value="6: Compliance & Awards">6: Compliance & Awards</option>
+                                    <option value="7: Appeals & Resolution">7: Appeals & Resolution</option>
+                                </select>
                             </div>
                         </div>
                         <div class="col-md-6">
