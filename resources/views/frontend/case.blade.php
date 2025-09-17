@@ -1211,251 +1211,319 @@ function showAlert(type, message) {
     }, 5000);
 }
 
-        $(document).ready(function() {
-            let currentEditingRow = null;
-            let originalData = {};
+            $(document).ready(function() {
+                let currentEditingRow = null;
+                let originalData = {};
 
-            // Search functionality
-            $('#customSearch1').on('keyup', function() {
-                const value = $(this).val().toLowerCase();
-                $("#dataTable1 tbody tr").filter(function() {
-                    $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1);
+                // Search functionality
+                $('#customSearch1').on('keyup', function() {
+                    const value = $(this).val().toLowerCase();
+                    $("#dataTable1 tbody tr").filter(function() {
+                        $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1);
+                    });
                 });
-            });
 
-            // Edit row button click
-            $(document).on('click', '.edit-row-btn', function() {
-                const row = $(this).closest('tr');
-                
-                // If another row is being edited, cancel it first
-                if (currentEditingRow && currentEditingRow.get(0) !== row.get(0)) {
-                    cancelEdit();
-                }
-                
-                enableRowEdit(row);
-            });
-
-            function enableRowEdit(row) {
-                currentEditingRow = row;
-                
-                // Store original data
-                originalData = {};
-                row.find('.editable-cell').each(function() {
-                    const cell = $(this);
-                    const field = cell.data('field');
-                    originalData[field] = cell.text().trim();
+                // Edit row button click
+                $(document).on('click', '.edit-row-btn', function() {
+                    const row = $(this).closest('tr');
                     
-                    // Convert to input
-                    const currentValue = cell.text().trim() === '-' ? '' : cell.text().trim();
-                    const dataType = cell.data('type');
-                    
-                    let input;
-                    if (dataType === 'date') {
-                        input = `<input type="date" class="form-control form-control-sm edit-input" value="${currentValue}" data-field="${field}">`;
-                    } else if (field === 'establishment_name') {
-                        // Use the full title for establishment name
-                        const fullValue = cell.attr('title') || currentValue;
-                        input = `<input type="text" class="form-control form-control-sm edit-input" value="${fullValue}" data-field="${field}">`;
-                    } else {
-                        input = `<input type="text" class="form-control form-control-sm edit-input" value="${currentValue}" data-field="${field}">`;
+                    // If another row is being edited, cancel it first
+                    if (currentEditingRow && currentEditingRow.get(0) !== row.get(0)) {
+                        cancelEdit();
                     }
                     
-                    cell.html(input);
-                    cell.addClass('edit-mode');
+                    enableRowEdit(row);
                 });
-                
-                // Change edit button to save/cancel buttons
-                const actionsCell = row.find('td:last');
-                const currentButtons = actionsCell.html();
-                actionsCell.data('original-buttons', currentButtons);
-                
-                actionsCell.html(`
-                    <div class="save-cancel-buttons">
-                        <button class="btn btn-success btn-sm save-btn" title="Save">
-                            <i class="fas fa-check"></i>
-                        </button>
-                        <button class="btn btn-secondary btn-sm cancel-btn ml-1" title="Cancel">
-                            <i class="fas fa-times"></i>
-                        </button>
-                    </div>
-                `);
-                
-                // Focus on first input
-                row.find('.edit-input').first().focus();
-            }
 
-            $(document).on('click', '.save-btn', function() {
-                const row = $(this).closest('tr');
-                const inspectionId = row.data('id');
-                const updatedData = {};
-                
-                // Collect updated data
-                row.find('.edit-input').each(function() {
-                    const input = $(this);
-                    const field = input.data('field');
-                    updatedData[field] = input.val();
-                });
-        
-            // Save the data
-                saveInspectionData(inspectionId, updatedData, row);
-            });
-
-            // Cancel button click
-            $(document).on('click', '.cancel-btn', function() {
-                cancelEdit();
-            });
-
-            // ESC key to cancel edit
-            $(document).on('keyup', function(e) {
-                if (e.key === 'Escape' && currentEditingRow) {
-                    cancelEdit();
-                }
-            });
-
-            // Enter key to save
-            $(document).on('keyup', '.edit-input', function(e) {
-                if (e.key === 'Enter') {
-                    $('.save-btn').click();
-                }
-            });
-
-            function cancelEdit() {
-                if (!currentEditingRow) return;
-                
-                // Restore original data
-                currentEditingRow.find('.editable-cell').each(function() {
-                    const cell = $(this);
-                    const field = cell.data('field');
-                    let displayValue = originalData[field] || '';
+                function enableRowEdit(row) {
+                    currentEditingRow = row;
                     
-                    // For establishment name, truncate again if needed
-                    if (field === 'establishment_name' && displayValue.length > 25) {
-                        cell.attr('title', displayValue);
-                        displayValue = displayValue.substring(0, 25) + '...';
+                    // Store original data
+                    originalData = {};
+                    row.find('.editable-cell').each(function() {
+                        const cell = $(this);
+                        const field = cell.data('field');
+                        originalData[field] = cell.text().trim();
+                        
+                        // Convert to input
+                        const currentValue = cell.text().trim() === '-' ? '' : cell.text().trim();
+                        const dataType = cell.data('type');
+                        
+                        let input;
+                        if (dataType === 'date') {
+                            input = `<input type="date" class="form-control form-control-sm edit-input" value="${currentValue}" data-field="${field}">`;
+                        } else if (field === 'establishment_name') {
+                            // Use the full title for establishment name
+                            const fullValue = cell.attr('title') || currentValue;
+                            input = `<input type="text" class="form-control form-control-sm edit-input" value="${fullValue}" data-field="${field}">`;
+                        } else {
+                            input = `<input type="text" class="form-control form-control-sm edit-input" value="${currentValue}" data-field="${field}">`;
+                        }
+                        
+                        cell.html(input);
+                        cell.addClass('edit-mode');
+                    });
+                    
+                    // Change edit button to save/cancel buttons
+                    const actionsCell = row.find('td:last');
+                    const currentButtons = actionsCell.html();
+                    actionsCell.data('original-buttons', currentButtons);
+                    
+                    actionsCell.html(`
+                        <div class="save-cancel-buttons">
+                            <button class="btn btn-success btn-sm save-btn" title="Save">
+                                <i class="fas fa-check"></i>
+                            </button>
+                            <button class="btn btn-secondary btn-sm cancel-btn ml-1" title="Cancel">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    `);
+                    
+                    // Focus on first input
+                    row.find('.edit-input').first().focus();
+                }
+
+                // Save button click
+                $(document).on('click', '.save-btn', function() {
+                    const row = $(this).closest('tr');
+                    const inspectionId = row.data('id');
+                    
+                    if (!inspectionId) {
+                        showAlert('Invalid inspection ID. Please refresh the page.', 'danger');
+                        return;
                     }
                     
-                    cell.html(displayValue);
-                    cell.removeClass('edit-mode');
+                    const updatedData = {};
+                    let hasChanges = false;
+                    
+                    // Collect updated data and check for changes
+                    row.find('.edit-input').each(function() {
+                        const input = $(this);
+                        const field = input.data('field');
+                        const newValue = input.val().trim();
+                        const originalValue = originalData[field] || '';
+                        
+                        // Always include the field in the update, even if unchanged
+                        updatedData[field] = newValue;
+                        
+                        // Check if there are actual changes
+                        if (newValue !== originalValue) {
+                            hasChanges = true;
+                        }
+                    });
+                    
+                    console.log('Data to save:', updatedData);
+                    console.log('Has changes:', hasChanges);
+                    console.log('Original data:', originalData);
+                    
+                    // Proceed with save even if no changes detected (in case of edge cases)
+                    saveInspectionData(inspectionId, updatedData, row);
                 });
-                
-                // Restore original buttons
-                const actionsCell = currentEditingRow.find('td:last');
-                actionsCell.html(actionsCell.data('original-buttons'));
-                
-                currentEditingRow = null;
-                originalData = {};
-            }
 
-            function saveInspectionData(inspectionId, data, row) {
-                // Show loading state
-                const saveBtn = row.find('.save-btn');
-                const originalSaveContent = saveBtn.html();
-                saveBtn.html('<i class="fas fa-spinner fa-spin"></i>').prop('disabled', true);
-                
-                // Get CSRF token
-                const csrfToken = $('meta[name="csrf-token"]').attr('content');
-                
-                if (!csrfToken) {
-                    showAlert('CSRF token not found. Please refresh the page.', 'danger');
-                    saveBtn.html(originalSaveContent).prop('disabled', false);
-                    return;
+                // Cancel button click
+                $(document).on('click', '.cancel-btn', function() {
+                    cancelEdit();
+                });
+
+                // ESC key to cancel edit
+                $(document).on('keyup', function(e) {
+                    if (e.key === 'Escape' && currentEditingRow) {
+                        cancelEdit();
+                    }
+                });
+
+                // Enter key to save
+                $(document).on('keyup', '.edit-input', function(e) {
+                    if (e.key === 'Enter') {
+                        $('.save-btn').click();
+                    }
+                });
+
+                function cancelEdit() {
+                    if (!currentEditingRow) return;
+                    
+                    // Restore original data
+                    currentEditingRow.find('.editable-cell').each(function() {
+                        const cell = $(this);
+                        const field = cell.data('field');
+                        let displayValue = originalData[field] || '';
+                        
+                        // For establishment name, truncate again if needed
+                        if (field === 'establishment_name' && displayValue.length > 25) {
+                            cell.attr('title', displayValue);
+                            displayValue = displayValue.substring(0, 25) + '...';
+                        }
+                        
+                        cell.html(displayValue);
+                        cell.removeClass('edit-mode');
+                    });
+                    
+                    // Restore original buttons
+                    const actionsCell = currentEditingRow.find('td:last');
+                    actionsCell.html(actionsCell.data('original-buttons'));
+                    
+                    currentEditingRow = null;
+                    originalData = {};
                 }
 
-                // Real AJAX implementation
-                $.ajax({
-                    url: `/inspection/${inspectionId}/inline-update`,
-                    method: 'PUT',
-                    headers: {
-                        'X-CSRF-TOKEN': csrfToken,
-                        'Accept': 'application/json',
-                        'Content-Type': 'application/json'
-                    },
-                    data: JSON.stringify(data),
-                    success: function(response) {
-                        if (response.success) {
-                            // Update cells with response data
-                            row.find('.editable-cell').each(function() {
-                                const cell = $(this);
-                                const field = cell.data('field');
-                                let displayValue = response.data[field] || '-';
-                                
-                                if (field === 'establishment_name') {
-                                    // Store full value in title attribute
-                                    cell.attr('title', displayValue);
-                                    // Truncate for display if needed
-                                    if (displayValue.length > 25 && displayValue !== '-') {
-                                        displayValue = displayValue.substring(0, 25) + '...';
+                function saveInspectionData(inspectionId, data, row) {
+                    // Show loading state
+                    const saveBtn = row.find('.save-btn');
+                    const cancelBtn = row.find('.cancel-btn');
+                    const originalSaveContent = saveBtn.html();
+                    
+                    saveBtn.html('<i class="fas fa-spinner fa-spin"></i>').prop('disabled', true);
+                    cancelBtn.prop('disabled', true);
+                    
+                    // Get CSRF token
+                    const csrfToken = $('meta[name="csrf-token"]').attr('content');
+                    
+                    if (!csrfToken) {
+                        showAlert('CSRF token not found. Please refresh the page.', 'danger');
+                        saveBtn.html(originalSaveContent).prop('disabled', false);
+                        cancelBtn.prop('disabled', false);
+                        return;
+                    }
+
+                    // Clean the data - remove empty values or convert them appropriately
+                    const cleanedData = {};
+                    Object.keys(data).forEach(key => {
+                        const value = data[key];
+                        if (value === '' || value === null || value === undefined) {
+                            cleanedData[key] = null; // Convert empty strings to null
+                        } else if (typeof value === 'string') {
+                            cleanedData[key] = value.trim(); // Trim whitespace
+                        } else {
+                            cleanedData[key] = value;
+                        }
+                    });
+
+                    console.log('Sending data:', cleanedData);
+
+                    // Real AJAX implementation
+                    $.ajax({
+                        url: `/inspection/${inspectionId}/inline-update`,
+                        method: 'PUT',
+                        headers: {
+                            'X-CSRF-TOKEN': csrfToken,
+                            'Accept': 'application/json'
+                        },
+                        data: cleanedData, // Send as form data instead of JSON
+                        success: function(response) {
+                            console.log('Update response:', response);
+                            
+                            if (response.success) {
+                                // Update cells with response data
+                                row.find('.editable-cell').each(function() {
+                                    const cell = $(this);
+                                    const field = cell.data('field');
+                                    let displayValue = response.data[field];
+                                    
+                                    // Handle null or undefined values
+                                    if (displayValue === null || displayValue === undefined || displayValue === '') {
+                                        displayValue = '-';
                                     }
-                                }
+                                    
+                                    if (field === 'establishment_name') {
+                                        // Store full value in title attribute
+                                        if (displayValue !== '-') {
+                                            cell.attr('title', displayValue);
+                                            // Truncate for display if needed
+                                            if (displayValue.length > 25) {
+                                                displayValue = displayValue.substring(0, 25) + '...';
+                                            }
+                                        } else {
+                                            cell.removeAttr('title');
+                                        }
+                                    }
+                                    
+                                    cell.html(displayValue);
+                                    cell.removeClass('edit-mode');
+                                });
                                 
-                                cell.html(displayValue);
-                                cell.removeClass('edit-mode');
+                                // Restore action buttons
+                                const actionsCell = row.find('td:last');
+                                actionsCell.html(actionsCell.data('original-buttons'));
+                                
+                                // Show success message
+                                showAlert(response.message || 'Inspection updated successfully!', 'success');
+                                
+                                currentEditingRow = null;
+                                originalData = {};
+                            } else {
+                                throw new Error(response.message || 'Update failed');
+                            }
+                        },
+                        error: function(xhr, status, error) {
+                            console.error('Update failed:', {
+                                status: xhr.status,
+                                responseText: xhr.responseText,
+                                error: error,
+                                sentData: cleanedData
                             });
                             
-                            // Restore action buttons
-                            const actionsCell = row.find('td:last');
-                            actionsCell.html(actionsCell.data('original-buttons'));
+                            // Restore buttons
+                            saveBtn.html(originalSaveContent).prop('disabled', false);
+                            cancelBtn.prop('disabled', false);
                             
-                            // Show success message
-                            showAlert(response.message || 'Inspection updated successfully!', 'success');
+                            let errorMessage = 'Error updating inspection!';
                             
-                            currentEditingRow = null;
-                            originalData = {};
-                        } else {
-                            throw new Error(response.message || 'Update failed');
-                        }
-                    },
-                    error: function(xhr, status, error) {
-                        console.error('Update failed:', xhr, status, error);
-                        
-                        // Restore save button
-                        saveBtn.html(originalSaveContent).prop('disabled', false);
-                        
-                        let errorMessage = 'Error updating inspection!';
-                        
-                        if (xhr.responseJSON) {
-                            if (xhr.responseJSON.message) {
-                                errorMessage = xhr.responseJSON.message;
-                            } else if (xhr.responseJSON.errors) {
-                                // Handle validation errors
-                                const errors = Object.values(xhr.responseJSON.errors).flat();
-                                errorMessage = errors.join(', ');
+                            try {
+                                if (xhr.responseJSON) {
+                                    if (xhr.responseJSON.message) {
+                                        errorMessage = xhr.responseJSON.message;
+                                    } else if (xhr.responseJSON.errors) {
+                                        // Handle validation errors
+                                        const errors = Object.values(xhr.responseJSON.errors).flat();
+                                        errorMessage = 'Validation errors: ' + errors.join(', ');
+                                    }
+                                } else if (xhr.responseText) {
+                                    // Try to parse response text as JSON
+                                    const responseData = JSON.parse(xhr.responseText);
+                                    errorMessage = responseData.message || errorMessage;
+                                }
+                            } catch (parseError) {
+                                console.warn('Could not parse error response:', parseError);
                             }
-                        } else if (xhr.status === 404) {
-                            errorMessage = 'Inspection not found.';
-                        } else if (xhr.status === 422) {
-                            errorMessage = 'Validation error. Please check your input.';
-                        } else if (xhr.status === 500) {
-                            errorMessage = 'Server error occurred.';
+                            
+                            // Handle specific status codes
+                            if (xhr.status === 404) {
+                                errorMessage = 'Inspection not found.';
+                            } else if (xhr.status === 422) {
+                                errorMessage = errorMessage.includes('Validation') ? errorMessage : 'Validation error. Please check your input.';
+                            } else if (xhr.status === 500) {
+                                errorMessage = 'Server error occurred. Please try again.';
+                            } else if (xhr.status === 419) {
+                                errorMessage = 'Session expired. Please refresh the page and try again.';
+                            }
+                            
+                            showAlert(errorMessage, 'danger');
                         }
-                        
-                        showAlert(errorMessage, 'danger');
-                    }
-                });
+                    });
+                }
+            });
+
+            // Utility functions
+            function showAlert(message, type) {
+                const alertId = type === 'success' ? 'success-alert' : 'error-alert';
+                const messageId = type === 'success' ? 'success-message' : 'error-message';
+                
+                $(`#${messageId}`).text(message);
+                $(`#${alertId}`).removeClass('fade').addClass('show').show();
+                
+                // Auto-hide after 5 seconds
+                setTimeout(() => {
+                    hideAlert(alertId);
+                }, 5000);
             }
-        });
 
-
-        // Utility functions
-        function showAlert(message, type) {
-            const alertId = type === 'success' ? 'success-alert' : 'error-alert';
-            const messageId = type === 'success' ? 'success-message' : 'error-message';
-            
-            $(`#${messageId}`).text(message);
-            $(`#${alertId}`).removeClass('fade').addClass('show').show();
-            
-            // Auto-hide after 5 seconds
-            setTimeout(() => {
-                hideAlert(alertId);
-            }, 5000);
-        }   
-
-        function hideAlert(alertId) {
-            $(`#${alertId}`).removeClass('show').addClass('fade');
-            setTimeout(() => {
-                $(`#${alertId}`).hide();
-            }, 150);
-        }
+            function hideAlert(alertId) {
+                $(`#${alertId}`).removeClass('show').addClass('fade');
+                setTimeout(() => {
+                    $(`#${alertId}`).hide();
+                }, 150);
+            }
 
         function showAddForm() {
             alert('Add Inspection form would open here');

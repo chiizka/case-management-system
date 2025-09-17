@@ -168,13 +168,35 @@ class InspectionsController extends Controller
         }
     }
 
-    public function inlineUpdate(Request $request, $id)
+ public function inlineUpdate(Request $request, $id)
     {
+        // Add debug logging
+        Log::info('Inline update request received', [
+            'inspection_id' => $id,
+            'request_data' => $request->all(),
+            'content_type' => $request->header('Content-Type')
+        ]);
+        
         try {
             $inspection = Inspection::findOrFail($id);
             
+            // Get all input data
+            $inputData = $request->all();
+            
+            // Remove empty strings and convert them to null
+            $cleanedData = [];
+            foreach ($inputData as $key => $value) {
+                if ($value === '' || $value === '-') {
+                    $cleanedData[$key] = null;
+                } else {
+                    $cleanedData[$key] = $value;
+                }
+            }
+            
+            Log::info('Cleaned data for validation', ['cleaned_data' => $cleanedData]);
+            
             // Validation rules
-            $validator = Validator::make($request->all(), [
+            $validator = Validator::make($cleanedData, [
                 'inspection_id' => 'nullable|string|max:255',
                 'establishment_name' => 'nullable|string|max:500',
                 'po_office' => 'nullable|string|max:255',
@@ -187,29 +209,48 @@ class InspectionsController extends Controller
             ]);
 
             if ($validator->fails()) {
+                Log::warning('Validation failed', [
+                    'errors' => $validator->errors(),
+                    'data' => $cleanedData
+                ]);
+                
                 return response()->json([
                     'success' => false,
-                    'message' => 'Validation failed',
+                    'message' => 'Validation failed: ' . $validator->errors()->first(),
                     'errors' => $validator->errors()
                 ], 422);
             }
 
             $validatedData = $validator->validated();
             
-            // Handle establishment_name separately - it should update the related case
-            if (isset($validatedData['establishment_name']) && $inspection->case) {
-                $inspection->case->update(['establishment_name' => $validatedData['establishment_name']]);
-                unset($validatedData['establishment_name']); // Remove from inspection update data
+            // Separate data for case and inspection updates
+            $caseData = [];
+            $inspectionData = [];
+            
+            foreach ($validatedData as $field => $value) {
+                if (in_array($field, ['inspection_id', 'establishment_name'])) {
+                    $caseData[$field] = $value;
+                } else {
+                    $inspectionData[$field] = $value;
+                }
             }
             
-            // Handle inspection_id separately - it should update the related case
-            if (isset($validatedData['inspection_id']) && $inspection->case) {
-                $inspection->case->update(['inspection_id' => $validatedData['inspection_id']]);
-                unset($validatedData['inspection_id']); // Remove from inspection update data
+            Log::info('Update data separated', [
+                'case_data' => $caseData,
+                'inspection_data' => $inspectionData
+            ]);
+            
+            // Update the related case if there's case data to update
+            if (!empty($caseData) && $inspection->case) {
+                $inspection->case->update($caseData);
+                Log::info('Case updated successfully');
             }
-
+            
             // Update the inspection record with remaining fields
-            $inspection->update($validatedData);
+            if (!empty($inspectionData)) {
+                $inspection->update($inspectionData);
+                Log::info('Inspection updated successfully');
+            }
 
             // Reload the inspection with case relationship
             $inspection->load('case');
