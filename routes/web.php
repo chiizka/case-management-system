@@ -81,4 +81,6 @@ Route::middleware('auth')->group(function () {
 
     //
     Route::post('/case/{id}/next-stage', [CasesController::class, 'moveToNextStage'])->name('case.nextStage');
+
+    Route::put('/inspection/{inspection}/inline-update', [InspectionsController::class, 'inlineUpdate'])->name('inspection.inlineUpdate');
 });

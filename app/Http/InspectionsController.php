@@ -167,4 +167,93 @@ class InspectionsController extends Controller
                 ->with('active_tab', 'inspections');
         }
     }
+
+    /**
+     * Update inspection data inline via AJAX
+     */
+    public function inlineUpdate(Request $request, Inspection $inspection)
+    {
+        try {
+            $validatedData = $request->validate([
+                'inspection_id' => 'nullable|string|max:255',
+                'establishment_name' => 'nullable|string|max:255',
+                'po_office' => 'nullable|string|max:255',
+                'inspector_name' => 'nullable|string|max:255',
+                'inspector_authority_no' => 'nullable|string|max:255',
+                'date_of_inspection' => 'nullable|date',
+                'date_of_nr' => 'nullable|date',
+                'lapse_20_day_period' => 'nullable|date',
+                'twg_ali' => 'nullable|string|max:255',
+            ]);
+
+            // Handle case-related fields (inspection_id and establishment_name)
+            if (isset($validatedData['inspection_id']) || isset($validatedData['establishment_name'])) {
+                if ($inspection->case) {
+                    $caseData = [];
+                    if (isset($validatedData['inspection_id'])) {
+                        $caseData['inspection_id'] = $validatedData['inspection_id'];
+                    }
+                    if (isset($validatedData['establishment_name'])) {
+                        $caseData['establishment_name'] = $validatedData['establishment_name'];
+                    }
+                    
+                    $inspection->case->update($caseData);
+                    
+                    // Remove case fields from inspection data
+                    unset($validatedData['inspection_id']);
+                    unset($validatedData['establishment_name']);
+                }
+            }
+
+            // Update inspection fields
+            if (!empty($validatedData)) {
+                $inspection->update($validatedData);
+            }
+
+            // Reload the inspection with case data
+            $inspection->load('case');
+
+            // Prepare response data with both inspection and case fields
+            $responseData = $inspection->toArray();
+            if ($inspection->case) {
+                $responseData['inspection_id'] = $inspection->case->inspection_id;
+                $responseData['establishment_name'] = $inspection->case->establishment_name;
+            }
+
+            Log::info('Inspection inline update successful', [
+                'inspection_id' => $inspection->id,
+                'updated_data' => $validatedData
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Inspection updated successfully',
+                'data' => $responseData
+            ]);
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            Log::error('Validation error in inspection inline update', [
+                'inspection_id' => $inspection->id,
+                'errors' => $e->errors()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $e->errors()
+            ], 422);
+
+        } catch (\Exception $e) {
+            Log::error('Error in inspection inline update', [
+                'inspection_id' => $inspection->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'An error occurred while updating the inspection'
+            ], 500);
+        }
+    }
 }

@@ -53,6 +53,57 @@
     position: relative;
     overflow: visible !important; /* Prevent DataTables from overriding container overflow */
 }
+
+/* Inline editing styles */
+.editable-cell {
+    cursor: pointer;
+    min-height: 20px;
+    position: relative;
+}
+
+.editable-cell:hover:not(.edit-mode) {
+    background-color: #f8f9fa;
+}
+
+.edit-input {
+    border: 2px solid #007bff;
+    border-radius: 4px;
+    padding: 2px 5px;
+    width: 100%;
+    font-size: 0.85rem;
+    background-color: white;
+}
+
+.edit-mode {
+    background-color: #e3f2fd !important;
+}
+
+.save-cancel-buttons {
+    white-space: nowrap;
+}
+
+/* Make establishment name column wider */
+.table th:nth-child(2),
+.table td:nth-child(2) {
+    min-width: 200px;
+    max-width: 250px;
+}
+
+/* Date columns styling */
+.table th:nth-child(6),
+.table th:nth-child(7),
+.table th:nth-child(8),
+.table td:nth-child(6),
+.table td:nth-child(7),
+.table td:nth-child(8) {
+    min-width: 110px;
+}
+
+/* Actions column */
+.table th:last-child,
+.table td:last-child {
+    min-width: 180px;
+}
 </style>
 
 <!-- Main Content -->
@@ -198,6 +249,21 @@
                             </div>
                         @endif
 
+                        <!-- Success/Error alerts for AJAX -->
+                        <div class="alert alert-success alert-dismissible fade" role="alert" id="success-alert" style="display: none;">
+                            <span id="success-message"></span>
+                            <button type="button" class="close" onclick="hideAlert('success-alert')">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        
+                        <div class="alert alert-danger alert-dismissible fade" role="alert" id="error-alert" style="display: none;">
+                            <span id="error-message"></span>
+                            <button type="button" class="close" onclick="hideAlert('error-alert')">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+
                         <!-- Search + Buttons Row -->
                         <div class="d-flex justify-content-between align-items-center mb-3 custom-search-container">
                             <div class="d-flex align-items-center">
@@ -206,7 +272,6 @@
                             </div>
                         </div>
 
-                        
                         <!-- Table Container -->
                         <div class="table-container">
                             <table class="table table-bordered compact-table sticky-table" id="dataTable1" width="100%" cellspacing="0">
@@ -227,25 +292,25 @@
                                 <tbody>
                                     @if(isset($inspections) && $inspections->count() > 0)
                                         @foreach($inspections as $inspection)
-                                            <tr>
-                                               
-                                                <td>{{ $inspection->case->inspection_id ?? '-' }}</td>
-                                                <td title="{{ $inspection->case->establishment_name ?? '' }}">
-                                                {{ $inspection->case ? Str::limit($inspection->case->establishment_name, 25) : '-' }}</td>
-                                                <td>{{ $inspection->po_office ?? '-' }}</td>
-                                                <td>{{ $inspection->inspector_name ?? '-' }}</td>
-                                                <td>{{ $inspection->inspector_authority_no ?? '-' }}</td>
-                                                <td>{{ $inspection->date_of_inspection ? \Carbon\Carbon::parse($inspection->date_of_inspection)->format('Y-m-d') : '-' }}</td>
-                                                <td>{{ $inspection->date_of_nr ? \Carbon\Carbon::parse($inspection->date_of_nr)->format('Y-m-d') : '-' }}</td>
-                                                <td>{{ $inspection->lapse_20_day_period ? \Carbon\Carbon::parse($inspection->lapse_20_day_period)->format('Y-m-d') : '-' }}</td>
-                                                <td>{{ $inspection->twg_ali ?? '-' }}</td>
+                                            <tr data-id="{{ $inspection->id }}">
+                                                <td class="editable-cell" data-field="inspection_id">{{ $inspection->case->inspection_id ?? '-' }}</td>
+                                                <td class="editable-cell" data-field="establishment_name" title="{{ $inspection->case->establishment_name ?? '' }}">
+                                                    {{ $inspection->case ? Str::limit($inspection->case->establishment_name, 25) : '-' }}
+                                                </td>
+                                                <td class="editable-cell" data-field="po_office">{{ $inspection->po_office ?? '-' }}</td>
+                                                <td class="editable-cell" data-field="inspector_name">{{ $inspection->inspector_name ?? '-' }}</td>
+                                                <td class="editable-cell" data-field="inspector_authority_no">{{ $inspection->inspector_authority_no ?? '-' }}</td>
+                                                <td class="editable-cell" data-field="date_of_inspection" data-type="date">{{ $inspection->date_of_inspection ? \Carbon\Carbon::parse($inspection->date_of_inspection)->format('Y-m-d') : '-' }}</td>
+                                                <td class="editable-cell" data-field="date_of_nr" data-type="date">{{ $inspection->date_of_nr ? \Carbon\Carbon::parse($inspection->date_of_nr)->format('Y-m-d') : '-' }}</td>
+                                                <td class="editable-cell" data-field="lapse_20_day_period" data-type="date">{{ $inspection->lapse_20_day_period ? \Carbon\Carbon::parse($inspection->lapse_20_day_period)->format('Y-m-d') : '-' }}</td>
+                                                <td class="editable-cell" data-field="twg_ali">{{ $inspection->twg_ali ?? '-' }}</td>
                                                 <td>
                                                     <a href="{{ route('inspection.show', $inspection->id) }}" class="btn btn-info btn-sm" title="View">
                                                         <i class="fas fa-eye"></i>
                                                     </a>
-                                                    <a href="{{ route('inspection.edit', $inspection->id) }}" class="btn btn-warning btn-sm" title="Edit">
+                                                    <button class="btn btn-warning btn-sm edit-row-btn" title="Edit Row">
                                                         <i class="fas fa-edit"></i>
-                                                    </a>
+                                                    </button>
                                                     <form action="{{ route('inspection.destroy', $inspection->id) }}" method="POST" style="display:inline;">
                                                         @csrf
                                                         @method('DELETE')
@@ -254,7 +319,6 @@
                                                         </button>
                                                     </form>
                                                     
-                                                    <!-- ADD THIS BUTTON -->
                                                     @if($inspection->case && $inspection->case->current_stage === '1: Inspections')
                                                         <form action="{{ route('case.nextStage', $inspection->case->id) }}" method="POST" style="display:inline;">
                                                             @csrf
@@ -268,7 +332,7 @@
                                         @endforeach
                                     @else
                                         <tr>
-                                            <td colspan="11" class="text-center">No inspections found. Click "Add Inspection" to create your first inspection.</td>
+                                            <td colspan="10" class="text-center">No inspections found. Click "Add Inspection" to create your first inspection.</td>
                                         </tr>
                                     @endif
                                 </tbody>
@@ -876,8 +940,10 @@
         </div>
     </div>
 </div>
+@endsection
 
-
+@section('scripts')
+   
 <script>
 $(document).ready(function() {
     // Check if DataTable is available
@@ -1144,5 +1210,261 @@ function showAlert(type, message) {
         $('.alert').fadeOut();
     }, 5000);
 }
+
+        $(document).ready(function() {
+            let currentEditingRow = null;
+            let originalData = {};
+
+            // Search functionality
+            $('#customSearch1').on('keyup', function() {
+                const value = $(this).val().toLowerCase();
+                $("#dataTable1 tbody tr").filter(function() {
+                    $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1);
+                });
+            });
+
+            // Edit row button click
+            $(document).on('click', '.edit-row-btn', function() {
+                const row = $(this).closest('tr');
+                
+                // If another row is being edited, cancel it first
+                if (currentEditingRow && currentEditingRow.get(0) !== row.get(0)) {
+                    cancelEdit();
+                }
+                
+                enableRowEdit(row);
+            });
+
+            function enableRowEdit(row) {
+                currentEditingRow = row;
+                
+                // Store original data
+                originalData = {};
+                row.find('.editable-cell').each(function() {
+                    const cell = $(this);
+                    const field = cell.data('field');
+                    originalData[field] = cell.text().trim();
+                    
+                    // Convert to input
+                    const currentValue = cell.text().trim();
+                    const dataType = cell.data('type');
+                    
+                    let input;
+                    if (dataType === 'date') {
+                        input = `<input type="date" class="edit-input" value="${currentValue}" data-field="${field}">`;
+                    } else if (field === 'establishment_name') {
+                        // Use the full title for establishment name
+                        const fullValue = cell.attr('title') || currentValue;
+                        input = `<input type="text" class="edit-input" value="${fullValue}" data-field="${field}">`;
+                    } else {
+                        input = `<input type="text" class="edit-input" value="${currentValue}" data-field="${field}">`;
+                    }
+                    
+                    cell.html(input);
+                    cell.addClass('edit-mode');
+                });
+                
+                // Change edit button to save/cancel buttons
+                const actionsCell = row.find('td:last');
+                const currentButtons = actionsCell.html();
+                actionsCell.data('original-buttons', currentButtons);
+                
+                actionsCell.html(`
+                    <div class="save-cancel-buttons">
+                        <button class="btn btn-success btn-sm save-btn" title="Save">
+                            <i class="fas fa-check"></i>
+                        </button>
+                        <button class="btn btn-secondary btn-sm cancel-btn ml-1" title="Cancel">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                `);
+                
+                // Focus on first input
+                row.find('.edit-input').first().focus();
+            }
+
+            // Save button click
+            $(document).on('click', '.save-btn', function() {
+                const row = $(this).closest('tr');
+                const inspectionId = row.data('id');
+                const updatedData = {};
+                
+                // Collect updated data
+                row.find('.edit-input').each(function() {
+                    const input = $(this);
+                    const field = input.data('field');
+                    updatedData[field] = input.val();
+                });
+                
+                // Save the data
+                saveInspectionData(inspectionId, updatedData, row);
+            });
+
+            // Cancel button click
+            $(document).on('click', '.cancel-btn', function() {
+                cancelEdit();
+            });
+
+            // ESC key to cancel edit
+            $(document).on('keyup', function(e) {
+                if (e.key === 'Escape' && currentEditingRow) {
+                    cancelEdit();
+                }
+            });
+
+            // Enter key to save
+            $(document).on('keyup', '.edit-input', function(e) {
+                if (e.key === 'Enter') {
+                    $('.save-btn').click();
+                }
+            });
+
+            function cancelEdit() {
+                if (!currentEditingRow) return;
+                
+                // Restore original data
+                currentEditingRow.find('.editable-cell').each(function() {
+                    const cell = $(this);
+                    const field = cell.data('field');
+                    let displayValue = originalData[field] || '';
+                    
+                    // For establishment name, truncate again if needed
+                    if (field === 'establishment_name' && displayValue.length > 25) {
+                        cell.attr('title', displayValue);
+                        displayValue = displayValue.substring(0, 25) + '...';
+                    }
+                    
+                    cell.html(displayValue);
+                    cell.removeClass('edit-mode');
+                });
+                
+                // Restore original buttons
+                const actionsCell = currentEditingRow.find('td:last');
+                actionsCell.html(actionsCell.data('original-buttons'));
+                
+                currentEditingRow = null;
+                originalData = {};
+            }
+
+            function saveInspectionData(inspectionId, data, row) {
+                // Show loading state
+                row.find('.save-btn').html('<i class="fas fa-spinner fa-spin"></i>').prop('disabled', true);
+                
+                // Simulate AJAX call - replace with your actual endpoint
+                setTimeout(() => {
+                    // Update cells with new data
+                    row.find('.editable-cell').each(function() {
+                        const cell = $(this);
+                        const field = cell.data('field');
+                        let displayValue = data[field] || '';
+                        
+                        // For establishment name, handle truncation
+                        if (field === 'establishment_name') {
+                            cell.attr('title', displayValue);
+                            if (displayValue.length > 25) {
+                                displayValue = displayValue.substring(0, 25) + '...';
+                            }
+                        }
+                        
+                        cell.html(displayValue);
+                        cell.removeClass('edit-mode');
+                    });
+                    
+                    // Restore action buttons
+                    const actionsCell = row.find('td:last');
+                    actionsCell.html(actionsCell.data('original-buttons'));
+                    
+                    // Show success message
+                    showAlert('Inspection updated successfully!', 'success');
+                    
+                    currentEditingRow = null;
+                    originalData = {};
+                    
+                }, 1000); // Simulate network delay
+                
+                /* 
+                // Real AJAX implementation:
+                $.ajax({
+                    url: `/inspection/${inspectionId}/inline-update`,
+                    method: 'PUT',
+                    data: {
+                        _token: $('meta[name="csrf-token"]').attr('content'),
+                        ...data
+                    },
+                    success: function(response) {
+                        // Update cells with response data
+                        row.find('.editable-cell').each(function() {
+                            const cell = $(this);
+                            const field = cell.data('field');
+                            let displayValue = response.data[field] || '';
+                            
+                            if (field === 'establishment_name') {
+                                cell.attr('title', displayValue);
+                                if (displayValue.length > 25) {
+                                    displayValue = displayValue.substring(0, 25) + '...';
+                                }
+                            }
+                            
+                            cell.html(displayValue);
+                            cell.removeClass('edit-mode');
+                        });
+                        
+                        const actionsCell = row.find('td:last');
+                        actionsCell.html(actionsCell.data('original-buttons'));
+                        
+                        showAlert('Inspection updated successfully!', 'success');
+                        currentEditingRow = null;
+                    },
+                    error: function(xhr) {
+                        showAlert('Error updating inspection!', 'danger');
+                        cancelEdit();
+                    }
+                });
+                */
+            }
+        });
+
+        // Utility functions
+        function showAlert(message, type) {
+            const alertId = type === 'success' ? 'success-alert' : 'error-alert';
+            const messageId = type === 'success' ? 'success-message' : 'error-message';
+            
+            $(`#${messageId}`).text(message);
+            $(`#${alertId}`).removeClass('fade').addClass('show').show();
+            
+            // Auto-hide after 3 seconds
+            setTimeout(() => {
+                hideAlert(alertId);
+            }, 3000);
+        }
+
+        function hideAlert(alertId) {
+            $(`#${alertId}`).removeClass('show').addClass('fade');
+            setTimeout(() => {
+                $(`#${alertId}`).hide();
+            }, 150);
+        }
+
+        function showAddForm() {
+            alert('Add Inspection form would open here');
+            // Implement your add inspection logic
+        }
+
+        function confirmDelete(inspectionId) {
+            if (confirm('Are you sure you want to delete this inspection?')) {
+                // Implement delete logic
+                alert(`Delete inspection ID: ${inspectionId}`);
+                // You would typically make an AJAX call here
+            }
+        }
+
+        function confirmNextStage(inspectionId) {
+            if (confirm('Complete inspection and move to Docketing?')) {
+                // Implement next stage logic
+                alert(`Move inspection ID: ${inspectionId} to next stage`);
+                // You would typically make an AJAX call here
+            }
+        }
 </script>
-@stop
+@endsection
