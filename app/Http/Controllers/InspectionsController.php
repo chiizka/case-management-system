@@ -12,22 +12,21 @@ class InspectionsController extends Controller
 {
     /**
      * Display a listing of inspections in the combined case view.
+     * Only show inspections where the related case's current_stage is "1: Inspections"
      */
-public function index()
-{
-    $cases = CaseFile::all();
-    $inspections = Inspection::with('case')->get();
-    
-    // This will dump the data and stop execution
-    dd([
-        'cases_count' => $cases->count(),
-        'inspections_count' => $inspections->count(),
-        'inspections_data' => $inspections->toArray()
-    ]);
-    
-    return view('frontend.case', compact('cases', 'inspections'));
-}
-
+    public function index()
+    {
+        $cases = CaseFile::all();
+        
+        // UPDATED: Filter inspections to only show those in "1: Inspections" stage
+        $inspections = Inspection::with('case')
+            ->whereHas('case', function($query) {
+                $query->where('current_stage', '1: Inspections');
+            })
+            ->get();
+        
+        return view('frontend.case', compact('cases', 'inspections'));
+    }
 
     /**
      * Show the form for creating a new inspection (combined view).
@@ -35,7 +34,14 @@ public function index()
     public function create()
     {
         $cases = CaseFile::all();
-        $inspections = Inspection::with('case')->get();
+        
+        // UPDATED: Filter inspections for create view as well
+        $inspections = Inspection::with('case')
+            ->whereHas('case', function($query) {
+                $query->where('current_stage', '1: Inspections');
+            })
+            ->get();
+            
         return view('frontend.case', compact('cases', 'inspections'));
     }
 
@@ -63,7 +69,7 @@ public function index()
 
         return redirect()->route('inspections.index')
             ->with('success', 'Inspection created successfully.')
-            ->with('active_tab', 'inspections'); // Add this to activate the inspections tab
+            ->with('active_tab', 'inspections');
     }
 
     /**
@@ -78,7 +84,14 @@ public function index()
         $establishmentName = $inspection->case->establishment_name;
         
         $cases = CaseFile::all();
-        $inspections = Inspection::with('case')->get();
+        
+        // UPDATED: Filter inspections for show view
+        $inspections = Inspection::with('case')
+            ->whereHas('case', function($query) {
+                $query->where('current_stage', '1: Inspections');
+            })
+            ->get();
+            
         return view('frontend.case', compact('cases', 'inspections', 'inspection'));
     }
 
@@ -94,7 +107,14 @@ public function index()
         $establishmentName = $inspection->case->establishment_name;
         
         $cases = CaseFile::all();
-        $inspections = Inspection::with('case')->get();
+        
+        // UPDATED: Filter inspections for edit view
+        $inspections = Inspection::with('case')
+            ->whereHas('case', function($query) {
+                $query->where('current_stage', '1: Inspections');
+            })
+            ->get();
+            
         return view('frontend.case', compact('cases', 'inspections', 'inspection'));
     }
 
@@ -130,21 +150,21 @@ public function index()
     /**
      * Remove the specified inspection from storage.
      */
-public function destroy($id)
-{
-    try {
-        $inspection = Inspection::findOrFail($id);
-        $inspection->delete();
-        Log::info('Inspection ID: ' . $id . ' deleted successfully.');
-        
-        return redirect()->route('case.index')
-            ->with('success', 'Inspection deleted successfully.')
-            ->with('active_tab', 'inspections');
-    } catch (\Exception $e) {
-        Log::error('Error deleting inspection ID: ' . $id . ' - ' . $e->getMessage());
-        return redirect()->route('case.index')
-            ->with('error', 'Failed to delete inspection: ' . $e->getMessage())
-            ->with('active_tab', 'inspections');
+    public function destroy($id)
+    {
+        try {
+            $inspection = Inspection::findOrFail($id);
+            $inspection->delete();
+            Log::info('Inspection ID: ' . $id . ' deleted successfully.');
+            
+            return redirect()->route('case.index')
+                ->with('success', 'Inspection deleted successfully.')
+                ->with('active_tab', 'inspections');
+        } catch (\Exception $e) {
+            Log::error('Error deleting inspection ID: ' . $id . ' - ' . $e->getMessage());
+            return redirect()->route('case.index')
+                ->with('error', 'Failed to delete inspection: ' . $e->getMessage())
+                ->with('active_tab', 'inspections');
+        }
     }
-}
 }

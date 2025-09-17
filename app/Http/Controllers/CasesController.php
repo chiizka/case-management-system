@@ -19,13 +19,49 @@ class CasesController extends Controller
     public function case()
     {
         $cases = CaseFile::all();
-        $inspections = Inspection::with('case')->get();
-        $docketing = Docketing::with('case')->get();
-        $hearingProcess = HearingProcess::with('case')->get();
-        $reviewAndDrafting = ReviewAndDrafting::with('case')->get();
-        $ordersAndDisposition = OrderAndDisposition::with('case')->get();
-        $complianceAndAwards = ComplianceAndAward::with('case')->get();
-        $appealsAndResolutions = AppealsAndResolution::with('case')->get(); // ✅ NEW - Add this line
+        
+        //Filter each stage by the related case's current_stage
+        $inspections = Inspection::with('case')
+            ->whereHas('case', function($query) {
+                $query->where('current_stage', '1: Inspections');
+            })
+            ->get();
+            
+        $docketing = Docketing::with('case')
+            ->whereHas('case', function($query) {
+                $query->where('current_stage', '2: Docketing');
+            })
+            ->get();
+            
+        $hearingProcess = HearingProcess::with('case')
+            ->whereHas('case', function($query) {
+                $query->where('current_stage', '3: Hearing');
+            })
+            ->get();
+            
+        $reviewAndDrafting = ReviewAndDrafting::with('case')
+            ->whereHas('case', function($query) {
+                $query->where('current_stage', '4: Review & Drafting');
+            })
+            ->get();
+            
+        $ordersAndDisposition = OrderAndDisposition::with('case')
+            ->whereHas('case', function($query) {
+                $query->where('current_stage', '5: Orders & Disposition');
+            })
+            ->get();
+            
+        $complianceAndAwards = ComplianceAndAward::with('case')
+            ->whereHas('case', function($query) {
+                $query->where('current_stage', '6: Compliance & Awards');
+            })
+            ->get();
+            
+        $appealsAndResolutions = AppealsAndResolution::with('case')
+            ->whereHas('case', function($query) {
+                $query->where('current_stage', '7: Appeals & Resolution');
+            })
+            ->get();
 
         return view('frontend.case', compact(
             'cases',
@@ -125,23 +161,23 @@ class CasesController extends Controller
     }
 
     public function moveToNextStage(Request $request, $id)
-{
-    $case = CaseFile::findOrFail($id);
-    
-    // Check if current stage is Inspections
-    if ($case->current_stage === '1: Inspections') {
-        // Create docketing record
-        $case->docketing()->create([
-            'case_id' => $case->id,
-            // All other fields will be null
-        ]);
+    {
+        $case = CaseFile::findOrFail($id);
         
-        // Update case stage to Docketing
-        $case->update(['current_stage' => '2: Docketing']);
+        // Check if current stage is Inspections
+        if ($case->current_stage === '1: Inspections') {
+            // Create docketing record
+            $case->docketing()->create([
+                'case_id' => $case->id,
+                // All other fields will be null
+            ]);
+            
+            // Update case stage to Docketing
+            $case->update(['current_stage' => '2: Docketing']);
+            
+            return redirect()->back()->with('success', 'Case successfully moved to Docketing stage');
+        }
         
-        return redirect()->back()->with('success', 'Case successfully moved to Docketing stage');
-    }
-    
-    return redirect()->back()->with('error', 'Cannot move to next stage from current stage');
-}   
+        return redirect()->back()->with('error', 'Cannot move to next stage from current stage');
+    }   
 }
