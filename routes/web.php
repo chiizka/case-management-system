@@ -79,8 +79,10 @@ Route::middleware('auth')->group(function () {
     //appeals and resolution routes
     Route::resource('appeals-and-resolution', AppealsAndResolutionController::class);
 
-    //
+    //move to next stage
     Route::post('/case/{id}/next-stage', [CasesController::class, 'moveToNextStage'])->name('case.nextStage');
 
+    //inline-update
     Route::put('/inspection/{inspection}/inline-update', [InspectionsController::class, 'inlineUpdate'])->name('inspection.inlineUpdate');
+    Route::put('/case/{id}/inline-update', [CasesController::class, 'inlineUpdate'])->name('case.inlineUpdate');
 });

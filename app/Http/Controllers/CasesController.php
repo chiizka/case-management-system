@@ -180,4 +180,96 @@ class CasesController extends Controller
         
         return redirect()->back()->with('error', 'Cannot move to next stage from current stage');
     }   
+
+        public function inlineUpdate(Request $request, $id)
+    {
+        // Add debug logging
+        Log::info('Case inline update request received', [
+            'case_id' => $id,
+            'request_data' => $request->all(),
+            'content_type' => $request->header('Content-Type')
+        ]);
+        
+        try {
+            $case = CaseFile::findOrFail($id);
+            
+            // Get all input data
+            $inputData = $request->all();
+            
+            // Remove empty strings and convert them to null
+            $cleanedData = [];
+            foreach ($inputData as $key => $value) {
+                if ($value === '' || $value === '-') {
+                    $cleanedData[$key] = null;
+                } else {
+                    $cleanedData[$key] = $value;
+                }
+            }
+            
+            Log::info('Cleaned data for validation', ['cleaned_data' => $cleanedData]);
+            
+            // Validation rules
+            $validator = \Illuminate\Support\Facades\Validator::make($cleanedData, [
+                'inspection_id' => 'nullable|string|max:255',
+                'case_no' => 'nullable|string|max:255',
+                'establishment_name' => 'nullable|string|max:500',
+                'current_stage' => 'nullable|in:1: Inspections,2: Docketing,3: Hearing,4: Review & Drafting,5: Orders & Disposition,6: Compliance & Awards,7: Appeals & Resolution',
+                'overall_status' => 'nullable|in:Active,Completed,Dismissed',
+            ]);
+
+            if ($validator->fails()) {
+                Log::warning('Case validation failed', [
+                    'errors' => $validator->errors(),
+                    'data' => $cleanedData
+                ]);
+                
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Validation failed: ' . $validator->errors()->first(),
+                    'errors' => $validator->errors()
+                ], 422);
+            }
+
+            $validatedData = $validator->validated();
+            
+            Log::info('Case update data validated', [
+                'validated_data' => $validatedData
+            ]);
+            
+            // Update the case record
+            $case->update($validatedData);
+            Log::info('Case updated successfully');
+
+            // Reload the case
+            $case->refresh();
+
+            // Prepare response data with proper formatting
+            $responseData = [
+                'inspection_id' => $case->inspection_id ?? '-',
+                'case_no' => $case->case_no ?? '-',
+                'establishment_name' => $case->establishment_name ?? '-',
+                'current_stage' => $case->current_stage ?? '-',
+                'overall_status' => $case->overall_status ?? '-',
+                'created_at' => $case->created_at ? \Carbon\Carbon::parse($case->created_at)->format('Y-m-d') : '-',
+            ];
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Case updated successfully!',
+                'data' => $responseData
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Case inline update failed: ' . $e->getMessage(), [
+                'case_id' => $id,
+                'request_data' => $request->all(),
+                'error' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to update case: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 }
