@@ -168,15 +168,15 @@ class InspectionsController extends Controller
         }
     }
 
-    /**
-     * Update inspection data inline via AJAX
-     */
-    public function inlineUpdate(Request $request, Inspection $inspection)
+    public function inlineUpdate(Request $request, $id)
     {
         try {
-            $validatedData = $request->validate([
+            $inspection = Inspection::findOrFail($id);
+            
+            // Validation rules
+            $validator = Validator::make($request->all(), [
                 'inspection_id' => 'nullable|string|max:255',
-                'establishment_name' => 'nullable|string|max:255',
+                'establishment_name' => 'nullable|string|max:500',
                 'po_office' => 'nullable|string|max:255',
                 'inspector_name' => 'nullable|string|max:255',
                 'inspector_authority_no' => 'nullable|string|max:255',
@@ -186,73 +186,63 @@ class InspectionsController extends Controller
                 'twg_ali' => 'nullable|string|max:255',
             ]);
 
-            // Handle case-related fields (inspection_id and establishment_name)
-            if (isset($validatedData['inspection_id']) || isset($validatedData['establishment_name'])) {
-                if ($inspection->case) {
-                    $caseData = [];
-                    if (isset($validatedData['inspection_id'])) {
-                        $caseData['inspection_id'] = $validatedData['inspection_id'];
-                    }
-                    if (isset($validatedData['establishment_name'])) {
-                        $caseData['establishment_name'] = $validatedData['establishment_name'];
-                    }
-                    
-                    $inspection->case->update($caseData);
-                    
-                    // Remove case fields from inspection data
-                    unset($validatedData['inspection_id']);
-                    unset($validatedData['establishment_name']);
-                }
+            if ($validator->fails()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Validation failed',
+                    'errors' => $validator->errors()
+                ], 422);
             }
 
-            // Update inspection fields
-            if (!empty($validatedData)) {
-                $inspection->update($validatedData);
+            $validatedData = $validator->validated();
+            
+            // Handle establishment_name separately - it should update the related case
+            if (isset($validatedData['establishment_name']) && $inspection->case) {
+                $inspection->case->update(['establishment_name' => $validatedData['establishment_name']]);
+                unset($validatedData['establishment_name']); // Remove from inspection update data
+            }
+            
+            // Handle inspection_id separately - it should update the related case
+            if (isset($validatedData['inspection_id']) && $inspection->case) {
+                $inspection->case->update(['inspection_id' => $validatedData['inspection_id']]);
+                unset($validatedData['inspection_id']); // Remove from inspection update data
             }
 
-            // Reload the inspection with case data
+            // Update the inspection record with remaining fields
+            $inspection->update($validatedData);
+
+            // Reload the inspection with case relationship
             $inspection->load('case');
 
-            // Prepare response data with both inspection and case fields
-            $responseData = $inspection->toArray();
-            if ($inspection->case) {
-                $responseData['inspection_id'] = $inspection->case->inspection_id;
-                $responseData['establishment_name'] = $inspection->case->establishment_name;
-            }
-
-            Log::info('Inspection inline update successful', [
-                'inspection_id' => $inspection->id,
-                'updated_data' => $validatedData
-            ]);
+            // Prepare response data with proper formatting
+            $responseData = [
+                'inspection_id' => $inspection->case->inspection_id ?? '-',
+                'establishment_name' => $inspection->case->establishment_name ?? '-',
+                'po_office' => $inspection->po_office ?? '-',
+                'inspector_name' => $inspection->inspector_name ?? '-',
+                'inspector_authority_no' => $inspection->inspector_authority_no ?? '-',
+                'date_of_inspection' => $inspection->date_of_inspection ? \Carbon\Carbon::parse($inspection->date_of_inspection)->format('Y-m-d') : '-',
+                'date_of_nr' => $inspection->date_of_nr ? \Carbon\Carbon::parse($inspection->date_of_nr)->format('Y-m-d') : '-',
+                'lapse_20_day_period' => $inspection->lapse_20_day_period ? \Carbon\Carbon::parse($inspection->lapse_20_day_period)->format('Y-m-d') : '-',
+                'twg_ali' => $inspection->twg_ali ?? '-',
+            ];
 
             return response()->json([
                 'success' => true,
-                'message' => 'Inspection updated successfully',
+                'message' => 'Inspection updated successfully!',
                 'data' => $responseData
             ]);
 
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            Log::error('Validation error in inspection inline update', [
-                'inspection_id' => $inspection->id,
-                'errors' => $e->errors()
-            ]);
-
-            return response()->json([
-                'success' => false,
-                'message' => 'Validation failed',
-                'errors' => $e->errors()
-            ], 422);
-
         } catch (\Exception $e) {
-            Log::error('Error in inspection inline update', [
-                'inspection_id' => $inspection->id,
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
+            Log::error('Inline update failed: ' . $e->getMessage(), [
+                'inspection_id' => $id,
+                'request_data' => $request->all(),
+                'error' => $e->getTraceAsString()
             ]);
 
             return response()->json([
                 'success' => false,
-                'message' => 'An error occurred while updating the inspection'
+                'message' => 'Failed to update inspection: ' . $e->getMessage()
             ], 500);
         }
     }

@@ -1246,18 +1246,18 @@ function showAlert(type, message) {
                     originalData[field] = cell.text().trim();
                     
                     // Convert to input
-                    const currentValue = cell.text().trim();
+                    const currentValue = cell.text().trim() === '-' ? '' : cell.text().trim();
                     const dataType = cell.data('type');
                     
                     let input;
                     if (dataType === 'date') {
-                        input = `<input type="date" class="edit-input" value="${currentValue}" data-field="${field}">`;
+                        input = `<input type="date" class="form-control form-control-sm edit-input" value="${currentValue}" data-field="${field}">`;
                     } else if (field === 'establishment_name') {
                         // Use the full title for establishment name
                         const fullValue = cell.attr('title') || currentValue;
-                        input = `<input type="text" class="edit-input" value="${fullValue}" data-field="${field}">`;
+                        input = `<input type="text" class="form-control form-control-sm edit-input" value="${fullValue}" data-field="${field}">`;
                     } else {
-                        input = `<input type="text" class="edit-input" value="${currentValue}" data-field="${field}">`;
+                        input = `<input type="text" class="form-control form-control-sm edit-input" value="${currentValue}" data-field="${field}">`;
                     }
                     
                     cell.html(input);
@@ -1284,7 +1284,6 @@ function showAlert(type, message) {
                 row.find('.edit-input').first().focus();
             }
 
-            // Save button click
             $(document).on('click', '.save-btn', function() {
                 const row = $(this).closest('tr');
                 const inspectionId = row.data('id');
@@ -1296,8 +1295,8 @@ function showAlert(type, message) {
                     const field = input.data('field');
                     updatedData[field] = input.val();
                 });
-                
-                // Save the data
+        
+            // Save the data
                 saveInspectionData(inspectionId, updatedData, row);
             });
 
@@ -1349,81 +1348,93 @@ function showAlert(type, message) {
 
             function saveInspectionData(inspectionId, data, row) {
                 // Show loading state
-                row.find('.save-btn').html('<i class="fas fa-spinner fa-spin"></i>').prop('disabled', true);
+                const saveBtn = row.find('.save-btn');
+                const originalSaveContent = saveBtn.html();
+                saveBtn.html('<i class="fas fa-spinner fa-spin"></i>').prop('disabled', true);
                 
-                // Simulate AJAX call - replace with your actual endpoint
-                setTimeout(() => {
-                    // Update cells with new data
-                    row.find('.editable-cell').each(function() {
-                        const cell = $(this);
-                        const field = cell.data('field');
-                        let displayValue = data[field] || '';
-                        
-                        // For establishment name, handle truncation
-                        if (field === 'establishment_name') {
-                            cell.attr('title', displayValue);
-                            if (displayValue.length > 25) {
-                                displayValue = displayValue.substring(0, 25) + '...';
-                            }
-                        }
-                        
-                        cell.html(displayValue);
-                        cell.removeClass('edit-mode');
-                    });
-                    
-                    // Restore action buttons
-                    const actionsCell = row.find('td:last');
-                    actionsCell.html(actionsCell.data('original-buttons'));
-                    
-                    // Show success message
-                    showAlert('Inspection updated successfully!', 'success');
-                    
-                    currentEditingRow = null;
-                    originalData = {};
-                    
-                }, 1000); // Simulate network delay
+                // Get CSRF token
+                const csrfToken = $('meta[name="csrf-token"]').attr('content');
                 
-                /* 
-                // Real AJAX implementation:
+                if (!csrfToken) {
+                    showAlert('CSRF token not found. Please refresh the page.', 'danger');
+                    saveBtn.html(originalSaveContent).prop('disabled', false);
+                    return;
+                }
+
+                // Real AJAX implementation
                 $.ajax({
                     url: `/inspection/${inspectionId}/inline-update`,
                     method: 'PUT',
-                    data: {
-                        _token: $('meta[name="csrf-token"]').attr('content'),
-                        ...data
+                    headers: {
+                        'X-CSRF-TOKEN': csrfToken,
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
                     },
+                    data: JSON.stringify(data),
                     success: function(response) {
-                        // Update cells with response data
-                        row.find('.editable-cell').each(function() {
-                            const cell = $(this);
-                            const field = cell.data('field');
-                            let displayValue = response.data[field] || '';
-                            
-                            if (field === 'establishment_name') {
-                                cell.attr('title', displayValue);
-                                if (displayValue.length > 25) {
-                                    displayValue = displayValue.substring(0, 25) + '...';
+                        if (response.success) {
+                            // Update cells with response data
+                            row.find('.editable-cell').each(function() {
+                                const cell = $(this);
+                                const field = cell.data('field');
+                                let displayValue = response.data[field] || '-';
+                                
+                                if (field === 'establishment_name') {
+                                    // Store full value in title attribute
+                                    cell.attr('title', displayValue);
+                                    // Truncate for display if needed
+                                    if (displayValue.length > 25 && displayValue !== '-') {
+                                        displayValue = displayValue.substring(0, 25) + '...';
+                                    }
                                 }
-                            }
+                                
+                                cell.html(displayValue);
+                                cell.removeClass('edit-mode');
+                            });
                             
-                            cell.html(displayValue);
-                            cell.removeClass('edit-mode');
-                        });
-                        
-                        const actionsCell = row.find('td:last');
-                        actionsCell.html(actionsCell.data('original-buttons'));
-                        
-                        showAlert('Inspection updated successfully!', 'success');
-                        currentEditingRow = null;
+                            // Restore action buttons
+                            const actionsCell = row.find('td:last');
+                            actionsCell.html(actionsCell.data('original-buttons'));
+                            
+                            // Show success message
+                            showAlert(response.message || 'Inspection updated successfully!', 'success');
+                            
+                            currentEditingRow = null;
+                            originalData = {};
+                        } else {
+                            throw new Error(response.message || 'Update failed');
+                        }
                     },
-                    error: function(xhr) {
-                        showAlert('Error updating inspection!', 'danger');
-                        cancelEdit();
+                    error: function(xhr, status, error) {
+                        console.error('Update failed:', xhr, status, error);
+                        
+                        // Restore save button
+                        saveBtn.html(originalSaveContent).prop('disabled', false);
+                        
+                        let errorMessage = 'Error updating inspection!';
+                        
+                        if (xhr.responseJSON) {
+                            if (xhr.responseJSON.message) {
+                                errorMessage = xhr.responseJSON.message;
+                            } else if (xhr.responseJSON.errors) {
+                                // Handle validation errors
+                                const errors = Object.values(xhr.responseJSON.errors).flat();
+                                errorMessage = errors.join(', ');
+                            }
+                        } else if (xhr.status === 404) {
+                            errorMessage = 'Inspection not found.';
+                        } else if (xhr.status === 422) {
+                            errorMessage = 'Validation error. Please check your input.';
+                        } else if (xhr.status === 500) {
+                            errorMessage = 'Server error occurred.';
+                        }
+                        
+                        showAlert(errorMessage, 'danger');
                     }
                 });
-                */
             }
         });
+
 
         // Utility functions
         function showAlert(message, type) {
@@ -1433,11 +1444,11 @@ function showAlert(type, message) {
             $(`#${messageId}`).text(message);
             $(`#${alertId}`).removeClass('fade').addClass('show').show();
             
-            // Auto-hide after 3 seconds
+            // Auto-hide after 5 seconds
             setTimeout(() => {
                 hideAlert(alertId);
-            }, 3000);
-        }
+            }, 5000);
+        }   
 
         function hideAlert(alertId) {
             $(`#${alertId}`).removeClass('show').addClass('fade');
