@@ -104,6 +104,16 @@
 .table td:last-child {
     min-width: 180px;
 }
+
+.readonly-cell {
+    background-color: #f8f9fa !important;
+    color: #6c757d;
+    cursor: not-allowed;
+}
+
+.readonly-cell:hover {
+    background-color: #e9ecef !important;
+}
 </style>
 
 <!-- Main Content -->
@@ -319,7 +329,9 @@
                                                 <td class="editable-cell" data-field="inspector_authority_no">{{ $inspection->inspector_authority_no ?? '-' }}</td>
                                                 <td class="editable-cell" data-field="date_of_inspection" data-type="date">{{ $inspection->date_of_inspection ? \Carbon\Carbon::parse($inspection->date_of_inspection)->format('Y-m-d') : '-' }}</td>
                                                 <td class="editable-cell" data-field="date_of_nr" data-type="date">{{ $inspection->date_of_nr ? \Carbon\Carbon::parse($inspection->date_of_nr)->format('Y-m-d') : '-' }}</td>
-                                                <td class="editable-cell" data-field="lapse_20_day_period" data-type="date">{{ $inspection->lapse_20_day_period ? \Carbon\Carbon::parse($inspection->lapse_20_day_period)->format('Y-m-d') : '-' }}</td>
+                                                <td class="editable-cell readonly-cell" data-field="lapse_20_day_period" data-type="date" title="Auto-calculated: 20 days after Date of NR">
+                                                    {{ $inspection->lapse_20_day_period ? \Carbon\Carbon::parse($inspection->lapse_20_day_period)->format('Y-m-d') : '-' }}
+                                                </td>
                                                 <td class="editable-cell" data-field="twg_ali">{{ $inspection->twg_ali ?? '-' }}</td>
                                                 <td>
                                                     <a href="{{ route('inspection.show', $inspection->id) }}" class="btn btn-info btn-sm" title="View">
@@ -1286,7 +1298,7 @@ function showAlert(type, message) {
                             'inspector_authority_no': { type: 'text' },
                             'date_of_inspection': { type: 'date' },
                             'date_of_nr': { type: 'date' },
-                            'lapse_20_day_period': { type: 'date' },
+                            // Remove 'lapse_20_day_period' from here - it's no longer editable
                             'twg_ali': { type: 'text' }
                         }
                     }
@@ -1357,7 +1369,7 @@ function showAlert(type, message) {
                     const config = getTabConfig(currentTab);
                     originalData = {};
                     
-                    row.find('.editable-cell').each(function() {
+                    row.find('.editable-cell:not(.readonly-cell)').each(function() {  // Added :not(.readonly-cell)
                         const cell = $(this);
                         const field = cell.data('field');
                         originalData[field] = cell.text().trim();
@@ -1515,7 +1527,7 @@ function showAlert(type, message) {
                     
                     const config = getTabConfig(currentTab);
                     
-                    currentEditingRow.find('.editable-cell').each(function() {
+                    currentEditingRow.find('.editable-cell:not(.readonly-cell)').each(function() {  // Added :not(.readonly-cell)
                         const cell = $(this);
                         const field = cell.data('field');
                         let displayValue = originalData[field] || '';

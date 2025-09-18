@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Carbon\Carbon;
 
 class Inspection extends Model
 {
@@ -19,11 +20,6 @@ class Inspection extends Model
         'twg_ali',
     ];
 
-    protected $casts = [
-        'date_of_inspection' => 'date',
-        'date_of_nr' => 'date',
-        'lapse_20_day_period' => 'date',
-    ];
 
     // Define the belongs-to relationship with CaseFile
     public function case()
@@ -40,5 +36,37 @@ class Inspection extends Model
     public function getEstablishmentNameAttribute()
     {
         return $this->case ? $this->case->establishment_name : null;
+    }
+
+    // Add mutators to handle date formatting when saving
+    public function setDateOfInspectionAttribute($value)
+    {
+        $this->attributes['date_of_inspection'] = $value ? Carbon::parse($value)->format('Y-m-d') : null;
+    }
+
+    public function setDateOfNrAttribute($value)
+    {
+        $this->attributes['date_of_nr'] = $value ? Carbon::parse($value)->format('Y-m-d') : null;
+    }
+
+    public function setLapse20DayPeriodAttribute($value)
+    {
+        $this->attributes['lapse_20_day_period'] = $value ? Carbon::parse($value)->format('Y-m-d') : null;
+    }
+
+    // Add accessors to format dates when retrieving
+    public function getDateOfInspectionAttribute($value)
+    {
+        return $value ? Carbon::parse($value)->format('Y-m-d') : null;
+    }
+
+    public function getDateOfNrAttribute($value)
+    {
+        return $value ? Carbon::parse($value)->format('Y-m-d') : null;
+    }
+
+    public function getLapse20DayPeriodAttribute($value)
+    {
+        return $value ? Carbon::parse($value)->format('Y-m-d') : null;
     }
 }
