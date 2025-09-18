@@ -135,4 +135,106 @@ class DocketingController extends Controller
                 ->with('active_tab', 'docketing');
         }
     }
+
+    /**
+ * Update docketing record inline via AJAX
+ */
+public function inlineUpdate(Request $request, $id)
+{
+    Log::info('Docketing inline update request received', [
+        'docketing_id' => $id,
+        'request_data' => $request->all(),
+        'content_type' => $request->header('Content-Type')
+    ]);
+    
+    try {
+        $docketing = docketing::findOrFail($id);
+        
+        // Get all input data
+        $inputData = $request->all();
+        
+        // Remove readonly fields (inspection_id and establishment_name come from case)
+        unset($inputData['inspection_id']);
+        unset($inputData['establishment_name']);
+        
+        // Remove empty strings and convert them to null
+        $cleanedData = [];
+        foreach ($inputData as $key => $value) {
+            if ($value === '' || $value === '-') {
+                $cleanedData[$key] = null;
+            } else {
+                $cleanedData[$key] = $value;
+            }
+        }
+        
+        Log::info('Cleaned data for validation', ['cleaned_data' => $cleanedData]);
+        
+        // Validation rules
+        $validator = Validator::make($cleanedData, [
+            'pct_for_docketing' => 'nullable|numeric',
+            'date_scheduled_docketed' => 'nullable|date',
+            'aging_docket' => 'nullable|numeric',
+            'status_docket' => 'nullable|string|max:255',
+            'hearing_officer_mis' => 'nullable|string|max:255',
+        ]);
+
+        if ($validator->fails()) {
+            Log::warning('Docketing validation failed', [
+                'errors' => $validator->errors(),
+                'data' => $cleanedData
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed: ' . $validator->errors()->first(),
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        $validatedData = $validator->validated();
+        
+        Log::info('Docketing update data validated', [
+            'validated_data' => $validatedData
+        ]);
+        
+        // Update the docketing record
+        $docketing->update($validatedData);
+        Log::info('Docketing updated successfully');
+
+        // Refresh to get any computed fields
+        $docketing->refresh();
+        
+        // Load the case relationship
+        $docketing->load('case');
+
+        // Prepare response data with proper formatting
+        $responseData = [
+            'inspection_id' => $docketing->case->inspection_id ?? '-',
+            'establishment_name' => $docketing->case->establishment_name ?? '-',
+            'pct_for_docketing' => $docketing->pct_for_docketing ?? '-',
+            'date_scheduled_docketed' => $docketing->date_scheduled_docketed ? \Carbon\Carbon::parse($docketing->date_scheduled_docketed)->format('Y-m-d') : '-',
+            'aging_docket' => $docketing->aging_docket ?? '-',
+            'status_docket' => $docketing->status_docket ?? 'Pending',
+            'hearing_officer_mis' => $docketing->hearing_officer_mis ?? '-',
+        ];
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Docketing updated successfully!',
+            'data' => $responseData
+        ]);
+
+    } catch (\Exception $e) {
+        Log::error('Docketing inline update failed: ' . $e->getMessage(), [
+            'docketing_id' => $id,
+            'request_data' => $request->all(),
+            'error' => $e->getTraceAsString()
+        ]);
+
+        return response()->json([
+            'success' => false,
+            'message' => 'Failed to update docketing: ' . $e->getMessage()
+        ], 500);
+    }
+}
 }

@@ -371,10 +371,25 @@
                 </div>
             </div>
 
-             <!-- Tab 2: Docketing -->
+            <!-- Tab 2: Docketing -->
             <div class="tab-pane fade" id="tab2" role="tabpanel" aria-labelledby="tab2-tab">
                 <div class="card shadow mb-4">
                     <div class="card-body">
+                        <!-- Success/Error alerts for AJAX -->
+                        <div class="alert alert-success alert-dismissible fade" role="alert" id="success-alert-tab2" style="display: none;">
+                            <span id="success-message-tab2"></span>
+                            <button type="button" class="close" onclick="hideAlert('success-alert-tab2')">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        
+                        <div class="alert alert-danger alert-dismissible fade" role="alert" id="error-alert-tab2" style="display: none;">
+                            <span id="error-message-tab2"></span>
+                            <button type="button" class="close" onclick="hideAlert('error-alert-tab2')">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+
                         <!-- Search + Buttons Row -->
                         <div class="d-flex justify-content-between align-items-center mb-3 custom-search-container">
                             <div class="d-flex align-items-center">
@@ -401,26 +416,27 @@
                                 <tbody>
                                     @if(isset($docketing) && $docketing->count() > 0)
                                         @foreach($docketing as $record)
-                                            <tr>
-                                                <td>{{ $record->case->inspection_id ?? '-' }}</td>
-                                                <td title="{{ $record->case->establishment_name ?? '' }}">
-                                                {{ $record->case ? Str::limit($record->case->establishment_name, 25) : '-' }}</td>
-                                                <td>{{ $record->pct_for_docketing ?? '-' }}</td>
-                                                <td>{{ $record->date_scheduled_docketed ? \Carbon\Carbon::parse($record->date_scheduled_docketed)->format('Y-m-d') : '-' }}</td>
-                                                <td>{{ $record->aging_docket ?? '-' }}</td>
-                                                <td>
+                                            <tr data-id="{{ $record->id }}">
+                                                <td class="editable-cell readonly-cell" data-field="inspection_id" title="From case record">{{ $record->case->inspection_id ?? '-' }}</td>
+                                                <td class="editable-cell readonly-cell" data-field="establishment_name" title="{{ $record->case->establishment_name ?? '' }}">
+                                                    {{ $record->case ? Str::limit($record->case->establishment_name, 25) : '-' }}
+                                                </td>
+                                                <td class="editable-cell" data-field="pct_for_docketing">{{ $record->pct_for_docketing ?? '-' }}</td>
+                                                <td class="editable-cell" data-field="date_scheduled_docketed" data-type="date">{{ $record->date_scheduled_docketed ? \Carbon\Carbon::parse($record->date_scheduled_docketed)->format('Y-m-d') : '-' }}</td>
+                                                <td class="editable-cell" data-field="aging_docket">{{ $record->aging_docket ?? '-' }}</td>
+                                                <td class="editable-cell" data-field="status_docket">
                                                     <span class="badge badge-{{ $record->status_docket == 'Pending' ? 'warning' : ($record->status_docket == 'Completed' ? 'success' : 'secondary') }}">
                                                         {{ $record->status_docket ?? 'Pending' }}
                                                     </span>
                                                 </td>
-                                                <td>{{ $record->hearing_officer_mis ?? '-' }}</td>
+                                                <td class="editable-cell" data-field="hearing_officer_mis">{{ $record->hearing_officer_mis ?? '-' }}</td>
                                                 <td>
                                                     <a href="{{ route('docketing.show', $record->id) }}" class="btn btn-info btn-sm" title="View">
                                                         <i class="fas fa-eye"></i>
                                                     </a>
-                                                    <a href="{{ route('docketing.edit', $record->id) }}" class="btn btn-warning btn-sm" title="Edit">
+                                                    <button class="btn btn-warning btn-sm edit-row-btn-docketing" title="Edit Row">
                                                         <i class="fas fa-edit"></i>
-                                                    </a>
+                                                    </button>
                                                     <form action="{{ route('docketing.destroy', $record->id) }}" method="POST" style="display:inline;">
                                                         @csrf
                                                         @method('DELETE')
@@ -428,6 +444,15 @@
                                                             <i class="fas fa-trash"></i>
                                                         </button>
                                                     </form>
+                                                    
+                                                    @if($record->case && $record->case->current_stage === '2: Docketing')
+                                                        <form action="{{ route('case.nextStage', $record->case->id) }}" method="POST" style="display:inline;">
+                                                            @csrf
+                                                            <button type="submit" class="btn btn-success btn-sm ml-1" title="Move to Hearing" onclick="return confirm('Complete docketing and move to Hearing?')">
+                                                                <i class="fas fa-arrow-right"></i> Next
+                                                            </button>
+                                                        </form>
+                                                    @endif
                                                 </td>
                                             </tr>
                                         @endforeach
@@ -1301,6 +1326,31 @@ function showAlert(type, message) {
                             // Remove 'lapse_20_day_period' from here - it's no longer editable
                             'twg_ali': { type: 'text' }
                         }
+                    },
+                    'tab2': {
+                        name: 'docketing',
+                        endpoint: '/docketing/',
+                        editBtnClass: '.edit-row-btn-docketing',
+                        saveBtnClass: '.save-btn-docketing',
+                        cancelBtnClass: '.cancel-btn-docketing',
+                        alertPrefix: 'tab2',
+                        fields: {
+                            // inspection_id and establishment_name are readonly (from case)
+                            'pct_for_docketing': { type: 'text' },
+                            'date_scheduled_docketed': { type: 'date' },
+                            'aging_docket': { type: 'text' },
+                            'status_docket': {
+                                type: 'select',
+                                options: [
+                                    { value: '', text: 'Select Status' },
+                                    { value: 'Pending', text: 'Pending' },
+                                    { value: 'Completed', text: 'Completed' },
+                                    { value: 'In Progress', text: 'In Progress' },
+                                    { value: 'Cancelled', text: 'Cancelled' }
+                                ]
+                            },
+                            'hearing_officer_mis': { type: 'text' }
+                        }
                     }
                     // Add more tabs here as needed:
                     // 'tab2': { name: 'docketing', endpoint: '/docketing/', ... }
@@ -1318,7 +1368,7 @@ function showAlert(type, message) {
                 }
 
                 // Unified edit button click handler
-                $(document).on('click', '.edit-row-btn, .edit-row-btn-case', function() {
+                $(document).on('click', '.edit-row-btn, .edit-row-btn-case, .edit-row-btn-docketing', function() {
                     const row = $(this).closest('tr');
                     currentTab = getCurrentTab();
                     
@@ -1500,6 +1550,13 @@ function showAlert(type, message) {
                             displayValue = displayValue.split(': ')[1];
                         }
                         
+                        // NEW: Handle status_docket badge display
+                            if (field === 'status_docket' && displayValue !== '-') {
+                                const badgeClass = displayValue === 'Pending' ? 'warning' : 
+                                                (displayValue === 'Completed' ? 'success' : 'secondary');
+                                displayValue = `<span class="badge badge-${badgeClass}">${displayValue}</span>`;
+                            }
+
                         if (field === 'establishment_name' && displayValue !== '-') {
                             cell.attr('title', displayValue);
                             if (displayValue.length > 25) {

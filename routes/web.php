@@ -85,4 +85,5 @@ Route::middleware('auth')->group(function () {
     //inline-update
     Route::put('/inspection/{inspection}/inline-update', [InspectionsController::class, 'inlineUpdate'])->name('inspection.inlineUpdate');
     Route::put('/case/{id}/inline-update', [CasesController::class, 'inlineUpdate'])->name('case.inlineUpdate');
+    Route::put('/docketing/{id}/inline-update', [DocketingController::class, 'inlineUpdate'])->name('docketing.inlineUpdate');
 });
