@@ -343,7 +343,7 @@
                                                     <form action="{{ route('inspection.destroy', $inspection->id) }}" method="POST" style="display:inline;">
                                                         @csrf
                                                         @method('DELETE')
-                                                        <button type="submit" class="btn btn-danger btn-sm delete-btn" title="Delete" onclick="return confirm('Are you sure you want to delete this inspection?')">
+                                                        <button type="submit" class="btn btn-danger btn-sm inspection-delete-btn" title="Delete" onclick="return confirm('Are you sure you want to delete this inspection?')">
                                                             <i class="fas fa-trash"></i>
                                                         </button>
                                                     </form>
@@ -440,7 +440,7 @@
                                                     <form action="{{ route('docketing.destroy', $record->id) }}" method="POST" style="display:inline;">
                                                         @csrf
                                                         @method('DELETE')
-                                                        <button type="submit" class="btn btn-danger btn-sm delete-btn" title="Delete" onclick="return confirm('Are you sure you want to delete this docketing record?')">
+                                                        <button type="submit" class="btn btn-danger btn-sm docketing-delete-btn" title="Delete" onclick="return confirm('Are you sure you want to delete this docketing record?')">
                                                             <i class="fas fa-trash"></i>
                                                         </button>
                                                     </form>
