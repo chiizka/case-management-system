@@ -320,8 +320,8 @@
                                     @if(isset($inspections) && $inspections->count() > 0)
                                         @foreach($inspections as $inspection)
                                             <tr data-id="{{ $inspection->id }}">
-                                                <td class="editable-cell" data-field="inspection_id">{{ $inspection->case->inspection_id ?? '-' }}</td>
-                                                <td class="editable-cell" data-field="establishment_name" title="{{ $inspection->case->establishment_name ?? '' }}">
+                                                <td class="editable-cell readonly-cell" data-field="inspection_id" title="From case record">{{ $inspection->case->inspection_id ?? '-' }}</td>
+                                                <td class="editable-cell readonly-cell" data-field="establishment_name" title="{{ $inspection->case->establishment_name ?? '' }}">
                                                     {{ $inspection->case ? Str::limit($inspection->case->establishment_name, 25) : '-' }}
                                                 </td>
                                                 <td class="editable-cell" data-field="po_office">{{ $inspection->po_office ?? '-' }}</td>
