@@ -75,20 +75,41 @@ class CasesController extends Controller
         ));
     }
 
-    public function store(Request $request)
-    {
-        $validated = $request->validate([
-            'inspection_id' => 'required|string|max:255',
-            'case_no' => 'nullable|string|max:255',
-            'establishment_name' => 'required|string|max:255',
-            'current_stage' => 'required|in:1: Inspections,2: Docketing,3: Hearing,4: Review & Drafting,5: Orders & Disposition,6: Compliance & Awards,7: Appeals & Resolution',
-            'overall_status' => 'required|in:Active,Completed,Dismissed',
-        ]);
+public function store(Request $request)
+{
+    $validated = $request->validate([
+        'inspection_id' => 'required|string|max:255',
+        'case_no' => 'nullable|string|max:255',
+        'establishment_name' => 'required|string|max:255',
+        'current_stage' => 'required|in:1: Inspections,2: Docketing,3: Hearing,4: Review & Drafting,5: Orders & Disposition,6: Compliance & Awards,7: Appeals & Resolution',
+        'overall_status' => 'required|in:Active,Completed,Dismissed',
+    ]);
 
-        CaseFile::create($validated);
+    try {
+        // Create the case first
+        $case = CaseFile::create($validated);
+        
+        // If the current stage is "1: Inspections", automatically create an inspection record
+        if ($case->current_stage === '1: Inspections') {
+            Inspection::create([
+                'case_id' => $case->id,
+                // All other fields will be null initially - they can be filled in later via inline editing
+                'po_office' => null,
+                'inspector_name' => null,
+                'inspector_authority_no' => null,
+                'date_of_inspection' => null,
+                'date_of_nr' => null,
+                'twg_ali' => null,
+            ]);
+        }
         
         return redirect()->route('case.index')->with('success', 'Case created successfully!');
+        
+    } catch (\Exception $e) {
+        Log::error('Error creating case: ' . $e->getMessage());
+        return redirect()->route('case.index')->with('error', 'Failed to create case: ' . $e->getMessage());
     }
+}
 
     public function update(Request $request, $id)
     {
