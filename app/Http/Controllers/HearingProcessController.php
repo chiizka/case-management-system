@@ -191,113 +191,131 @@ class HearingProcessController extends Controller
         }
     }
 
-    /**
-     * Update hearing process record inline via AJAX
-     */
-public function inlineUpdate(Request $request, $id)
-{
-    Log::info('Hearing process inline update request received', [
-        'hearing_id' => $id,
-        'request_data' => $request->all(),
-        'content_type' => $request->header('Content-Type')
-    ]);
-    
-    try {
-        $hearingProcess = HearingProcess::findOrFail($id);
-        
-        // Get all input data
-        $inputData = $request->all();
-        
-        // Remove readonly fields (these come from the case relationship)
-        unset($inputData['inspection_id']);
-        unset($inputData['establishment_name']);
-        
-        // Remove empty strings and convert them to null
-        $cleanedData = [];
-        foreach ($inputData as $key => $value) {
-            if ($value === '' || $value === '-') {
-                $cleanedData[$key] = null;
-            } else {
-                $cleanedData[$key] = $value;
-            }
-        }
-        
-        Log::info('Cleaned data for validation', ['cleaned_data' => $cleanedData]);
-        
-        // Updated validation rules to match your actual fields
-        $validator = Validator::make($cleanedData, [
-            'date_1st_mc_actual' => 'nullable|date',
-            'first_mc_pct' => 'nullable|string|max:255',
-            'status_1st_mc' => 'nullable|string|max:255',
-            'date_2nd_last_mc' => 'nullable|date',
-            'second_last_mc_pct' => 'nullable|string|max:255',
-            'status_2nd_mc' => 'nullable|string|max:255',
-            'case_folder_forwarded_to_ro' => 'nullable|string|max:255',
-            'complete_case_folder' => 'nullable|in:Y,N',
+    public function inlineUpdate(Request $request, $id)
+    {
+        Log::info('Hearing process inline update request received', [
+            'hearing_id' => $id,
+            'request_data' => $request->all(),
+            'content_type' => $request->header('Content-Type')
         ]);
+        
+        try {
+            $hearingProcess = HearingProcess::findOrFail($id);
+            
+            // Get all input data
+            $inputData = $request->all();
+            
+            // Remove readonly fields (these come from the case relationship)
+            unset($inputData['inspection_id']);
+            unset($inputData['establishment_name']);
+            
+            // Remove empty strings and convert them to null
+            $cleanedData = [];
+            foreach ($inputData as $key => $value) {
+                if ($value === '' || $value === '-') {
+                    $cleanedData[$key] = null;
+                } else {
+                    $cleanedData[$key] = is_string($value) ? trim($value) : $value;
+                }
+            }
+            
+            Log::info('Cleaned data for validation', ['cleaned_data' => $cleanedData]);
+            
+            // Updated validation rules with proper field types
+            $validator = Validator::make($cleanedData, [
+                'date_1st_mc_actual' => 'nullable|date',
+                'first_mc_pct' => 'nullable|string|max:255',  // Changed from date to string
+                'status_1st_mc' => 'nullable|in:Pending,Ongoing,Completed',
+                'date_2nd_last_mc' => 'nullable|date',
+                'second_last_mc_pct' => 'nullable|string|max:255',  // Changed from date to string
+                'status_2nd_mc' => 'nullable|in:Pending,In Progress,Completed',
+                'case_folder_forwarded_to_ro' => 'nullable|string|max:255',
+                'complete_case_folder' => 'nullable|in:Y,N',
+            ]);
 
-        if ($validator->fails()) {
-            Log::warning('Hearing process validation failed', [
-                'errors' => $validator->errors(),
-                'data' => $cleanedData
+            if ($validator->fails()) {
+                Log::warning('Hearing process validation failed', [
+                    'errors' => $validator->errors(),
+                    'data' => $cleanedData
+                ]);
+                
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Validation failed: ' . $validator->errors()->first(),
+                    'errors' => $validator->errors()
+                ], 422);
+            }
+
+            $validatedData = $validator->validated();
+            
+            Log::info('Hearing process update data validated', [
+                'validated_data' => $validatedData
+            ]);
+            
+            // Update the hearing process record
+            $hearingProcess->update($validatedData);
+            Log::info('Hearing process updated successfully');
+
+            // Refresh to get updated data
+            $hearingProcess->refresh();
+            
+            // Load the case relationship
+            $hearingProcess->load('case');
+
+            // Prepare response data with proper formatting
+            $responseData = [
+                'inspection_id' => $hearingProcess->case->inspection_id ?? '-',
+                'establishment_name' => $hearingProcess->case->establishment_name ?? '-',
+                'date_1st_mc_actual' => $hearingProcess->date_1st_mc_actual ? \Carbon\Carbon::parse($hearingProcess->date_1st_mc_actual)->format('Y-m-d') : '-',
+                'first_mc_pct' => $hearingProcess->first_mc_pct ?? '-',
+                'status_1st_mc' => $hearingProcess->status_1st_mc ?? 'Pending',
+                'date_2nd_last_mc' => $hearingProcess->date_2nd_last_mc ? \Carbon\Carbon::parse($hearingProcess->date_2nd_last_mc)->format('Y-m-d') : '-',
+                'second_last_mc_pct' => $hearingProcess->second_last_mc_pct ?? '-',
+                'status_2nd_mc' => $hearingProcess->status_2nd_mc ?? 'Pending',
+                'case_folder_forwarded_to_ro' => $hearingProcess->case_folder_forwarded_to_ro ?? '-',
+                'complete_case_folder' => $hearingProcess->complete_case_folder ?? 'N',
+            ];
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Hearing process updated successfully!',
+                'data' => $responseData
+            ]);
+
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            Log::error('Hearing process not found: ' . $id);
+            return response()->json([
+                'success' => false,
+                'message' => 'Hearing process record not found'
+            ], 404);
+            
+        } catch (\Illuminate\Database\QueryException $e) {
+            Log::error('Database error in hearing process update: ' . $e->getMessage(), [
+                'hearing_id' => $id,
+                'sql_state' => $e->errorInfo[0] ?? 'Unknown',
+                'error_code' => $e->errorInfo[1] ?? 'Unknown',
             ]);
             
             return response()->json([
                 'success' => false,
-                'message' => 'Validation failed: ' . $validator->errors()->first(),
-                'errors' => $validator->errors()
-            ], 422);
+                'message' => 'Database error occurred. Please check your data and try again.'
+            ], 500);
+            
+        } catch (\Exception $e) {
+            Log::error('Hearing process inline update failed: ' . $e->getMessage(), [
+                'hearing_id' => $id,
+                'request_data' => $request->all(),
+                'error_class' => get_class($e),
+                'error_line' => $e->getLine(),
+                'error_file' => $e->getFile(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to update hearing process: ' . $e->getMessage()
+            ], 500);
         }
-
-        $validatedData = $validator->validated();
-        
-        Log::info('Hearing process update data validated', [
-            'validated_data' => $validatedData
-        ]);
-        
-        // Update the hearing process record
-        $hearingProcess->update($validatedData);
-        Log::info('Hearing process updated successfully');
-
-        // Refresh to get any computed fields
-        $hearingProcess->refresh();
-        
-        // Load the case relationship
-        $hearingProcess->load('case');
-
-        // Prepare response data with proper formatting to match your actual fields
-        $responseData = [
-            'inspection_id' => $hearingProcess->case->inspection_id ?? '-',
-            'establishment_name' => $hearingProcess->case->establishment_name ?? '-',
-            'date_1st_mc_actual' => $hearingProcess->date_1st_mc_actual ? \Carbon\Carbon::parse($hearingProcess->date_1st_mc_actual)->format('Y-m-d') : '-',
-            'first_mc_pct' => $hearingProcess->first_mc_pct ?? '-',
-            'status_1st_mc' => $hearingProcess->status_1st_mc ?? 'Pending',
-            'date_2nd_last_mc' => $hearingProcess->date_2nd_last_mc ? \Carbon\Carbon::parse($hearingProcess->date_2nd_last_mc)->format('Y-m-d') : '-',
-            'second_last_mc_pct' => $hearingProcess->second_last_mc_pct ?? '-',
-            'status_2nd_mc' => $hearingProcess->status_2nd_mc ?? 'Pending',
-            'case_folder_forwarded_to_ro' => $hearingProcess->case_folder_forwarded_to_ro ?? '-',
-            'complete_case_folder' => $hearingProcess->complete_case_folder ?? 'N',
-        ];
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Hearing process updated successfully!',
-            'data' => $responseData
-        ]);
-
-    } catch (\Exception $e) {
-        Log::error('Hearing process inline update failed: ' . $e->getMessage(), [
-            'hearing_id' => $id,
-            'request_data' => $request->all(),
-            'error' => $e->getTraceAsString()
-        ]);
-
-        return response()->json([
-            'success' => false,
-            'message' => 'Failed to update hearing process: ' . $e->getMessage()
-        ], 500);
     }
-}
 
     /**
      * Get hearing process data for AJAX requests.

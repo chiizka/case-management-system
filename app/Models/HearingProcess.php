@@ -25,10 +25,8 @@ class HearingProcess extends Model
 
     protected $casts = [
         'date_1st_mc_actual' => 'date',
-        'first_mc_pct' => 'date', // FIXED: Changed from decimal to date
         'date_2nd_last_mc' => 'date',
-        'second_last_mc_pct' => 'date', // FIXED: Changed from decimal to date
-        'complete_case_folder' => 'string',
+        // Remove casting for PCT fields - let them be handled as strings
     ];
 
     /**

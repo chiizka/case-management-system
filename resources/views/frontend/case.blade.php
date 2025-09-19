@@ -468,116 +468,116 @@
                 </div>
             </div>
 
-<!-- Tab 3: Hearing Process -->
-<div class="tab-pane fade" id="tab3" role="tabpanel" aria-labelledby="tab3-tab">
-    <div class="card shadow mb-4">
-        <div class="card-body">
-            <!-- Success/Error alerts for AJAX -->
-            <div class="alert alert-success alert-dismissible fade" role="alert" id="success-alert-tab3" style="display: none;">
-                <span id="success-message-tab3"></span>
-                <button type="button" class="close" onclick="hideAlert('success-alert-tab3')">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-            </div>
-            
-            <div class="alert alert-danger alert-dismissible fade" role="alert" id="error-alert-tab3" style="display: none;">
-                <span id="error-message-tab3"></span>
-                <button type="button" class="close" onclick="hideAlert('error-alert-tab3')">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-            </div>
+            <!-- Tab 3: Hearing Process -->
+            <div class="tab-pane fade" id="tab3" role="tabpanel" aria-labelledby="tab3-tab">
+                <div class="card shadow mb-4">
+                    <div class="card-body">
+                        <!-- Success/Error alerts for AJAX -->
+                        <div class="alert alert-success alert-dismissible fade" role="alert" id="success-alert-tab3" style="display: none;">
+                            <span id="success-message-tab3"></span>
+                            <button type="button" class="close" onclick="hideAlert('success-alert-tab3')">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        
+                        <div class="alert alert-danger alert-dismissible fade" role="alert" id="error-alert-tab3" style="display: none;">
+                            <span id="error-message-tab3"></span>
+                            <button type="button" class="close" onclick="hideAlert('error-alert-tab3')">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
 
-            <!-- Search + Buttons Row -->
-            <div class="d-flex justify-content-between align-items-center mb-3 custom-search-container">
-                <div class="d-flex align-items-center">
-                    <label class="mr-2 mb-0" style="font-size: 0.8rem;">Search:</label>
-                    <input type="search" class="form-control form-control-sm" id="customSearch3" placeholder="Search hearing records..." style="width: 200px;">
+                        <!-- Search + Buttons Row -->
+                        <div class="d-flex justify-content-between align-items-center mb-3 custom-search-container">
+                            <div class="d-flex align-items-center">
+                                <label class="mr-2 mb-0" style="font-size: 0.8rem;">Search:</label>
+                                <input type="search" class="form-control form-control-sm" id="customSearch3" placeholder="Search hearing records..." style="width: 200px;">
+                            </div>
+                        </div>
+
+                        <!-- Table Container -->
+                        <div class="table-container">
+                            <table class="table table-bordered compact-table sticky-table" id="dataTable3" width="100%" cellspacing="0">
+                                <thead>
+                                    <tr>
+                                        <th>Inspection ID</th>
+                                        <th>Name of Establishment</th>
+                                        <th>Date of 1st MC (Actual)</th>
+                                        <th>1st MC PCT</th>
+                                        <th>Status (1st MC)</th>
+                                        <th>Date of 2nd/Last MC (Actual)</th>
+                                        <th>2nd/Last MC PCT</th>
+                                        <th>Status (2nd MC)</th>
+                                        <th>Case Folder forwarded to RO</th>
+                                        <th>Complete case folder? (Y/N)</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @if(isset($hearingProcess) && $hearingProcess->count() > 0)
+                                        @foreach($hearingProcess as $record)
+                                            <tr data-id="{{ $record->id }}">
+                                                <td class="editable-cell readonly-cell" data-field="inspection_id" title="From case record">{{ $record->case->inspection_id ?? '-' }}</td>
+                                                <td class="editable-cell readonly-cell" data-field="establishment_name" title="{{ $record->case->establishment_name ?? '' }}">
+                                                    {{ $record->case ? Str::limit($record->case->establishment_name, 25) : '-' }}
+                                                </td>
+                                                <td class="editable-cell" data-field="date_1st_mc_actual" data-type="date">{{ $record->date_1st_mc_actual ? \Carbon\Carbon::parse($record->date_1st_mc_actual)->format('Y-m-d') : '-' }}</td>
+                                                <td class="editable-cell" data-field="first_mc_pct">{{ $record->first_mc_pct ?? '-' }}</td>
+                                                <td class="editable-cell" data-field="status_1st_mc">
+                                                    <span class="badge badge-{{ $record->status_1st_mc == 'Completed' ? 'success' : ($record->status_1st_mc == 'Ongoing' ? 'warning' : 'secondary') }}">
+                                                        {{ $record->status_1st_mc ?? 'Pending' }}
+                                                    </span>
+                                                </td>
+                                                <td class="editable-cell" data-field="date_2nd_last_mc" data-type="date">{{ $record->date_2nd_last_mc ? \Carbon\Carbon::parse($record->date_2nd_last_mc)->format('Y-m-d') : '-' }}</td>
+                                                <td class="editable-cell" data-field="second_last_mc_pct">{{ $record->second_last_mc_pct ?? '-' }}</td>
+                                                <td class="editable-cell" data-field="status_2nd_mc">
+                                                    <span class="badge badge-{{ $record->status_2nd_mc == 'Completed' ? 'success' : ($record->status_2nd_mc == 'In Progress' ? 'warning' : 'secondary') }}">
+                                                        {{ $record->status_2nd_mc ?? 'Pending' }}
+                                                    </span>
+                                                </td>
+                                                <td class="editable-cell" data-field="case_folder_forwarded_to_ro">{{ $record->case_folder_forwarded_to_ro ?? '-' }}</td>
+                                                <td class="editable-cell" data-field="complete_case_folder">
+                                                    <span class="badge badge-{{ $record->complete_case_folder == 'Y' ? 'success' : 'warning' }}">
+                                                        {{ $record->complete_case_folder ?? 'N' }}
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <a href="{{ route('hearing-process.show', $record->id) }}" class="btn btn-info btn-sm" title="View">
+                                                        <i class="fas fa-eye"></i>
+                                                    </a>
+                                                    <button class="btn btn-warning btn-sm edit-row-btn-hearing" title="Edit Row">
+                                                        <i class="fas fa-edit"></i>
+                                                    </button>
+                                                    <form action="{{ route('hearing-process.destroy', $record->id) }}" method="POST" style="display:inline;">
+                                                        @csrf
+                                                        @method('DELETE')
+                                                        <button type="submit" class="btn btn-danger btn-sm hearing-delete-btn" title="Delete" onclick="return confirm('Are you sure you want to delete this hearing record?')">
+                                                            <i class="fas fa-trash"></i>
+                                                        </button>
+                                                    </form>
+                                                    
+                                                    @if($record->case && $record->case->current_stage === '3: Hearing')
+                                                        <form action="{{ route('case.nextStage', $record->case->id) }}" method="POST" style="display:inline;">
+                                                            @csrf
+                                                            <button type="submit" class="btn btn-success btn-sm ml-1" title="Move to Review & Drafting" onclick="return confirm('Complete hearing and move to Review & Drafting?')">
+                                                                <i class="fas fa-arrow-right"></i> Next
+                                                            </button>
+                                                        </form>
+                                                    @endif
+                                                </td>
+                                            </tr>
+                                        @endforeach
+                                    @else
+                                        <tr>
+                                            <td colspan="11" class="text-center">No hearing process records found.</td>
+                                        </tr>
+                                    @endif
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
             </div>
-
-            <!-- Table Container -->
-            <div class="table-container">
-                <table class="table table-bordered compact-table sticky-table" id="dataTable3" width="100%" cellspacing="0">
-                    <thead>
-                        <tr>
-                            <th>Inspection ID</th>
-                            <th>Name of Establishment</th>
-                            <th>Date of 1st MC (Actual)</th>
-                            <th>1st MC PCT</th>
-                            <th>Status (1st MC)</th>
-                            <th>Date of 2nd/Last MC (Actual)</th>
-                            <th>2nd/Last MC PCT</th>
-                            <th>Status (2nd MC)</th>
-                            <th>Case Folder forwarded to RO</th>
-                            <th>Complete case folder? (Y/N)</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @if(isset($hearingProcess) && $hearingProcess->count() > 0)
-                            @foreach($hearingProcess as $record)
-                                <tr data-id="{{ $record->id }}">
-                                    <td class="editable-cell readonly-cell" data-field="inspection_id" title="From case record">{{ $record->case->inspection_id ?? '-' }}</td>
-                                    <td class="editable-cell readonly-cell" data-field="establishment_name" title="{{ $record->case->establishment_name ?? '' }}">
-                                        {{ $record->case ? Str::limit($record->case->establishment_name, 25) : '-' }}
-                                    </td>
-                                    <td class="editable-cell" data-field="date_1st_mc_actual" data-type="date">{{ $record->date_1st_mc_actual ? \Carbon\Carbon::parse($record->date_1st_mc_actual)->format('Y-m-d') : '-' }}</td>
-                                    <td class="editable-cell" data-field="first_mc_pct">{{ $record->first_mc_pct ?? '-' }}</td>
-                                    <td class="editable-cell" data-field="status_1st_mc">
-                                        <span class="badge badge-{{ $record->status_1st_mc == 'Completed' ? 'success' : ($record->status_1st_mc == 'Ongoing' ? 'warning' : 'secondary') }}">
-                                            {{ $record->status_1st_mc ?? 'Pending' }}
-                                        </span>
-                                    </td>
-                                    <td class="editable-cell" data-field="date_2nd_last_mc" data-type="date">{{ $record->date_2nd_last_mc ? \Carbon\Carbon::parse($record->date_2nd_last_mc)->format('Y-m-d') : '-' }}</td>
-                                    <td class="editable-cell" data-field="second_last_mc_pct">{{ $record->second_last_mc_pct ?? '-' }}</td>
-                                    <td class="editable-cell" data-field="status_2nd_mc">
-                                        <span class="badge badge-{{ $record->status_2nd_mc == 'Completed' ? 'success' : ($record->status_2nd_mc == 'In Progress' ? 'warning' : 'secondary') }}">
-                                            {{ $record->status_2nd_mc ?? 'Pending' }}
-                                        </span>
-                                    </td>
-                                    <td class="editable-cell" data-field="case_folder_forwarded_to_ro">{{ $record->case_folder_forwarded_to_ro ?? '-' }}</td>
-                                    <td class="editable-cell" data-field="complete_case_folder">
-                                        <span class="badge badge-{{ $record->complete_case_folder == 'Y' ? 'success' : 'warning' }}">
-                                            {{ $record->complete_case_folder ?? 'N' }}
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <a href="{{ route('hearing-process.show', $record->id) }}" class="btn btn-info btn-sm" title="View">
-                                            <i class="fas fa-eye"></i>
-                                        </a>
-                                        <button class="btn btn-warning btn-sm edit-row-btn-hearing" title="Edit Row">
-                                            <i class="fas fa-edit"></i>
-                                        </button>
-                                        <form action="{{ route('hearing-process.destroy', $record->id) }}" method="POST" style="display:inline;">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" class="btn btn-danger btn-sm hearing-delete-btn" title="Delete" onclick="return confirm('Are you sure you want to delete this hearing record?')">
-                                                <i class="fas fa-trash"></i>
-                                            </button>
-                                        </form>
-                                        
-                                        @if($record->case && $record->case->current_stage === '3: Hearing')
-                                            <form action="{{ route('case.nextStage', $record->case->id) }}" method="POST" style="display:inline;">
-                                                @csrf
-                                                <button type="submit" class="btn btn-success btn-sm ml-1" title="Move to Review & Drafting" onclick="return confirm('Complete hearing and move to Review & Drafting?')">
-                                                    <i class="fas fa-arrow-right"></i> Next
-                                                </button>
-                                            </form>
-                                        @endif
-                                    </td>
-                                </tr>
-                            @endforeach
-                        @else
-                            <tr>
-                                <td colspan="11" class="text-center">No hearing process records found.</td>
-                            </tr>
-                        @endif
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-</div>
 
             <!-- Tab 4: Review & Drafting -->
             <div class="tab-pane fade" id="tab4" role="tabpanel" aria-labelledby="tab4-tab">
@@ -1410,15 +1410,14 @@ function showAlert(type, message) {
                     },
                     'tab3': {
                         name: 'hearing',
-                        endpoint: '/hearing-process/',  // Fixed: This should match your routes (hearing-process.*)
+                        endpoint: '/hearing-process/',  // Keep this consistent with your routes
                         editBtnClass: '.edit-row-btn-hearing',
                         saveBtnClass: '.save-btn-hearing',
                         cancelBtnClass: '.cancel-btn-hearing',
                         alertPrefix: 'tab3',
                         fields: {
-                            // These fields should match your actual hearing process database fields
                             'date_1st_mc_actual': { type: 'date' },
-                            'first_mc_pct': { type: 'text' },
+                            'first_mc_pct': { type: 'text' },  // FIXED: Changed from date to text
                             'status_1st_mc': {
                                 type: 'select',
                                 options: [
@@ -1429,7 +1428,7 @@ function showAlert(type, message) {
                                 ]
                             },
                             'date_2nd_last_mc': { type: 'date' },
-                            'second_last_mc_pct': { type: 'text' },
+                            'second_last_mc_pct': { type: 'text' },  // FIXED: Changed from date to text
                             'status_2nd_mc': {
                                 type: 'select',
                                 options: [
@@ -1443,8 +1442,8 @@ function showAlert(type, message) {
                             'complete_case_folder': {
                                 type: 'select',
                                 options: [
-                                    { value: 'Y', text: 'Yes' },
-                                    { value: 'N', text: 'No' }
+                                    { value: 'N', text: 'No' },
+                                    { value: 'Y', text: 'Yes' }
                                 ]
                             }
                         }
@@ -1648,13 +1647,32 @@ function showAlert(type, message) {
                             displayValue = displayValue.split(': ')[1];
                         }
                         
-                        // NEW: Handle status_docket badge display
-                            if (field === 'status_docket' && displayValue !== '-') {
-                                const badgeClass = displayValue === 'Pending' ? 'warning' : 
-                                                (displayValue === 'Completed' ? 'success' : 'secondary');
-                                displayValue = `<span class="badge badge-${badgeClass}">${displayValue}</span>`;
-                            }
-
+                        // Handle status_docket badge display
+                        if (field === 'status_docket' && displayValue !== '-') {
+                            const badgeClass = displayValue === 'Pending' ? 'warning' : 
+                                            (displayValue === 'Completed' ? 'success' : 'secondary');
+                            displayValue = `<span class="badge badge-${badgeClass}">${displayValue}</span>`;
+                        }
+                        
+                        // NEW: Handle hearing process status badges
+                        if (field === 'status_1st_mc' && displayValue !== '-') {
+                            const badgeClass = displayValue === 'Completed' ? 'success' : 
+                                            (displayValue === 'Ongoing' ? 'warning' : 'secondary');
+                            displayValue = `<span class="badge badge-${badgeClass}">${displayValue}</span>`;
+                        }
+                        
+                        if (field === 'status_2nd_mc' && displayValue !== '-') {
+                            const badgeClass = displayValue === 'Completed' ? 'success' : 
+                                            (displayValue === 'In Progress' ? 'warning' : 'secondary');
+                            displayValue = `<span class="badge badge-${badgeClass}">${displayValue}</span>`;
+                        }
+                        
+                        if (field === 'complete_case_folder' && displayValue !== '-') {
+                            const badgeClass = displayValue === 'Y' ? 'success' : 'warning';
+                            displayValue = `<span class="badge badge-${badgeClass}">${displayValue}</span>`;
+                        }
+                        
+                        // Handle establishment name truncation
                         if (field === 'establishment_name' && displayValue !== '-') {
                             cell.attr('title', displayValue);
                             if (displayValue.length > 25) {
