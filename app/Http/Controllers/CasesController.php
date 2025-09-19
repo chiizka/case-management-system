@@ -160,26 +160,103 @@ class CasesController extends Controller
         return response()->json($case);
     }
 
-    public function moveToNextStage(Request $request, $id)
-    {
+public function moveToNextStage(Request $request, $id)
+{
+    try {
         $case = CaseFile::findOrFail($id);
         
-        // Check if current stage is Inspections
-        if ($case->current_stage === '1: Inspections') {
-            // Create docketing record
-            $case->docketing()->create([
-                'case_id' => $case->id,
-                // All other fields will be null
-            ]);
-            
-            // Update case stage to Docketing
-            $case->update(['current_stage' => '2: Docketing']);
-            
-            return redirect()->back()->with('success', 'Case successfully moved to Docketing stage');
+        switch ($case->current_stage) {
+            case '1: Inspections':
+                // Create docketing record
+                Docketing::create([
+                    'case_id' => $case->id,
+                    // All other fields will be null initially
+                ]);
+                
+                // Update case stage to Docketing
+                $case->update(['current_stage' => '2: Docketing']);
+                
+                return redirect()->back()->with('success', 'Case successfully moved to Docketing stage');
+                
+            case '2: Docketing':
+                // Create hearing process record
+                HearingProcess::create([
+                    'case_id' => $case->id,
+                    // All other fields will be null initially - blank row
+                ]);
+                
+                // Update case stage to Hearing
+                $case->update(['current_stage' => '3: Hearing']);
+                
+                return redirect()->back()->with('success', 'Case successfully moved to Hearing stage');
+                
+            case '3: Hearing':
+                // Create review and drafting record
+                ReviewAndDrafting::create([
+                    'case_id' => $case->id,
+                    // All other fields will be null initially
+                ]);
+                
+                // Update case stage
+                $case->update(['current_stage' => '4: Review & Drafting']);
+                
+                return redirect()->back()->with('success', 'Case successfully moved to Review & Drafting stage');
+                
+            case '4: Review & Drafting':
+                // Create orders and disposition record
+                OrderAndDisposition::create([
+                    'case_id' => $case->id,
+                    // All other fields will be null initially
+                ]);
+                
+                // Update case stage
+                $case->update(['current_stage' => '5: Orders & Disposition']);
+                
+                return redirect()->back()->with('success', 'Case successfully moved to Orders & Disposition stage');
+                
+            case '5: Orders & Disposition':
+                // Create compliance and awards record
+                ComplianceAndAward::create([
+                    'case_id' => $case->id,
+                    // All other fields will be null initially
+                ]);
+                
+                // Update case stage
+                $case->update(['current_stage' => '6: Compliance & Awards']);
+                
+                return redirect()->back()->with('success', 'Case successfully moved to Compliance & Awards stage');
+                
+            case '6: Compliance & Awards':
+                // Create appeals and resolution record
+                AppealsAndResolution::create([
+                    'case_id' => $case->id,
+                    // All other fields will be null initially
+                ]);
+                
+                // Update case stage
+                $case->update(['current_stage' => '7: Appeals & Resolution']);
+                
+                return redirect()->back()->with('success', 'Case successfully moved to Appeals & Resolution stage');
+                
+            case '7: Appeals & Resolution':
+                // Final stage - mark case as completed
+                $case->update(['overall_status' => 'Completed']);
+                
+                return redirect()->back()->with('success', 'Case has been completed');
+                
+            default:
+                return redirect()->back()->with('error', 'Invalid current stage');
         }
         
-        return redirect()->back()->with('error', 'Cannot move to next stage from current stage');
-    }   
+    } catch (\Exception $e) {
+        Log::error('Error moving case to next stage: ' . $e->getMessage(), [
+            'case_id' => $id,
+            'current_stage' => $case->current_stage ?? 'unknown'
+        ]);
+        
+        return redirect()->back()->with('error', 'Failed to move case to next stage: ' . $e->getMessage());
+    }
+}
 
         public function inlineUpdate(Request $request, $id)
     {

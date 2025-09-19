@@ -468,92 +468,116 @@
                 </div>
             </div>
 
-            <!-- Tab 3: Hearing Process -->
-            <div class="tab-pane fade" id="tab3" role="tabpanel" aria-labelledby="tab3-tab">
-                <div class="card shadow mb-4">
-                    <div class="card-body">
-                        <!-- Search + Buttons Row -->
-                        <div class="d-flex justify-content-between align-items-center mb-3 custom-search-container">
-                            <div class="d-flex align-items-center">
-                                <label class="mr-2 mb-0" style="font-size: 0.8rem;">Search:</label>
-                                <input type="search" class="form-control form-control-sm" id="customSearch3" placeholder="Search hearing records..." style="width: 200px;">
-                            </div>
-                        </div>
+<!-- Tab 3: Hearing Process -->
+<div class="tab-pane fade" id="tab3" role="tabpanel" aria-labelledby="tab3-tab">
+    <div class="card shadow mb-4">
+        <div class="card-body">
+            <!-- Success/Error alerts for AJAX -->
+            <div class="alert alert-success alert-dismissible fade" role="alert" id="success-alert-tab3" style="display: none;">
+                <span id="success-message-tab3"></span>
+                <button type="button" class="close" onclick="hideAlert('success-alert-tab3')">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            
+            <div class="alert alert-danger alert-dismissible fade" role="alert" id="error-alert-tab3" style="display: none;">
+                <span id="error-message-tab3"></span>
+                <button type="button" class="close" onclick="hideAlert('error-alert-tab3')">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
 
-                        <!-- Table Container -->
-                        <div class="table-container">
-                            <table class="table table-bordered compact-table sticky-table" id="dataTable3" width="100%" cellspacing="0">
-                                <thead>
-                                    <tr>
-                                        <th>Inspection ID</th>
-                                        <th>Name of Establishment</th>
-                                        <th>Date of 1st MC (Actual)</th>
-                                        <th>1st MC PCT</th>
-                                        <th>Status (1st MC)</th>
-                                        <th>Date of 2nd/Last MC (Actual)</th>
-                                        <th>2nd/Last MC PCT</th>
-                                        <th>Status (2nd MC)</th>
-                                        <th>Case Folder forwarded to RO</th>
-                                        <th>Complete case folder? (Y/N)</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @if(isset($hearingProcess) && $hearingProcess->count() > 0)
-                                        @foreach($hearingProcess as $record)
-                                            <tr>
-                                                <td>{{ $record->case->inspection_id ?? '-' }}</td>
-                                                <td title="{{ $record->case->establishment_name ?? '' }}">
-                                                    {{ $record->case ? Str::limit($record->case->establishment_name, 25) : '-' }}
-                                                </td>
-                                                <td>{{ $record->date_1st_mc_actual ? \Carbon\Carbon::parse($record->date_1st_mc_actual)->format('Y-m-d') : '-' }}</td>
-                                                <td>{{ $record->first_mc_pct ?? '-' }}</td>
-                                                <td>
-                                                    <span class="badge badge-{{ $record->status_1st_mc == 'Completed' ? 'success' : ($record->status_1st_mc == 'Ongoing' ? 'warning' : 'secondary') }}">
-                                                        {{ $record->status_1st_mc ?? 'Pending' }}
-                                                    </span>
-                                                </td>
-                                                <td>{{ $record->date_2nd_last_mc ? \Carbon\Carbon::parse($record->date_2nd_last_mc)->format('Y-m-d') : '-' }}</td>
-                                                <td>{{ $record->second_last_mc_pct ?? '-' }}</td>
-                                                <td>
-                                                    <span class="badge badge-{{ $record->status_2nd_mc == 'Completed' ? 'success' : ($record->status_2nd_mc == 'In Progress' ? 'warning' : 'secondary') }}">
-                                                        {{ $record->status_2nd_mc ?? 'Pending' }}
-                                                    </span>
-                                                </td>
-                                                <td>{{ $record->case_folder_forwarded_to_ro ?? '-' }}</td>
-                                                <td>
-                                                    <span class="badge badge-{{ $record->complete_case_folder == 'Y' ? 'success' : 'warning' }}">
-                                                        {{ $record->complete_case_folder ?? 'N' }}
-                                                    </span>
-                                                </td>
-                                                <td>
-                                                    <a href="{{ route('hearing-process.show', $record->id) }}" class="btn btn-info btn-sm" title="View">
-                                                        <i class="fas fa-eye"></i>
-                                                    </a>
-                                                    <a href="{{ route('hearing-process.edit', $record->id) }}" class="btn btn-warning btn-sm" title="Edit">
-                                                        <i class="fas fa-edit"></i>
-                                                    </a>
-                                                    <form action="{{ route('hearing-process.destroy', $record->id) }}" method="POST" style="display:inline;">
-                                                        @csrf
-                                                        @method('DELETE')
-                                                        <button type="submit" class="btn btn-danger btn-sm delete-btn" title="Delete" onclick="return confirm('Are you sure you want to delete this hearing process record?')">
-                                                            <i class="fas fa-trash"></i>
-                                                        </button>
-                                                    </form>
-                                                </td>
-                                            </tr>
-                                        @endforeach
-                                    @else
-                                        <tr>
-                                            <td colspan="11" class="text-center">No hearing process records found.</td>
-                                        </tr>
-                                    @endif
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
+            <!-- Search + Buttons Row -->
+            <div class="d-flex justify-content-between align-items-center mb-3 custom-search-container">
+                <div class="d-flex align-items-center">
+                    <label class="mr-2 mb-0" style="font-size: 0.8rem;">Search:</label>
+                    <input type="search" class="form-control form-control-sm" id="customSearch3" placeholder="Search hearing records..." style="width: 200px;">
                 </div>
             </div>
+
+            <!-- Table Container -->
+            <div class="table-container">
+                <table class="table table-bordered compact-table sticky-table" id="dataTable3" width="100%" cellspacing="0">
+                    <thead>
+                        <tr>
+                            <th>Inspection ID</th>
+                            <th>Name of Establishment</th>
+                            <th>Date of 1st MC (Actual)</th>
+                            <th>1st MC PCT</th>
+                            <th>Status (1st MC)</th>
+                            <th>Date of 2nd/Last MC (Actual)</th>
+                            <th>2nd/Last MC PCT</th>
+                            <th>Status (2nd MC)</th>
+                            <th>Case Folder forwarded to RO</th>
+                            <th>Complete case folder? (Y/N)</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if(isset($hearingProcess) && $hearingProcess->count() > 0)
+                            @foreach($hearingProcess as $record)
+                                <tr data-id="{{ $record->id }}">
+                                    <td class="editable-cell readonly-cell" data-field="inspection_id" title="From case record">{{ $record->case->inspection_id ?? '-' }}</td>
+                                    <td class="editable-cell readonly-cell" data-field="establishment_name" title="{{ $record->case->establishment_name ?? '' }}">
+                                        {{ $record->case ? Str::limit($record->case->establishment_name, 25) : '-' }}
+                                    </td>
+                                    <td class="editable-cell" data-field="date_1st_mc_actual" data-type="date">{{ $record->date_1st_mc_actual ? \Carbon\Carbon::parse($record->date_1st_mc_actual)->format('Y-m-d') : '-' }}</td>
+                                    <td class="editable-cell" data-field="first_mc_pct">{{ $record->first_mc_pct ?? '-' }}</td>
+                                    <td class="editable-cell" data-field="status_1st_mc">
+                                        <span class="badge badge-{{ $record->status_1st_mc == 'Completed' ? 'success' : ($record->status_1st_mc == 'Ongoing' ? 'warning' : 'secondary') }}">
+                                            {{ $record->status_1st_mc ?? 'Pending' }}
+                                        </span>
+                                    </td>
+                                    <td class="editable-cell" data-field="date_2nd_last_mc" data-type="date">{{ $record->date_2nd_last_mc ? \Carbon\Carbon::parse($record->date_2nd_last_mc)->format('Y-m-d') : '-' }}</td>
+                                    <td class="editable-cell" data-field="second_last_mc_pct">{{ $record->second_last_mc_pct ?? '-' }}</td>
+                                    <td class="editable-cell" data-field="status_2nd_mc">
+                                        <span class="badge badge-{{ $record->status_2nd_mc == 'Completed' ? 'success' : ($record->status_2nd_mc == 'In Progress' ? 'warning' : 'secondary') }}">
+                                            {{ $record->status_2nd_mc ?? 'Pending' }}
+                                        </span>
+                                    </td>
+                                    <td class="editable-cell" data-field="case_folder_forwarded_to_ro">{{ $record->case_folder_forwarded_to_ro ?? '-' }}</td>
+                                    <td class="editable-cell" data-field="complete_case_folder">
+                                        <span class="badge badge-{{ $record->complete_case_folder == 'Y' ? 'success' : 'warning' }}">
+                                            {{ $record->complete_case_folder ?? 'N' }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <a href="{{ route('hearing-process.show', $record->id) }}" class="btn btn-info btn-sm" title="View">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        <button class="btn btn-warning btn-sm edit-row-btn-hearing" title="Edit Row">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <form action="{{ route('hearing-process.destroy', $record->id) }}" method="POST" style="display:inline;">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="btn btn-danger btn-sm hearing-delete-btn" title="Delete" onclick="return confirm('Are you sure you want to delete this hearing record?')">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </form>
+                                        
+                                        @if($record->case && $record->case->current_stage === '3: Hearing')
+                                            <form action="{{ route('case.nextStage', $record->case->id) }}" method="POST" style="display:inline;">
+                                                @csrf
+                                                <button type="submit" class="btn btn-success btn-sm ml-1" title="Move to Review & Drafting" onclick="return confirm('Complete hearing and move to Review & Drafting?')">
+                                                    <i class="fas fa-arrow-right"></i> Next
+                                                </button>
+                                            </form>
+                                        @endif
+                                    </td>
+                                </tr>
+                            @endforeach
+                        @else
+                            <tr>
+                                <td colspan="11" class="text-center">No hearing process records found.</td>
+                            </tr>
+                        @endif
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
 
             <!-- Tab 4: Review & Drafting -->
             <div class="tab-pane fade" id="tab4" role="tabpanel" aria-labelledby="tab4-tab">
@@ -1016,6 +1040,9 @@ $(document).ready(function() {
     if ($.fn.DataTable.isDataTable('#dataTable2')) {
         $('#dataTable2').DataTable().destroy();
     }
+    if ($.fn.DataTable.isDataTable('#dataTable3')) {
+    $('#dataTable3').DataTable().destroy();
+    }
 
     // Initialize DataTable for All Active Cases Tab (tab0)
     var table0 = $('#dataTable0').DataTable({
@@ -1089,6 +1116,29 @@ $(document).ready(function() {
         }
     });
 
+        var table3 = $('#dataTable3').DataTable({
+        pageLength: 10,
+        lengthChange: false,
+        paging: true,
+        searching: false,
+        info: true,
+        dom: 'tip',
+        order: [[0, "asc"]],
+        scrollX: true,
+        scrollY: '400px',
+        scrollCollapse: true,
+        drawCallback: function() {
+            $('.sticky-table thead th').css({
+                'position': 'sticky',
+                'top': 0,
+                'z-index': 12
+            });
+            $('.sticky-table thead th:nth-child(-n+5)').css({
+                'z-index': 13
+            });
+        }
+    });
+
     // Custom search functionality for All Active Cases Tab
     $('#customSearch0').on('keyup input change', function() {
         table0.search(this.value).draw();
@@ -1103,6 +1153,10 @@ $(document).ready(function() {
     $('#customSearch2').on('keyup input change', function() {
         table2.search(this.value).draw();
     });
+    
+    $('#customSearch3').on('keyup input change', function() {
+    table3.search(this.value).draw();
+        });
 
     // Modal handling for Add/Edit Cases
     $('#addCaseModal').on('show.bs.modal', function(event) {
@@ -1239,6 +1293,8 @@ $(document).ready(function() {
             table1.columns.adjust().draw();
         } else if (target === '#tab2') {
             table2.columns.adjust().draw();
+        } else if (target === '#tab3') {
+            table3.columns.adjust().draw();
         }
     });
 });
@@ -1351,7 +1407,49 @@ function showAlert(type, message) {
                             },
                             'hearing_officer_mis': { type: 'text' }
                         }
+                    },
+                    'tab3': {
+                        name: 'hearing',
+                        endpoint: '/hearing-process/',  // Fixed: This should match your routes (hearing-process.*)
+                        editBtnClass: '.edit-row-btn-hearing',
+                        saveBtnClass: '.save-btn-hearing',
+                        cancelBtnClass: '.cancel-btn-hearing',
+                        alertPrefix: 'tab3',
+                        fields: {
+                            // These fields should match your actual hearing process database fields
+                            'date_1st_mc_actual': { type: 'date' },
+                            'first_mc_pct': { type: 'text' },
+                            'status_1st_mc': {
+                                type: 'select',
+                                options: [
+                                    { value: '', text: 'Select Status' },
+                                    { value: 'Pending', text: 'Pending' },
+                                    { value: 'Ongoing', text: 'Ongoing' },
+                                    { value: 'Completed', text: 'Completed' }
+                                ]
+                            },
+                            'date_2nd_last_mc': { type: 'date' },
+                            'second_last_mc_pct': { type: 'text' },
+                            'status_2nd_mc': {
+                                type: 'select',
+                                options: [
+                                    { value: '', text: 'Select Status' },
+                                    { value: 'Pending', text: 'Pending' },
+                                    { value: 'In Progress', text: 'In Progress' },
+                                    { value: 'Completed', text: 'Completed' }
+                                ]
+                            },
+                            'case_folder_forwarded_to_ro': { type: 'text' },
+                            'complete_case_folder': {
+                                type: 'select',
+                                options: [
+                                    { value: 'Y', text: 'Yes' },
+                                    { value: 'N', text: 'No' }
+                                ]
+                            }
+                        }
                     }
+                    
                     // Add more tabs here as needed:
                     // 'tab2': { name: 'docketing', endpoint: '/docketing/', ... }
                 };
@@ -1368,7 +1466,7 @@ function showAlert(type, message) {
                 }
 
                 // Unified edit button click handler
-                $(document).on('click', '.edit-row-btn, .edit-row-btn-case, .edit-row-btn-docketing', function() {
+                $(document).on('click', '.edit-row-btn, .edit-row-btn-case, .edit-row-btn-docketing, .edit-row-btn-hearing', function() {
                     const row = $(this).closest('tr');
                     currentTab = getCurrentTab();
                     
@@ -1381,7 +1479,7 @@ function showAlert(type, message) {
                 });
 
                 // Unified save button click handler  
-                $(document).on('click', '.save-btn, .save-btn-case', function() {
+                $(document).on('click', '.save-btn, .save-btn-case, .save-btn-hearing', function() {
                     const row = $(this).closest('tr');
                     const recordId = row.data('id');
                     const config = getTabConfig(currentTab);
@@ -1396,7 +1494,7 @@ function showAlert(type, message) {
                 });
 
                 // Unified cancel button click handler
-                $(document).on('click', '.cancel-btn, .cancel-btn-case', function() {
+                $(document).on('click', '.cancel-btn, .cancel-btn-case, .cancel-btn-hearing', function() {
                     cancelEdit();
                 });
 

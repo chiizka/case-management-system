@@ -86,4 +86,11 @@ Route::middleware('auth')->group(function () {
     Route::put('/inspection/{inspection}/inline-update', [InspectionsController::class, 'inlineUpdate'])->name('inspection.inlineUpdate');
     Route::put('/case/{id}/inline-update', [CasesController::class, 'inlineUpdate'])->name('case.inlineUpdate');
     Route::put('/docketing/{id}/inline-update', [DocketingController::class, 'inlineUpdate'])->name('docketing.inlineUpdate');
+
+    // Hearing Process routes
+Route::resource('hearing', HearingProcessController::class);
+Route::put('/hearing/{id}/inline-update', [HearingProcessController::class, 'inlineUpdate'])->name('hearing.inlineUpdate');
+Route::get('/hearing/{id}/get', [HearingProcessController::class, 'getHearingProcess'])->name('hearing.get');
+// Add this line to your existing hearing-process routes:
+Route::put('/hearing-process/{id}/inline-update', [HearingProcessController::class, 'inlineUpdate'])->name('hearing-process.inlineUpdate');
 });
