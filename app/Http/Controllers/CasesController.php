@@ -197,7 +197,9 @@ public function moveToNextStage(Request $request, $id)
                 // Update case stage to Docketing
                 $case->update(['current_stage' => '2: Docketing']);
                 
-                return redirect()->back()->with('success', 'Case successfully moved to Docketing stage');
+                return redirect()->back()
+                    ->with('success', 'Case successfully moved to Docketing stage')
+                    ->with('active_tab', 'tab2');
                 
             case '2: Docketing':
                 // Create hearing process record
@@ -209,19 +211,24 @@ public function moveToNextStage(Request $request, $id)
                 // Update case stage to Hearing
                 $case->update(['current_stage' => '3: Hearing']);
                 
-                return redirect()->back()->with('success', 'Case successfully moved to Hearing stage');
+                return redirect()->back()
+                    ->with('success', 'Case successfully moved to Hearing stage')
+                    ->with('active_tab', 'tab3');
                 
             case '3: Hearing':
-                // Create review and drafting record
-                ReviewAndDrafting::create([
+                // Create review and drafting record with required fields
+                 ReviewAndDrafting::create([
                     'case_id' => $case->id,
-                    // All other fields will be null initially
+                    // other fields will use DB defaults or null
                 ]);
+
                 
                 // Update case stage
                 $case->update(['current_stage' => '4: Review & Drafting']);
                 
-                return redirect()->back()->with('success', 'Case successfully moved to Review & Drafting stage');
+                return redirect()->back()
+                    ->with('success', 'Case successfully moved to Review & Drafting stage')
+                    ->with('active_tab', 'tab4');
                 
             case '4: Review & Drafting':
                 // Create orders and disposition record
@@ -233,7 +240,9 @@ public function moveToNextStage(Request $request, $id)
                 // Update case stage
                 $case->update(['current_stage' => '5: Orders & Disposition']);
                 
-                return redirect()->back()->with('success', 'Case successfully moved to Orders & Disposition stage');
+                return redirect()->back()
+                    ->with('success', 'Case successfully moved to Orders & Disposition stage')
+                    ->with('active_tab', 'tab5');
                 
             case '5: Orders & Disposition':
                 // Create compliance and awards record
@@ -245,7 +254,9 @@ public function moveToNextStage(Request $request, $id)
                 // Update case stage
                 $case->update(['current_stage' => '6: Compliance & Awards']);
                 
-                return redirect()->back()->with('success', 'Case successfully moved to Compliance & Awards stage');
+                return redirect()->back()
+                    ->with('success', 'Case successfully moved to Compliance & Awards stage')
+                    ->with('active_tab', 'tab6');
                 
             case '6: Compliance & Awards':
                 // Create appeals and resolution record
@@ -257,7 +268,9 @@ public function moveToNextStage(Request $request, $id)
                 // Update case stage
                 $case->update(['current_stage' => '7: Appeals & Resolution']);
                 
-                return redirect()->back()->with('success', 'Case successfully moved to Appeals & Resolution stage');
+                return redirect()->back()
+                    ->with('success', 'Case successfully moved to Appeals & Resolution stage')
+                    ->with('active_tab', 'tab7');
                 
             case '7: Appeals & Resolution':
                 // Final stage - mark case as completed
@@ -272,7 +285,8 @@ public function moveToNextStage(Request $request, $id)
     } catch (\Exception $e) {
         Log::error('Error moving case to next stage: ' . $e->getMessage(), [
             'case_id' => $id,
-            'current_stage' => $case->current_stage ?? 'unknown'
+            'current_stage' => $case->current_stage ?? 'unknown',
+            'stack_trace' => $e->getTraceAsString()
         ]);
         
         return redirect()->back()->with('error', 'Failed to move case to next stage: ' . $e->getMessage());

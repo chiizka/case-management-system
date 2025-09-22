@@ -35,7 +35,7 @@ Route::get('/password/reset/{token}', [App\Http\Controllers\Auth\ResetPasswordCo
 Route::post('/password/reset', [App\Http\Controllers\Auth\ResetPasswordController::class, 'reset'])->name('password.update');
 
 // Protected Routes (require authentication)
-Route::middleware('auth')->group(function () {
+// Route::middleware('auth')->group(function () {
     
     // Dashboard/Home
     Route::get('/', [FrontController::class, 'index'])->name('home');
@@ -93,4 +93,6 @@ Route::put('/hearing/{id}/inline-update', [HearingProcessController::class, 'inl
 Route::get('/hearing/{id}/get', [HearingProcessController::class, 'getHearingProcess'])->name('hearing.get');
 // Add this line to your existing hearing-process routes:
 Route::put('/hearing-process/{id}/inline-update', [HearingProcessController::class, 'inlineUpdate'])->name('hearing-process.inlineUpdate');
-});
+Route::resource('review-and-drafting', ReviewAndDraftingController::class);
+Route::put('/review-and-drafting/{id}/inline-update', [ReviewAndDraftingController::class, 'inlineUpdate'])->name('review-and-drafting.inline-update');
+// });

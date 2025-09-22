@@ -554,8 +554,7 @@
                                                         <button type="submit" class="btn btn-danger btn-sm hearing-delete-btn" title="Delete" onclick="return confirm('Are you sure you want to delete this hearing record?')">
                                                             <i class="fas fa-trash"></i>
                                                         </button>
-                                                    </form>
-                                                    
+                                                    </form>                               
                                                     @if($record->case && $record->case->current_stage === '3: Hearing')
                                                         <form action="{{ route('case.nextStage', $record->case->id) }}" method="POST" style="display:inline;">
                                                             @csrf
@@ -583,7 +582,20 @@
             <div class="tab-pane fade" id="tab4" role="tabpanel" aria-labelledby="tab4-tab">
                 <div class="card shadow mb-4">
                     <div class="card-body">
-                        <!-- Search + Buttons Row -->
+                        <div class="alert alert-success alert-dismissible fade" role="alert" id="success-alert-tab4" style="display: none;">
+                            <span id="success-message-tab4"></span>
+                            <button type="button" class="close" onclick="hideAlert('success-alert-tab4')">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+
+                        <div class="alert alert-danger alert-dismissible fade" role="alert" id="error-alert-tab4" style="display: none;">
+                            <span id="error-message-tab4"></span>
+                            <button type="button" class="close" onclick="hideAlert('error-alert-tab4')">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                                                <!-- Search + Buttons Row -->
                         <div class="d-flex justify-content-between align-items-center mb-3 custom-search-container">
                             <div class="d-flex align-items-center">
                                 <label class="mr-2 mb-0" style="font-size: 0.8rem;">Search:</label>
@@ -1041,7 +1053,10 @@ $(document).ready(function() {
         $('#dataTable2').DataTable().destroy();
     }
     if ($.fn.DataTable.isDataTable('#dataTable3')) {
-    $('#dataTable3').DataTable().destroy();
+        $('#dataTable3').DataTable().destroy();
+    }
+    if ($.fn.DataTable.isDataTable('#dataTable4')) {
+        $('#dataTable4').DataTable().destroy();
     }
 
     // Initialize DataTable for All Active Cases Tab (tab0)
@@ -1116,7 +1131,32 @@ $(document).ready(function() {
         }
     });
 
-        var table3 = $('#dataTable3').DataTable({
+    // Initialize DataTable for Hearing Process Tab (tab3)
+    var table3 = $('#dataTable3').DataTable({
+        pageLength: 10,
+        lengthChange: false,
+        paging: true,
+        searching: false,
+        info: true,
+        dom: 'tip',
+        order: [[0, "asc"]],
+        scrollX: true,
+        scrollY: '400px',
+        scrollCollapse: true,
+        drawCallback: function() {
+            $('.sticky-table thead th').css({
+                'position': 'sticky',
+                'top': 0,
+                'z-index': 12
+            });
+            $('.sticky-table thead th:nth-child(-n+5)').css({
+                'z-index': 13
+            });
+        }
+    });
+
+    // Initialize DataTable for Review & Drafting Tab (tab4)
+    var table4 = $('#dataTable4').DataTable({
         pageLength: 10,
         lengthChange: false,
         paging: true,
@@ -1154,9 +1194,15 @@ $(document).ready(function() {
         table2.search(this.value).draw();
     });
     
+    // Custom search functionality for Hearing Process Tab
     $('#customSearch3').on('keyup input change', function() {
-    table3.search(this.value).draw();
-        });
+        table3.search(this.value).draw();
+    });
+
+    // Custom search functionality for Review & Drafting Tab
+    $('#customSearch4').on('keyup input change', function() {
+        table4.search(this.value).draw();
+    });
 
     // Modal handling for Add/Edit Cases
     $('#addCaseModal').on('show.bs.modal', function(event) {
@@ -1260,6 +1306,8 @@ $(document).ready(function() {
         }
     });
 
+
+
     // Handle edit button click for Cases
     $(document).on('click', '.btn-warning[data-target="#addCaseModal"]', function() {
         var caseId = $(this).data('case-id');
@@ -1295,6 +1343,8 @@ $(document).ready(function() {
             table2.columns.adjust().draw();
         } else if (target === '#tab3') {
             table3.columns.adjust().draw();
+        } else if (target === '#tab4') {
+            table4.columns.adjust().draw();
         }
     });
 });
@@ -1379,7 +1429,6 @@ function showAlert(type, message) {
                             'inspector_authority_no': { type: 'text' },
                             'date_of_inspection': { type: 'date' },
                             'date_of_nr': { type: 'date' },
-                            // Remove 'lapse_20_day_period' from here - it's no longer editable
                             'twg_ali': { type: 'text' }
                         }
                     },
@@ -1391,7 +1440,6 @@ function showAlert(type, message) {
                         cancelBtnClass: '.cancel-btn-docketing',
                         alertPrefix: 'tab2',
                         fields: {
-                            // inspection_id and establishment_name are readonly (from case)
                             'pct_for_docketing': { type: 'text' },
                             'date_scheduled_docketed': { type: 'date' },
                             'aging_docket': { type: 'text' },
@@ -1410,14 +1458,14 @@ function showAlert(type, message) {
                     },
                     'tab3': {
                         name: 'hearing',
-                        endpoint: '/hearing-process/',  // Keep this consistent with your routes
+                        endpoint: '/hearing-process/',
                         editBtnClass: '.edit-row-btn-hearing',
                         saveBtnClass: '.save-btn-hearing',
                         cancelBtnClass: '.cancel-btn-hearing',
                         alertPrefix: 'tab3',
                         fields: {
                             'date_1st_mc_actual': { type: 'date' },
-                            'first_mc_pct': { type: 'text' },  // FIXED: Changed from date to text
+                            'first_mc_pct': { type: 'text' },
                             'status_1st_mc': {
                                 type: 'select',
                                 options: [
@@ -1428,7 +1476,7 @@ function showAlert(type, message) {
                                 ]
                             },
                             'date_2nd_last_mc': { type: 'date' },
-                            'second_last_mc_pct': { type: 'text' },  // FIXED: Changed from date to text
+                            'second_last_mc_pct': { type: 'text' },
                             'status_2nd_mc': {
                                 type: 'select',
                                 options: [
@@ -1447,10 +1495,54 @@ function showAlert(type, message) {
                                 ]
                             }
                         }
+                    },
+                    'tab4': {
+                        name: 'review-and-drafting',
+                        endpoint: '/review-and-drafting/',
+                        editBtnClass: '.edit-row-btn-review',
+                        saveBtnClass: '.save-btn-review',
+                        cancelBtnClass: '.cancel-btn-review',
+                        alertPrefix: 'tab4',
+                        fields: {
+                            'draft_order_type': { type: 'text' },
+                            'applicable_draft_order': {
+                                type: 'select',
+                                options: [
+                                    { value: 'N', text: 'No' },
+                                    { value: 'Y', text: 'Yes' }
+                                ]
+                            },
+                            'po_pct': { type: 'text' },
+                            'aging_po_pct': { type: 'text' },
+                            'status_po_pct': {
+                                type: 'select',
+                                options: [
+                                    { value: '', text: 'Select Status' },
+                                    { value: 'Pending', text: 'Pending' },
+                                    { value: 'In Progress', text: 'In Progress' },
+                                    { value: 'Completed', text: 'Completed' }
+                                ]
+                            },
+                            'date_received_from_po': { type: 'date' },
+                            'reviewer_drafter': { type: 'text' },
+                            'date_received_by_reviewer': { type: 'date' },
+                            'date_returned_from_drafter': { type: 'date' },
+                            'aging_10_days_tssd': { type: 'text' },
+                            'status_reviewer_drafter': {
+                                type: 'select',
+                                options: [
+                                    { value: '', text: 'Select Status' },
+                                    { value: 'Pending', text: 'Pending' },
+                                    { value: 'Ongoing', text: 'Ongoing' },
+                                    { value: 'Completed', text: 'Completed' },
+                                    { value: 'Approved', text: 'Approved' },
+                                    { value: 'Returned', text: 'Returned' },
+                                    { value: 'Overdue', text: 'Overdue' }
+                                ]
+                            },
+                            'draft_order_tssd_reviewer': { type: 'text' }
+                        }
                     }
-                    
-                    // Add more tabs here as needed:
-                    // 'tab2': { name: 'docketing', endpoint: '/docketing/', ... }
                 };
 
                 // Get current active tab
@@ -1465,7 +1557,7 @@ function showAlert(type, message) {
                 }
 
                 // Unified edit button click handler
-                $(document).on('click', '.edit-row-btn, .edit-row-btn-case, .edit-row-btn-docketing, .edit-row-btn-hearing', function() {
+                $(document).on('click', '.edit-row-btn, .edit-row-btn-case, .edit-row-btn-docketing, .edit-row-btn-hearing, .edit-row-btn-review', function() {
                     const row = $(this).closest('tr');
                     currentTab = getCurrentTab();
                     
@@ -1478,7 +1570,7 @@ function showAlert(type, message) {
                 });
 
                 // Unified save button click handler  
-                $(document).on('click', '.save-btn, .save-btn-case, .save-btn-hearing', function() {
+                $(document).on('click', '.save-btn, .save-btn-case, .save-btn-hearing, .save-btn-review', function() {
                     const row = $(this).closest('tr');
                     const recordId = row.data('id');
                     const config = getTabConfig(currentTab);
@@ -1493,7 +1585,7 @@ function showAlert(type, message) {
                 });
 
                 // Unified cancel button click handler
-                $(document).on('click', '.cancel-btn, .cancel-btn-case, .cancel-btn-hearing', function() {
+                $(document).on('click', '.cancel-btn, .cancel-btn-case, .cancel-btn-hearing, .cancel-btn-review', function() {
                     cancelEdit();
                 });
 
@@ -1507,7 +1599,7 @@ function showAlert(type, message) {
                 // Enter key to save
                 $(document).on('keyup', '.edit-input', function(e) {
                     if (e.key === 'Enter') {
-                        $(`.save-btn, .save-btn-case`).filter(':visible').click();
+                        $(`.save-btn, .save-btn-case, .save-btn-hearing, .save-btn-review`).filter(':visible').click();
                     }
                 });
 
@@ -1516,7 +1608,7 @@ function showAlert(type, message) {
                     const config = getTabConfig(currentTab);
                     originalData = {};
                     
-                    row.find('.editable-cell:not(.readonly-cell)').each(function() {  // Added :not(.readonly-cell)
+                    row.find('.editable-cell:not(.readonly-cell)').each(function() {
                         const cell = $(this);
                         const field = cell.data('field');
                         originalData[field] = cell.text().trim();
@@ -1531,13 +1623,16 @@ function showAlert(type, message) {
                     const currentButtons = actionsCell.html();
                     actionsCell.data('original-buttons', currentButtons);
                     
-                    const buttonClass = config.name === 'case' ? 'case' : '';
+                    const buttonSuffix = config.name === 'case' ? '-case' : 
+                                        config.name === 'hearing' ? '-hearing' :
+                                        config.name === 'review-and-drafting' ? '-review' : '';
+                    
                     actionsCell.html(`
                         <div class="save-cancel-buttons">
-                            <button class="btn btn-success btn-sm save-btn${buttonClass ? '-' + buttonClass : ''}" title="Save">
+                            <button class="btn btn-success btn-sm save-btn${buttonSuffix}" title="Save">
                                 <i class="fas fa-check"></i>
                             </button>
-                            <button class="btn btn-secondary btn-sm cancel-btn${buttonClass ? '-' + buttonClass : ''} ml-1" title="Cancel">
+                            <button class="btn btn-secondary btn-sm cancel-btn${buttonSuffix} ml-1" title="Cancel">
                                 <i class="fas fa-times"></i>
                             </button>
                         </div>
@@ -1647,27 +1742,27 @@ function showAlert(type, message) {
                             displayValue = displayValue.split(': ')[1];
                         }
                         
-                        // Handle status_docket badge display
-                        if (field === 'status_docket' && displayValue !== '-') {
-                            const badgeClass = displayValue === 'Pending' ? 'warning' : 
-                                            (displayValue === 'Completed' ? 'success' : 'secondary');
+                        // Handle status badges for all tabs
+                        const statusFields = ['status_docket', 'status_1st_mc', 'status_2nd_mc', 'status_po_pct', 'status_reviewer_drafter'];
+                        if (statusFields.includes(field) && displayValue !== '-') {
+                            let badgeClass = 'secondary';
+                            if (displayValue === 'Completed' || displayValue === 'Approved') {
+                                badgeClass = 'success';
+                            } else if (displayValue === 'Ongoing' || displayValue === 'In Progress') {
+                                badgeClass = 'warning';
+                            } else if (displayValue === 'Overdue') {
+                                badgeClass = 'danger';
+                            } else if (displayValue === 'Returned') {
+                                badgeClass = 'info';
+                            } else if (displayValue === 'Pending') {
+                                badgeClass = 'warning';
+                            }
                             displayValue = `<span class="badge badge-${badgeClass}">${displayValue}</span>`;
                         }
                         
-                        // NEW: Handle hearing process status badges
-                        if (field === 'status_1st_mc' && displayValue !== '-') {
-                            const badgeClass = displayValue === 'Completed' ? 'success' : 
-                                            (displayValue === 'Ongoing' ? 'warning' : 'secondary');
-                            displayValue = `<span class="badge badge-${badgeClass}">${displayValue}</span>`;
-                        }
-                        
-                        if (field === 'status_2nd_mc' && displayValue !== '-') {
-                            const badgeClass = displayValue === 'Completed' ? 'success' : 
-                                            (displayValue === 'In Progress' ? 'warning' : 'secondary');
-                            displayValue = `<span class="badge badge-${badgeClass}">${displayValue}</span>`;
-                        }
-                        
-                        if (field === 'complete_case_folder' && displayValue !== '-') {
+                        // Handle Y/N badges
+                        const ynFields = ['complete_case_folder', 'applicable_draft_order'];
+                        if (ynFields.includes(field) && displayValue !== '-') {
                             const badgeClass = displayValue === 'Y' ? 'success' : 'warning';
                             displayValue = `<span class="badge badge-${badgeClass}">${displayValue}</span>`;
                         }
@@ -1700,7 +1795,7 @@ function showAlert(type, message) {
                     
                     const config = getTabConfig(currentTab);
                     
-                    currentEditingRow.find('.editable-cell:not(.readonly-cell)').each(function() {  // Added :not(.readonly-cell)
+                    currentEditingRow.find('.editable-cell:not(.readonly-cell)').each(function() {
                         const cell = $(this);
                         const field = cell.data('field');
                         let displayValue = originalData[field] || '';

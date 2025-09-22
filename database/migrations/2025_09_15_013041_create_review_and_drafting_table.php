@@ -14,20 +14,24 @@ return new class extends Migration
         Schema::create('review_and_drafting', function (Blueprint $table) {
             $table->id();
             $table->foreignId('case_id')->constrained('cases')->onDelete('cascade');
-            $table->string('draft_order_type');
-            $table->enum('applicable_draft_order', ['Y', 'N']);
 
-            $table->integer('po_pct');
-            $table->integer('aging_po_pct');
-            $table->enum('status_po_pct', ['Pending', 'Ongoing', 'Overdue', 'Completed']);
+            // make text/enum fields nullable if they can be empty
+            $table->string('draft_order_type')->nullable();
+            $table->enum('applicable_draft_order', ['Y', 'N'])->default('N');
 
-            $table->date('date_received_from_po');
+            // numeric fields nullable
+            $table->integer('po_pct')->nullable();
+            $table->integer('aging_po_pct')->nullable();
+            $table->enum('status_po_pct', ['Pending', 'Ongoing', 'Overdue', 'Completed'])->default('Pending');
+
+            // dates nullable
+            $table->date('date_received_from_po')->nullable();
             $table->string('reviewer_drafter')->nullable(); // store reviewer name
             $table->date('date_received_by_reviewer')->nullable();
             $table->date('date_returned_from_drafter')->nullable();
 
             $table->integer('aging_10_days_tssd')->nullable();
-            $table->enum('status_reviewer_drafter', ['Pending','Ongoing','Returned','Approved','Overdue']);
+            $table->enum('status_reviewer_drafter', ['Pending','Ongoing','Returned','Approved','Overdue'])->default('Pending');
 
             $table->string('draft_order_tssd_reviewer')->nullable(); // store reviewer name
 
