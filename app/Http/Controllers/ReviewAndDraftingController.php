@@ -38,15 +38,15 @@ class ReviewAndDraftingController extends Controller
             'case_id' => 'required|exists:cases,id',
             'draft_order_type' => 'nullable|string|max:255',
             'applicable_draft_order' => 'nullable|in:Y,N',
-            'po_pct' => 'nullable|string|max:255',
-            'aging_po_pct' => 'nullable|string|max:255',
-            'status_po_pct' => 'nullable|string|max:255',
+            'po_pct' => 'nullable|integer',
+            'aging_po_pct' => 'nullable|integer',
+            'status_po_pct' => 'nullable|in:Pending,Ongoing,Overdue,Completed',
             'date_received_from_po' => 'nullable|date',
             'reviewer_drafter' => 'nullable|string|max:255',
             'date_received_by_reviewer' => 'nullable|date',
             'date_returned_from_drafter' => 'nullable|date',
-            'aging_10_days_tssd' => 'nullable|string|max:255',
-            'status_reviewer_drafter' => 'nullable|string|max:255',
+            'aging_10_days_tssd' => 'nullable|integer',
+            'status_reviewer_drafter' => 'nullable|in:Pending,Ongoing,Returned,Approved,Overdue',
             'draft_order_tssd_reviewer' => 'nullable|string|max:255',
         ]);
 
@@ -143,15 +143,15 @@ class ReviewAndDraftingController extends Controller
             'case_id' => 'required|exists:cases,id',
             'draft_order_type' => 'nullable|string|max:255',
             'applicable_draft_order' => 'nullable|in:Y,N',
-            'po_pct' => 'nullable|string|max:255',
-            'aging_po_pct' => 'nullable|string|max:255',
-            'status_po_pct' => 'nullable|string|max:255',
+            'po_pct' => 'nullable|integer',
+            'aging_po_pct' => 'nullable|integer',
+            'status_po_pct' => 'nullable|in:Pending,Ongoing,Overdue,Completed',
             'date_received_from_po' => 'nullable|date',
             'reviewer_drafter' => 'nullable|string|max:255',
             'date_received_by_reviewer' => 'nullable|date',
             'date_returned_from_drafter' => 'nullable|date',
-            'aging_10_days_tssd' => 'nullable|string|max:255',
-            'status_reviewer_drafter' => 'nullable|string|max:255',
+            'aging_10_days_tssd' => 'nullable|integer',
+            'status_reviewer_drafter' => 'nullable|in:Pending,Ongoing,Returned,Approved,Overdue',
             'draft_order_tssd_reviewer' => 'nullable|string|max:255',
         ]);
 
@@ -223,31 +223,36 @@ class ReviewAndDraftingController extends Controller
             unset($inputData['inspection_id']);
             unset($inputData['establishment_name']);
             
-            // Remove empty strings and convert them to null
+            // Clean and convert data types
             $cleanedData = [];
             foreach ($inputData as $key => $value) {
                 if ($value === '' || $value === '-') {
                     $cleanedData[$key] = null;
                 } else {
-                    $cleanedData[$key] = is_string($value) ? trim($value) : $value;
+                    // Handle integer fields
+                    if (in_array($key, ['po_pct', 'aging_po_pct', 'aging_10_days_tssd'])) {
+                        $cleanedData[$key] = is_numeric($value) ? (int)$value : null;
+                    } else {
+                        $cleanedData[$key] = is_string($value) ? trim($value) : $value;
+                    }
                 }
             }
             
             Log::info('Cleaned data for validation', ['cleaned_data' => $cleanedData]);
             
-            // Updated validation rules to match your database schema
+            // Validation rules matching your migration exactly
             $validator = Validator::make($cleanedData, [
                 'draft_order_type' => 'nullable|string|max:255',
                 'applicable_draft_order' => 'nullable|in:Y,N',
-                'po_pct' => 'nullable|string|max:255',
-                'aging_po_pct' => 'nullable|string|max:255',
-                'status_po_pct' => 'nullable|string|max:255', // Removed strict enum validation
+                'po_pct' => 'nullable|integer',
+                'aging_po_pct' => 'nullable|integer',
+                'status_po_pct' => 'nullable|in:Pending,Ongoing,Overdue,Completed',
                 'date_received_from_po' => 'nullable|date',
                 'reviewer_drafter' => 'nullable|string|max:255',
                 'date_received_by_reviewer' => 'nullable|date',
                 'date_returned_from_drafter' => 'nullable|date',
-                'aging_10_days_tssd' => 'nullable|string|max:255',
-                'status_reviewer_drafter' => 'nullable|string|max:255', // Removed strict enum validation
+                'aging_10_days_tssd' => 'nullable|integer',
+                'status_reviewer_drafter' => 'nullable|in:Pending,Ongoing,Returned,Approved,Overdue',
                 'draft_order_tssd_reviewer' => 'nullable|string|max:255',
             ]);
 

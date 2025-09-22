@@ -16,18 +16,21 @@ class ReviewAndDrafting extends Model
         'aging_po_pct',
         'status_po_pct',
         'date_received_from_po',
-        'reviewer_drafter',              // now just a string
+        'reviewer_drafter',
         'date_received_by_reviewer',
         'date_returned_from_drafter',
         'aging_10_days_tssd',
         'status_reviewer_drafter',
-        'draft_order_tssd_reviewer',    // now just a string
+        'draft_order_tssd_reviewer',
     ];
 
     protected $casts = [
         'date_received_from_po' => 'date',
         'date_received_by_reviewer' => 'date',
         'date_returned_from_drafter' => 'date',
+        'po_pct' => 'integer',
+        'aging_po_pct' => 'integer',
+        'aging_10_days_tssd' => 'integer',
     ];
 
     // Define the belongs-to relationship with CaseFile

@@ -1514,18 +1514,19 @@ function showAlert(type, message) {
                             'applicable_draft_order': {
                                 type: 'select',
                                 options: [
-                                    { value: 'N', text: 'No' },
-                                    { value: 'Y', text: 'Yes' }
+                                    { value: 'Y', text: 'Yes' },
+                                    { value: 'N', text: 'No' }
                                 ]
                             },
-                            'po_pct': { type: 'text' },
-                            'aging_po_pct': { type: 'text' },
+                            'po_pct': { type: 'number' }, // Changed from text to number
+                            'aging_po_pct': { type: 'number' }, // Changed from text to number
                             'status_po_pct': {
                                 type: 'select',
                                 options: [
                                     { value: '', text: 'Select Status' },
                                     { value: 'Pending', text: 'Pending' },
-                                    { value: 'In Progress', text: 'In Progress' },
+                                    { value: 'Ongoing', text: 'Ongoing' },
+                                    { value: 'Overdue', text: 'Overdue' },
                                     { value: 'Completed', text: 'Completed' }
                                 ]
                             },
@@ -1533,16 +1534,15 @@ function showAlert(type, message) {
                             'reviewer_drafter': { type: 'text' },
                             'date_received_by_reviewer': { type: 'date' },
                             'date_returned_from_drafter': { type: 'date' },
-                            'aging_10_days_tssd': { type: 'text' },
+                            'aging_10_days_tssd': { type: 'number' }, // Changed from text to number
                             'status_reviewer_drafter': {
                                 type: 'select',
                                 options: [
                                     { value: '', text: 'Select Status' },
                                     { value: 'Pending', text: 'Pending' },
                                     { value: 'Ongoing', text: 'Ongoing' },
-                                    { value: 'Completed', text: 'Completed' },
-                                    { value: 'Approved', text: 'Approved' },
                                     { value: 'Returned', text: 'Returned' },
+                                    { value: 'Approved', text: 'Approved' },
                                     { value: 'Overdue', text: 'Overdue' }
                                 ]
                             },
