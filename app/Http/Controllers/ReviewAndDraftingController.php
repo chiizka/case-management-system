@@ -200,12 +200,17 @@ class ReviewAndDraftingController extends Controller
         }
     }
 
+    /**
+     * AJAX inline update method for review and drafting records
+     */
     public function inlineUpdate(Request $request, $id)
     {
         Log::info('Review and drafting inline update request received', [
             'review_drafting_id' => $id,
             'request_data' => $request->all(),
-            'content_type' => $request->header('Content-Type')
+            'content_type' => $request->header('Content-Type'),
+            'method' => $request->method(),
+            'url' => $request->url()
         ]);
         
         try {
@@ -230,19 +235,19 @@ class ReviewAndDraftingController extends Controller
             
             Log::info('Cleaned data for validation', ['cleaned_data' => $cleanedData]);
             
-            // Validation rules
+            // Updated validation rules to match your database schema
             $validator = Validator::make($cleanedData, [
                 'draft_order_type' => 'nullable|string|max:255',
                 'applicable_draft_order' => 'nullable|in:Y,N',
                 'po_pct' => 'nullable|string|max:255',
                 'aging_po_pct' => 'nullable|string|max:255',
-                'status_po_pct' => 'nullable|in:Pending,In Progress,Completed',
+                'status_po_pct' => 'nullable|string|max:255', // Removed strict enum validation
                 'date_received_from_po' => 'nullable|date',
                 'reviewer_drafter' => 'nullable|string|max:255',
                 'date_received_by_reviewer' => 'nullable|date',
                 'date_returned_from_drafter' => 'nullable|date',
                 'aging_10_days_tssd' => 'nullable|string|max:255',
-                'status_reviewer_drafter' => 'nullable|in:Pending,Ongoing,Completed,Approved,Returned,Overdue',
+                'status_reviewer_drafter' => 'nullable|string|max:255', // Removed strict enum validation
                 'draft_order_tssd_reviewer' => 'nullable|string|max:255',
             ]);
 

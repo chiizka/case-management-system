@@ -595,7 +595,8 @@
                                 <span aria-hidden="true">&times;</span>
                             </button>
                         </div>
-                                                <!-- Search + Buttons Row -->
+
+                        <!-- Search + Buttons Row -->
                         <div class="d-flex justify-content-between align-items-center mb-3 custom-search-container">
                             <div class="d-flex align-items-center">
                                 <label class="mr-2 mb-0" style="font-size: 0.8rem;">Search:</label>
@@ -628,30 +629,33 @@
                                 <tbody>
                                     @if(isset($reviewAndDrafting) && $reviewAndDrafting->count() > 0)
                                         @foreach($reviewAndDrafting as $record)
-                                            <tr>
-                                                <td>{{ $record->case->inspection_id ?? '-' }}</td>
-                                                <td title="{{ $record->case->establishment_name ?? '' }}">
+                                            <tr data-id="{{ $record->id }}">
+                                                <!-- Readonly fields -->
+                                                <td class="editable-cell readonly-cell" data-field="inspection_id">{{ $record->case->inspection_id ?? '-' }}</td>
+                                                <td class="editable-cell readonly-cell" data-field="establishment_name" title="{{ $record->case->establishment_name ?? '' }}">
                                                     {{ $record->case ? Str::limit($record->case->establishment_name, 25) : '-' }}
                                                 </td>
-                                                <td>{{ $record->draft_order_type ?? '-' }}</td>
-                                                <td>
+                                                
+                                                <!-- Editable fields -->
+                                                <td class="editable-cell" data-field="draft_order_type">{{ $record->draft_order_type ?? '-' }}</td>
+                                                <td class="editable-cell" data-field="applicable_draft_order">
                                                     <span class="badge badge-{{ $record->applicable_draft_order == 'Y' ? 'success' : 'warning' }}">
                                                         {{ $record->applicable_draft_order ?? 'N' }}
                                                     </span>
                                                 </td>
-                                                <td>{{ $record->po_pct ?? '-' }}</td>
-                                                <td>{{ $record->aging_po_pct ?? '-' }}</td>
-                                                <td>
+                                                <td class="editable-cell" data-field="po_pct">{{ $record->po_pct ?? '-' }}</td>
+                                                <td class="editable-cell" data-field="aging_po_pct">{{ $record->aging_po_pct ?? '-' }}</td>
+                                                <td class="editable-cell" data-field="status_po_pct">
                                                     <span class="badge badge-{{ $record->status_po_pct == 'Completed' ? 'success' : ($record->status_po_pct == 'In Progress' ? 'warning' : 'secondary') }}">
                                                         {{ $record->status_po_pct ?? 'Pending' }}
                                                     </span>
                                                 </td>
-                                                <td>{{ $record->date_received_from_po ? \Carbon\Carbon::parse($record->date_received_from_po)->format('Y-m-d') : '-' }}</td>
-                                                <td>{{ $record->reviewer_drafter ?? '-' }}</td>
-                                                <td>{{ $record->date_received_by_reviewer ? \Carbon\Carbon::parse($record->date_received_by_reviewer)->format('Y-m-d') : '-' }}</td>
-                                                <td>{{ $record->date_returned_from_drafter ? \Carbon\Carbon::parse($record->date_returned_from_drafter)->format('Y-m-d') : '-' }}</td>
-                                                <td>{{ $record->aging_10_days_tssd ?? '-' }}</td>
-                                                <td>
+                                                <td class="editable-cell" data-field="date_received_from_po">{{ $record->date_received_from_po ? \Carbon\Carbon::parse($record->date_received_from_po)->format('Y-m-d') : '-' }}</td>
+                                                <td class="editable-cell" data-field="reviewer_drafter">{{ $record->reviewer_drafter ?? '-' }}</td>
+                                                <td class="editable-cell" data-field="date_received_by_reviewer">{{ $record->date_received_by_reviewer ? \Carbon\Carbon::parse($record->date_received_by_reviewer)->format('Y-m-d') : '-' }}</td>
+                                                <td class="editable-cell" data-field="date_returned_from_drafter">{{ $record->date_returned_from_drafter ? \Carbon\Carbon::parse($record->date_returned_from_drafter)->format('Y-m-d') : '-' }}</td>
+                                                <td class="editable-cell" data-field="aging_10_days_tssd">{{ $record->aging_10_days_tssd ?? '-' }}</td>
+                                                <td class="editable-cell" data-field="status_reviewer_drafter">
                                                     <span class="badge badge-{{ 
                                                         $record->status_reviewer_drafter == 'Completed' ? 'success' : 
                                                         ($record->status_reviewer_drafter == 'Ongoing' ? 'warning' : 
@@ -662,13 +666,15 @@
                                                         {{ $record->status_reviewer_drafter ?? 'Pending' }}
                                                     </span>
                                                 </td>
-                                                <td>{{ $record->draft_order_tssd_reviewer ?? '-' }}</td>
+                                                <td class="editable-cell" data-field="draft_order_tssd_reviewer">{{ $record->draft_order_tssd_reviewer ?? '-' }}</td>
+                                                
+                                                <!-- Actions -->
                                                 <td>
+                                                    <button class="btn btn-sm btn-warning edit-row-btn-review" title="Edit">
+                                                        <i class="fas fa-edit"></i>
+                                                    </button>
                                                     <a href="{{ route('review-and-drafting.show', $record->id) }}" class="btn btn-info btn-sm" title="View">
                                                         <i class="fas fa-eye"></i>
-                                                    </a>
-                                                    <a href="{{ route('review-and-drafting.edit', $record->id) }}" class="btn btn-warning btn-sm" title="Edit">
-                                                        <i class="fas fa-edit"></i>
                                                     </a>
                                                     <form action="{{ route('review-and-drafting.destroy', $record->id) }}" method="POST" style="display:inline;">
                                                         @csrf
