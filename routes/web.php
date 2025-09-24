@@ -87,12 +87,13 @@ Route::post('/password/reset', [App\Http\Controllers\Auth\ResetPasswordControlle
     Route::put('/case/{id}/inline-update', [CasesController::class, 'inlineUpdate'])->name('case.inlineUpdate');
     Route::put('/docketing/{id}/inline-update', [DocketingController::class, 'inlineUpdate'])->name('docketing.inlineUpdate');
 
-    // Hearing Process routes
+
 Route::resource('hearing', HearingProcessController::class);
 Route::put('/hearing/{id}/inline-update', [HearingProcessController::class, 'inlineUpdate'])->name('hearing.inlineUpdate');
 Route::get('/hearing/{id}/get', [HearingProcessController::class, 'getHearingProcess'])->name('hearing.get');
-// Add this line to your existing hearing-process routes:
 Route::put('/hearing-process/{id}/inline-update', [HearingProcessController::class, 'inlineUpdate'])->name('hearing-process.inlineUpdate');
 Route::resource('review-and-drafting', ReviewAndDraftingController::class);
 Route::put('/review-and-drafting/{id}/inline-update', [ReviewAndDraftingController::class, 'inlineUpdate'])->name('review-and-drafting.inline-update');
+Route::put('/orders-and-disposition/{id}/inline-update', [OrderAndDispositionController::class, 'inlineUpdate'])->name('orders-and-disposition.inline-update');
+
 // });

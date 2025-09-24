@@ -683,6 +683,14 @@
                                                             <i class="fas fa-trash"></i>
                                                         </button>
                                                     </form>
+                                                    @if($record->case && $record->case->current_stage === '4: Review & Drafting')
+                                                        <form action="{{ route('case.nextStage', $record->case->id) }}" method="POST" style="display:inline;">
+                                                            @csrf
+                                                            <button type="submit" class="btn btn-success btn-sm ml-1" title="Move to Orders & Disposition" onclick="return confirm('Complete review & drafting and move to Orders & Disposition?')">
+                                                                <i class="fas fa-arrow-right"></i> Next
+                                                            </button>
+                                                        </form>
+                                                    @endif
                                                 </td>
                                             </tr>
                                         @endforeach
@@ -702,6 +710,19 @@
             <div class="tab-pane fade" id="tab5" role="tabpanel" aria-labelledby="tab5-tab">
                 <div class="card shadow mb-4">
                     <div class="card-body">
+                        <div class="alert alert-success alert-dismissible fade" role="alert" id="success-alert-tab5" style="display: none;">
+                            <span id="success-message-tab5"></span>
+                            <button type="button" class="close" onclick="hideAlert('success-alert-tab5')">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+
+                        <div class="alert alert-danger alert-dismissible fade" role="alert" id="error-alert-tab5" style="display: none;">
+                            <span id="error-message-tab5"></span>
+                            <button type="button" class="close" onclick="hideAlert('error-alert-tab5')">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
                         <!-- Search + Buttons Row -->
                         <div class="d-flex justify-content-between align-items-center mb-3 custom-search-container">
                             <div class="d-flex align-items-center">
@@ -732,63 +753,75 @@
                                         <th>Actions</th>
                                     </tr>
                                 </thead>
-                                <tbody>
-                                    @if(isset($ordersAndDisposition) && $ordersAndDisposition->count() > 0)
-                                        @foreach($ordersAndDisposition as $record)
-                                            <tr>
-                                                <td>{{ $record->case->inspection_id ?? '-' }}</td>
-                                                <td title="{{ $record->case->establishment_name ?? '' }}">
-                                                    {{ $record->case ? Str::limit($record->case->establishment_name, 25) : '-' }}
-                                                </td>
-                                                <td>{{ $record->aging_2_days_finalization ?? '-' }}</td>
-                                                <td>
-                                                    <span class="badge badge-{{ $record->status_finalization == 'Completed' ? 'success' : ($record->status_finalization == 'Pending' ? 'warning' : 'secondary') }}">
-                                                        {{ $record->status_finalization ?? 'Pending' }}
-                                                    </span>
-                                                </td>
-                                                <td>{{ $record->pct_96_days ?? '-' }}</td>
-                                                <td>{{ $record->date_signed_mis ? \Carbon\Carbon::parse($record->date_signed_mis)->format('Y-m-d') : '-' }}</td>
-                                                <td>
-                                                    <span class="badge badge-{{ $record->status_pct == 'Completed' ? 'success' : ($record->status_pct == 'Ongoing' ? 'warning' : 'secondary') }}">
-                                                        {{ $record->status_pct ?? 'Pending' }}
-                                                    </span>
-                                                </td>
-                                                <td>{{ $record->reference_date_pct ? \Carbon\Carbon::parse($record->reference_date_pct)->format('Y-m-d') : '-' }}</td>
-                                                <td>{{ $record->aging_pct ?? '-' }}</td>
-                                                <td>{{ $record->disposition_mis ?? '-' }}</td>
-                                                <td>{{ $record->disposition_actual ?? '-' }}</td>
-                                                <td>{{ Str::limit($record->findings_to_comply, 40) ?? '-' }}</td>
-                                                <td>{{ $record->date_of_order_actual ? \Carbon\Carbon::parse($record->date_of_order_actual)->format('Y-m-d') : '-' }}</td>
-                                                <td>{{ $record->released_date_actual ? \Carbon\Carbon::parse($record->released_date_actual)->format('Y-m-d') : '-' }}</td>
-                                                <td>
-                                                    <a href="{{ route('orders-and-disposition.show', $record->id) }}" class="btn btn-info btn-sm" title="View">
-                                                        <i class="fas fa-eye"></i>
-                                                    </a>
-                                                    <a href="{{ route('orders-and-disposition.edit', $record->id) }}" class="btn btn-warning btn-sm" title="Edit">
-                                                        <i class="fas fa-edit"></i>
-                                                    </a>
-                                                    <form action="{{ route('orders-and-disposition.destroy', $record->id) }}" method="POST" style="display:inline;">
-                                                        @csrf
-                                                        @method('DELETE')
-                                                        <button type="submit" class="btn btn-danger btn-sm delete-btn" title="Delete" onclick="return confirm('Are you sure you want to delete this order & disposition record?')">
-                                                            <i class="fas fa-trash"></i>
+                                    <tbody>
+                                        @if(isset($ordersAndDisposition) && $ordersAndDisposition->count() > 0)
+                                            @foreach($ordersAndDisposition as $record)
+                                                <tr data-id="{{ $record->id }}">
+                                                    <!-- Readonly fields -->
+                                                    <td class="editable-cell readonly-cell" data-field="inspection_id">{{ $record->case->inspection_id ?? '-' }}</td>
+                                                    <td class="editable-cell readonly-cell" data-field="establishment_name" title="{{ $record->case->establishment_name ?? '' }}">
+                                                        {{ $record->case ? Str::limit($record->case->establishment_name, 25) : '-' }}
+                                                    </td>
+                                                    
+                                                    <!-- Editable fields -->
+                                                    <td class="editable-cell" data-field="aging_2_days_finalization">{{ $record->aging_2_days_finalization ?? '-' }}</td>
+                                                    <td class="editable-cell" data-field="status_finalization">
+                                                        <span class="badge badge-{{ $record->status_finalization == 'Completed' ? 'success' : ($record->status_finalization == 'Pending' ? 'warning' : 'secondary') }}">
+                                                            {{ $record->status_finalization ?? 'Pending' }}
+                                                        </span>
+                                                    </td>
+                                                    <td class="editable-cell" data-field="pct_96_days">{{ $record->pct_96_days ?? '-' }}</td>
+                                                    <td class="editable-cell" data-field="date_signed_mis" data-type="date">{{ $record->date_signed_mis ? \Carbon\Carbon::parse($record->date_signed_mis)->format('Y-m-d') : '-' }}</td>
+                                                    <td class="editable-cell" data-field="status_pct">
+                                                        <span class="badge badge-{{ $record->status_pct == 'Completed' ? 'success' : ($record->status_pct == 'Ongoing' ? 'warning' : 'secondary') }}">
+                                                            {{ $record->status_pct ?? 'Pending' }}
+                                                        </span>
+                                                    </td>
+                                                    <td class="editable-cell" data-field="reference_date_pct" data-type="date">{{ $record->reference_date_pct ? \Carbon\Carbon::parse($record->reference_date_pct)->format('Y-m-d') : '-' }}</td>
+                                                    <td class="editable-cell" data-field="aging_pct">{{ $record->aging_pct ?? '-' }}</td>
+                                                    <td class="editable-cell" data-field="disposition_mis">{{ $record->disposition_mis ?? '-' }}</td>
+                                                    <td class="editable-cell" data-field="disposition_actual">{{ $record->disposition_actual ?? '-' }}</td>
+                                                    <td class="editable-cell" data-field="findings_to_comply" title="{{ $record->findings_to_comply ?? '' }}">{{ Str::limit($record->findings_to_comply, 40) ?? '-' }}</td>
+                                                    <td class="editable-cell" data-field="date_of_order_actual" data-type="date">{{ $record->date_of_order_actual ? \Carbon\Carbon::parse($record->date_of_order_actual)->format('Y-m-d') : '-' }}</td>
+                                                    <td class="editable-cell" data-field="released_date_actual" data-type="date">{{ $record->released_date_actual ? \Carbon\Carbon::parse($record->released_date_actual)->format('Y-m-d') : '-' }}</td>
+                                                    
+                                                    <!-- Actions -->
+                                                    <td>
+                                                        <button class="btn btn-sm btn-warning edit-row-btn-orders" title="Edit">
+                                                            <i class="fas fa-edit"></i>
                                                         </button>
-                                                    </form>
-                                                </td>
+                                                        <a href="{{ route('orders-and-disposition.show', $record->id) }}" class="btn btn-info btn-sm" title="View">
+                                                            <i class="fas fa-eye"></i>
+                                                        </a>
+                                                        <form action="{{ route('orders-and-disposition.destroy', $record->id) }}" method="POST" style="display:inline;">
+                                                            @csrf
+                                                            @method('DELETE')
+                                                            <button type="submit" class="btn btn-danger btn-sm delete-btn" title="Delete" onclick="return confirm('Are you sure you want to delete this order & disposition record?')">
+                                                                <i class="fas fa-trash"></i>
+                                                            </button>
+                                                        </form>
+                                                        @if($record->case && $record->case->current_stage === '5: Orders & Disposition')
+                                                            <form action="{{ route('case.nextStage', $record->case->id) }}" method="POST" style="display:inline;">
+                                                                @csrf
+                                                                <button type="submit" class="btn btn-success btn-sm ml-1" title="Move to Compliance & Awards" onclick="return confirm('Complete orders & disposition and move to Compliance & Awards?')">
+                                                                    <i class="fas fa-arrow-right"></i> Next
+                                                                </button>
+                                                            </form>
+                                                        @endif
+                                                    </td>
+                                                </tr>
+                                            @endforeach
+                                        @else
+                                            <tr>
+                                                <td colspan="15" class="text-center">No orders & disposition records found.</td>
                                             </tr>
-                                        @endforeach
-                                    @else
-                                        <tr>
-                                            <td colspan="15" class="text-center">No orders & disposition records found.</td>
-                                        </tr>
-                                    @endif
-                                </tbody>
+                                        @endif
+                                    </tbody>
                             </table>
                         </div>
                     </div>
                 </div>
             </div>
-
 
             <!-- Tab 6: Compliance & Awards -->
             <div class="tab-pane fade" id="tab6" role="tabpanel" aria-labelledby="tab6-tab">
@@ -1064,6 +1097,9 @@ $(document).ready(function() {
     if ($.fn.DataTable.isDataTable('#dataTable4')) {
         $('#dataTable4').DataTable().destroy();
     }
+    if ($.fn.DataTable.isDataTable('#dataTable5')) {
+    $('#dataTable5').DataTable().destroy();
+    }
 
     // Initialize DataTable for All Active Cases Tab (tab0)
     var table0 = $('#dataTable0').DataTable({
@@ -1185,6 +1221,29 @@ $(document).ready(function() {
         }
     });
 
+    var table5 = $('#dataTable5').DataTable({
+        pageLength: 10,
+        lengthChange: false,
+        paging: true,
+        searching: false,
+        info: true,
+        dom: 'tip',
+        order: [[0, "asc"]],
+        scrollX: true,
+        scrollY: '400px',
+        scrollCollapse: true,
+        drawCallback: function() {
+            $('.sticky-table thead th').css({
+                'position': 'sticky',
+                'top': 0,
+                'z-index': 12
+            });
+            $('.sticky-table thead th:nth-child(-n+5)').css({
+                'z-index': 13
+            });
+        }
+    });
+
     // Custom search functionality for All Active Cases Tab
     $('#customSearch0').on('keyup input change', function() {
         table0.search(this.value).draw();
@@ -1209,6 +1268,10 @@ $(document).ready(function() {
     $('#customSearch4').on('keyup input change', function() {
         table4.search(this.value).draw();
     });
+
+    if ($.fn.DataTable.isDataTable('#dataTable5')) {
+    $('#dataTable5').DataTable().destroy();
+    }
 
     // Modal handling for Add/Edit Cases
     $('#addCaseModal').on('show.bs.modal', function(event) {
@@ -1351,6 +1414,8 @@ $(document).ready(function() {
             table3.columns.adjust().draw();
         } else if (target === '#tab4') {
             table4.columns.adjust().draw();
+        } else if (target === '#tab5') {
+            table5.columns.adjust().draw(); // Add this line
         }
     });
 });
@@ -1374,7 +1439,7 @@ function showAlert(type, message) {
     // Auto-remove after 5 seconds
     setTimeout(function() {
         $('.alert').fadeOut();
-    }, 5000);
+    }, 2000);
 }
 
             $(document).ready(function() {
@@ -1548,7 +1613,47 @@ function showAlert(type, message) {
                             },
                             'draft_order_tssd_reviewer': { type: 'text' }
                         }
+                    },
+                    'tab5': {
+                    name: 'orders-and-disposition',
+                    endpoint: '/orders-and-disposition/',
+                    editBtnClass: '.edit-row-btn-orders',
+                    saveBtnClass: '.save-btn-orders',
+                    cancelBtnClass: '.cancel-btn-orders',
+                    alertPrefix: 'tab5',
+                    fields: {
+                        'aging_2_days_finalization': { type: 'number' },
+                        'status_finalization': {
+                            type: 'select',
+                            options: [
+                                { value: '', text: 'Select Status' },
+                                { value: 'Pending', text: 'Pending' },
+                                { value: 'In Progress', text: 'In Progress' },
+                                { value: 'Completed', text: 'Completed' },
+                                { value: 'Overdue', text: 'Overdue' }
+                            ]
+                        },
+                        'pct_96_days': { type: 'number' },
+                        'date_signed_mis': { type: 'date' },
+                        'status_pct': {
+                            type: 'select',
+                            options: [
+                                { value: '', text: 'Select Status' },
+                                { value: 'Pending', text: 'Pending' },
+                                { value: 'Ongoing', text: 'Ongoing' },
+                                { value: 'Completed', text: 'Completed' },
+                                { value: 'Overdue', text: 'Overdue' }
+                            ]
+                        },
+                        'reference_date_pct': { type: 'date' },
+                        'aging_pct': { type: 'number' },
+                        'disposition_mis': { type: 'text' },
+                        'disposition_actual': { type: 'text' },
+                        'findings_to_comply': { type: 'text' },
+                        'date_of_order_actual': { type: 'date' },
+                        'released_date_actual': { type: 'date' }
                     }
+                }
                 };
 
                 // Get current active tab
@@ -1563,7 +1668,7 @@ function showAlert(type, message) {
                 }
 
                 // Unified edit button click handler
-                $(document).on('click', '.edit-row-btn, .edit-row-btn-case, .edit-row-btn-docketing, .edit-row-btn-hearing, .edit-row-btn-review', function() {
+                $(document).on('click', '.edit-row-btn, .edit-row-btn-case, .edit-row-btn-docketing, .edit-row-btn-hearing, .edit-row-btn-review, .edit-row-btn-orders', function() {
                     const row = $(this).closest('tr');
                     currentTab = getCurrentTab();
                     
@@ -1576,7 +1681,7 @@ function showAlert(type, message) {
                 });
 
                 // Unified save button click handler  
-                $(document).on('click', '.save-btn, .save-btn-case, .save-btn-hearing, .save-btn-review', function() {
+                $(document).on('click', '.save-btn, .save-btn-case, .save-btn-hearing, .save-btn-review, .save-btn-orders', function() {
                     const row = $(this).closest('tr');
                     const recordId = row.data('id');
                     const config = getTabConfig(currentTab);
@@ -1591,7 +1696,7 @@ function showAlert(type, message) {
                 });
 
                 // Unified cancel button click handler
-                $(document).on('click', '.cancel-btn, .cancel-btn-case, .cancel-btn-hearing, .cancel-btn-review', function() {
+                $(document).on('click', '.cancel-btn, .cancel-btn-case, .cancel-btn-hearing, .cancel-btn-review, .cancel-btn-orders', function() {
                     cancelEdit();
                 });
 

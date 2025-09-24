@@ -21,7 +21,7 @@ return new class extends Migration
                 '2: Docketing', 
                 '3: Hearing',
                 '4: Review & Drafting',  // Replace with actual stage 4 name
-                '5: Order & Disposition',  // Replace with actual stage 5 name
+                '5: Orders & Disposition',  // Replace with actual stage 5 name
                 '6: Compliance & Awards',  // Replace with actual stage 6 name
                 '7: Appeals & Resolution'   // Replace with actual stage 7 name
             ]);
