@@ -826,8 +826,20 @@
             <!-- Tab 6: Compliance & Awards -->
             <div class="tab-pane fade" id="tab6" role="tabpanel" aria-labelledby="tab6-tab">
                 <div class="card shadow mb-4">
-                    <div class="card-body">
-                        <!-- Search + Buttons Row -->
+                    <div class="card-body">   
+                            <div class="alert alert-success alert-dismissible fade" role="alert" id="success-alert-tab6" style="display: none;">
+                                <span id="success-message-tab6"></span>
+                                <button type="button" class="close" onclick="hideAlert('success-alert-tab6')">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+
+                            <div class="alert alert-danger alert-dismissible fade" role="alert" id="error-alert-tab6" style="display: none;">
+                                <span id="error-message-tab6"></span>
+                                <button type="button" class="close" onclick="hideAlert('error-alert-tab6')">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
                         <div class="d-flex justify-content-between align-items-center mb-3 custom-search-container">
                             <div class="d-flex align-items-center">
                                 <label class="mr-2 mb-0" style="font-size: 0.8rem;">Search:</label>
@@ -855,145 +867,186 @@
                                         <th>Status of Case (After 1st Order)</th>
                                         <th>Date Notice Finality Dismissed</th>
                                         <th>Released Date Notice Finality</th>
+                                        <th>Updated Ticked in MIS</th>
+                                        <th>Second Order Drafter</th>
+                                        <th>Date Received by Drafter CT/CNPC</th>
                                         <th>Actions</th>
                                     </tr>
                                 </thead>
-                                <tbody>
-                                    @if(isset($complianceAndAwards) && $complianceAndAwards->count() > 0)
-                                        @foreach($complianceAndAwards as $record)
-                                            <tr>
-                                                <td>{{ $record->inspection_id ?? '-' }}</td>
-                                                <td title="{{ $record->establishment_name ?? '' }}">
-                                                    {{ $record->establishment_name ? Str::limit($record->establishment_name, 25) : '-' }}
-                                                </td>
-                                                <td>{{ $record->compliance_order_monetary_award ?? '-' }}</td>
-                                                <td>{{ $record->osh_penalty ?? '-' }}</td>
-                                                <td>{{ $record->affected_male ?? 0 }}</td>
-                                                <td>{{ $record->affected_female ?? 0 }}</td>
-                                                <td>{{ $record->first_order_dismissal_cnpc ?? '-' }}</td>
-                                                <td>{{ $record->tavable_less_than_10_workers ? 'Yes' : 'No' }}</td>
-                                                <td>{{ $record->with_deposited_monetary_claims ? 'Yes' : 'No' }}</td>
-                                                <td>{{ $record->amount_deposited ?? '-' }}</td>
-                                                <td>{{ $record->with_order_payment_notice ? 'Yes' : 'No' }}</td>
-                                                <td>
-                                                    <span class="badge badge-{{ $record->status_all_employees_received == 'Yes' ? 'success' : 'warning' }}">
-                                                        {{ $record->status_all_employees_received ?? 'Pending' }}
-                                                    </span>
-                                                </td>
-                                                <td>{{ $record->status_case_after_first_order ?? '-' }}</td>
-                                                <td>{{ $record->date_notice_finality_dismissed ? \Carbon\Carbon::parse($record->date_notice_finality_dismissed)->format('Y-m-d') : '-' }}</td>
-                                                <td>{{ $record->released_date_notice_finality ? \Carbon\Carbon::parse($record->released_date_notice_finality)->format('Y-m-d') : '-' }}</td>
-                                                <td>
-                                                    <a href="{{ route('compliance-and-awards.show', $record->id) }}" class="btn btn-info btn-sm" title="View">
-                                                        <i class="fas fa-eye"></i>
-                                                    </a>
-                                                    <a href="{{ route('compliance-and-awards.edit', $record->id) }}" class="btn btn-warning btn-sm" title="Edit">
-                                                        <i class="fas fa-edit"></i>
-                                                    </a>
-                                                    <form action="{{ route('compliance-and-awards.destroy', $record->id) }}" method="POST" style="display:inline;">
-                                                        @csrf
-                                                        @method('DELETE')
-                                                        <button type="submit" class="btn btn-danger btn-sm delete-btn" title="Delete" onclick="return confirm('Are you sure you want to delete this compliance & awards record?')">
-                                                            <i class="fas fa-trash"></i>
+                                    <tbody>
+                                        @if(isset($complianceAndAwards) && $complianceAndAwards->count() > 0)
+                                            @foreach($complianceAndAwards as $record)
+                                                <tr data-id="{{ $record->id }}">
+                                                    <!-- Readonly fields -->
+                                                    <td class="editable-cell readonly-cell" data-field="inspection_id">{{ $record->case->inspection_id ?? '-' }}</td>
+                                                    <td class="editable-cell readonly-cell" data-field="establishment_name" title="{{ $record->case->establishment_name ?? '' }}">
+                                                        {{ $record->case ? Str::limit($record->case->establishment_name, 25) : '-' }}
+                                                    </td>
+                                                    
+                                                    <!-- Editable fields -->
+                                                    <td class="editable-cell" data-field="compliance_order_monetary_award">{{ $record->compliance_order_monetary_award ?? '-' }}</td>
+                                                    <td class="editable-cell" data-field="osh_penalty">{{ $record->osh_penalty ?? '-' }}</td>
+                                                    <td class="editable-cell" data-field="affected_male">{{ $record->affected_male ?? 0 }}</td>
+                                                    <td class="editable-cell" data-field="affected_female">{{ $record->affected_female ?? 0 }}</td>
+                                                    <td class="editable-cell" data-field="first_order_dismissal_cnpc">
+                                                        <span class="badge badge-{{ $record->first_order_dismissal_cnpc ? 'success' : 'secondary' }}">
+                                                            {{ $record->first_order_dismissal_cnpc ? 'Yes' : 'No' }}
+                                                        </span>
+                                                    </td>
+                                                    <td class="editable-cell" data-field="tavable_less_than_10_workers">
+                                                        <span class="badge badge-{{ $record->tavable_less_than_10_workers ? 'success' : 'secondary' }}">
+                                                            {{ $record->tavable_less_than_10_workers ? 'Yes' : 'No' }}
+                                                        </span>
+                                                    </td>
+                                                    <td class="editable-cell" data-field="with_deposited_monetary_claims">
+                                                        <span class="badge badge-{{ $record->with_deposited_monetary_claims ? 'success' : 'secondary' }}">
+                                                            {{ $record->with_deposited_monetary_claims ? 'Yes' : 'No' }}
+                                                        </span>
+                                                    </td>
+                                                    <td class="editable-cell" data-field="amount_deposited">{{ $record->amount_deposited ?? '-' }}</td>
+                                                    <td class="editable-cell" data-field="with_order_payment_notice">
+                                                        <span class="badge badge-{{ $record->with_order_payment_notice ? 'success' : 'secondary' }}">
+                                                            {{ $record->with_order_payment_notice ? 'Yes' : 'No' }}
+                                                        </span>
+                                                    </td>
+                                                    <td class="editable-cell" data-field="status_all_employees_received">
+                                                        <span class="badge badge-{{ $record->status_all_employees_received == 'Yes' ? 'success' : 'warning' }}">
+                                                            {{ $record->status_all_employees_received ?? 'Pending' }}
+                                                        </span>
+                                                    </td>
+                                                    <td class="editable-cell" data-field="status_case_after_first_order">{{ $record->status_case_after_first_order ?? '-' }}</td>
+                                                    <td class="editable-cell" data-field="date_notice_finality_dismissed" data-type="date">{{ $record->date_notice_finality_dismissed ? \Carbon\Carbon::parse($record->date_notice_finality_dismissed)->format('Y-m-d') : '-' }}</td>
+                                                    <td class="editable-cell" data-field="released_date_notice_finality" data-type="date">{{ $record->released_date_notice_finality ? \Carbon\Carbon::parse($record->released_date_notice_finality)->format('Y-m-d') : '-' }}</td>
+                                                    
+                                                    <!-- NEW MISSING COLUMNS -->
+                                                    <td class="editable-cell" data-field="updated_ticked_in_mis">
+                                                        <span class="badge badge-{{ $record->updated_ticked_in_mis ? 'success' : 'secondary' }}">
+                                                            {{ $record->updated_ticked_in_mis ? 'Yes' : 'No' }}
+                                                        </span>
+                                                    </td>
+                                                    <td class="editable-cell" data-field="second_order_drafter">{{ $record->second_order_drafter ?? '-' }}</td>
+                                                    <td class="editable-cell" data-field="date_received_by_drafter_ct_cnpc" data-type="date">{{ $record->date_received_by_drafter_ct_cnpc ? \Carbon\Carbon::parse($record->date_received_by_drafter_ct_cnpc)->format('Y-m-d') : '-' }}</td>
+                                                    
+                                                    <!-- Actions -->
+                                                    <td>
+                                                        <button class="btn btn-sm btn-warning edit-row-btn-compliance" title="Edit">
+                                                            <i class="fas fa-edit"></i>
                                                         </button>
-                                                    </form>
-                                                </td>
+                                                        <a href="{{ route('compliance-and-awards.show', $record->id) }}" class="btn btn-info btn-sm" title="View">
+                                                            <i class="fas fa-eye"></i>
+                                                        </a>
+                                                        <form action="{{ route('compliance-and-awards.destroy', $record->id) }}" method="POST" style="display:inline;">
+                                                            @csrf
+                                                            @method('DELETE')
+                                                            <button type="submit" class="btn btn-danger btn-sm delete-btn" title="Delete" onclick="return confirm('Are you sure you want to delete this compliance & awards record?')">
+                                                                <i class="fas fa-trash"></i>
+                                                            </button>
+                                                        </form>
+                                                        @if($record->case && $record->case->current_stage === '6: Compliance & Awards')
+                                                            <form action="{{ route('case.nextStage', $record->case->id) }}" method="POST" style="display:inline;">
+                                                                @csrf
+                                                                <button type="submit" class="btn btn-success btn-sm ml-1" title="Move to Appeals & Resolution" onclick="return confirm('Complete compliance & awards and move to Appeals & Resolution?')">
+                                                                    <i class="fas fa-arrow-right"></i> Next
+                                                                </button>
+                                                            </form>
+                                                        @endif
+                                                    </td>
+                                                </tr>
+                                            @endforeach
+                                        @else
+                                            <tr>
+                                                <td colspan="19" class="text-center">No compliance & awards records found.</td>
                                             </tr>
-                                        @endforeach
-                                    @else
-                                        <tr>
-                                            <td colspan="16" class="text-center">No compliance & awards records found.</td>
-                                        </tr>
-                                    @endif
-                                </tbody>
+                                        @endif
+                                    </tbody>
                             </table>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Tab 7: Appeals & Resolution -->
-                        <div class="tab-pane fade" id="tab7" role="tabpanel" aria-labelledby="tab7-tab">
-                <div class="card shadow mb-4">
-                    <div class="card-body">
-                        <!-- Search + Buttons Row -->
-                        <div class="d-flex justify-content-between align-items-center mb-3 custom-search-container">
-                            <div class="d-flex align-items-center">
-                                <label class="mr-2 mb-0" style="font-size: 0.8rem;">Search:</label>
-                                <input type="search" class="form-control form-control-sm" id="customSearch7" placeholder="Search appeals..." style="width: 200px;">
+                <!-- Tab 7: Appeals & Resolution -->
+                            <div class="tab-pane fade" id="tab7" role="tabpanel" aria-labelledby="tab7-tab">
+                    <div class="card shadow mb-4">
+                        <div class="card-body">
+                            <!-- Search + Buttons Row -->
+                            <div class="d-flex justify-content-between align-items-center mb-3 custom-search-container">
+                                <div class="d-flex align-items-center">
+                                    <label class="mr-2 mb-0" style="font-size: 0.8rem;">Search:</label>
+                                    <input type="search" class="form-control form-control-sm" id="customSearch7" placeholder="Search appeals..." style="width: 200px;">
+                                </div>
+                            </div>
+
+                            <!-- Table Container -->
+                            <div class="table-container">
+                                <table class="table table-bordered compact-table sticky-table" id="dataTable7" width="100%" cellspacing="0">
+                                    <thead>
+                                        <tr>
+                                            <th>Inspection ID</th>
+                                            <th>Name of Establishment</th>
+                                            <th>Date Returned Case Mgmt</th>
+                                            <th>Review CT CNPC</th>
+                                            <th>Date Received Drafter Finalization (2nd)</th>
+                                            <th>Date Returned Case Mgmt Signature (2nd)</th>
+                                            <th>Date Order (2nd CNPC)</th>
+                                            <th>Released Date (2nd CNPC)</th>
+                                            <th>Date Forwarded MALSU</th>
+                                            <th>Motion Reconsideration Date</th>
+                                            <th>Date Received MALSU</th>
+                                            <th>Date Resolution MR</th>
+                                            <th>Released Date Resolution MR</th>
+                                            <th>Date Appeal Received Records</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @if(isset($appealsAndResolutions) && $appealsAndResolutions->count() > 0)
+                                            @foreach($appealsAndResolutions as $record)
+                                                <tr>
+                                                    <td>{{ $record->inspection_id ?? '-' }}</td>
+                                                    <td title="{{ $record->establishment_name ?? '' }}">
+                                                        {{ $record->establishment_name ? Str::limit($record->establishment_name, 25) : '-' }}
+                                                    </td>
+                                                    <td>{{ $record->date_returned_case_mgmt ? \Carbon\Carbon::parse($record->date_returned_case_mgmt)->format('Y-m-d') : '-' }}</td>
+                                                    <td>{{ $record->review_ct_cnpc ?? '-' }}</td>
+                                                    <td>{{ $record->date_received_drafter_finalization_2nd ? \Carbon\Carbon::parse($record->date_received_drafter_finalization_2nd)->format('Y-m-d') : '-' }}</td>
+                                                    <td>{{ $record->date_returned_case_mgmt_signature_2nd ? \Carbon\Carbon::parse($record->date_returned_case_mgmt_signature_2nd)->format('Y-m-d') : '-' }}</td>
+                                                    <td>{{ $record->date_order_2nd_cnpc ? \Carbon\Carbon::parse($record->date_order_2nd_cnpc)->format('Y-m-d') : '-' }}</td>
+                                                    <td>{{ $record->released_date_2nd_cnpc ? \Carbon\Carbon::parse($record->released_date_2nd_cnpc)->format('Y-m-d') : '-' }}</td>
+                                                    <td>{{ $record->date_forwarded_malsu ? \Carbon\Carbon::parse($record->date_forwarded_malsu)->format('Y-m-d') : '-' }}</td>
+                                                    <td>{{ $record->motion_reconsideration_date ? \Carbon\Carbon::parse($record->motion_reconsideration_date)->format('Y-m-d') : '-' }}</td>
+                                                    <td>{{ $record->date_received_malsu ? \Carbon\Carbon::parse($record->date_received_malsu)->format('Y-m-d') : '-' }}</td>
+                                                    <td>{{ $record->date_resolution_mr ? \Carbon\Carbon::parse($record->date_resolution_mr)->format('Y-m-d') : '-' }}</td>
+                                                    <td>{{ $record->released_date_resolution_mr ? \Carbon\Carbon::parse($record->released_date_resolution_mr)->format('Y-m-d') : '-' }}</td>
+                                                    <td>{{ $record->date_appeal_received_records ? \Carbon\Carbon::parse($record->date_appeal_received_records)->format('Y-m-d') : '-' }}</td>
+                                                    <td>
+                                                        <a href="{{ route('appeals-and-resolution.show', $record->id) }}" class="btn btn-info btn-sm" title="View">
+                                                            <i class="fas fa-eye"></i>
+                                                        </a>
+                                                        <a href="{{ route('appeals-and-resolution.edit', $record->id) }}" class="btn btn-warning btn-sm" title="Edit">
+                                                            <i class="fas fa-edit"></i>
+                                                        </a>
+                                                        <form action="{{ route('appeals-and-resolution.destroy', $record->id) }}" method="POST" style="display:inline;">
+                                                            @csrf
+                                                            @method('DELETE')
+                                                            <button type="submit" class="btn btn-danger btn-sm delete-btn" title="Delete" onclick="return confirm('Are you sure you want to delete this appeals & resolution record?')">
+                                                                <i class="fas fa-trash"></i>
+                                                            </button>
+                                                        </form>
+                                                    </td>
+                                                </tr>
+                                            @endforeach
+                                        @else
+                                            <tr>
+                                                <td colspan="15" class="text-center">No appeals & resolution records found.</td>
+                                            </tr>
+                                        @endif
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
-
-                        <!-- Table Container -->
-                        <div class="table-container">
-                            <table class="table table-bordered compact-table sticky-table" id="dataTable7" width="100%" cellspacing="0">
-                                <thead>
-                                    <tr>
-                                        <th>Inspection ID</th>
-                                        <th>Name of Establishment</th>
-                                        <th>Date Returned Case Mgmt</th>
-                                        <th>Review CT CNPC</th>
-                                        <th>Date Received Drafter Finalization (2nd)</th>
-                                        <th>Date Returned Case Mgmt Signature (2nd)</th>
-                                        <th>Date Order (2nd CNPC)</th>
-                                        <th>Released Date (2nd CNPC)</th>
-                                        <th>Date Forwarded MALSU</th>
-                                        <th>Motion Reconsideration Date</th>
-                                        <th>Date Received MALSU</th>
-                                        <th>Date Resolution MR</th>
-                                        <th>Released Date Resolution MR</th>
-                                        <th>Date Appeal Received Records</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @if(isset($appealsAndResolutions) && $appealsAndResolutions->count() > 0)
-                                        @foreach($appealsAndResolutions as $record)
-                                            <tr>
-                                                <td>{{ $record->inspection_id ?? '-' }}</td>
-                                                <td title="{{ $record->establishment_name ?? '' }}">
-                                                    {{ $record->establishment_name ? Str::limit($record->establishment_name, 25) : '-' }}
-                                                </td>
-                                                <td>{{ $record->date_returned_case_mgmt ? \Carbon\Carbon::parse($record->date_returned_case_mgmt)->format('Y-m-d') : '-' }}</td>
-                                                <td>{{ $record->review_ct_cnpc ?? '-' }}</td>
-                                                <td>{{ $record->date_received_drafter_finalization_2nd ? \Carbon\Carbon::parse($record->date_received_drafter_finalization_2nd)->format('Y-m-d') : '-' }}</td>
-                                                <td>{{ $record->date_returned_case_mgmt_signature_2nd ? \Carbon\Carbon::parse($record->date_returned_case_mgmt_signature_2nd)->format('Y-m-d') : '-' }}</td>
-                                                <td>{{ $record->date_order_2nd_cnpc ? \Carbon\Carbon::parse($record->date_order_2nd_cnpc)->format('Y-m-d') : '-' }}</td>
-                                                <td>{{ $record->released_date_2nd_cnpc ? \Carbon\Carbon::parse($record->released_date_2nd_cnpc)->format('Y-m-d') : '-' }}</td>
-                                                <td>{{ $record->date_forwarded_malsu ? \Carbon\Carbon::parse($record->date_forwarded_malsu)->format('Y-m-d') : '-' }}</td>
-                                                <td>{{ $record->motion_reconsideration_date ? \Carbon\Carbon::parse($record->motion_reconsideration_date)->format('Y-m-d') : '-' }}</td>
-                                                <td>{{ $record->date_received_malsu ? \Carbon\Carbon::parse($record->date_received_malsu)->format('Y-m-d') : '-' }}</td>
-                                                <td>{{ $record->date_resolution_mr ? \Carbon\Carbon::parse($record->date_resolution_mr)->format('Y-m-d') : '-' }}</td>
-                                                <td>{{ $record->released_date_resolution_mr ? \Carbon\Carbon::parse($record->released_date_resolution_mr)->format('Y-m-d') : '-' }}</td>
-                                                <td>{{ $record->date_appeal_received_records ? \Carbon\Carbon::parse($record->date_appeal_received_records)->format('Y-m-d') : '-' }}</td>
-                                                <td>
-                                                    <a href="{{ route('appeals-and-resolution.show', $record->id) }}" class="btn btn-info btn-sm" title="View">
-                                                        <i class="fas fa-eye"></i>
-                                                    </a>
-                                                    <a href="{{ route('appeals-and-resolution.edit', $record->id) }}" class="btn btn-warning btn-sm" title="Edit">
-                                                        <i class="fas fa-edit"></i>
-                                                    </a>
-                                                    <form action="{{ route('appeals-and-resolution.destroy', $record->id) }}" method="POST" style="display:inline;">
-                                                        @csrf
-                                                        @method('DELETE')
-                                                        <button type="submit" class="btn btn-danger btn-sm delete-btn" title="Delete" onclick="return confirm('Are you sure you want to delete this appeals & resolution record?')">
-                                                            <i class="fas fa-trash"></i>
-                                                        </button>
-                                                    </form>
-                                                </td>
-                                            </tr>
-                                        @endforeach
-                                    @else
-                                        <tr>
-                                            <td colspan="15" class="text-center">No appeals & resolution records found.</td>
-                                        </tr>
-                                    @endif
-                                </tbody>
-                            </table>
-                        </div>
                     </div>
                 </div>
-            </div>
 
         </div>
         <!-- End Tabs Content -->
@@ -1100,6 +1153,9 @@ $(document).ready(function() {
     if ($.fn.DataTable.isDataTable('#dataTable5')) {
     $('#dataTable5').DataTable().destroy();
     }
+    if ($.fn.DataTable.isDataTable('#dataTable6')) {
+    $('#dataTable6').DataTable().destroy();
+}
 
     // Initialize DataTable for All Active Cases Tab (tab0)
     var table0 = $('#dataTable0').DataTable({
@@ -1244,6 +1300,29 @@ $(document).ready(function() {
         }
     });
 
+    var table6 = $('#dataTable6').DataTable({
+        pageLength: 10,
+        lengthChange: false,
+        paging: true,
+        searching: false,
+        info: true,
+        dom: 'tip',
+        order: [[0, "asc"]],
+        scrollX: true,
+        scrollY: '400px',
+        scrollCollapse: true,
+        drawCallback: function() {
+            $('.sticky-table thead th').css({
+                'position': 'sticky',
+                'top': 0,
+                'z-index': 12
+            });
+            $('.sticky-table thead th:nth-child(-n+5)').css({
+                'z-index': 13
+            });
+        }
+    });
+
     // Custom search functionality for All Active Cases Tab
     $('#customSearch0').on('keyup input change', function() {
         table0.search(this.value).draw();
@@ -1267,6 +1346,14 @@ $(document).ready(function() {
     // Custom search functionality for Review & Drafting Tab
     $('#customSearch4').on('keyup input change', function() {
         table4.search(this.value).draw();
+    });
+
+    $('#customSearch5').on('keyup input change', function() {
+        table5.search(this.value).draw();
+    });
+
+    $('#customSearch6').on('keyup input change', function() {
+        table6.search(this.value).draw();
     });
 
     if ($.fn.DataTable.isDataTable('#dataTable5')) {
@@ -1415,7 +1502,9 @@ $(document).ready(function() {
         } else if (target === '#tab4') {
             table4.columns.adjust().draw();
         } else if (target === '#tab5') {
-            table5.columns.adjust().draw(); // Add this line
+            table5.columns.adjust().draw();
+        } else if (target === '#tab6') {
+            table6.columns.adjust().draw(); // Add this line
         }
     });
 });
@@ -1615,45 +1704,110 @@ function showAlert(type, message) {
                         }
                     },
                     'tab5': {
-                    name: 'orders-and-disposition',
-                    endpoint: '/orders-and-disposition/',
-                    editBtnClass: '.edit-row-btn-orders',
-                    saveBtnClass: '.save-btn-orders',
-                    cancelBtnClass: '.cancel-btn-orders',
-                    alertPrefix: 'tab5',
-                    fields: {
-                        'aging_2_days_finalization': { type: 'number' },
-                        'status_finalization': {
-                            type: 'select',
-                            options: [
-                                { value: '', text: 'Select Status' },
-                                { value: 'Pending', text: 'Pending' },
-                                { value: 'In Progress', text: 'In Progress' },
-                                { value: 'Completed', text: 'Completed' },
-                                { value: 'Overdue', text: 'Overdue' }
-                            ]
-                        },
-                        'pct_96_days': { type: 'number' },
-                        'date_signed_mis': { type: 'date' },
-                        'status_pct': {
-                            type: 'select',
-                            options: [
-                                { value: '', text: 'Select Status' },
-                                { value: 'Pending', text: 'Pending' },
-                                { value: 'Ongoing', text: 'Ongoing' },
-                                { value: 'Completed', text: 'Completed' },
-                                { value: 'Overdue', text: 'Overdue' }
-                            ]
-                        },
-                        'reference_date_pct': { type: 'date' },
-                        'aging_pct': { type: 'number' },
-                        'disposition_mis': { type: 'text' },
-                        'disposition_actual': { type: 'text' },
-                        'findings_to_comply': { type: 'text' },
-                        'date_of_order_actual': { type: 'date' },
-                        'released_date_actual': { type: 'date' }
+                        name: 'orders-and-disposition',
+                        endpoint: '/orders-and-disposition/',
+                        editBtnClass: '.edit-row-btn-orders',
+                        saveBtnClass: '.save-btn-orders',
+                        cancelBtnClass: '.cancel-btn-orders',
+                        alertPrefix: 'tab5',
+                        fields: {
+                            'aging_2_days_finalization': { type: 'number' },
+                            'status_finalization': {
+                                type: 'select',
+                                options: [
+                                    { value: '', text: 'Select Status' },
+                                    { value: 'Pending', text: 'Pending' },
+                                    { value: 'In Progress', text: 'In Progress' },
+                                    { value: 'Completed', text: 'Completed' },
+                                    { value: 'Overdue', text: 'Overdue' }
+                                ]
+                            },
+                            'pct_96_days': { type: 'number' },
+                            'date_signed_mis': { type: 'date' },
+                            'status_pct': {
+                                type: 'select',
+                                options: [
+                                    { value: '', text: 'Select Status' },
+                                    { value: 'Pending', text: 'Pending' },
+                                    { value: 'Ongoing', text: 'Ongoing' },
+                                    { value: 'Completed', text: 'Completed' },
+                                    { value: 'Overdue', text: 'Overdue' }
+                                ]
+                            },
+                            'reference_date_pct': { type: 'date' },
+                            'aging_pct': { type: 'number' },
+                            'disposition_mis': { type: 'text' },
+                            'disposition_actual': { type: 'text' },
+                            'findings_to_comply': { type: 'text' },
+                            'date_of_order_actual': { type: 'date' },
+                            'released_date_actual': { type: 'date' }
+                        }
+                    },
+                    'tab6': {
+                        name: 'compliance-and-awards',
+                        endpoint: '/compliance-and-awards/',
+                        editBtnClass: '.edit-row-btn-compliance',
+                        saveBtnClass: '.save-btn-compliance',
+                        cancelBtnClass: '.cancel-btn-compliance',
+                        alertPrefix: 'tab6',
+                        fields: {
+                            'compliance_order_monetary_award': { type: 'number', step: '0.01' },
+                            'osh_penalty': { type: 'number', step: '0.01' },
+                            'affected_male': { type: 'number' },
+                            'affected_female': { type: 'number' },
+                            'first_order_dismissal_cnpc': {
+                                type: 'select',
+                                options: [
+                                    { value: '0', text: 'No' },
+                                    { value: '1', text: 'Yes' }
+                                ]
+                            },
+                            'tavable_less_than_10_workers': {
+                                type: 'select',
+                                options: [
+                                    { value: '0', text: 'No' },
+                                    { value: '1', text: 'Yes' }
+                                ]
+                            },
+                            'with_deposited_monetary_claims': {
+                                type: 'select',
+                                options: [
+                                    { value: '0', text: 'No' },
+                                    { value: '1', text: 'Yes' }
+                                ]
+                            },
+                            'amount_deposited': { type: 'number', step: '0.01' },
+                            'with_order_payment_notice': {
+                                type: 'select',
+                                options: [
+                                    { value: '0', text: 'No' },
+                                    { value: '1', text: 'Yes' }
+                                ]
+                            },
+                            'status_all_employees_received': {
+                                type: 'select',
+                                options: [
+                                    { value: '', text: 'Select Status' },
+                                    { value: 'Pending', text: 'Pending' },
+                                    { value: 'Yes', text: 'Yes' },
+                                    { value: 'No', text: 'No' },
+                                    { value: 'Partial', text: 'Partial' }
+                                ]
+                            },
+                            'status_case_after_first_order': { type: 'text' },
+                            'date_notice_finality_dismissed': { type: 'date' },
+                            'released_date_notice_finality': { type: 'date' },
+                            'updated_ticked_in_mis': {
+                                type: 'select',
+                                options: [
+                                    { value: '0', text: 'No' },
+                                    { value: '1', text: 'Yes' }
+                                ]
+                            },
+                            'second_order_drafter': { type: 'text' },
+                            'date_received_by_drafter_ct_cnpc': { type: 'date' }
+                        }
                     }
-                }
                 };
 
                 // Get current active tab
@@ -1668,7 +1822,7 @@ function showAlert(type, message) {
                 }
 
                 // Unified edit button click handler
-                $(document).on('click', '.edit-row-btn, .edit-row-btn-case, .edit-row-btn-docketing, .edit-row-btn-hearing, .edit-row-btn-review, .edit-row-btn-orders', function() {
+                $(document).on('click', '.edit-row-btn, .edit-row-btn-case, .edit-row-btn-docketing, .edit-row-btn-hearing, .edit-row-btn-review, .edit-row-btn-orders, .edit-row-btn-compliance', function() {
                     const row = $(this).closest('tr');
                     currentTab = getCurrentTab();
                     
@@ -1681,7 +1835,7 @@ function showAlert(type, message) {
                 });
 
                 // Unified save button click handler  
-                $(document).on('click', '.save-btn, .save-btn-case, .save-btn-hearing, .save-btn-review, .save-btn-orders', function() {
+                $(document).on('click', '.save-btn, .save-btn-case, .save-btn-hearing, .save-btn-review, .save-btn-orders, .save-btn-compliance', function() {
                     const row = $(this).closest('tr');
                     const recordId = row.data('id');
                     const config = getTabConfig(currentTab);
@@ -1696,9 +1850,10 @@ function showAlert(type, message) {
                 });
 
                 // Unified cancel button click handler
-                $(document).on('click', '.cancel-btn, .cancel-btn-case, .cancel-btn-hearing, .cancel-btn-review, .cancel-btn-orders', function() {
+                $(document).on('click', '.cancel-btn, .cancel-btn-case, .cancel-btn-hearing, .cancel-btn-review, .cancel-btn-orders, .cancel-btn-compliance', function() {
                     cancelEdit();
                 });
+
 
                 // ESC key to cancel edit
                 $(document).on('keyup', function(e) {
