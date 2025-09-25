@@ -965,88 +965,129 @@
                 </div>
             </div>
 
-                <!-- Tab 7: Appeals & Resolution -->
-                            <div class="tab-pane fade" id="tab7" role="tabpanel" aria-labelledby="tab7-tab">
-                    <div class="card shadow mb-4">
-                        <div class="card-body">
-                            <!-- Search + Buttons Row -->
-                            <div class="d-flex justify-content-between align-items-center mb-3 custom-search-container">
-                                <div class="d-flex align-items-center">
-                                    <label class="mr-2 mb-0" style="font-size: 0.8rem;">Search:</label>
-                                    <input type="search" class="form-control form-control-sm" id="customSearch7" placeholder="Search appeals..." style="width: 200px;">
-                                </div>
-                            </div>
+            <!-- Tab 7: Appeals & Resolution - FIXED VERSION -->
+            <div class="tab-pane fade" id="tab7" role="tabpanel" aria-labelledby="tab7-tab">
+                <div class="card shadow mb-4">
+                    <div class="card-body">   
+                        <!-- Success/Error Alerts - MISSING IN ORIGINAL -->
+                        <div class="alert alert-success alert-dismissible fade" role="alert" id="success-alert-tab7" style="display: none;">
+                            <span id="success-message-tab7"></span>
+                            <button type="button" class="close" onclick="hideAlert('success-alert-tab7')">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
 
-                            <!-- Table Container -->
-                            <div class="table-container">
-                                <table class="table table-bordered compact-table sticky-table" id="dataTable7" width="100%" cellspacing="0">
-                                    <thead>
-                                        <tr>
-                                            <th>Inspection ID</th>
-                                            <th>Name of Establishment</th>
-                                            <th>Date Returned Case Mgmt</th>
-                                            <th>Review CT CNPC</th>
-                                            <th>Date Received Drafter Finalization (2nd)</th>
-                                            <th>Date Returned Case Mgmt Signature (2nd)</th>
-                                            <th>Date Order (2nd CNPC)</th>
-                                            <th>Released Date (2nd CNPC)</th>
-                                            <th>Date Forwarded MALSU</th>
-                                            <th>Motion Reconsideration Date</th>
-                                            <th>Date Received MALSU</th>
-                                            <th>Date Resolution MR</th>
-                                            <th>Released Date Resolution MR</th>
-                                            <th>Date Appeal Received Records</th>
-                                            <th>Actions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        @if(isset($appealsAndResolutions) && $appealsAndResolutions->count() > 0)
-                                            @foreach($appealsAndResolutions as $record)
-                                                <tr>
-                                                    <td>{{ $record->inspection_id ?? '-' }}</td>
-                                                    <td title="{{ $record->establishment_name ?? '' }}">
-                                                        {{ $record->establishment_name ? Str::limit($record->establishment_name, 25) : '-' }}
-                                                    </td>
-                                                    <td>{{ $record->date_returned_case_mgmt ? \Carbon\Carbon::parse($record->date_returned_case_mgmt)->format('Y-m-d') : '-' }}</td>
-                                                    <td>{{ $record->review_ct_cnpc ?? '-' }}</td>
-                                                    <td>{{ $record->date_received_drafter_finalization_2nd ? \Carbon\Carbon::parse($record->date_received_drafter_finalization_2nd)->format('Y-m-d') : '-' }}</td>
-                                                    <td>{{ $record->date_returned_case_mgmt_signature_2nd ? \Carbon\Carbon::parse($record->date_returned_case_mgmt_signature_2nd)->format('Y-m-d') : '-' }}</td>
-                                                    <td>{{ $record->date_order_2nd_cnpc ? \Carbon\Carbon::parse($record->date_order_2nd_cnpc)->format('Y-m-d') : '-' }}</td>
-                                                    <td>{{ $record->released_date_2nd_cnpc ? \Carbon\Carbon::parse($record->released_date_2nd_cnpc)->format('Y-m-d') : '-' }}</td>
-                                                    <td>{{ $record->date_forwarded_malsu ? \Carbon\Carbon::parse($record->date_forwarded_malsu)->format('Y-m-d') : '-' }}</td>
-                                                    <td>{{ $record->motion_reconsideration_date ? \Carbon\Carbon::parse($record->motion_reconsideration_date)->format('Y-m-d') : '-' }}</td>
-                                                    <td>{{ $record->date_received_malsu ? \Carbon\Carbon::parse($record->date_received_malsu)->format('Y-m-d') : '-' }}</td>
-                                                    <td>{{ $record->date_resolution_mr ? \Carbon\Carbon::parse($record->date_resolution_mr)->format('Y-m-d') : '-' }}</td>
-                                                    <td>{{ $record->released_date_resolution_mr ? \Carbon\Carbon::parse($record->released_date_resolution_mr)->format('Y-m-d') : '-' }}</td>
-                                                    <td>{{ $record->date_appeal_received_records ? \Carbon\Carbon::parse($record->date_appeal_received_records)->format('Y-m-d') : '-' }}</td>
-                                                    <td>
-                                                        <a href="{{ route('appeals-and-resolution.show', $record->id) }}" class="btn btn-info btn-sm" title="View">
-                                                            <i class="fas fa-eye"></i>
-                                                        </a>
-                                                        <a href="{{ route('appeals-and-resolution.edit', $record->id) }}" class="btn btn-warning btn-sm" title="Edit">
-                                                            <i class="fas fa-edit"></i>
-                                                        </a>
-                                                        <form action="{{ route('appeals-and-resolution.destroy', $record->id) }}" method="POST" style="display:inline;">
+                        <div class="alert alert-danger alert-dismissible fade" role="alert" id="error-alert-tab7" style="display: none;">
+                            <span id="error-message-tab7"></span>
+                            <button type="button" class="close" onclick="hideAlert('error-alert-tab7')">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <div class="alert alert-success alert-dismissible fade" role="alert" id="success-alert-tab7" style="display: none;">
+                            <span id="success-message-tab7"></span>
+                            <button type="button" class="close" onclick="hideAlert('success-alert-tab7')">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+
+                        <div class="alert alert-danger alert-dismissible fade" role="alert" id="error-alert-tab7" style="display: none;">
+                            <span id="error-message-tab7"></span>
+                            <button type="button" class="close" onclick="hideAlert('error-alert-tab7')">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+
+                        <!-- Search + Buttons Row -->
+                        <div class="d-flex justify-content-between align-items-center mb-3 custom-search-container">
+                            <div class="d-flex align-items-center">
+                                <label class="mr-2 mb-0" style="font-size: 0.8rem;">Search:</label>
+                                <input type="search" class="form-control form-control-sm" id="customSearch7" placeholder="Search appeals..." style="width: 200px;">
+                            </div>
+                        </div>
+
+                        <!-- Table Container -->
+                        <div class="table-container">
+                            <table class="table table-bordered compact-table sticky-table" id="dataTable7" width="100%" cellspacing="0">
+                                <thead>
+                                    <tr>
+                                        <th>Inspection ID</th>
+                                        <th>Name of Establishment</th>
+                                        <th>Date Returned Case Mgmt</th>
+                                        <th>Review CT CNPC</th>
+                                        <th>Date Received Drafter Finalization (2nd)</th>
+                                        <th>Date Returned Case Mgmt Signature (2nd)</th>
+                                        <th>Date Order (2nd CNPC)</th>
+                                        <th>Released Date (2nd CNPC)</th>
+                                        <th>Date Forwarded MALSU</th>
+                                        <th>Motion Reconsideration Date</th>
+                                        <th>Date Received MALSU</th>
+                                        <th>Date Resolution MR</th>
+                                        <th>Released Date Resolution MR</th>
+                                        <th>Date Appeal Received Records</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @if(isset($appealsAndResolutions) && $appealsAndResolutions->count() > 0)
+                                        @foreach($appealsAndResolutions as $record)
+                                            <tr data-id="{{ $record->id }}">
+                                                <!-- Readonly fields -->
+                                                <td class="editable-cell readonly-cell" data-field="inspection_id">{{ $record->case->inspection_id ?? '-' }}</td>
+                                                <td class="editable-cell readonly-cell" data-field="establishment_name" title="{{ $record->case->establishment_name ?? '' }}">
+                                                    {{ $record->case ? Str::limit($record->case->establishment_name, 25) : '-' }}
+                                                </td>
+                                                
+                                                <!-- Editable fields -->
+                                                <td class="editable-cell" data-field="date_returned_case_mgmt" data-type="date">{{ $record->date_returned_case_mgmt ? \Carbon\Carbon::parse($record->date_returned_case_mgmt)->format('Y-m-d') : '-' }}</td>
+                                                <td class="editable-cell" data-field="review_ct_cnpc">{{ $record->review_ct_cnpc ?? '-' }}</td>
+                                                <td class="editable-cell" data-field="date_received_drafter_finalization_2nd" data-type="date">{{ $record->date_received_drafter_finalization_2nd ? \Carbon\Carbon::parse($record->date_received_drafter_finalization_2nd)->format('Y-m-d') : '-' }}</td>
+                                                <td class="editable-cell" data-field="date_returned_case_mgmt_signature_2nd" data-type="date">{{ $record->date_returned_case_mgmt_signature_2nd ? \Carbon\Carbon::parse($record->date_returned_case_mgmt_signature_2nd)->format('Y-m-d') : '-' }}</td>
+                                                <td class="editable-cell" data-field="date_order_2nd_cnpc" data-type="date">{{ $record->date_order_2nd_cnpc ? \Carbon\Carbon::parse($record->date_order_2nd_cnpc)->format('Y-m-d') : '-' }}</td>
+                                                <td class="editable-cell" data-field="released_date_2nd_cnpc" data-type="date">{{ $record->released_date_2nd_cnpc ? \Carbon\Carbon::parse($record->released_date_2nd_cnpc)->format('Y-m-d') : '-' }}</td>
+                                                <td class="editable-cell" data-field="date_forwarded_malsu" data-type="date">{{ $record->date_forwarded_malsu ? \Carbon\Carbon::parse($record->date_forwarded_malsu)->format('Y-m-d') : '-' }}</td>
+                                                <td class="editable-cell" data-field="motion_reconsideration_date" data-type="date">{{ $record->motion_reconsideration_date ? \Carbon\Carbon::parse($record->motion_reconsideration_date)->format('Y-m-d') : '-' }}</td>
+                                                <td class="editable-cell" data-field="date_received_malsu" data-type="date">{{ $record->date_received_malsu ? \Carbon\Carbon::parse($record->date_received_malsu)->format('Y-m-d') : '-' }}</td>
+                                                <td class="editable-cell" data-field="date_resolution_mr" data-type="date">{{ $record->date_resolution_mr ? \Carbon\Carbon::parse($record->date_resolution_mr)->format('Y-m-d') : '-' }}</td>
+                                                <td class="editable-cell" data-field="released_date_resolution_mr" data-type="date">{{ $record->released_date_resolution_mr ? \Carbon\Carbon::parse($record->released_date_resolution_mr)->format('Y-m-d') : '-' }}</td>
+                                                <td class="editable-cell" data-field="date_appeal_received_records" data-type="date">{{ $record->date_appeal_received_records ? \Carbon\Carbon::parse($record->date_appeal_received_records)->format('Y-m-d') : '-' }}</td>
+                                                
+                                                <!-- Actions -->
+                                                <td>
+                                                    <button class="btn btn-sm btn-warning edit-row-btn-appeals" title="Edit">
+                                                        <i class="fas fa-edit"></i>
+                                                    </button>
+                                                    <a href="{{ route('appeals-and-resolution.show', $record->id) }}" class="btn btn-info btn-sm" title="View">
+                                                        <i class="fas fa-eye"></i>
+                                                    </a>
+                                                    <form action="{{ route('appeals-and-resolution.destroy', $record->id) }}" method="POST" style="display:inline;">
+                                                        @csrf
+                                                        @method('DELETE')
+                                                        <button type="submit" class="btn btn-danger btn-sm delete-btn" title="Delete" onclick="return confirm('Are you sure you want to delete this appeals & resolution record?')">
+                                                            <i class="fas fa-trash"></i>
+                                                        </button>
+                                                    </form>
+                                                    @if($record->case && $record->case->current_stage === '7: Appeals & Resolution')
+                                                        <form action="{{ route('case.nextStage', $record->case->id) }}" method="POST" style="display:inline;">
                                                             @csrf
-                                                            @method('DELETE')
-                                                            <button type="submit" class="btn btn-danger btn-sm delete-btn" title="Delete" onclick="return confirm('Are you sure you want to delete this appeals & resolution record?')">
-                                                                <i class="fas fa-trash"></i>
+                                                            <button type="submit" class="btn btn-success btn-sm ml-1" title="Complete Case" onclick="return confirm('Complete appeals & resolution and close case?')">
+                                                                <i class="fas fa-check"></i> Complete
                                                             </button>
                                                         </form>
-                                                    </td>
-                                                </tr>
-                                            @endforeach
-                                        @else
-                                            <tr>
-                                                <td colspan="15" class="text-center">No appeals & resolution records found.</td>
+                                                    @endif
+                                                </td>
                                             </tr>
-                                        @endif
-                                    </tbody>
-                                </table>
-                            </div>
+                                        @endforeach
+                                    @else
+                                        <tr>
+                                            <td colspan="15" class="text-center">No appeals & resolution records found.</td>
+                                        </tr>
+                                    @endif
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 </div>
+            </div>
 
         </div>
         <!-- End Tabs Content -->
@@ -1155,7 +1196,10 @@ $(document).ready(function() {
     }
     if ($.fn.DataTable.isDataTable('#dataTable6')) {
     $('#dataTable6').DataTable().destroy();
-}
+    }
+    if ($.fn.DataTable.isDataTable('#dataTable7')) {
+    $('#dataTable7').DataTable().destroy();
+    }    
 
     // Initialize DataTable for All Active Cases Tab (tab0)
     var table0 = $('#dataTable0').DataTable({
@@ -1323,6 +1367,29 @@ $(document).ready(function() {
         }
     });
 
+        var table7 = $('#dataTable7').DataTable({
+        pageLength: 10,
+        lengthChange: false,
+        paging: true,
+        searching: false,
+        info: true,
+        dom: 'tip',
+        order: [[0, "asc"]],
+        scrollX: true,
+        scrollY: '400px',
+        scrollCollapse: true,
+        drawCallback: function() {
+            $('.sticky-table thead th').css({
+                'position': 'sticky',
+                'top': 0,
+                'z-index': 12
+            });
+            $('.sticky-table thead th:nth-child(-n+5)').css({
+                'z-index': 13
+            });
+        }
+    });
+
     // Custom search functionality for All Active Cases Tab
     $('#customSearch0').on('keyup input change', function() {
         table0.search(this.value).draw();
@@ -1356,9 +1423,11 @@ $(document).ready(function() {
         table6.search(this.value).draw();
     });
 
-    if ($.fn.DataTable.isDataTable('#dataTable5')) {
-    $('#dataTable5').DataTable().destroy();
-    }
+    $('#customSearch7').on('keyup input change', function() {
+        table7.search(this.value).draw();
+    });
+
+    
 
     // Modal handling for Add/Edit Cases
     $('#addCaseModal').on('show.bs.modal', function(event) {
@@ -1504,8 +1573,10 @@ $(document).ready(function() {
         } else if (target === '#tab5') {
             table5.columns.adjust().draw();
         } else if (target === '#tab6') {
-            table6.columns.adjust().draw(); // Add this line
-        }
+            table6.columns.adjust().draw();
+        } else if (target === '#tab7') {
+            table7.columns.adjust().draw(); 
+        }    
     });
 });
 
@@ -1807,6 +1878,28 @@ function showAlert(type, message) {
                             'second_order_drafter': { type: 'text' },
                             'date_received_by_drafter_ct_cnpc': { type: 'date' }
                         }
+                    }, 
+                    'tab7': { // ADD THIS ENTIRE BLOCK
+                        name: 'appeals-and-resolution',
+                        endpoint: '/appeals-and-resolution/',
+                        editBtnClass: '.edit-row-btn-appeals',
+                        saveBtnClass: '.save-btn-appeals',
+                        cancelBtnClass: '.cancel-btn-appeals',
+                        alertPrefix: 'tab7',
+                        fields: {
+                            'date_returned_case_mgmt': { type: 'date' },
+                            'review_ct_cnpc': { type: 'text' },
+                            'date_received_drafter_finalization_2nd': { type: 'date' },
+                            'date_returned_case_mgmt_signature_2nd': { type: 'date' },
+                            'date_order_2nd_cnpc': { type: 'date' },
+                            'released_date_2nd_cnpc': { type: 'date' },
+                            'date_forwarded_malsu': { type: 'date' },
+                            'motion_reconsideration_date': { type: 'date' },
+                            'date_received_malsu': { type: 'date' },
+                            'date_resolution_mr': { type: 'date' },
+                            'released_date_resolution_mr': { type: 'date' },
+                            'date_appeal_received_records': { type: 'date' }
+                        }
                     }
                 };
 
@@ -1822,7 +1915,8 @@ function showAlert(type, message) {
                 }
 
                 // Unified edit button click handler
-                $(document).on('click', '.edit-row-btn, .edit-row-btn-case, .edit-row-btn-docketing, .edit-row-btn-hearing, .edit-row-btn-review, .edit-row-btn-orders, .edit-row-btn-compliance', function() {
+                $(document).on('click', '.edit-row-btn, .edit-row-btn-case, .edit-row-btn-docketing, .edit-row-btn-hearing, .edit-row-btn-review, .edit-row-btn-orders, .edit-row-btn-compliance, .edit-row-btn-appeals', function() {
+
                     const row = $(this).closest('tr');
                     currentTab = getCurrentTab();
                     
@@ -1835,7 +1929,7 @@ function showAlert(type, message) {
                 });
 
                 // Unified save button click handler  
-                $(document).on('click', '.save-btn, .save-btn-case, .save-btn-hearing, .save-btn-review, .save-btn-orders, .save-btn-compliance', function() {
+                $(document).on('click', '.save-btn, .save-btn-case, .save-btn-hearing, .save-btn-review, .save-btn-orders, .save-btn-compliance, .save-btn-appeals', function() {
                     const row = $(this).closest('tr');
                     const recordId = row.data('id');
                     const config = getTabConfig(currentTab);
@@ -1850,7 +1944,7 @@ function showAlert(type, message) {
                 });
 
                 // Unified cancel button click handler
-                $(document).on('click', '.cancel-btn, .cancel-btn-case, .cancel-btn-hearing, .cancel-btn-review, .cancel-btn-orders, .cancel-btn-compliance', function() {
+                $(document).on('click', '.cancel-btn, .cancel-btn-case, .cancel-btn-hearing, .cancel-btn-review, .cancel-btn-orders, .cancel-btn-compliance, .cancel-btn-appeals', function() {
                     cancelEdit();
                 });
 
