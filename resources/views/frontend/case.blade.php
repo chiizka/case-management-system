@@ -1145,11 +1145,13 @@
                         <div class="col-md-6">
                             <div class="form-group">
                                 <label for="overall_status">Overall Status</label>
-                                <select class="form-control" id="overall_status" name="overall_status" required>
-                                    <option value="Active">Active</option>
+                                <select class="form-control" id="overall_status" name="overall_status" required disabled>
+                                    <option value="Active" selected>Active</option>
                                     <option value="Completed">Completed</option>
                                     <option value="Dismissed">Dismissed</option>
                                 </select>
+                                <!-- Hidden input to ensure the value is submitted -->
+                                <input type="hidden" name="overall_status" value="Active">
                             </div>
                         </div>
                     </div>

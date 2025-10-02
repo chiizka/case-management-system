@@ -55,7 +55,7 @@ Route::post('/password/reset', [App\Http\Controllers\Auth\ResetPasswordControlle
     Route::resource('inspection', InspectionsController::class);
 
     //archived
-    Route::get('/archive', [ArchivedController::class, 'index'])->name('archive');
+    Route::get('/archive', [ArchivedController::class, 'index'])->name('archive.index');
 
     //docketing
     Route::resource('docketing', DocketingController::class);

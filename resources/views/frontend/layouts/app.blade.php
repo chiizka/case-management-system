@@ -67,7 +67,7 @@
                     <div class="bg-white py-2 collapse-inner rounded">
                         <h6 class="collapse-header">Custom Utilities:</h6>
                         <a class="collapse-item" href="{{ route('case.index') }}">Active Cases</a>
-                        <a class="collapse-item" href="{{ route('archive') }}">Archived Cases</a>
+                        <a class="collapse-item" href="{{ route('archive.index') }}">Archived Cases</a>
                     </div>
                 </div>
             </li>

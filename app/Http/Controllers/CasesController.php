@@ -18,48 +18,56 @@ class CasesController extends Controller
 {
     public function case()
     {
-        $cases = CaseFile::all();
+        // Filter out completed cases - only show Active and Dismissed
+        $cases = CaseFile::where('overall_status', '!=', 'Completed')->get();
         
-        //Filter each stage by the related case's current_stage
+        // Filter each stage by the related case's current_stage AND exclude completed cases
         $inspections = Inspection::with('case')
             ->whereHas('case', function($query) {
-                $query->where('current_stage', '1: Inspections');
+                $query->where('current_stage', '1: Inspections')
+                    ->where('overall_status', '!=', 'Completed');
             })
             ->get();
             
         $docketing = Docketing::with('case')
             ->whereHas('case', function($query) {
-                $query->where('current_stage', '2: Docketing');
+                $query->where('current_stage', '2: Docketing')
+                    ->where('overall_status', '!=', 'Completed');
             })
             ->get();
             
         $hearingProcess = HearingProcess::with('case')
             ->whereHas('case', function($query) {
-                $query->where('current_stage', '3: Hearing');
+                $query->where('current_stage', '3: Hearing')
+                    ->where('overall_status', '!=', 'Completed');
             })
             ->get();
             
         $reviewAndDrafting = ReviewAndDrafting::with('case')
             ->whereHas('case', function($query) {
-                $query->where('current_stage', '4: Review & Drafting');
+                $query->where('current_stage', '4: Review & Drafting')
+                    ->where('overall_status', '!=', 'Completed');
             })
             ->get();
             
         $ordersAndDisposition = OrderAndDisposition::with('case')
             ->whereHas('case', function($query) {
-                $query->where('current_stage', '5: Orders & Disposition');
+                $query->where('current_stage', '5: Orders & Disposition')
+                    ->where('overall_status', '!=', 'Completed');
             })
             ->get();
             
         $complianceAndAwards = ComplianceAndAward::with('case')
             ->whereHas('case', function($query) {
-                $query->where('current_stage', '6: Compliance & Awards');
+                $query->where('current_stage', '6: Compliance & Awards')
+                    ->where('overall_status', '!=', 'Completed');
             })
             ->get();
             
         $appealsAndResolutions = AppealsAndResolution::with('case')
             ->whereHas('case', function($query) {
-                $query->where('current_stage', '7: Appeals & Resolution');
+                $query->where('current_stage', '7: Appeals & Resolution')
+                    ->where('overall_status', '!=', 'Completed');
             })
             ->get();
 
