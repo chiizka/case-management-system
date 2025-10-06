@@ -1168,43 +1168,20 @@
 @endsection
 
 @section('scripts')
-   
+<!-- DataTables plugins -->
+<script src="{{ asset('vendor/datatables/jquery.dataTables.min.js') }}"></script>
+<script src="{{ asset('vendor/datatables/dataTables.bootstrap4.min.js') }}"></script>
+
 <script>
 $(document).ready(function() {
-    // Check if DataTable is available
-    if (typeof $.fn.DataTable === 'undefined') {
-        console.error('DataTables library is not loaded. Please include DataTables CSS and JS files.');
-        return;
-    }
+    console.log('jQuery version:', $.fn.jquery);
+    console.log('DataTables available:', typeof $.fn.DataTable !== 'undefined');
 
-    // Destroy existing DataTables if they exist
-    if ($.fn.DataTable.isDataTable('#dataTable0')) {
-        $('#dataTable0').DataTable().destroy();
-    }
-    if ($.fn.DataTable.isDataTable('#dataTable1')) {
-        $('#dataTable1').DataTable().destroy();
-    }
-    if ($.fn.DataTable.isDataTable('#dataTable2')) {
-        $('#dataTable2').DataTable().destroy();
-    }
-    if ($.fn.DataTable.isDataTable('#dataTable3')) {
-        $('#dataTable3').DataTable().destroy();
-    }
-    if ($.fn.DataTable.isDataTable('#dataTable4')) {
-        $('#dataTable4').DataTable().destroy();
-    }
-    if ($.fn.DataTable.isDataTable('#dataTable5')) {
-    $('#dataTable5').DataTable().destroy();
-    }
-    if ($.fn.DataTable.isDataTable('#dataTable6')) {
-    $('#dataTable6').DataTable().destroy();
-    }
-    if ($.fn.DataTable.isDataTable('#dataTable7')) {
-    $('#dataTable7').DataTable().destroy();
-    }    
+    // Store all table instances
+    var tables = {};
 
-    // Initialize DataTable for All Active Cases Tab (tab0)
-    var table0 = $('#dataTable0').DataTable({
+    // DataTable configuration
+    var dtConfig = {
         pageLength: 10,
         lengthChange: false,
         paging: true,
@@ -1224,172 +1201,131 @@ $(document).ready(function() {
             $('.sticky-table thead th:nth-child(-n+5)').css({
                 'z-index': 13
             });
+        }
+    };
+
+    // Function to safely initialize a DataTable
+    function initDataTable(tableId) {
+        try {
+            // Destroy if exists
+            if ($.fn.DataTable.isDataTable(tableId)) {
+                $(tableId).DataTable().destroy();
+            }
+            
+            // Clear any existing bindings
+            $(tableId).off();
+            
+            // Initialize
+            tables[tableId] = $(tableId).DataTable(dtConfig);
+            console.log('✓ Initialized ' + tableId);
+            return true;
+        } catch (error) {
+            console.error('✗ Failed to initialize ' + tableId + ':', error);
+            return false;
+        }
+    }
+
+    // Initialize only Tab 0 (visible on page load)
+    initDataTable('#dataTable0');
+
+    // Initialize other tables when their tabs are shown
+    $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
+        var target = $(e.target).attr("href");
+        var tableId = target.replace('#tab', '#dataTable');
+        
+        // Initialize if not already done
+        if (!tables[tableId]) {
+            console.log('Tab switched to ' + target + ', initializing ' + tableId);
+            initDataTable(tableId);
+        } else {
+            // Just adjust columns if already initialized
+            tables[tableId].columns.adjust().draw(false);
         }
     });
 
-    // Initialize DataTable for Inspection Tab (tab1)
-    var table1 = $('#dataTable1').DataTable({
-        pageLength: 10,
-        lengthChange: false,
-        paging: true,
-        searching: false,
-        info: true,
-        dom: 'tip',
-        order: [[0, "asc"]],
-        scrollX: true,
-        scrollY: '400px',
-        scrollCollapse: true,
-        drawCallback: function() {
-            $('.sticky-table thead th').css({
-                'position': 'sticky',
-                'top': 0,
-                'z-index': 12
-            });
-            $('.sticky-table thead th:nth-child(-n+5)').css({
-                'z-index': 13
-            });
-        }
+    // Custom search for each table
+    $('#customSearch0').on('keyup input change', function() {
+        if (tables['#dataTable0']) tables['#dataTable0'].search(this.value).draw();
+    });
+    $('#customSearch1').on('keyup input change', function() {
+        if (tables['#dataTable1']) tables['#dataTable1'].search(this.value).draw();
+    });
+    $('#customSearch2').on('keyup input change', function() {
+        if (tables['#dataTable2']) tables['#dataTable2'].search(this.value).draw();
+    });
+    $('#customSearch3').on('keyup input change', function() {
+        if (tables['#dataTable3']) tables['#dataTable3'].search(this.value).draw();
+    });
+    $('#customSearch4').on('keyup input change', function() {
+        if (tables['#dataTable4']) tables['#dataTable4'].search(this.value).draw();
+    });
+    $('#customSearch5').on('keyup input change', function() {
+        if (tables['#dataTable5']) tables['#dataTable5'].search(this.value).draw();
+    });
+    $('#customSearch6').on('keyup input change', function() {
+        if (tables['#dataTable6']) tables['#dataTable6'].search(this.value).draw();
+    });
+    $('#customSearch7').on('keyup input change', function() {
+        if (tables['#dataTable7']) tables['#dataTable7'].search(this.value).draw();
     });
 
-    // Initialize DataTable for Docketing Tab (tab2)
-    var table2 = $('#dataTable2').DataTable({
-        pageLength: 10,
-        lengthChange: false,
-        paging: true,
-        searching: false,
-        info: true,
-        dom: 'tip',
-        order: [[0, "asc"]],
-        scrollX: true,
-        scrollY: '400px',
-        scrollCollapse: true,
-        drawCallback: function() {
-            $('.sticky-table thead th').css({
-                'position': 'sticky',
-                'top': 0,
-                'z-index': 12
-            });
-            $('.sticky-table thead th:nth-child(-n+5)').css({
-                'z-index': 13
-            });
+    // Sidebar state persistence
+    // Check if sidebar was toggled before
+    if (localStorage.getItem('sidebarToggled') === 'true') {
+        $('body').addClass('sidebar-toggled');
+        $('.sidebar').addClass('toggled');
+    }
+
+    // Auto-minimize sidebar on page load
+    $('body').addClass('sidebar-toggled');
+    $('.sidebar').addClass('toggled');
+    localStorage.setItem('sidebarToggled', 'true');
+    
+    // Adjust table after auto-minimize
+    setTimeout(function() {
+        if (tables['#dataTable0']) {
+            tables['#dataTable0'].columns.adjust().draw(false);
         }
+    }, 100);
+
+    // Fix sidebar toggle with state persistence
+    $('#sidebarToggle, #sidebarToggleTop').on('click', function() {
+        // Toggle the state
+        var isToggled = $('body').hasClass('sidebar-toggled');
+        
+        // Save state to localStorage
+        localStorage.setItem('sidebarToggled', !isToggled);
+        
+        // Wait for sidebar animation to complete
+        setTimeout(function() {
+            var activeTab = $('.tab-pane.active').attr('id');
+            var tableId = '#dataTable' + activeTab.replace('tab', '');
+            if (tables[tableId]) {
+                tables[tableId].columns.adjust().draw(false);
+            }
+        }, 350);
     });
 
-    // Initialize DataTable for Hearing Process Tab (tab3)
-    var table3 = $('#dataTable3').DataTable({
-        pageLength: 10,
-        lengthChange: false,
-        paging: true,
-        searching: false,
-        info: true,
-        dom: 'tip',
-        order: [[0, "asc"]],
-        scrollX: true,
-        scrollY: '400px',
-        scrollCollapse: true,
-        drawCallback: function() {
-            $('.sticky-table thead th').css({
-                'position': 'sticky',
-                'top': 0,
-                'z-index': 12
-            });
-            $('.sticky-table thead th:nth-child(-n+5)').css({
-                'z-index': 13
-            });
-        }
+    // When tab changes, adjust table if sidebar is toggled
+    $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
+        setTimeout(function() {
+            var activeTab = $('.tab-pane.active').attr('id');
+            var tableId = '#dataTable' + activeTab.replace('tab', '');
+            if (tables[tableId]) {
+                tables[tableId].columns.adjust().draw(false);
+            }
+        }, 100);
     });
 
-    // Initialize DataTable for Review & Drafting Tab (tab4)
-    var table4 = $('#dataTable4').DataTable({
-        pageLength: 10,
-        lengthChange: false,
-        paging: true,
-        searching: false,
-        info: true,
-        dom: 'tip',
-        order: [[0, "asc"]],
-        scrollX: true,
-        scrollY: '400px',
-        scrollCollapse: true,
-        drawCallback: function() {
-            $('.sticky-table thead th').css({
-                'position': 'sticky',
-                'top': 0,
-                'z-index': 12
-            });
-            $('.sticky-table thead th:nth-child(-n+5)').css({
-                'z-index': 13
-            });
-        }
-    });
-
-    var table5 = $('#dataTable5').DataTable({
-        pageLength: 10,
-        lengthChange: false,
-        paging: true,
-        searching: false,
-        info: true,
-        dom: 'tip',
-        order: [[0, "asc"]],
-        scrollX: true,
-        scrollY: '400px',
-        scrollCollapse: true,
-        drawCallback: function() {
-            $('.sticky-table thead th').css({
-                'position': 'sticky',
-                'top': 0,
-                'z-index': 12
-            });
-            $('.sticky-table thead th:nth-child(-n+5)').css({
-                'z-index': 13
-            });
-        }
-    });
-
-    var table6 = $('#dataTable6').DataTable({
-        pageLength: 10,
-        lengthChange: false,
-        paging: true,
-        searching: false,
-        info: true,
-        dom: 'tip',
-        order: [[0, "asc"]],
-        scrollX: true,
-        scrollY: '400px',
-        scrollCollapse: true,
-        drawCallback: function() {
-            $('.sticky-table thead th').css({
-                'position': 'sticky',
-                'top': 0,
-                'z-index': 12
-            });
-            $('.sticky-table thead th:nth-child(-n+5)').css({
-                'z-index': 13
-            });
-        }
-    });
-
-        var table7 = $('#dataTable7').DataTable({
-        pageLength: 10,
-        lengthChange: false,
-        paging: true,
-        searching: false,
-        info: true,
-        dom: 'tip',
-        order: [[0, "asc"]],
-        scrollX: true,
-        scrollY: '400px',
-        scrollCollapse: true,
-        drawCallback: function() {
-            $('.sticky-table thead th').css({
-                'position': 'sticky',
-                'top': 0,
-                'z-index': 12
-            });
-            $('.sticky-table thead th:nth-child(-n+5)').css({
-                'z-index': 13
-            });
-        }
+    // Fix sidebar toggle
+    $('#sidebarToggle, #sidebarToggleTop').on('click', function() {
+        setTimeout(function() {
+            var activeTab = $('.tab-pane.active').attr('id');
+            var tableId = '#dataTable' + activeTab.replace('tab', '');
+            if (tables[tableId]) {
+                tables[tableId].columns.adjust().draw(false);
+            }
+        }, 350);
     });
 
     // Custom search functionality for All Active Cases Tab
