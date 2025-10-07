@@ -15,7 +15,7 @@
 
 /* Smaller text and compact spacing */
 .compact-table {
-    font-size: 0.75rem;
+    font-size: 1rem;
 }
 
 .compact-table th,
@@ -114,6 +114,11 @@
 .readonly-cell:hover {
     background-color: #e9ecef !important;
 }
+
+.tab-loading {
+    text-align: center;
+    padding: 3rem;
+}
 </style>
 
 <!-- Main Content -->
@@ -167,7 +172,7 @@
         <!-- Tabs Content -->
         <div class="tab-content mt-3" id="dataTableTabsContent">
             
-<!-- Tab 0: All Active Cases -->
+        <!-- Tab 0: All Active Cases -->
             <div class="tab-pane fade show active" id="tab0" role="tabpanel" aria-labelledby="tab0-tab">
                 <div class="card shadow mb-4">
                     <div class="card-body">
@@ -375,6 +380,7 @@
             <div class="tab-pane fade" id="tab2" role="tabpanel" aria-labelledby="tab2-tab">
                 <div class="card shadow mb-4">
                     <div class="card-body">
+
                         <!-- Success/Error alerts for AJAX -->
                         <div class="alert alert-success alert-dismissible fade" role="alert" id="success-alert-tab2" style="display: none;">
                             <span id="success-message-tab2"></span>
@@ -471,7 +477,7 @@
             <!-- Tab 3: Hearing Process -->
             <div class="tab-pane fade" id="tab3" role="tabpanel" aria-labelledby="tab3-tab">
                 <div class="card shadow mb-4">
-                    <div class="card-body">
+                    <div class="card-body" >
                         <!-- Success/Error alerts for AJAX -->
                         <div class="alert alert-success alert-dismissible fade" role="alert" id="success-alert-tab3" style="display: none;">
                             <span id="success-message-tab3"></span>
@@ -582,6 +588,7 @@
             <div class="tab-pane fade" id="tab4" role="tabpanel" aria-labelledby="tab4-tab">
                 <div class="card shadow mb-4">
                     <div class="card-body">
+
                         <div class="alert alert-success alert-dismissible fade" role="alert" id="success-alert-tab4" style="display: none;">
                             <span id="success-message-tab4"></span>
                             <button type="button" class="close" onclick="hideAlert('success-alert-tab4')">
@@ -709,7 +716,8 @@
             <!-- Tab 5: Orders & Disposition -->
             <div class="tab-pane fade" id="tab5" role="tabpanel" aria-labelledby="tab5-tab">
                 <div class="card shadow mb-4">
-                    <div class="card-body">
+                    <div class="card-body" >
+
                         <div class="alert alert-success alert-dismissible fade" role="alert" id="success-alert-tab5" style="display: none;">
                             <span id="success-message-tab5"></span>
                             <button type="button" class="close" onclick="hideAlert('success-alert-tab5')">
@@ -1166,7 +1174,6 @@
     </div>
 </div>
 @endsection
-
 @section('scripts')
 <!-- DataTables plugins -->
 <script src="{{ asset('vendor/datatables/jquery.dataTables.min.js') }}"></script>
@@ -1207,6 +1214,18 @@ $(document).ready(function() {
     // Function to safely initialize a DataTable
     function initDataTable(tableId) {
         try {
+            // Check if table exists
+            if ($(tableId).length === 0) {
+                console.warn('Table not found:', tableId);
+                return false;
+            }
+            
+            // Check if table has rows
+            if ($(tableId + ' tbody tr').length === 0) {
+                console.log('Table has no data rows:', tableId);
+                return false;
+            }
+            
             // Destroy if exists
             if ($.fn.DataTable.isDataTable(tableId)) {
                 $(tableId).DataTable().destroy();
@@ -1225,25 +1244,65 @@ $(document).ready(function() {
         }
     }
 
-    // Initialize only Tab 0 (visible on page load)
+    // Auto-minimize sidebar on page load
+    $('body').addClass('sidebar-toggled');
+    $('.sidebar').addClass('toggled');
+    localStorage.setItem('sidebarToggled', 'true');
+    
+    // Initialize only Tab 0 on page load
     initDataTable('#dataTable0');
+    
+    // Adjust table after auto-minimize
+    setTimeout(function() {
+        if (tables['#dataTable0']) {
+            tables['#dataTable0'].columns.adjust().draw(false);
+        }
+    }, 100);
 
     // Initialize other tables when their tabs are shown
     $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
         var target = $(e.target).attr("href");
         var tableId = target.replace('#tab', '#dataTable');
         
+        console.log('Tab switched to:', target);
+        
         // Initialize if not already done
         if (!tables[tableId]) {
-            console.log('Tab switched to ' + target + ', initializing ' + tableId);
+            console.log('Initializing DataTable for:', tableId);
             initDataTable(tableId);
         } else {
             // Just adjust columns if already initialized
+            console.log('Adjusting columns for:', tableId);
             tables[tableId].columns.adjust().draw(false);
         }
+        
+        // Also adjust after a short delay to ensure proper rendering
+        setTimeout(function() {
+            if (tables[tableId]) {
+                tables[tableId].columns.adjust().draw(false);
+            }
+        }, 100);
     });
 
-    // Custom search for each table
+    // Fix sidebar toggle with state persistence
+    $('#sidebarToggle, #sidebarToggleTop').on('click', function() {
+        // Toggle the state
+        var isToggled = $('body').hasClass('sidebar-toggled');
+        
+        // Save state to localStorage
+        localStorage.setItem('sidebarToggled', !isToggled);
+        
+        // Wait for sidebar animation to complete, then adjust active table
+        setTimeout(function() {
+            var activeTab = $('.tab-pane.active').attr('id');
+            var tableId = '#dataTable' + activeTab.replace('tab', '');
+            if (tables[tableId]) {
+                tables[tableId].columns.adjust().draw(false);
+            }
+        }, 350);
+    });
+
+    // Custom search for each table - FIXED to use tables object
     $('#customSearch0').on('keyup input change', function() {
         if (tables['#dataTable0']) tables['#dataTable0'].search(this.value).draw();
     });
@@ -1269,101 +1328,16 @@ $(document).ready(function() {
         if (tables['#dataTable7']) tables['#dataTable7'].search(this.value).draw();
     });
 
-    // Sidebar state persistence
-    // Check if sidebar was toggled before
-    if (localStorage.getItem('sidebarToggled') === 'true') {
-        $('body').addClass('sidebar-toggled');
-        $('.sidebar').addClass('toggled');
-    }
-
-    // Auto-minimize sidebar on page load
-    $('body').addClass('sidebar-toggled');
-    $('.sidebar').addClass('toggled');
-    localStorage.setItem('sidebarToggled', 'true');
-    
-    // Adjust table after auto-minimize
-    setTimeout(function() {
-        if (tables['#dataTable0']) {
-            tables['#dataTable0'].columns.adjust().draw(false);
-        }
-    }, 100);
-
-    // Fix sidebar toggle with state persistence
-    $('#sidebarToggle, #sidebarToggleTop').on('click', function() {
-        // Toggle the state
-        var isToggled = $('body').hasClass('sidebar-toggled');
-        
-        // Save state to localStorage
-        localStorage.setItem('sidebarToggled', !isToggled);
-        
-        // Wait for sidebar animation to complete
+    // Handle active tab from session (after moveToNextStage)
+    @if(session('active_tab'))
+        const activeTab = '{{ session("active_tab") }}';
+        console.log('Activating tab from session:', activeTab);
         setTimeout(function() {
-            var activeTab = $('.tab-pane.active').attr('id');
-            var tableId = '#dataTable' + activeTab.replace('tab', '');
-            if (tables[tableId]) {
-                tables[tableId].columns.adjust().draw(false);
-            }
-        }, 350);
-    });
-
-    // When tab changes, adjust table if sidebar is toggled
-    $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
-        setTimeout(function() {
-            var activeTab = $('.tab-pane.active').attr('id');
-            var tableId = '#dataTable' + activeTab.replace('tab', '');
-            if (tables[tableId]) {
-                tables[tableId].columns.adjust().draw(false);
-            }
+            $('a[href="#' + activeTab + '"]').tab('show');
         }, 100);
-    });
+    @endif
 
-    // Fix sidebar toggle
-    $('#sidebarToggle, #sidebarToggleTop').on('click', function() {
-        setTimeout(function() {
-            var activeTab = $('.tab-pane.active').attr('id');
-            var tableId = '#dataTable' + activeTab.replace('tab', '');
-            if (tables[tableId]) {
-                tables[tableId].columns.adjust().draw(false);
-            }
-        }, 350);
-    });
-
-    // Custom search functionality for All Active Cases Tab
-    $('#customSearch0').on('keyup input change', function() {
-        table0.search(this.value).draw();
-    });
-
-    // Custom search functionality for Inspection Tab
-    $('#customSearch1').on('keyup input change', function() {
-        table1.search(this.value).draw();
-    });
-
-    // Custom search functionality for Docketing Tab
-    $('#customSearch2').on('keyup input change', function() {
-        table2.search(this.value).draw();
-    });
-    
-    // Custom search functionality for Hearing Process Tab
-    $('#customSearch3').on('keyup input change', function() {
-        table3.search(this.value).draw();
-    });
-
-    // Custom search functionality for Review & Drafting Tab
-    $('#customSearch4').on('keyup input change', function() {
-        table4.search(this.value).draw();
-    });
-
-    $('#customSearch5').on('keyup input change', function() {
-        table5.search(this.value).draw();
-    });
-
-    $('#customSearch6').on('keyup input change', function() {
-        table6.search(this.value).draw();
-    });
-
-    $('#customSearch7').on('keyup input change', function() {
-        table7.search(this.value).draw();
-    });
+    console.log('Initialization complete');
 
     
 
@@ -1495,27 +1469,6 @@ $(document).ready(function() {
         $('.alert').fadeOut('slow');
     }, 5000);
 
-    // Handle tab switching - reinitialize DataTables when switching tabs
-    $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
-        var target = $(e.target).attr("href");
-        if (target === '#tab0') {
-            table0.columns.adjust().draw();
-        } else if (target === '#tab1') {
-            table1.columns.adjust().draw();
-        } else if (target === '#tab2') {
-            table2.columns.adjust().draw();
-        } else if (target === '#tab3') {
-            table3.columns.adjust().draw();
-        } else if (target === '#tab4') {
-            table4.columns.adjust().draw();
-        } else if (target === '#tab5') {
-            table5.columns.adjust().draw();
-        } else if (target === '#tab6') {
-            table6.columns.adjust().draw();
-        } else if (target === '#tab7') {
-            table7.columns.adjust().draw(); 
-        }    
-    });
 });
 
 // Function to show alert messages

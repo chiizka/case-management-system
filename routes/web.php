@@ -34,8 +34,7 @@ Route::post('/user', [UserController::class, 'store'])->name('user.post');
 Route::get('/password/reset/{token}', [App\Http\Controllers\Auth\ResetPasswordController::class, 'showResetForm'])->name('password.reset');
 Route::post('/password/reset', [App\Http\Controllers\Auth\ResetPasswordController::class, 'reset'])->name('password.update');
 
-// Protected Routes (require authentication)
-// Route::middleware('auth')->group(function () {
+Route::middleware('auth')->group(function () {
     
     // Dashboard/Home
     Route::get('/', [FrontController::class, 'index'])->name('home');
@@ -99,4 +98,4 @@ Route::put('/orders-and-disposition/{id}/inline-update', [OrderAndDispositionCon
 Route::put('/compliance-and-awards/{id}/inline-update', [ComplianceAndAwardController::class, 'inlineUpdate'])->name('compliance-and-awards.inline-update');
 Route::put('/appeals-and-resolution/{id}/inline-update', [AppealsAndResolutionController::class, 'inlineUpdate'])->name('appeals-and-resolution.inline-update');
 
-// });
+});
