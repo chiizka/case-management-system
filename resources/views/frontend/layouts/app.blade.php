@@ -297,6 +297,14 @@
 <!-- Custom scripts for all pages-->
 <script src="{{ asset('js/sb-admin-2.min.js') }}"></script>
 
+<!-- Chart.js -->
+<script src="{{ asset('vendor/chart.js/Chart.min.js') }}"></script>
+
+<!-- Demo scripts for charts -->
+<script src="{{ asset('js/demo/chart-area-demo.js') }}"></script>
+<script src="{{ asset('js/demo/chart-pie-demo.js') }}"></script>
+
+
 @yield('scripts')
         </div>
     </div>
