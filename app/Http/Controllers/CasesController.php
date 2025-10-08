@@ -18,94 +18,150 @@ class CasesController extends Controller
 {
     /**
      * Display the main case management page
-     * Loads all data but optimized with selective column queries
+     * OPTIMIZED: Only loads Tab 0 data initially
      */
     public function case()
     {
-        // Load all data but only select needed columns to reduce memory usage
+        // ONLY load Tab 0 (All Active Cases) on initial page load
         $cases = CaseFile::select('id', 'inspection_id', 'case_no', 'establishment_name', 'current_stage', 'overall_status', 'created_at')
             ->where('overall_status', '!=', 'Completed')
             ->orderBy('created_at', 'desc')
             ->get();
-        
-        $inspections = Inspection::with(['case' => function($query) {
-                $query->select('id', 'inspection_id', 'establishment_name', 'current_stage', 'overall_status');
-            }])
-            ->whereHas('case', function($query) {
-                $query->where('current_stage', '1: Inspections')
-                    ->where('overall_status', '!=', 'Completed');
-            })
-            ->get();
-            
-        $docketing = Docketing::with(['case' => function($query) {
-                $query->select('id', 'inspection_id', 'establishment_name', 'current_stage', 'overall_status');
-            }])
-            ->whereHas('case', function($query) {
-                $query->where('current_stage', '2: Docketing')
-                    ->where('overall_status', '!=', 'Completed');
-            })
-            ->get();
-            
-        $hearingProcess = HearingProcess::with(['case' => function($query) {
-                $query->select('id', 'inspection_id', 'establishment_name', 'current_stage', 'overall_status');
-            }])
-            ->whereHas('case', function($query) {
-                $query->where('current_stage', '3: Hearing')
-                    ->where('overall_status', '!=', 'Completed');
-            })
-            ->get();
-            
-        $reviewAndDrafting = ReviewAndDrafting::with(['case' => function($query) {
-                $query->select('id', 'inspection_id', 'establishment_name', 'current_stage', 'overall_status');
-            }])
-            ->whereHas('case', function($query) {
-                $query->where('current_stage', '4: Review & Drafting')
-                    ->where('overall_status', '!=', 'Completed');
-            })
-            ->get();
-            
-        $ordersAndDisposition = OrderAndDisposition::with(['case' => function($query) {
-                $query->select('id', 'inspection_id', 'establishment_name', 'current_stage', 'overall_status');
-            }])
-            ->whereHas('case', function($query) {
-                $query->where('current_stage', '5: Orders & Disposition')
-                    ->where('overall_status', '!=', 'Completed');
-            })
-            ->get();
-            
-        $complianceAndAwards = ComplianceAndAward::with(['case' => function($query) {
-                $query->select('id', 'inspection_id', 'establishment_name', 'current_stage', 'overall_status');
-            }])
-            ->whereHas('case', function($query) {
-                $query->where('current_stage', '6: Compliance & Awards')
-                    ->where('overall_status', '!=', 'Completed');
-            })
-            ->get();
-            
-        $appealsAndResolutions = AppealsAndResolution::with(['case' => function($query) {
-                $query->select('id', 'inspection_id', 'establishment_name', 'current_stage', 'overall_status');
-            }])
-            ->whereHas('case', function($query) {
-                $query->where('current_stage', '7: Appeals & Resolution')
-                    ->where('overall_status', '!=', 'Completed');
-            })
-            ->get();
 
-        return view('frontend.case', compact(
-            'cases',
-            'inspections',
-            'docketing',
-            'hearingProcess',
-            'reviewAndDrafting',
-            'ordersAndDisposition',
-            'complianceAndAwards',
-            'appealsAndResolutions' 
-        ));
+        // Pass empty collections for other tabs - they'll be loaded via AJAX
+        return view('frontend.case', [
+            'cases' => $cases,
+            'inspections' => collect([]), // Empty collection
+            'docketing' => collect([]),
+            'hearingProcess' => collect([]),
+            'reviewAndDrafting' => collect([]),
+            'ordersAndDisposition' => collect([]),
+            'complianceAndAwards' => collect([]),
+            'appealsAndResolutions' => collect([])
+        ]);
     }
 
     /**
-     * Store a new case
+     * NEW METHOD: Load tab data via AJAX
      */
+    public function loadTabData(Request $request, $tabNumber)
+    {
+        try {
+            $data = null;
+            $html = '';
+
+            switch ($tabNumber) {
+                case '1': // Inspections
+                    $data = Inspection::with(['case' => function($query) {
+                            $query->select('id', 'inspection_id', 'establishment_name', 'current_stage', 'overall_status');
+                        }])
+                        ->whereHas('case', function($query) {
+                            $query->where('current_stage', '1: Inspections')
+                                ->where('overall_status', '!=', 'Completed');
+                        })
+                        ->get();
+                    
+                    $html = view('frontend.partials.inspection_table', ['inspections' => $data])->render();
+                    break;
+
+                case '2': // Docketing
+                    $data = Docketing::with(['case' => function($query) {
+                            $query->select('id', 'inspection_id', 'establishment_name', 'current_stage', 'overall_status');
+                        }])
+                        ->whereHas('case', function($query) {
+                            $query->where('current_stage', '2: Docketing')
+                                ->where('overall_status', '!=', 'Completed');
+                        })
+                        ->get();
+                    
+                    $html = view('frontend.partials.docketing_table', ['docketing' => $data])->render();
+                    break;
+
+                case '3': // Hearing
+                    $data = HearingProcess::with(['case' => function($query) {
+                            $query->select('id', 'inspection_id', 'establishment_name', 'current_stage', 'overall_status');
+                        }])
+                        ->whereHas('case', function($query) {
+                            $query->where('current_stage', '3: Hearing')
+                                ->where('overall_status', '!=', 'Completed');
+                        })
+                        ->get();
+                    
+                    $html = view('frontend.partials.hearing_table', ['hearingProcess' => $data])->render();
+                    break;
+
+                case '4': // Review & Drafting
+                    $data = ReviewAndDrafting::with(['case' => function($query) {
+                            $query->select('id', 'inspection_id', 'establishment_name', 'current_stage', 'overall_status');
+                        }])
+                        ->whereHas('case', function($query) {
+                            $query->where('current_stage', '4: Review & Drafting')
+                                ->where('overall_status', '!=', 'Completed');
+                        })
+                        ->get();
+                    
+                    $html = view('frontend.partials.review_table', ['reviewAndDrafting' => $data])->render();
+                    break;
+
+                case '5': // Orders & Disposition
+                    $data = OrderAndDisposition::with(['case' => function($query) {
+                            $query->select('id', 'inspection_id', 'establishment_name', 'current_stage', 'overall_status');
+                        }])
+                        ->whereHas('case', function($query) {
+                            $query->where('current_stage', '5: Orders & Disposition')
+                                ->where('overall_status', '!=', 'Completed');
+                        })
+                        ->get();
+                    
+                    $html = view('frontend.partials.orders_table', ['ordersAndDisposition' => $data])->render();
+                    break;
+
+                case '6': // Compliance & Awards
+                    $data = ComplianceAndAward::with(['case' => function($query) {
+                            $query->select('id', 'inspection_id', 'establishment_name', 'current_stage', 'overall_status');
+                        }])
+                        ->whereHas('case', function($query) {
+                            $query->where('current_stage', '6: Compliance & Awards')
+                                ->where('overall_status', '!=', 'Completed');
+                        })
+                        ->get();
+                    
+                    $html = view('frontend.partials.compliance_table', ['complianceAndAwards' => $data])->render();
+                    break;
+
+                case '7': // Appeals & Resolution
+                    $data = AppealsAndResolution::with(['case' => function($query) {
+                            $query->select('id', 'inspection_id', 'establishment_name', 'current_stage', 'overall_status');
+                        }])
+                        ->whereHas('case', function($query) {
+                            $query->where('current_stage', '7: Appeals & Resolution')
+                                ->where('overall_status', '!=', 'Completed');
+                        })
+                        ->get();
+                    
+                    $html = view('frontend.partials.appeals_table', ['appealsAndResolutions' => $data])->render();
+                    break;
+
+                default:
+                    return response()->json(['error' => 'Invalid tab number'], 400);
+            }
+
+            return response()->json([
+                'success' => true,
+                'html' => $html,
+                'count' => $data ? $data->count() : 0
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error loading tab data: ' . $e->getMessage());
+            return response()->json([
+                'error' => 'Failed to load data: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    // ... rest of your existing methods (store, update, destroy, etc.) remain unchanged ...
+
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -119,7 +175,6 @@ class CasesController extends Controller
         try {
             $case = CaseFile::create($validated);
             
-            // If the current stage is "1: Inspections", automatically create an inspection record
             if ($case->current_stage === '1: Inspections') {
                 Inspection::create([
                     'case_id' => $case->id,
@@ -140,9 +195,6 @@ class CasesController extends Controller
         }
     }
 
-    /**
-     * Update an existing case
-     */
     public function update(Request $request, $id)
     {
         $validated = $request->validate([
@@ -159,9 +211,6 @@ class CasesController extends Controller
         return redirect()->route('case.index')->with('success', 'Case updated successfully!');
     }
 
-    /**
-     * Delete a case
-     */
     public function destroy($id)
     {
         Log::info("Delete request received for case ID: " . $id);
@@ -201,27 +250,18 @@ class CasesController extends Controller
         }
     }
 
-    /**
-     * Show a specific case
-     */
     public function show($id)
     {
         $case = CaseFile::findOrFail($id);
         return response()->json($case);
     }
 
-    /**
-     * Get case data for editing
-     */
     public function edit($id)
     {
         $case = CaseFile::findOrFail($id);
         return response()->json($case);
     }
 
-    /**
-     * Move case to the next stage
-     */
     public function moveToNextStage(Request $request, $id)
     {
         try {
@@ -289,9 +329,6 @@ class CasesController extends Controller
         }
     }
 
-    /**
-     * Inline update for case fields
-     */
     public function inlineUpdate(Request $request, $id)
     {
         Log::info('Case inline update request received', [
@@ -304,13 +341,11 @@ class CasesController extends Controller
             
             $inputData = $request->all();
             
-            // Clean data - convert empty strings to null
             $cleanedData = [];
             foreach ($inputData as $key => $value) {
                 $cleanedData[$key] = ($value === '' || $value === '-') ? null : $value;
             }
             
-            // Validation rules
             $validator = \Illuminate\Support\Facades\Validator::make($cleanedData, [
                 'inspection_id' => 'nullable|string|max:255',
                 'case_no' => 'nullable|string|max:255',
@@ -330,7 +365,6 @@ class CasesController extends Controller
             $case->update($validator->validated());
             $case->refresh();
 
-            // Prepare response data
             $responseData = [
                 'inspection_id' => $case->inspection_id ?? '-',
                 'case_no' => $case->case_no ?? '-',

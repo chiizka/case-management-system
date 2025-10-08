@@ -101,5 +101,6 @@ Route::put('/appeals-and-resolution/{id}/inline-update', [AppealsAndResolutionCo
 // In your routes/web.php file (within your admin routes group if you have one)
 Route::post('/user/{id}/reset-password', [UserController::class, 'resetPassword'])
     ->name('user.reset-password');
-
+// Add this route inside your middleware('auth')->group()
+Route::get('/case/load-tab/{tabNumber}', [CasesController::class, 'loadTabData'])->name('case.loadTab');
 });

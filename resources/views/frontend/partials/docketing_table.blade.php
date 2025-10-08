@@ -1,0 +1,87 @@
+<div class="alert alert-success alert-dismissible fade" role="alert" id="success-alert-tab2" style="display: none;">
+    <span id="success-message-tab2"></span>
+    <button type="button" class="close" onclick="hideAlert('success-alert-tab2')">
+        <span aria-hidden="true">&times;</span>
+    </button>
+</div>
+
+<div class="alert alert-danger alert-dismissible fade" role="alert" id="error-alert-tab2" style="display: none;">
+    <span id="error-message-tab2"></span>
+    <button type="button" class="close" onclick="hideAlert('error-alert-tab2')">
+        <span aria-hidden="true">&times;</span>
+    </button>
+</div>
+
+<div class="d-flex justify-content-between align-items-center mb-3 custom-search-container">
+    <div class="d-flex align-items-center">
+        <label class="mr-2 mb-0" style="font-size: 0.8rem;">Search:</label>
+        <input type="search" class="form-control form-control-sm" id="customSearch2" placeholder="Search docketing..." style="width: 200px;">
+    </div>
+</div>
+
+<div class="table-container">
+    <table class="table table-bordered compact-table sticky-table" id="dataTable2" width="100%" cellspacing="0">
+        <thead>
+            <tr>
+                <th>Inspection ID</th>
+                <th>Establishment Name</th>
+                <th>PCT for Docketing</th>
+                <th>Date Scheduled/Docketed</th>
+                <th>Aging Docket</th>
+                <th>Status Docket</th>
+                <th>Hearing Officer (MIS)</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if(isset($docketing) && $docketing->count() > 0)
+                @foreach($docketing as $dock)
+                    <tr data-id="{{ $dock->id }}">
+                        <td class="editable-cell readonly-cell" data-field="inspection_id">{{ $dock->case->inspection_id ?? '-' }}</td>
+                        <td class="editable-cell readonly-cell" data-field="establishment_name" title="{{ $dock->case->establishment_name ?? '' }}">
+                            {{ $dock->case ? Str::limit($dock->case->establishment_name, 25) : '-' }}
+                        </td>
+                        <td class="editable-cell" data-field="pct_for_docketing">{{ $dock->pct_for_docketing ?? '-' }}</td>
+                        <td class="editable-cell" data-field="date_scheduled_docketed" data-type="date">{{ $dock->date_scheduled_docketed ? \Carbon\Carbon::parse($dock->date_scheduled_docketed)->format('Y-m-d') : '-' }}</td>
+                        <td class="editable-cell" data-field="aging_docket">{{ $dock->aging_docket ?? '-' }}</td>
+                        <td class="editable-cell" data-field="status_docket" data-type="select">
+                            @if($dock->status_docket)
+                                <span class="badge badge-{{ $dock->status_docket == 'Completed' ? 'success' : ($dock->status_docket == 'In Progress' ? 'warning' : 'secondary') }}">
+                                    {{ $dock->status_docket }}
+                                </span>
+                            @else
+                                -
+                            @endif
+                        </td>
+                        <td class="editable-cell" data-field="hearing_officer_mis">{{ $dock->hearing_officer_mis ?? '-' }}</td>
+                        <td>
+                            <button class="btn btn-warning btn-sm edit-row-btn-docketing" title="Edit Row">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <form action="{{ route('docketing.destroy', $dock->id) }}" method="POST" style="display:inline;">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="btn btn-danger btn-sm" title="Delete" onclick="return confirm('Are you sure?')">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </form>
+                            
+                            @if($dock->case && $dock->case->current_stage === '2: Docketing')
+                                <form action="{{ route('case.nextStage', $dock->case->id) }}" method="POST" style="display:inline;">
+                                    @csrf
+                                    <button type="submit" class="btn btn-success btn-sm ml-1" title="Move to Hearing" onclick="return confirm('Complete docketing and move to Hearing?')">
+                                        <i class="fas fa-arrow-right"></i> Next
+                                    </button>
+                                </form>
+                            @endif
+                        </td>
+                    </tr>
+                @endforeach
+            @else
+                <tr>
+                    <td colspan="8" class="text-center">No docketing records found.</td>
+                </tr>
+            @endif
+        </tbody>
+    </table>
+</div>
