@@ -27,37 +27,62 @@
             </div>
         @endif
 
-        <!-- User Table -->
-        <div class="card shadow mb-4">
-            <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table table-bordered table-sm">
-                        <thead class="thead-light">
-                            <tr>
-                                <th>#</th>
-                                <th>First Name</th>
-                                <th>Last Name</th>
-                                <th>Email</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @forelse($users as $index => $user)
-                                <tr>
-                                    <td>{{ $index+1 }}</td>
-                                    <td>{{ $user->fname }}</td>
-                                    <td>{{ $user->lname }}</td>
-                                    <td>{{ $user->email }}</td>
-                                </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="4" class="text-center">No users found.</td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+<!-- User Table -->
+<div class="card shadow mb-4">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-bordered table-sm">
+                <thead class="thead-light">
+                    <tr>
+                        <th>#</th>
+                        <th>First Name</th>
+                        <th>Last Name</th>
+                        <th>Email</th>
+                        <th>Last Reset Sent</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse($users as $index => $user)
+                        <tr>
+                            <td>{{ $index+1 }}</td>
+                            <td>{{ $user->fname }}</td>
+                            <td>{{ $user->lname }}</td>
+                            <td>{{ $user->email }}</td>
+                            <td>
+                                @if($user->password_reset_sent_at)
+                                    <span class="badge badge-info" title="{{ $user->password_reset_sent_at->format('M d, Y h:i A') }}">
+                                        {{ $user->password_reset_sent_at->diffForHumans() }}
+                                    </span>
+                                    @if($user->password)
+                                        <span class="badge badge-success ml-1">✓ Set</span>
+                                    @else
+                                        <span class="badge badge-warning ml-1">Pending</span>
+                                    @endif
+                                @else
+                                    <span class="text-muted">Never</span>
+                                @endif
+                            </td>
+                            <td>
+                                <form method="POST" action="{{ route('user.reset-password', $user->id) }}" style="display: inline;">
+                                    @csrf
+                                    <button type="submit" class="btn btn-warning btn-sm" 
+                                            onclick="return confirm('Send password reset link to {{ $user->email }}?')">
+                                        Reset Password
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="6" class="text-center">No users found.</td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
         </div>
+    </div>
+</div>
 
     </div>
 

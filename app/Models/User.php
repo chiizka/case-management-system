@@ -19,6 +19,7 @@ class User extends Authenticatable
         'two_factor_enabled',
         'otp_code',
         'otp_expires_at',
+        'password_reset_sent_at',
     ];
 
     protected $hidden = [
@@ -30,6 +31,7 @@ class User extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
         'otp_expires_at' => 'datetime',
+        'password_reset_sent_at' => 'datetime',
         'two_factor_enabled' => 'boolean',
     ];
 

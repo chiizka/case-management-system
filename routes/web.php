@@ -98,4 +98,8 @@ Route::put('/orders-and-disposition/{id}/inline-update', [OrderAndDispositionCon
 Route::put('/compliance-and-awards/{id}/inline-update', [ComplianceAndAwardController::class, 'inlineUpdate'])->name('compliance-and-awards.inline-update');
 Route::put('/appeals-and-resolution/{id}/inline-update', [AppealsAndResolutionController::class, 'inlineUpdate'])->name('appeals-and-resolution.inline-update');
 
+// In your routes/web.php file (within your admin routes group if you have one)
+Route::post('/user/{id}/reset-password', [UserController::class, 'resetPassword'])
+    ->name('user.reset-password');
+
 });
