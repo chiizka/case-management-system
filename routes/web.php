@@ -13,6 +13,7 @@ use App\Http\Controllers\OrderAndDispositionController;
 use App\Http\Controllers\ComplianceAndAwardController;
 use App\Http\Controllers\AppealsAndResolutionController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\LogController;
 
 Route::get('/', [FrontController::class, 'index'])->name('home');
 
@@ -103,4 +104,8 @@ Route::post('/user/{id}/reset-password', [UserController::class, 'resetPassword'
     ->name('user.reset-password');
 // Add this route inside your middleware('auth')->group()
 Route::get('/case/load-tab/{tabNumber}', [CasesController::class, 'loadTabData'])->name('case.loadTab');
+
+Route::middleware(['auth'])->group(function () {
+    Route::get('/logs', [LogController::class, 'index'])->name('logs.index');
+});
 });
