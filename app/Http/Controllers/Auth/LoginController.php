@@ -80,14 +80,10 @@ class LoginController extends Controller
             return redirect()->route('login')->withErrors(['email' => 'User not found.']);
         }
 
-        // Verify OTP
         if ($this->verifyOTPForUser($user, $request->otp_code)) {
-            // Clear 2FA session
             session()->forget('2fa_user_id');
-            
-            // Log the user in
             Auth::login($user, true);
-            
+            $request->session()->regenerate(); // 🔒 New session ID after login
             return redirect()->intended('/')->with('success', 'Login successful!');
         }
 
