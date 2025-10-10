@@ -29,7 +29,7 @@ class LoginController extends Controller
             return back()->withErrors(['email' => 'Please check your email to set up your password first.']);
         }
 
-        // Attempt authentication
+        // Attempt authentication - this will fire the Login event
         if (Auth::attempt($request->only('email', 'password'), $request->filled('remember'))) {
             $user = Auth::user();
 
@@ -37,7 +37,10 @@ class LoginController extends Controller
             if ($user->two_factor_enabled) {
                 // Store user ID in session and logout temporarily
                 session(['2fa_user_id' => $user->id]);
+                session(['2fa_in_progress' => true]); // Flag to prevent logout logging
+                
                 Auth::logout();
+                session()->forget('2fa_in_progress'); // Clear flag immediately
 
                 // Generate and send 2FA code
                 $otpCode = $this->generateOTPForUser($user);
@@ -46,7 +49,8 @@ class LoginController extends Controller
                 return redirect()->route('2fa.verify')->with('success', 'A 6-digit verification code has been sent to your email.');
             }
 
-            // If 2FA is disabled, login directly
+            // If 2FA is disabled, login directly (already logged in via Auth::attempt)
+            $request->session()->regenerate();
             return redirect()->intended('/');
         }
 
@@ -55,7 +59,6 @@ class LoginController extends Controller
 
     public function show2FAForm()
     {
-        // Check if user is in 2FA process
         if (!session('2fa_user_id')) {
             return redirect()->route('login')->withErrors(['email' => 'Please login first.']);
         }
@@ -69,7 +72,6 @@ class LoginController extends Controller
             'otp_code' => 'required|digits:6',
         ]);
 
-        // Get user from session
         $userId = session('2fa_user_id');
         if (!$userId) {
             return redirect()->route('login')->withErrors(['email' => 'Session expired. Please login again.']);
@@ -82,12 +84,17 @@ class LoginController extends Controller
 
         if ($this->verifyOTPForUser($user, $request->otp_code)) {
             session()->forget('2fa_user_id');
+            
+            // Login WITHOUT firing the event (we already logged it during Auth::attempt)
+            session(['skip_login_log' => true]); // Flag to skip logging
             Auth::login($user, true);
-            $request->session()->regenerate(); // 🔒 New session ID after login
+            session()->forget('skip_login_log'); // Clear flag
+            
+            $request->session()->regenerate();
+            
             return redirect()->intended('/')->with('success', 'Login successful!');
         }
 
-        // Check if OTP expired
         if ($this->isOTPExpiredForUser($user)) {
             return back()->withErrors(['otp_code' => 'Verification code has expired. Please request a new one.'])
                         ->with('show_resend', true);
@@ -108,7 +115,6 @@ class LoginController extends Controller
             return redirect()->route('login')->withErrors(['email' => 'User not found.']);
         }
 
-        // Generate new OTP and send
         $otpCode = $this->generateOTPForUser($user);
         $this->send2FACode($user, $otpCode);
 
@@ -118,7 +124,6 @@ class LoginController extends Controller
     private function verifyOTPForUser(User $user, $code)
     {
         if ($user->otp_code === $code && $user->otp_expires_at && $user->otp_expires_at->isFuture()) {
-            // Clear OTP after successful verification
             $user->otp_code = null;
             $user->otp_expires_at = null;
             $user->save();
@@ -144,7 +149,6 @@ class LoginController extends Controller
 
     private function send2FACode(User $user, $code)
     {
-        // Send email with 2FA code
         Mail::raw("Your login verification code is: {$code}\n\nThis code will expire in 10 minutes.\n\nIf you didn't attempt to login, please ignore this email.", function ($message) use ($user) {
             $message->to($user->email)
                    ->subject('Login Verification Code - Case Management System');
