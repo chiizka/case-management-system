@@ -12,6 +12,7 @@
                         <tr>
                             <th>ID</th>
                             <th>User</th>
+                            <th>Action</th>
                             <th>Activity</th>
                             <th>IP Address</th>
                             <th>User Agent</th>
@@ -23,16 +24,31 @@
                             <tr>
                                 <td>{{ $log->id }}</td>
                                 <td>{{ $log->user ? $log->user->fname . ' ' . $log->user->lname : 'Guest' }}</td>
+                                <td>
+                                    @php
+                                        $actionClass = match($log->action) {
+                                            'create' => 'badge bg-success text-white',
+                                            'update' => 'badge bg-primary text-white',
+                                            'delete' => 'badge bg-danger text-white',
+                                            'view' => 'badge bg-info text-white',
+                                            'progress' => 'badge bg-warning text-white',
+                                            'login' => 'badge bg-success text-white',
+                                            'logout' => 'badge bg-secondary text-white',
+                                            'export' => 'badge bg-dark text-white',
+                                            'import' => 'badge bg-dark text-white',
+                                            default => 'badge bg-secondary text-white'
+                                        };
+                                    @endphp
+                                    <span class="{{ $actionClass }}">{{ strtoupper($log->action ?? 'N/A') }}</span>
+                                </td>
                                 <td>{{ $log->activity }}</td>
                                 <td>{{ $log->ip_address }}</td>
                                 <td>{{ Str::limit($log->user_agent, 30) }}</td>
-                                <td>{{ $log->created_at->format('Y-m-d H:i:s') }}</td>
+                                <td>{{ $log->created_at->timezone('Asia/Manila')->format('Y-m-d h:i:s A') }}</td>
                             </tr>
                         @endforeach
                     </tbody>
                 </table>
-                {{-- Remove Laravel pagination since DataTables will handle it --}}
-                {{-- {{ $logs->links() }} --}}
             </div>
         </div>
     </div>
@@ -40,17 +56,17 @@
 @endsection
 
 @section('scripts')
-    {{-- Include DataTables JS --}}
     <script src="{{ asset('vendor/datatables/jquery.dataTables.min.js') }}"></script>
     <script src="{{ asset('vendor/datatables/dataTables.bootstrap4.min.js') }}"></script>
 
-    {{-- Initialize DataTable --}}
     <script>
         $(document).ready(function() {
             $('#logsTable').DataTable({
-                // Optional: adjust the page length and default order
                 "pageLength": 10,
-                "order": [[0, "desc"]], // Sort by ID descending
+                "order": [[0, "desc"]],
+                "columnDefs": [
+                    { "orderable": false, "targets": [4, 5] } // User Agent column not sortable
+                ],
                 "language": {
                     "search": "Search logs:",
                     "lengthMenu": "Show _MENU_ entries per page",

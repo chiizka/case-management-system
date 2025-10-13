@@ -2,9 +2,8 @@
 
 namespace App\Listeners;
 
-use App\Models\Log;
+use App\Helpers\ActivityLogger;
 use Illuminate\Auth\Events\Logout;
-use Illuminate\Support\Facades\Request;
 
 class LogSuccessfulLogout
 {
@@ -18,12 +17,7 @@ class LogSuccessfulLogout
         $user = $event->user;
 
         if ($user) {
-            Log::create([
-                'user_id' => $user->id,
-                'activity' => 'Logged out',
-                'ip_address' => Request::ip(),
-                'user_agent' => Request::header('User-Agent'),
-            ]);
+            ActivityLogger::log('Logged out');
         }
     }
 }

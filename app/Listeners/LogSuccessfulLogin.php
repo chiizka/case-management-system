@@ -2,9 +2,8 @@
 
 namespace App\Listeners;
 
-use App\Models\Log;
+use App\Helpers\ActivityLogger;
 use Illuminate\Auth\Events\Login;
-use Illuminate\Support\Facades\Request;
 
 class LogSuccessfulLogin
 {
@@ -15,11 +14,6 @@ class LogSuccessfulLogin
             return;
         }
 
-        Log::create([
-            'user_id' => $event->user->id,
-            'activity' => 'Logged in',
-            'ip_address' => Request::ip(),
-            'user_agent' => Request::header('User-Agent'),
-        ]);
+        ActivityLogger::log('Logged in');
     }
 }

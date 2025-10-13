@@ -12,10 +12,14 @@ class Log extends Model
     protected $fillable = [
         'user_id',
         'activity',
+        'action',
         'ip_address',
         'user_agent',
     ];
 
+    /**
+     * Get the user that owns the log.
+     */
     public function user()
     {
         return $this->belongsTo(User::class);
