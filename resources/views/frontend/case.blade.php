@@ -237,13 +237,13 @@
                                             <button class="btn btn-warning btn-sm edit-row-btn-case" title="Edit Row">
                                                 <i class="fas fa-edit"></i>
                                             </button>
-                                            <form action="/case/{{ $case->id }}" method="POST" style="display:inline;">
-                                                @csrf
-                                                @method('DELETE')
-                                                <button type="submit" class="btn btn-danger btn-sm delete-btn" data-case-id="{{ $case->id }}" onclick="return confirm('Delete this case?')" title="Delete">
-                                                    <i class="fas fa-trash"></i>  
-                                                </button>
-                                            </form>
+<button type="button" 
+        class="btn btn-danger btn-sm delete-btn" 
+        data-case-id="{{ $case->id }}" 
+        title="Delete">
+    <i class="fas fa-trash"></i>
+</button>
+
                                             <button class="btn btn-info btn-sm" title="View">
                                                 <i class="fas fa-eye"></i>
                                             </button>

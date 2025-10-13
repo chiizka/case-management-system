@@ -44,12 +44,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/users', [FrontController::class, 'users'])->name('users');
     
     //cases
-    Route::get('/case', [CasesController::class, 'case'])->name('case.index');
-    Route::post('/case', [CasesController::class, 'store'])->name('case.store');
-    Route::put('/case/{id}', [CasesController::class, 'update'])->name('case.update');
-    Route::delete('/case/{id}', [CasesController::class, 'destroy'])->name('case.destroy');
-    Route::get('/case/{id}', [CasesController::class, 'show'])->name('case.show');
-    Route::get('/case/{id}/edit', [CasesController::class, 'edit'])->name('case.edit');
+    Route::resource('case', CasesController::class);
 
     // Inspections
     Route::resource('inspection', InspectionsController::class);
