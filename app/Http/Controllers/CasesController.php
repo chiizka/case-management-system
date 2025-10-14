@@ -50,7 +50,7 @@ class CasesController extends Controller
             switch ($tabNumber) {
                 case '1': // Inspections
                     $data = Inspection::with(['case' => function($query) {
-                        $query->select('id', 'inspection_id', 'establishment_name', 'current_stage', 'overall_status');
+                        $query->select('id', 'inspection_id', 'case_no', 'establishment_name', 'current_stage', 'overall_status');
                     }])
                     ->whereHas('case', function($query) {
                         $query->where('current_stage', '1: Inspections')
@@ -63,7 +63,7 @@ class CasesController extends Controller
 
                 case '2': // Docketing
                     $data = Docketing::with(['case' => function($query) {
-                        $query->select('id', 'inspection_id', 'establishment_name', 'current_stage', 'overall_status');
+                        $query->select('id', 'inspection_id', 'case_no', 'establishment_name', 'current_stage', 'overall_status');
                     }])
                     ->whereHas('case', function($query) {
                         $query->where('current_stage', '2: Docketing')
@@ -76,7 +76,7 @@ class CasesController extends Controller
 
                 case '3': // Hearing
                     $data = HearingProcess::with(['case' => function($query) {
-                        $query->select('id', 'inspection_id', 'establishment_name', 'current_stage', 'overall_status');
+                        $query->select('id', 'inspection_id', 'case_no', 'establishment_name', 'current_stage', 'overall_status');
                     }])
                     ->whereHas('case', function($query) {
                         $query->where('current_stage', '3: Hearing')
@@ -89,7 +89,7 @@ class CasesController extends Controller
 
                 case '4': // Review & Drafting
                     $data = ReviewAndDrafting::with(['case' => function($query) {
-                        $query->select('id', 'inspection_id', 'establishment_name', 'current_stage', 'overall_status');
+                        $query->select('id', 'inspection_id', 'case_no', 'establishment_name', 'current_stage', 'overall_status');
                     }])
                     ->whereHas('case', function($query) {
                         $query->where('current_stage', '4: Review & Drafting')
@@ -102,7 +102,7 @@ class CasesController extends Controller
 
                 case '5': // Orders & Disposition
                     $data = OrderAndDisposition::with(['case' => function($query) {
-                        $query->select('id', 'inspection_id', 'establishment_name', 'current_stage', 'overall_status');
+                        $query->select('id', 'inspection_id', 'case_no', 'establishment_name', 'current_stage', 'overall_status');
                     }])
                     ->whereHas('case', function($query) {
                         $query->where('current_stage', '5: Orders & Disposition')
@@ -115,7 +115,7 @@ class CasesController extends Controller
 
                 case '6': // Compliance & Awards
                     $data = ComplianceAndAward::with(['case' => function($query) {
-                        $query->select('id', 'inspection_id', 'establishment_name', 'current_stage', 'overall_status');
+                        $query->select('id', 'inspection_id', 'case_no', 'establishment_name', 'current_stage', 'overall_status');
                     }])
                     ->whereHas('case', function($query) {
                         $query->where('current_stage', '6: Compliance & Awards')
@@ -128,7 +128,7 @@ class CasesController extends Controller
 
                 case '7': // Appeals & Resolution
                     $data = AppealsAndResolution::with(['case' => function($query) {
-                        $query->select('id', 'inspection_id', 'establishment_name', 'current_stage', 'overall_status');
+                        $query->select('id', 'inspection_id',  'case_no','establishment_name', 'current_stage', 'overall_status');
                     }])
                     ->whereHas('case', function($query) {
                         $query->where('current_stage', '7: Appeals & Resolution')

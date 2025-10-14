@@ -24,6 +24,7 @@
         <thead>
             <tr>
                 <th>Inspection ID</th>
+                <th>Case No</th>
                 <th>Establishment Name</th>
                 <th>PCT for Docketing</th>
                 <th>Date Scheduled/Docketed</th>
@@ -38,6 +39,7 @@
                 @foreach($docketing as $dock)
                     <tr data-id="{{ $dock->id }}">
                         <td class="editable-cell readonly-cell" data-field="inspection_id">{{ $dock->case->inspection_id ?? '-' }}</td>
+                        <td class="editable-cell" data-field="case_no" title="Click to edit Case No">{{ $dock->case->case_no ?? '-' }}</td>
                         <td class="editable-cell readonly-cell" data-field="establishment_name" title="{{ $dock->case->establishment_name ?? '' }}">
                             {{ $dock->case ? Str::limit($dock->case->establishment_name, 25) : '-' }}
                         </td>
@@ -79,7 +81,7 @@
                 @endforeach
             @else
                 <tr>
-                    <td colspan="8" class="text-center">No docketing records found.</td>
+                    <td colspan="9" class="text-center">No docketing records found.</td>
                 </tr>
             @endif
         </tbody>

@@ -182,38 +182,72 @@ class DocketingController extends Controller
     /**
      * Update docketing record inline via AJAX
      */
-    public function inlineUpdate(Request $request, $id)
-    {
-        Log::info('Docketing inline update request received', [
-            'docketing_id' => $id,
-            'request_data' => $request->all(),
-            'content_type' => $request->header('Content-Type')
-        ]);
+ /**
+ * Update docketing record inline via AJAX
+ */
+public function inlineUpdate(Request $request, $id)
+{
+    Log::info('Docketing inline update request received', [
+        'docketing_id' => $id,
+        'request_data' => $request->all(),
+        'content_type' => $request->header('Content-Type')
+    ]);
+    
+    try {
+        $docketing = docketing::findOrFail($id);
         
-        try {
-            $docketing = docketing::findOrFail($id);
-            
-            // Get all input data
-            $inputData = $request->all();
-            
-            // Remove readonly fields (these come from the case relationship)
-            unset($inputData['inspection_id']);
-            unset($inputData['establishment_name']);
-            
-            // Remove empty strings and convert them to null
-            $cleanedData = [];
-            foreach ($inputData as $key => $value) {
-                if ($value === '' || $value === '-') {
-                    $cleanedData[$key] = null;
-                } else {
-                    $cleanedData[$key] = $value;
-                }
+        // Get all input data
+        $inputData = $request->all();
+        
+        // Remove empty strings and convert them to null
+        $cleanedData = [];
+        foreach ($inputData as $key => $value) {
+            if ($value === '' || $value === '-') {
+                $cleanedData[$key] = null;
+            } else {
+                $cleanedData[$key] = $value;
             }
-            
-            Log::info('Cleaned data for validation', ['cleaned_data' => $cleanedData]);
-            
-            // Validation rules
-            $validator = Validator::make($cleanedData, [
+        }
+        
+        Log::info('Cleaned data for validation', ['cleaned_data' => $cleanedData]);
+        
+        // Separate data for case and docketing updates
+        $caseData = [];
+        $docketingData = [];
+        
+        foreach ($cleanedData as $field => $value) {
+            if (in_array($field, ['inspection_id', 'establishment_name', 'case_no'])) {
+                $caseData[$field] = $value;
+            } else {
+                $docketingData[$field] = $value;
+            }
+        }
+        
+        // Validation rules for case data
+        if (!empty($caseData)) {
+            $caseValidator = Validator::make($caseData, [
+                'inspection_id' => 'nullable|string|max:255',
+                'establishment_name' => 'nullable|string|max:500',
+                'case_no' => 'nullable|string|max:255',
+            ]);
+
+            if ($caseValidator->fails()) {
+                Log::warning('Case validation failed', [
+                    'errors' => $caseValidator->errors(),
+                    'data' => $caseData
+                ]);
+                
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Validation failed: ' . $caseValidator->errors()->first(),
+                    'errors' => $caseValidator->errors()
+                ], 422);
+            }
+        }
+        
+        // Validation rules for docketing data
+        if (!empty($docketingData)) {
+            $docketingValidator = Validator::make($docketingData, [
                 'pct_for_docketing' => 'nullable|numeric|min:0',
                 'date_scheduled_docketed' => 'nullable|date',
                 'aging_docket' => 'nullable|numeric|min:0',
@@ -221,65 +255,74 @@ class DocketingController extends Controller
                 'hearing_officer_mis' => 'nullable|string|max:255',
             ]);
 
-            if ($validator->fails()) {
+            if ($docketingValidator->fails()) {
                 Log::warning('Docketing validation failed', [
-                    'errors' => $validator->errors(),
-                    'data' => $cleanedData
+                    'errors' => $docketingValidator->errors(),
+                    'data' => $docketingData
                 ]);
                 
                 return response()->json([
                     'success' => false,
-                    'message' => 'Validation failed: ' . $validator->errors()->first(),
-                    'errors' => $validator->errors()
+                    'message' => 'Validation failed: ' . $docketingValidator->errors()->first(),
+                    'errors' => $docketingValidator->errors()
                 ], 422);
             }
-
-            $validatedData = $validator->validated();
-            
-            Log::info('Docketing update data validated', [
-                'validated_data' => $validatedData
-            ]);
-            
-            // Update the docketing record
-            $docketing->update($validatedData);
-            Log::info('Docketing updated successfully');
-
-            // Refresh to get any computed fields
-            $docketing->refresh();
-            
-            // Load the case relationship
-            $docketing->load('case');
-
-            // Prepare response data with proper formatting
-            $responseData = [
-                'inspection_id' => $docketing->case->inspection_id ?? '-',
-                'establishment_name' => $docketing->case->establishment_name ?? '-',
-                'pct_for_docketing' => $docketing->pct_for_docketing ?? '-',
-                'date_scheduled_docketed' => $docketing->date_scheduled_docketed ? \Carbon\Carbon::parse($docketing->date_scheduled_docketed)->format('Y-m-d') : '-',
-                'aging_docket' => $docketing->aging_docket ?? '-',
-                'status_docket' => $docketing->status_docket ?? 'Pending',
-                'hearing_officer_mis' => $docketing->hearing_officer_mis ?? '-',
-            ];
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Docketing updated successfully!',
-                'data' => $responseData
-            ]);
-
-        } catch (\Exception $e) {
-            Log::error('Docketing inline update failed: ' . $e->getMessage(), [
-                'docketing_id' => $id,
-                'request_data' => $request->all(),
-                'error' => $e->getTraceAsString()
-            ]);
-
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to update docketing: ' . $e->getMessage()
-            ], 500);
         }
+        
+        Log::info('Update data separated', [
+            'case_data' => $caseData,
+            'docketing_data' => $docketingData
+        ]);
+        
+        // Update the related case if there's case data to update
+        if (!empty($caseData) && $docketing->case) {
+            $docketing->case->update($caseData);
+            Log::info('Case updated successfully');
+        }
+        
+        // Update the docketing record
+        if (!empty($docketingData)) {
+            $docketing->update($docketingData);
+            Log::info('Docketing updated successfully');
+        }
+
+        // Refresh to get any computed fields
+        $docketing->refresh();
+        
+        // Load the case relationship
+        $docketing->load('case');
+
+        // Prepare response data with proper formatting
+        $responseData = [
+            'inspection_id' => $docketing->case->inspection_id ?? '-',
+            'case_no' => $docketing->case->case_no ?? '-',
+            'establishment_name' => $docketing->case->establishment_name ?? '-',
+            'pct_for_docketing' => $docketing->pct_for_docketing ?? '-',
+            'date_scheduled_docketed' => $docketing->date_scheduled_docketed ? \Carbon\Carbon::parse($docketing->date_scheduled_docketed)->format('Y-m-d') : '-',
+            'aging_docket' => $docketing->aging_docket ?? '-',
+            'status_docket' => $docketing->status_docket ?? 'Pending',
+            'hearing_officer_mis' => $docketing->hearing_officer_mis ?? '-',
+        ];
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Docketing updated successfully!',
+            'data' => $responseData
+        ]);
+
+    } catch (\Exception $e) {
+        Log::error('Docketing inline update failed: ' . $e->getMessage(), [
+            'docketing_id' => $id,
+            'request_data' => $request->all(),
+            'error' => $e->getTraceAsString()
+        ]);
+
+        return response()->json([
+            'success' => false,
+            'message' => 'Failed to update docketing: ' . $e->getMessage()
+        ], 500);
     }
+}
 
     /**
      * Get docketing data for AJAX requests.

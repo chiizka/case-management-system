@@ -237,13 +237,12 @@
                                             <button class="btn btn-warning btn-sm edit-row-btn-case" title="Edit Row">
                                                 <i class="fas fa-edit"></i>
                                             </button>
-<button type="button" 
-        class="btn btn-danger btn-sm delete-btn" 
-        data-case-id="{{ $case->id }}" 
-        title="Delete">
-    <i class="fas fa-trash"></i>
-</button>
-
+                                                <button type="button" 
+                                                        class="btn btn-danger btn-sm delete-btn" 
+                                                        data-case-id="{{ $case->id }}" 
+                                                        title="Delete">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
                                             <button class="btn btn-info btn-sm" title="View">
                                                 <i class="fas fa-eye"></i>
                                             </button>

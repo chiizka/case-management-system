@@ -23,7 +23,7 @@
     <table class="table table-bordered compact-table sticky-table" id="dataTable6" width="100%" cellspacing="0">
         <thead>
             <tr>
-                <th>Inspection ID</th>
+                <th>Case No.</th>
                 <th>Establishment Name</th>
                 <th>Compliance Order/Monetary Award</th>
                 <th>OSH Penalty</th>
@@ -48,7 +48,7 @@
             @if(isset($complianceAndAwards) && $complianceAndAwards->count() > 0)
                 @foreach($complianceAndAwards as $compliance)
                     <tr data-id="{{ $compliance->id }}">
-                        <td class="editable-cell readonly-cell" data-field="inspection_id">{{ $compliance->case->inspection_id ?? '-' }}</td>
+                        <td class="editable-cell readonly-cell" data-field="inspection_id">{{ $compliance->case->case_no ?? '-' }}</td>
                         <td class="editable-cell readonly-cell" data-field="establishment_name" title="{{ $compliance->case->establishment_name ?? '' }}">
                             {{ $compliance->case ? Str::limit($compliance->case->establishment_name, 25) : '-' }}
                         </td>

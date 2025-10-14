@@ -23,7 +23,7 @@
     <table class="table table-bordered compact-table sticky-table" id="dataTable5" width="100%" cellspacing="0">
         <thead>
             <tr>
-                <th>Inspection ID</th>
+                <th>Case No.</th>
                 <th>Establishment Name</th>
                 <th>Aging 2 Days Finalization</th>
                 <th>Status Finalization</th>
@@ -44,7 +44,7 @@
             @if(isset($ordersAndDisposition) && $ordersAndDisposition->count() > 0)
                 @foreach($ordersAndDisposition as $order)
                     <tr data-id="{{ $order->id }}">
-                        <td class="editable-cell readonly-cell" data-field="inspection_id">{{ $order->case->inspection_id ?? '-' }}</td>
+                        <td class="editable-cell readonly-cell" data-field="inspection_id">{{ $order->case->case_no ?? '-' }}</td>
                         <td class="editable-cell readonly-cell" data-field="establishment_name" title="{{ $order->case->establishment_name ?? '' }}">
                             {{ $order->case ? Str::limit($order->case->establishment_name, 25) : '-' }}
                         </td>
