@@ -473,7 +473,7 @@
         pageLength: 10,
         lengthChange: false,
         paging: true,
-        searching: false,
+        searching: true,
         info: true,
         dom: 'tip',
         order: [[0, "asc"]],
