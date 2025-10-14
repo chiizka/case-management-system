@@ -449,7 +449,9 @@
 <script src="{{ asset('vendor/datatables/jquery.dataTables.min.js') }}"></script>
 <script src="{{ asset('vendor/datatables/dataTables.bootstrap4.min.js') }}"></script>
 
-<script>$(document).ready(function() {
+<script>
+
+$(document).ready(function() {
     console.log('jQuery version:', $.fn.jquery);
     console.log('DataTables available:', typeof $.fn.DataTable !== 'undefined');
 
@@ -458,7 +460,7 @@
     
     // Track which tabs have been loaded
     var loadedTabs = {
-        'tab0': true, // Tab 0 is loaded on page load
+        'tab0': true,
         'tab1': false,
         'tab2': false,
         'tab3': false,
@@ -500,7 +502,6 @@
                 return false;
             }
             
-            // Check if table has actual data rows (not just "no records" message)
             const $tbody = $(tableId + ' tbody');
             const $rows = $tbody.find('tr');
             
@@ -509,7 +510,6 @@
                 return false;
             }
             
-            // Check if the only row is a "no records" message (has colspan)
             if ($rows.length === 1 && $rows.first().find('td[colspan]').length > 0) {
                 console.log('Table has no data (only "no records" message):', tableId);
                 return false;
@@ -523,6 +523,10 @@
             
             tables[tableId] = $(tableId).DataTable(dtConfig);
             console.log('✓ Initialized ' + tableId);
+            
+            // IMPORTANT: Bind search after table initialization
+            bindSearchForTable(tableId);
+            
             return true;
         } catch (error) {
             console.error('✗ Failed to initialize ' + tableId + ':', error);
@@ -530,12 +534,30 @@
         }
     }
 
-    // NEW: Function to load tab data via AJAX
+    // NEW: Function to bind search to a specific table
+    function bindSearchForTable(tableId) {
+        const tabNumber = tableId.replace('#dataTable', '');
+        const searchId = '#customSearch' + tabNumber;
+        
+        // Remove any existing event handlers to prevent duplicates
+        $(searchId).off('keyup input change');
+        
+        // Bind the search
+        $(searchId).on('keyup input change', function() {
+            if (tables[tableId]) {
+                tables[tableId].search(this.value).draw();
+                console.log('Search triggered for ' + tableId + ' with value: ' + this.value);
+            }
+        });
+        
+        console.log('✓ Search bound for ' + tableId);
+    }
+
+    // Function to load tab data via AJAX
     function loadTabData(tabId, tabNumber) {
         const $tabPane = $('#' + tabId);
         const $cardBody = $tabPane.find('.card-body');
         
-        // Show loading indicator
         $cardBody.html(`
             <div class="tab-loading">
                 <div class="spinner-border text-primary" role="status">
@@ -554,13 +576,9 @@
             },
             success: function(response) {
                 if (response.success) {
-                    // Replace loading indicator with actual content
                     $cardBody.html(response.html);
-                    
-                    // Mark tab as loaded
                     loadedTabs[tabId] = true;
                     
-                    // Initialize DataTable for this tab
                     const tableId = '#dataTable' + tabNumber;
                     setTimeout(function() {
                         initDataTable(tableId);
@@ -601,7 +619,7 @@
         }
     }, 100);
 
-    // UPDATED: Tab switching with lazy loading
+    // Tab switching with lazy loading
     $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
         var target = $(e.target).attr("href");
         var tableId = target.replace('#tab', '#dataTable');
@@ -610,7 +628,6 @@
         
         console.log('Tab switched to:', target);
         
-        // Skip Tab 0 (already loaded)
         if (tabId === 'tab0') {
             if (tables[tableId]) {
                 tables[tableId].columns.adjust().draw(false);
@@ -618,19 +635,16 @@
             return;
         }
         
-        // Check if tab data has been loaded
         if (!loadedTabs[tabId]) {
             console.log('Loading data for:', tabId);
             loadTabData(tabId, tabNumber);
         } else {
-            // Tab already loaded, just adjust columns
             console.log('Adjusting columns for:', tableId);
             if (tables[tableId]) {
                 tables[tableId].columns.adjust().draw(false);
             }
         }
         
-        // Adjust after a short delay
         setTimeout(function() {
             if (tables[tableId]) {
                 tables[tableId].columns.adjust().draw(false);
@@ -652,33 +666,10 @@
         }, 350);
     });
 
-    // Custom search for each table
-    $('#customSearch0').on('keyup input change', function() {
-        if (tables['#dataTable0']) tables['#dataTable0'].search(this.value).draw();
-    });
-    $('#customSearch1').on('keyup input change', function() {
-        if (tables['#dataTable1']) tables['#dataTable1'].search(this.value).draw();
-    });
-    $('#customSearch2').on('keyup input change', function() {
-        if (tables['#dataTable2']) tables['#dataTable2'].search(this.value).draw();
-    });
-    $('#customSearch3').on('keyup input change', function() {
-        if (tables['#dataTable3']) tables['#dataTable3'].search(this.value).draw();
-    });
-    $('#customSearch4').on('keyup input change', function() {
-        if (tables['#dataTable4']) tables['#dataTable4'].search(this.value).draw();
-    });
-    $('#customSearch5').on('keyup input change', function() {
-        if (tables['#dataTable5']) tables['#dataTable5'].search(this.value).draw();
-    });
-    $('#customSearch6').on('keyup input change', function() {
-        if (tables['#dataTable6']) tables['#dataTable6'].search(this.value).draw();
-    });
-    $('#customSearch7').on('keyup input change', function() {
-        if (tables['#dataTable7']) tables['#dataTable7'].search(this.value).draw();
-    });
+    // REMOVED: Individual search bindings (now handled by bindSearchForTable)
+    // The old code was trying to bind to tables that don't exist yet
 
-    // Handle active tab from session (after moveToNextStage)
+    // Handle active tab from session
     @if(session('active_tab'))
         const activeTab = '{{ session("active_tab") }}';
         console.log('Activating tab from session:', activeTab);
@@ -688,7 +679,6 @@
     @endif
 
     console.log('Initialization complete');
-
     // ... rest of your existing code (delete handlers, inline editing, etc.) ...
     // Keep all your existing modal, delete, and inline editing code below this line
     
