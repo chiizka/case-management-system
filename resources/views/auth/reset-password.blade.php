@@ -11,11 +11,14 @@
     <title>Set Your Password</title>
 
     <!-- Custom fonts for this template-->
-    <link href="vendor/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css">
+    <link href="{{ asset('vendor/fontawesome-free/css/all.min.css') }}" rel="stylesheet" type="text/css">
     <link href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i" rel="stylesheet">
 
+    <!-- Bootstrap CSS from CDN as fallback -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
     <!-- Custom styles for this template-->
-    <link href="css/sb-admin-2.min.css" rel="stylesheet">
+    <link href="{{ asset('css/sb-admin-2.min.css') }}" rel="stylesheet">
 
     <!-- Enhanced modern styles -->
     <style>
@@ -32,7 +35,7 @@
         }
 
         body {
-            font-family: 'Nunito', sans-serif;
+            font-family: 'Nunito', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             display: flex;
@@ -44,6 +47,7 @@
         .login-container {
             width: 100%;
             max-width: 600px;
+            margin: 0 auto;
         }
 
         .card {
@@ -52,6 +56,8 @@
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
             backdrop-filter: blur(10px);
             border: none;
+            width: 100%;
+            background: #ffffff;
         }
 
         .card-body {
@@ -63,6 +69,10 @@
             font-size: 3rem;
             color: #667eea;
             margin-bottom: 1rem;
+        }
+
+        .text-center {
+            text-align: center;
         }
 
         .text-center h1 {
@@ -78,18 +88,26 @@
             margin-bottom: 30px;
         }
 
+        .mb-4 {
+            margin-bottom: 1.5rem;
+        }
+
         .form-group {
             margin-bottom: 20px;
             position: relative;
         }
 
         .form-control-user {
+            display: block;
+            width: 100%;
             border-radius: 12px;
             padding: 16px 20px;
             font-size: 15px;
             border: 2px solid #e2e8f0;
             transition: all 0.3s ease;
-            width: 100%;
+            line-height: 1.5;
+            color: #495057;
+            background-color: #fff;
         }
 
         .form-control-user:focus {
@@ -108,18 +126,20 @@
         }
 
         .is-invalid {
-            border-color: #fc8181;
+            border-color: #fc8181 !important;
         }
 
         .btn-user {
+            display: block;
+            width: 100%;
             border-radius: 12px;
             padding: 16px 20px;
             font-size: 16px;
             font-weight: 600;
             transition: all 0.3s ease;
             border: none;
-            width: 100%;
             margin-top: 10px;
+            cursor: pointer;
         }
 
         .btn-primary {
@@ -148,6 +168,8 @@
             transform: translateY(-2px);
             box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
             background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+            color: white;
+            text-decoration: none;
         }
 
         .btn-primary:active {
@@ -155,9 +177,10 @@
         }
 
         .alert {
-            border-radius: 12px;
+            position: relative;
             padding: 15px 20px;
             margin-bottom: 20px;
+            border-radius: 12px;
             border: none;
         }
 
@@ -166,20 +189,43 @@
             color: #c53030;
         }
 
+        .alert-dismissible .close {
+            position: absolute;
+            top: 0;
+            right: 0;
+            padding: 0.75rem 1.25rem;
+            color: inherit;
+            background-color: transparent;
+            border: 0;
+            font-size: 1.5rem;
+            font-weight: 700;
+            line-height: 1;
+            opacity: 0.5;
+            cursor: pointer;
+        }
+
+        .alert-dismissible .close:hover {
+            opacity: 0.75;
+        }
+
         hr {
             margin: 30px 0;
+            border: 0;
             border-top: 1px solid #e2e8f0;
         }
 
         .small {
             font-size: 14px;
-            color: #667eea;
-            text-decoration: none;
-            transition: all 0.3s ease;
             font-weight: 600;
         }
 
-        .small:hover {
+        a {
+            color: #667eea;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+
+        a:hover {
             color: #764ba2;
             text-decoration: none;
         }
@@ -205,7 +251,6 @@
             color: #718096;
             margin-top: 8px;
             display: block;
-            text-align: center;
         }
 
         @media (max-width: 576px) {
@@ -220,106 +265,97 @@
     </style>
 </head>
 
-<body class="bg-gradient-primary">
+<body>
 
-    <div class="container login-container">
-        <div class="row justify-content-center w-100">
-            <div class="col-xl-6 col-lg-8 col-md-9">
-                <div class="card o-hidden border-0 shadow-lg">
-                    <div class="card-body p-0">
-                        <div class="row">
-                            <div class="col-lg-12">
-                                <div class="card-body">
-                                    <div class="text-center">
-                                        <i class="fas fa-key password-icon"></i>
-                                        <h1 class="h4 text-gray-900 mb-2">Set Your Password</h1>
-                                        <p class="mb-4 text-gray-600">
-                                            Please create a secure password for your account.
-                                        </p>
-                                    </div>
+    <div class="login-container">
+        <div class="card">
+            <div class="card-body">
+                <div class="text-center">
+                    <i class="fas fa-key password-icon"></i>
+                    <h1>Set Your Password</h1>
+                    <p class="mb-4 text-gray-600">
+                        Please create a secure password for your account.
+                    </p>
+                </div>
 
-                                    @if($errors->any())
-                                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                                            <i class="fas fa-exclamation-triangle me-2"></i>
-                                            @foreach($errors->all() as $error)
-                                                {{ $error }}<br>
-                                            @endforeach
-                                            <button type="button" class="close" data-dismiss="alert">
-                                                <span>&times;</span>
-                                            </button>
-                                        </div>
-                                    @endif
+                @if($errors->any())
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        @foreach($errors->all() as $error)
+                            {{ $error }}<br>
+                        @endforeach
+                        <button type="button" class="close" data-dismiss="alert">
+                            <span>&times;</span>
+                        </button>
+                    </div>
+                @endif
 
-                                    <form class="user" method="POST" action="{{ route('password.update') }}">
-                                        @csrf
-                                        <input type="hidden" name="token" value="{{ $token }}">
-                                        <input type="hidden" name="email" value="{{ $email }}">
+                <form class="user" method="POST" action="{{ route('password.update') }}">
+                    @csrf
+                    <input type="hidden" name="token" value="{{ $token }}">
 
-                                        <div class="form-group">
-                                            <input type="email" 
-                                                   name="email" 
-                                                   class="form-control form-control-user"
-                                                   value="{{ $email }}" 
-                                                   readonly 
-                                                   placeholder="Email Address">
-                                        </div>
+                    <div class="form-group">
+                        <input type="email" 
+                               name="email" 
+                               class="form-control-user"
+                               value="{{ $email ?? old('email') }}" 
+                               readonly 
+                               placeholder="Email Address">
+                    </div>
 
-                                        <div class="form-group">
-                                            <input type="password" 
-                                                   name="password" 
-                                                   class="form-control form-control-user @error('password') is-invalid @enderror"
-                                                   placeholder="New Password" 
-                                                   required 
-                                                   id="password-input">
-                                            <small class="form-text text-muted">
-                                                Password must be at least 8 characters
-                                            </small>
-                                            <div class="password-strength" id="password-strength">
-                                                <div class="password-strength-bar" id="strength-bar"></div>
-                                            </div>
-                                        </div>
-
-                                        <div class="form-group">
-                                            <input type="password" 
-                                                   name="password_confirmation" 
-                                                   class="form-control form-control-user"
-                                                   placeholder="Confirm New Password" 
-                                                   required 
-                                                   id="confirm-password-input">
-                                        </div>
-
-                                        <button type="submit" class="btn btn-primary btn-user btn-block">
-                                            <i class="fas fa-check me-2"></i>
-                                            Set Password
-                                        </button>
-                                    </form>
-
-                                    <hr>
-
-                                    <div class="text-center">
-                                        <a class="small text-gray-600" href="{{ route('login') }}">
-                                            <i class="fas fa-arrow-left me-1"></i>
-                                            Back to Login
-                                        </a>
-                                    </div>
-                                </div>
-                            </div>
+                    <div class="form-group">
+                        <input type="password" 
+                               name="password" 
+                               class="form-control-user @error('password') is-invalid @enderror"
+                               placeholder="New Password" 
+                               required 
+                               autocomplete="new-password"
+                               id="password-input">
+                        <small class="form-text">
+                            Password must be at least 8 characters
+                        </small>
+                        <div class="password-strength" id="password-strength">
+                            <div class="password-strength-bar" id="strength-bar"></div>
                         </div>
                     </div>
+
+                    <div class="form-group">
+                        <input type="password" 
+                               name="password_confirmation" 
+                               class="form-control-user"
+                               placeholder="Confirm New Password" 
+                               required 
+                               autocomplete="new-password"
+                               id="confirm-password-input">
+                    </div>
+
+                    <button type="submit" class="btn-primary btn-user">
+                        <i class="fas fa-check"></i>
+                        Set Password
+                    </button>
+                </form>
+
+                <hr>
+
+                <div class="text-center">
+                    <a class="small" href="{{ route('login') }}">
+                        <i class="fas fa-arrow-left"></i>
+                        Back to Login
+                    </a>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Bootstrap core JavaScript-->
-    <script src="vendor/jquery/jquery.min.js"></script>
-    <script src="vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
-
-    <!-- Core plugin JavaScript-->
-    <script src="vendor/jquery-easing/jquery.easing.min.js"></script>
-
-    <!-- Custom scripts for all pages-->
-    <script src="js/sb-admin-2.min.js"></script>
+    <!-- jQuery from CDN as fallback -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Try to load local versions -->
+    <script src="{{ asset('vendor/jquery/jquery.min.js') }}"></script>
+    <script src="{{ asset('vendor/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
+    <script src="{{ asset('vendor/jquery-easing/jquery.easing.min.js') }}"></script>
+    <script src="{{ asset('js/sb-admin-2.min.js') }}"></script>
 
     <script>
         $(document).ready(function() {
