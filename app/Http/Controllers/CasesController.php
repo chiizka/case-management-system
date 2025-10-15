@@ -172,11 +172,16 @@ class CasesController extends Controller
         try {
             $case = CaseFile::create($validated);
 
-            ActivityLogger::log('Created case', [
-                'case_id' => $case->id,
-                'establishment' => $case->establishment_name,
-                'stage' => $case->current_stage,
-            ]);
+            ActivityLogger::logAction(
+                'CREATE',
+                'Case',
+                $case->inspection_id,  // ← Use inspection_id instead of database ID
+                null,
+                [
+                    'establishment' => $case->establishment_name,
+                    'stage' => $case->current_stage
+                ]
+            );
 
             if ($case->current_stage === '1: Inspections') {
                 Inspection::create(['case_id' => $case->id]);
@@ -189,30 +194,62 @@ class CasesController extends Controller
         }
     }
 
-    /**
-     * Update case
-     */
-    public function update(Request $request, $id)
-    {
-        $validated = $request->validate([
-            'inspection_id' => 'required|string|max:255',
-            'case_no' => 'nullable|string|max:255',
-            'establishment_name' => 'required|string|max:255',
-            'current_stage' => 'required|in:1: Inspections,2: Docketing,3: Hearing,4: Review & Drafting,5: Orders & Disposition,6: Compliance & Awards,7: Appeals & Resolution',
-            'overall_status' => 'required|in:Active,Completed,Dismissed',
-        ]);
+/**
+ * Update case
+ */
+public function update(Request $request, $id)
+{
+    $validated = $request->validate([
+        'inspection_id' => 'required|string|max:255',
+        'case_no' => 'nullable|string|max:255',
+        'establishment_name' => 'required|string|max:255',
+        'current_stage' => 'required|in:1: Inspections,2: Docketing,3: Hearing,4: Review & Drafting,5: Orders & Disposition,6: Compliance & Awards,7: Appeals & Resolution',
+        'overall_status' => 'required|in:Active,Completed,Dismissed',
+    ]);
 
+    try {
         $case = CaseFile::findOrFail($id);
+        $oldData = $case->toArray();
+        
+        // Update the case
         $case->update($validated);
 
-        ActivityLogger::log('Updated case', [
-            'case_id' => $case->id,
-            'establishment' => $case->establishment_name,
-            'stage' => $case->current_stage,
-        ]);
+        // Track what changed with details
+        $changes = [];
+        foreach ($validated as $key => $value) {
+            if (isset($oldData[$key]) && $oldData[$key] != $value) {
+                $fieldName = ucfirst(str_replace('_', ' ', $key));
+                $oldValue = $oldData[$key] ?: '(empty)';
+                $newValue = $value ?: '(empty)';
+                
+                if ($key === 'current_stage') {
+                    $oldValue = explode(': ', $oldValue)[1] ?? $oldValue;
+                    $newValue = explode(': ', $newValue)[1] ?? $newValue;
+                }
+                
+                $changes[] = "{$fieldName}: '{$oldValue}' → '{$newValue}'";
+            }
+        }
+
+        $changeDescription = !empty($changes) 
+            ? implode(', ', $changes)
+            : 'No changes detected';
+
+        // Log the update
+        ActivityLogger::logAction(
+            'UPDATE',
+            'Case',
+            $case->inspection_id,
+            "Updated: {$changeDescription}",
+            ['establishment' => $case->establishment_name]
+        );
 
         return redirect()->route('case.index')->with('success', 'Case updated successfully!');
+    } catch (\Exception $e) {
+        Log::error('Error updating case: ' . $e->getMessage());
+        return redirect()->route('case.index')->with('error', 'Failed to update case.');
     }
+}
 
     /**
      * Delete case
@@ -306,33 +343,62 @@ public function destroy($id)
         }
     }
 
-    /**
-     * Inline update (AJAX)
-     */
-    public function inlineUpdate(Request $request, $id)
-    {
-        try {
-            $case = CaseFile::findOrFail($id);
-            $case->update($request->all());
+/**
+ * Inline update (AJAX)
+ */
+public function inlineUpdate(Request $request, $id)
+{
+    try {
+        $case = CaseFile::findOrFail($id);
+        $oldData = $case->toArray();
+        
+        // Update the case
+        $case->update($request->all());
+        $case->refresh();
 
-            ActivityLogger::log('Inline updated case', [
-                'case_id' => $case->id,
-                'fields_changed' => array_keys($request->all()),
-            ]);
-
-            $case->refresh();
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Case updated successfully!',
-                'data' => $case
-            ]);
-        } catch (\Exception $e) {
-            Log::error('Case inline update failed: ' . $e->getMessage());
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to update case.'
-            ], 500);
+        // Track what changed with old and new values
+        $changes = [];
+        foreach ($request->all() as $key => $value) {
+            if (isset($oldData[$key]) && $oldData[$key] != $value) {
+                $fieldName = ucfirst(str_replace('_', ' ', $key));
+                $oldValue = $oldData[$key] ?: '(empty)';
+                $newValue = $value ?: '(empty)';
+                
+                // Special handling for current_stage to show just the stage name
+                if ($key === 'current_stage') {
+                    $oldValue = explode(': ', $oldValue)[1] ?? $oldValue;
+                    $newValue = explode(': ', $newValue)[1] ?? $newValue;
+                }
+                
+                $changes[] = "{$fieldName}: '{$oldValue}' → '{$newValue}'";
+            }
         }
+
+        // Build description
+        $changeDescription = !empty($changes) 
+            ? implode(', ', $changes)
+            : 'No changes detected';
+
+        // Log with detailed changes
+        ActivityLogger::logAction(
+            'UPDATE',
+            'Case',
+            $case->inspection_id,
+            "Inline updated: {$changeDescription}",
+            ['establishment' => $case->establishment_name]
+        );
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Case updated successfully!',
+            'data' => $case
+        ]);
+    } catch (\Exception $e) {
+        Log::error('Case inline update failed: ' . $e->getMessage());
+        return response()->json([
+            'success' => false,
+            'message' => 'Failed to update case.'
+        ], 500);
     }
+}
 }

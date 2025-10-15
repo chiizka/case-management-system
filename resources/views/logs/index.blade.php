@@ -13,9 +13,9 @@
                             <th>ID</th>
                             <th>User</th>
                             <th>Action</th>
-                            <th>Activity</th>
+                            <th>Resource</th>
+                            <th>Description</th>
                             <th>IP Address</th>
-                            <th>User Agent</th>
                             <th>Timestamp</th>
                         </tr>
                     </thead>
@@ -41,9 +41,21 @@
                                     @endphp
                                     <span class="{{ $actionClass }}">{{ strtoupper($log->action ?? 'N/A') }}</span>
                                 </td>
-                                <td>{{ $log->activity }}</td>
+                                <td>
+                                    @if($log->resource_type)
+                                        <strong>{{ $log->resource_type }}</strong>
+                                        @if($log->resource_id)
+                                            <br>
+                                            <small class="text-muted">#{{ Str::limit($log->resource_id, 20) }}</small>
+                                        @endif
+                                    @else
+                                        <span class="text-muted">-</span>
+                                    @endif
+                                </td>
+                                <td class="text-left">
+                                    {{ $log->description ?? $log->activity ?? '-' }}
+                                </td>
                                 <td>{{ $log->ip_address }}</td>
-                                <td>{{ Str::limit($log->user_agent, 30) }}</td>
                                 <td>{{ $log->created_at->timezone('Asia/Manila')->format('Y-m-d h:i:s A') }}</td>
                             </tr>
                         @endforeach
@@ -62,10 +74,17 @@
     <script>
         $(document).ready(function() {
             $('#logsTable').DataTable({
-                "pageLength": 10,
-                "order": [[0, "desc"]],
+                "pageLength": 25,
+                "order": [[0, "desc"]], // Sort by ID (newest first)
                 "columnDefs": [
-                    { "orderable": false, "targets": [4, 5] } // User Agent column not sortable
+                    { 
+                        "orderable": true, 
+                        "targets": [0, 1, 2, 3, 5, 6] // ID, User, Action, Resource, IP, Timestamp sortable
+                    },
+                    { 
+                        "orderable": false, 
+                        "targets": [4] // Description not sortable
+                    }
                 ],
                 "language": {
                     "search": "Search logs:",
@@ -74,7 +93,9 @@
                     "info": "Showing _START_ to _END_ of _TOTAL_ logs",
                     "infoEmpty": "No logs available",
                     "infoFiltered": "(filtered from _MAX_ total logs)"
-                }
+                },
+                "dom": '<"row"<"col-sm-6"l><"col-sm-6"f>>rtip', // Add length menu
+                "lengthMenu": [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]]
             });
         });
     </script>

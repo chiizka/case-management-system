@@ -13,6 +13,9 @@ class Log extends Model
         'user_id',
         'activity',
         'action',
+        'resource_type',    
+        'resource_id',      
+        'description',     
         'ip_address',
         'user_agent',
     ];

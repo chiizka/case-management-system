@@ -24,8 +24,8 @@
         <thead>
             <tr>
                 <th>Inspection ID</th>
-                <th>Case No</th>
                 <th>Establishment Name</th>
+                <th>Case No.</th>
                 <th>PCT for Docketing</th>
                 <th>Date Scheduled/Docketed</th>
                 <th>Aging Docket</th>
@@ -38,11 +38,11 @@
             @if(isset($docketing) && $docketing->count() > 0)
                 @foreach($docketing as $dock)
                     <tr data-id="{{ $dock->id }}">
-                        <td class="editable-cell readonly-cell" data-field="inspection_id">{{ $dock->case->inspection_id ?? '-' }}</td>
-                        <td class="editable-cell" data-field="case_no" title="Click to edit Case No">{{ $dock->case->case_no ?? '-' }}</td>
+                        <td class="editable-cell readonly-cell" data-field="inspection_id">{{ $dock->case->inspection_id ?? '-' }}</td>   
                         <td class="editable-cell readonly-cell" data-field="establishment_name" title="{{ $dock->case->establishment_name ?? '' }}">
                             {{ $dock->case ? Str::limit($dock->case->establishment_name, 25) : '-' }}
                         </td>
+                        <td class="editable-cell" data-field="case_no" title="Click to edit Case No">{{ $dock->case->case_no ?? '-' }}</td>
                         <td class="editable-cell" data-field="pct_for_docketing">{{ $dock->pct_for_docketing ?? '-' }}</td>
                         <td class="editable-cell" data-field="date_scheduled_docketed" data-type="date">{{ $dock->date_scheduled_docketed ? \Carbon\Carbon::parse($dock->date_scheduled_docketed)->format('Y-m-d') : '-' }}</td>
                         <td class="editable-cell" data-field="aging_docket">{{ $dock->aging_docket ?? '-' }}</td>
