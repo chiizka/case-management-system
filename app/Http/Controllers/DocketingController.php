@@ -2,27 +2,32 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\docketing; // Consider renaming this to 'Docketing' for consistency
 use App\Models\CaseFile;
+use App\Models\Docketing;
+use App\Helpers\ActivityLogger;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Log;
+use Carbon\Carbon;
 
 class DocketingController extends Controller
 {
     /**
-     * Display a listing of docketings in the combined case view.
+     * Display a listing of docketing records.
      */
     public function index()
     {
-        // Redirect to unified case view instead of loading data here
+        ActivityLogger::logAction(
+            'VIEW',
+            'Docketing',
+            null,
+            'Viewed docketing list page'
+        );
+
         return redirect()->route('case.index')
             ->with('active_tab', 'docketing');
     }
 
-    /**
-     * Show the form for creating a new docketing (combined view).
-     */
     public function create()
     {
         return redirect()->route('case.index')
@@ -30,15 +35,15 @@ class DocketingController extends Controller
     }
 
     /**
-     * Store a newly created docketing in storage.
+     * Store a newly created docketing record.
      */
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
             'case_id' => 'required|exists:cases,id',
-            'pct_for_docketing' => 'nullable|numeric',
+            'pct_for_docketing' => 'nullable|numeric|min:0',
             'date_scheduled_docketed' => 'nullable|date',
-            'aging_docket' => 'nullable|numeric',
+            'aging_docket' => 'nullable|numeric|min:0',
             'status_docket' => 'nullable|string|max:255',
             'hearing_officer_mis' => 'nullable|string|max:255',
         ]);
@@ -51,14 +56,27 @@ class DocketingController extends Controller
         }
 
         try {
-            docketing::create($request->all());
-            
+            $docketing = Docketing::create($request->all());
+            $case = $docketing->case;
+
+            ActivityLogger::logAction(
+                'CREATE',
+                'Docketing',
+                $case->inspection_id ?? $docketing->id,
+                'Created new docketing record',
+                [
+                    'establishment' => $case->establishment_name ?? 'Unknown',
+                    'status' => $request->status_docket ?? 'Not set',
+                    'scheduled_date' => $request->date_scheduled_docketed ?? 'Not set'
+                ]
+            );
+
             return redirect()->route('case.index')
                 ->with('success', 'Docketing created successfully.')
                 ->with('active_tab', 'docketing');
         } catch (\Exception $e) {
             Log::error('Error creating docketing: ' . $e->getMessage());
-            
+
             return redirect()->route('case.index')
                 ->with('error', 'Failed to create docketing: ' . $e->getMessage())
                 ->with('active_tab', 'docketing');
@@ -66,13 +84,23 @@ class DocketingController extends Controller
     }
 
     /**
-     * Display the specified docketing in the combined view.
+     * Display the specified docketing record.
      */
     public function show($id)
     {
         try {
-            $docketingRecord = docketing::with('case')->findOrFail($id);
-            
+            $docketing = Docketing::with('case')->findOrFail($id);
+
+            ActivityLogger::logAction(
+                'VIEW',
+                'Docketing',
+                $docketing->case->inspection_id ?? $id,
+                'Viewed docketing details',
+                [
+                    'establishment' => $docketing->case->establishment_name ?? 'Unknown'
+                ]
+            );
+
             return redirect()->route('case.index')
                 ->with('active_tab', 'docketing')
                 ->with('highlighted_id', $id);
@@ -84,28 +112,37 @@ class DocketingController extends Controller
     }
 
     /**
-     * Show the form for editing the specified docketing.
+     * Show the form for editing the specified docketing record.
      */
     public function edit($id)
     {
         try {
-            $docketingRecord = docketing::with('case')->findOrFail($id);
-            
-            // Return JSON for AJAX requests
+            $docketing = Docketing::with('case')->findOrFail($id);
+
+            ActivityLogger::logAction(
+                'VIEW',
+                'Docketing',
+                $docketing->case->inspection_id ?? $id,
+                'Opened docketing record for editing',
+                [
+                    'establishment' => $docketing->case->establishment_name ?? 'Unknown'
+                ]
+            );
+
             if (request()->expectsJson()) {
                 return response()->json([
-                    'id' => $docketingRecord->id,
-                    'case_id' => $docketingRecord->case_id,
-                    'inspection_id' => $docketingRecord->case->inspection_id ?? '',
-                    'establishment_name' => $docketingRecord->case->establishment_name ?? '',
-                    'pct_for_docketing' => $docketingRecord->pct_for_docketing,
-                    'date_scheduled_docketed' => $docketingRecord->date_scheduled_docketed,
-                    'aging_docket' => $docketingRecord->aging_docket,
-                    'status_docket' => $docketingRecord->status_docket,
-                    'hearing_officer_mis' => $docketingRecord->hearing_officer_mis,
+                    'id' => $docketing->id,
+                    'case_id' => $docketing->case_id,
+                    'inspection_id' => $docketing->case->inspection_id ?? '',
+                    'establishment_name' => $docketing->case->establishment_name ?? '',
+                    'pct_for_docketing' => $docketing->pct_for_docketing,
+                    'date_scheduled_docketed' => $docketing->date_scheduled_docketed,
+                    'aging_docket' => $docketing->aging_docket,
+                    'status_docket' => $docketing->status_docket,
+                    'hearing_officer_mis' => $docketing->hearing_officer_mis,
                 ]);
             }
-            
+
             return redirect()->route('case.index')
                 ->with('active_tab', 'docketing')
                 ->with('edit_id', $id);
@@ -113,7 +150,7 @@ class DocketingController extends Controller
             if (request()->expectsJson()) {
                 return response()->json(['error' => 'Docketing not found'], 404);
             }
-            
+
             return redirect()->route('case.index')
                 ->with('error', 'Docketing not found.')
                 ->with('active_tab', 'docketing');
@@ -121,15 +158,15 @@ class DocketingController extends Controller
     }
 
     /**
-     * Update the specified docketing in storage.
+     * Update the specified docketing record.
      */
     public function update(Request $request, $id)
     {
         $validator = Validator::make($request->all(), [
             'case_id' => 'required|exists:cases,id',
-            'pct_for_docketing' => 'nullable|numeric',
+            'pct_for_docketing' => 'nullable|numeric|min:0',
             'date_scheduled_docketed' => 'nullable|date',
-            'aging_docket' => 'nullable|numeric',
+            'aging_docket' => 'nullable|numeric|min:0',
             'status_docket' => 'nullable|string|max:255',
             'hearing_officer_mis' => 'nullable|string|max:255',
         ]);
@@ -142,15 +179,35 @@ class DocketingController extends Controller
         }
 
         try {
-            $docketingRecord = docketing::findOrFail($id);
-            $docketingRecord->update($request->all());
+            $docketing = Docketing::findOrFail($id);
+            $originalData = $docketing->toArray();
+            $docketing->update($request->all());
+
+            $changes = [];
+            foreach ($request->all() as $key => $value) {
+                if (isset($originalData[$key]) && $originalData[$key] != $value) {
+                    $changes[] = ucfirst(str_replace('_', ' ', $key));
+                }
+            }
+
+            ActivityLogger::logAction(
+                'UPDATE',
+                'Docketing',
+                $docketing->case->inspection_id ?? $id,
+                'Updated docketing record',
+                [
+                    'establishment' => $docketing->case->establishment_name ?? 'Unknown',
+                    'fields_changed' => !empty($changes) ? implode(', ', $changes) : 'No changes detected',
+                    'change_count' => count($changes)
+                ]
+            );
 
             return redirect()->route('case.index')
                 ->with('success', 'Docketing updated successfully.')
                 ->with('active_tab', 'docketing');
         } catch (\Exception $e) {
             Log::error('Error updating docketing ID: ' . $id . ' - ' . $e->getMessage());
-            
+
             return redirect()->route('case.index')
                 ->with('error', 'Failed to update docketing: ' . $e->getMessage())
                 ->with('active_tab', 'docketing');
@@ -158,13 +215,27 @@ class DocketingController extends Controller
     }
 
     /**
-     * Remove the specified docketing from storage.
+     * Remove the specified docketing record.
      */
     public function destroy($id)
     {
         try {
-            $docketingRecord = docketing::findOrFail($id);
-            $docketingRecord->delete();
+            $docketing = Docketing::with('case')->findOrFail($id);
+            $docketingId = $docketing->case->inspection_id ?? $id;
+            $establishment = $docketing->case->establishment_name ?? 'Unknown';
+
+            $docketing->delete();
+
+            ActivityLogger::logAction(
+                'DELETE',
+                'Docketing',
+                $docketingId,
+                'Deleted docketing record',
+                [
+                    'establishment' => $establishment
+                ]
+            );
+
             Log::info('Docketing ID: ' . $id . ' deleted successfully.');
 
             return redirect()->route('case.index')
@@ -172,7 +243,7 @@ class DocketingController extends Controller
                 ->with('active_tab', 'docketing');
         } catch (\Exception $e) {
             Log::error('Error deleting docketing ID: ' . $id . ' - ' . $e->getMessage());
-            
+
             return redirect()->route('case.index')
                 ->with('error', 'Failed to delete docketing: ' . $e->getMessage())
                 ->with('active_tab', 'docketing');
@@ -180,74 +251,23 @@ class DocketingController extends Controller
     }
 
     /**
-     * Update docketing record inline via AJAX
+     * Inline update handler for AJAX.
      */
- /**
- * Update docketing record inline via AJAX
- */
-public function inlineUpdate(Request $request, $id)
-{
-    Log::info('Docketing inline update request received', [
-        'docketing_id' => $id,
-        'request_data' => $request->all(),
-        'content_type' => $request->header('Content-Type')
-    ]);
-    
-    try {
-        $docketing = docketing::findOrFail($id);
-        
-        // Get all input data
-        $inputData = $request->all();
-        
-        // Remove empty strings and convert them to null
-        $cleanedData = [];
-        foreach ($inputData as $key => $value) {
-            if ($value === '' || $value === '-') {
-                $cleanedData[$key] = null;
-            } else {
-                $cleanedData[$key] = $value;
-            }
-        }
-        
-        Log::info('Cleaned data for validation', ['cleaned_data' => $cleanedData]);
-        
-        // Separate data for case and docketing updates
-        $caseData = [];
-        $docketingData = [];
-        
-        foreach ($cleanedData as $field => $value) {
-            if (in_array($field, ['inspection_id', 'establishment_name', 'case_no'])) {
-                $caseData[$field] = $value;
-            } else {
-                $docketingData[$field] = $value;
-            }
-        }
-        
-        // Validation rules for case data
-        if (!empty($caseData)) {
-            $caseValidator = Validator::make($caseData, [
-                'inspection_id' => 'nullable|string|max:255',
-                'establishment_name' => 'nullable|string|max:500',
-                'case_no' => 'nullable|string|max:255',
-            ]);
+    public function inlineUpdate(Request $request, $id)
+    {
+        Log::info('Docketing inline update received', ['id' => $id, 'data' => $request->all()]);
 
-            if ($caseValidator->fails()) {
-                Log::warning('Case validation failed', [
-                    'errors' => $caseValidator->errors(),
-                    'data' => $caseData
-                ]);
-                
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Validation failed: ' . $caseValidator->errors()->first(),
-                    'errors' => $caseValidator->errors()
-                ], 422);
+        try {
+            $docketing = Docketing::with('case')->findOrFail($id);
+            $originalData = $docketing->toArray();
+            $originalCase = $docketing->case ? $docketing->case->toArray() : [];
+
+            $inputData = $request->all();
+            foreach ($inputData as $key => $value) {
+                $inputData[$key] = ($value === '' || $value === '-') ? null : $value;
             }
-        }
-        
-        // Validation rules for docketing data
-        if (!empty($docketingData)) {
-            $docketingValidator = Validator::make($docketingData, [
+
+            $validator = Validator::make($inputData, [
                 'pct_for_docketing' => 'nullable|numeric|min:0',
                 'date_scheduled_docketed' => 'nullable|date',
                 'aging_docket' => 'nullable|numeric|min:0',
@@ -255,96 +275,85 @@ public function inlineUpdate(Request $request, $id)
                 'hearing_officer_mis' => 'nullable|string|max:255',
             ]);
 
-            if ($docketingValidator->fails()) {
-                Log::warning('Docketing validation failed', [
-                    'errors' => $docketingValidator->errors(),
-                    'data' => $docketingData
-                ]);
-                
+            if ($validator->fails()) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Validation failed: ' . $docketingValidator->errors()->first(),
-                    'errors' => $docketingValidator->errors()
+                    'message' => 'Validation failed: ' . $validator->errors()->first(),
+                    'errors' => $validator->errors()
                 ], 422);
             }
+
+            $validatedData = $validator->validated();
+            $docketing->update($validatedData);
+            $docketing->refresh()->load('case');
+
+            $changeDetails = [];
+            foreach ($validatedData as $field => $newValue) {
+                $oldValue = $originalData[$field] ?? null;
+                if ($oldValue != $newValue) {
+                    $fieldLabel = ucfirst(str_replace('_', ' ', $field));
+                    $oldDisplay = $oldValue ?? 'empty';
+                    $newDisplay = $newValue ?? 'empty';
+
+                    if (in_array($field, ['date_scheduled_docketed'])) {
+                        $oldDisplay = $oldValue ? Carbon::parse($oldValue)->format('M d, Y') : 'not set';
+                        $newDisplay = $newValue ? Carbon::parse($newValue)->format('M d, Y') : 'not set';
+                    }
+
+                    $changeDetails[] = "{$fieldLabel}: '{$oldDisplay}' → '{$newDisplay}'";
+                }
+            }
+
+            if (!empty($changeDetails)) {
+                $logDetails = 'Updated: ' . implode('; ', $changeDetails);
+                ActivityLogger::logAction(
+                    'UPDATE',
+                    'Docketing',
+                    $docketing->case->inspection_id ?? $id,
+                    $logDetails,
+                    [
+                        'establishment' => $docketing->case->establishment_name ?? 'Unknown',
+                        'fields_count' => count($changeDetails),
+                        'method' => 'inline_edit'
+                    ]
+                );
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Docketing updated successfully!',
+                'data' => $docketing
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Inline update failed: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to update docketing: ' . $e->getMessage()
+            ], 500);
         }
-        
-        Log::info('Update data separated', [
-            'case_data' => $caseData,
-            'docketing_data' => $docketingData
-        ]);
-        
-        // Update the related case if there's case data to update
-        if (!empty($caseData) && $docketing->case) {
-            $docketing->case->update($caseData);
-            Log::info('Case updated successfully');
-        }
-        
-        // Update the docketing record
-        if (!empty($docketingData)) {
-            $docketing->update($docketingData);
-            Log::info('Docketing updated successfully');
-        }
-
-        // Refresh to get any computed fields
-        $docketing->refresh();
-        
-        // Load the case relationship
-        $docketing->load('case');
-
-        // Prepare response data with proper formatting
-        $responseData = [
-            'inspection_id' => $docketing->case->inspection_id ?? '-',
-            'case_no' => $docketing->case->case_no ?? '-',
-            'establishment_name' => $docketing->case->establishment_name ?? '-',
-            'pct_for_docketing' => $docketing->pct_for_docketing ?? '-',
-            'date_scheduled_docketed' => $docketing->date_scheduled_docketed ? \Carbon\Carbon::parse($docketing->date_scheduled_docketed)->format('Y-m-d') : '-',
-            'aging_docket' => $docketing->aging_docket ?? '-',
-            'status_docket' => $docketing->status_docket ?? 'Pending',
-            'hearing_officer_mis' => $docketing->hearing_officer_mis ?? '-',
-        ];
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Docketing updated successfully!',
-            'data' => $responseData
-        ]);
-
-    } catch (\Exception $e) {
-        Log::error('Docketing inline update failed: ' . $e->getMessage(), [
-            'docketing_id' => $id,
-            'request_data' => $request->all(),
-            'error' => $e->getTraceAsString()
-        ]);
-
-        return response()->json([
-            'success' => false,
-            'message' => 'Failed to update docketing: ' . $e->getMessage()
-        ], 500);
     }
-}
 
     /**
-     * Get docketing data for AJAX requests.
+     * Get docketing data via AJAX.
      */
     public function getDocketing($id)
     {
         try {
-            $docketing = docketing::with('case')->findOrFail($id);
-            
+            $docketing = Docketing::with('case')->findOrFail($id);
+
+            ActivityLogger::logAction(
+                'VIEW',
+                'Docketing',
+                $docketing->case->inspection_id ?? $id,
+                'Retrieved docketing data via API',
+                [
+                    'establishment' => $docketing->case->establishment_name ?? 'Unknown'
+                ]
+            );
+
             return response()->json([
                 'success' => true,
-                'data' => [
-                    'id' => $docketing->id,
-                    'case_id' => $docketing->case_id,
-                    'inspection_id' => $docketing->case->inspection_id ?? '',
-                    'establishment_name' => $docketing->case->establishment_name ?? '',
-                    'pct_for_docketing' => $docketing->pct_for_docketing,
-                    'date_scheduled_docketed' => $docketing->date_scheduled_docketed,
-                    'aging_docket' => $docketing->aging_docket,
-                    'status_docket' => $docketing->status_docket,
-                    'hearing_officer_mis' => $docketing->hearing_officer_mis,
-                ]
+                'data' => $docketing
             ]);
         } catch (\Exception $e) {
             return response()->json([
