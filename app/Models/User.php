@@ -39,6 +39,9 @@ class User extends Authenticatable
     // Role constants
     const ROLE_ADMIN = 'admin';
     const ROLE_USER = 'user';
+    const ROLE_PROVINCE = 'province';
+    const ROLE_MALSU = 'malsu';
+    const ROLE_CASE_MANAGEMENT = 'case_management';
 
     // Override the password mutator to handle hashing
     public function setPasswordAttribute($value)
@@ -92,6 +95,21 @@ class User extends Authenticatable
     public function isUser()
     {
         return $this->role === self::ROLE_USER;
+    }
+
+    public function isProvince()
+    {
+        return $this->role === self::ROLE_PROVINCE;
+    }
+
+    public function isMalsu()
+    {
+        return $this->role === self::ROLE_MALSU;
+    }
+
+    public function isCaseManagement()
+    {
+        return $this->role === self::ROLE_CASE_MANAGEMENT;
     }
 
     public function hasRole($role)
