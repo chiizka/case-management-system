@@ -1,31 +1,31 @@
-    @extends('frontend.layouts.app')
-    @section('content')
+@extends('frontend.layouts.app')
+@section('content')
 
-    <div class="container-fluid">
+<div class="container-fluid">
 
-        <!-- Button to open modal -->
-        <div class="mb-3">
-            <button class="btn btn-primary" data-toggle="modal" data-target="#addUserModal">
-                + Add User
+    <!-- Button to open modal -->
+    <div class="mb-3">
+        <button class="btn btn-primary" data-toggle="modal" data-target="#addUserModal">
+            + Add User
+        </button>
+    </div>
+    @if(session('success'))
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            {{ session('success') }}
+            <button type="button" class="close" data-dismiss="alert">
+                <span>&times;</span>
             </button>
         </div>
-        @if(session('success'))
-            <div class="alert alert-success alert-dismissible fade show" role="alert">
-                {{ session('success') }}
-                <button type="button" class="close" data-dismiss="alert">
-                    <span>&times;</span>
-                </button>
-            </div>
-        @endif
+    @endif
 
-        @if(session('error'))
-            <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                {{ session('error') }}
-                <button type="button" class="close" data-dismiss="alert">
-                    <span>&times;</span>
-                </button>
-            </div>
-        @endif
+    @if(session('error'))
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            {{ session('error') }}
+            <button type="button" class="close" data-dismiss="alert">
+                <span>&times;</span>
+            </button>
+        </div>
+    @endif
 
 <!-- User Table -->
 <div class="card shadow mb-4">
@@ -38,6 +38,7 @@
                         <th>First Name</th>
                         <th>Last Name</th>
                         <th>Email</th>
+                        <th>Role</th>
                         <th>Last Reset Sent</th>
                         <th>Actions</th>
                     </tr>
@@ -49,6 +50,19 @@
                             <td>{{ $user->fname }}</td>
                             <td>{{ $user->lname }}</td>
                             <td>{{ $user->email }}</td>
+                            <td>
+                                @if($user->role === 'admin')
+                                    <span class="badge badge-danger">Admin</span>
+                                @elseif($user->role === 'province')
+                                    <span class="badge badge-primary">Province</span>
+                                @elseif($user->role === 'malsu')
+                                    <span class="badge badge-info">MALSU</span>
+                                @elseif($user->role === 'case_management')
+                                    <span class="badge badge-warning">Case Management</span>
+                                @else
+                                    <span class="badge badge-secondary">User</span>
+                                @endif
+                            </td>
                             <td>
                                 @if($user->password_reset_sent_at)
                                     <span class="badge badge-info" title="{{ $user->password_reset_sent_at->format('M d, Y h:i A') }}">
@@ -75,7 +89,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6" class="text-center">No users found.</td>
+                            <td colspan="7" class="text-center">No users found.</td>
                         </tr>
                     @endforelse
                 </tbody>
@@ -84,55 +98,66 @@
     </div>
 </div>
 
+</div>
+
+<!-- Add User Modal -->
+<div class="modal fade" id="addUserModal" tabindex="-1" role="dialog" aria-labelledby="addUserModalLabel" aria-hidden="true">
+<div class="modal-dialog modal-md" role="document">
+    <div class="modal-content">
+    <div class="modal-header">
+        <h5 class="modal-title" id="addUserModalLabel">Add New User</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+        <span aria-hidden="true">&times;</span>
+        </button>
     </div>
 
-    <!-- Add User Modal -->
-    <div class="modal fade" id="addUserModal" tabindex="-1" role="dialog" aria-labelledby="addUserModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-md" role="document">
-        <div class="modal-content">
-        <div class="modal-header">
-            <h5 class="modal-title" id="addUserModalLabel">Add New User</h5>
-            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-            <span aria-hidden="true">&times;</span>
-            </button>
-        </div>
-
-        <form method="post" action="{{ route('user.post') }}">
-            @csrf
-            <div class="modal-body">
-                @if ($errors->any())
-                    <div class="alert alert-danger">
-                        <ul class="mb-0">
-                            @foreach ($errors->all() as $error)
-                                <li>{{ $error }}</li>
-                            @endforeach
-                        </ul>
-                    </div>
-                @endif
-
-                <div class="form-group">
-                    <label for="fname">First Name</label>
-                    <input type="text" class="form-control" id="fname" name="fname" placeholder="Your first name...">
+    <form method="post" action="{{ route('user.post') }}">
+        @csrf
+        <div class="modal-body">
+            @if ($errors->any())
+                <div class="alert alert-danger">
+                    <ul class="mb-0">
+                        @foreach ($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
                 </div>
+            @endif
 
-                <div class="form-group">
-                    <label for="lname">Last Name</label>
-                    <input type="text" class="form-control" id="lname" name="lname" placeholder="Your last name...">
-                </div>
-
-                <div class="form-group">
-                    <label for="email">Email</label>
-                    <input type="text" class="form-control" id="email" name="email" placeholder="Your email...">
-                </div>
+            <div class="form-group">
+                <label for="fname">First Name</label>
+                <input type="text" class="form-control" id="fname" name="fname" placeholder="Your first name..." value="{{ old('fname') }}">
             </div>
 
-            <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-            <button type="submit" class="btn btn-primary">Save User</button>
+            <div class="form-group">
+                <label for="lname">Last Name</label>
+                <input type="text" class="form-control" id="lname" name="lname" placeholder="Your last name..." value="{{ old('lname') }}">
             </div>
-        </form>
-        </div>
-    </div>
-    </div>
 
-    @stop
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input type="text" class="form-control" id="email" name="email" placeholder="Your email..." value="{{ old('email') }}">
+            </div>
+
+            <div class="form-group">
+                <label for="role">Role</label>
+                <select class="form-control" id="role" name="role">
+                    <option value="user" {{ old('role') === 'user' ? 'selected' : '' }}>User</option>
+                    <option value="admin" {{ old('role') === 'admin' ? 'selected' : '' }}>Admin</option>
+                    <option value="province" {{ old('role') === 'province' ? 'selected' : '' }}>Province</option>
+                    <option value="malsu" {{ old('role') === 'malsu' ? 'selected' : '' }}>MALSU</option>
+                    <option value="case_management" {{ old('role') === 'case_management' ? 'selected' : '' }}>Case Management</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+        <button type="submit" class="btn btn-primary">Save User</button>
+        </div>
+    </form>
+    </div>
+</div>
+</div>
+
+@stop

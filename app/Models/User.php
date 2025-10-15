@@ -15,6 +15,7 @@ class User extends Authenticatable
         'fname',
         'lname',
         'email',
+        'role',
         'password',
         'two_factor_enabled',
         'otp_code',
@@ -34,6 +35,10 @@ class User extends Authenticatable
         'password_reset_sent_at' => 'datetime',
         'two_factor_enabled' => 'boolean',
     ];
+
+    // Role constants
+    const ROLE_ADMIN = 'admin';
+    const ROLE_USER = 'user';
 
     // Override the password mutator to handle hashing
     public function setPasswordAttribute($value)
@@ -76,5 +81,21 @@ class User extends Authenticatable
     public function isOTPExpired()
     {
         return $this->otp_expires_at && $this->otp_expires_at->isPast();
+    }
+
+    // Role helper methods
+    public function isAdmin()
+    {
+        return $this->role === self::ROLE_ADMIN;
+    }
+
+    public function isUser()
+    {
+        return $this->role === self::ROLE_USER;
+    }
+
+    public function hasRole($role)
+    {
+        return $this->role === $role;
     }
 }
