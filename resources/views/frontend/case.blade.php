@@ -132,41 +132,62 @@
                     All Active Cases
                 </a>
             </li>
+            
+            @if(in_array(1, $allowedTabs))
             <li class="nav-item">
                 <a class="nav-link" id="tab1-tab" data-toggle="tab" href="#tab1" role="tab" aria-controls="tab1" aria-selected="false">
                     Inspection
                 </a>
             </li>
+            @endif
+            
+            @if(in_array(2, $allowedTabs))
             <li class="nav-item">
                 <a class="nav-link" id="tab2-tab" data-toggle="tab" href="#tab2" role="tab" aria-controls="tab2" aria-selected="false">
                     Docketing
                 </a>
             </li>
+            @endif
+            
+            @if(in_array(3, $allowedTabs))
             <li class="nav-item">
                 <a class="nav-link" id="tab3-tab" data-toggle="tab" href="#tab3" role="tab" aria-controls="tab3" aria-selected="false">
                     Hearing Process
                 </a>
             </li>
+            @endif
+            
+            @if(in_array(4, $allowedTabs))
             <li class="nav-item">
                 <a class="nav-link" id="tab4-tab" data-toggle="tab" href="#tab4" role="tab" aria-controls="tab4" aria-selected="false">
                     Review & Drafting
                 </a>
             </li>
+            @endif
+            
+            @if(in_array(5, $allowedTabs))
             <li class="nav-item">
                 <a class="nav-link" id="tab5-tab" data-toggle="tab" href="#tab5" role="tab" aria-controls="tab5" aria-selected="false">
                     Orders & Disposition
                 </a>
             </li>
+            @endif
+            
+            @if(in_array(6, $allowedTabs))
             <li class="nav-item">
                 <a class="nav-link" id="tab6-tab" data-toggle="tab" href="#tab6" role="tab" aria-controls="tab6" aria-selected="false">
                     Compliance & Awards
                 </a>
             </li>
+            @endif
+            
+            @if(in_array(7, $allowedTabs))
             <li class="nav-item">
                 <a class="nav-link" id="tab7-tab" data-toggle="tab" href="#tab7" role="tab" aria-controls="tab7" aria-selected="false">
                     Appeals & Resolution
                 </a>
             </li>
+            @endif
         </ul>
 
         <!-- Tabs Content -->

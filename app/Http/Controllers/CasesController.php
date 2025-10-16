@@ -13,9 +13,37 @@ use App\Models\ComplianceAndAward;
 use App\Models\AppealsAndResolution;
 use App\Helpers\ActivityLogger;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
 
 class CasesController extends Controller
 {
+    /**
+     * Get allowed tabs based on user role
+     */
+    private function getAllowedTabs()
+    {
+        $user = Auth::user();
+        
+        // Tab mapping: 1=Inspections, 2=Docketing, 3=Hearing, 4=Review&Drafting, 5=Orders&Disposition, 6=Compliance&Awards, 7=Appeals&Resolution
+        $tabPermissions = [
+            'admin' => [1, 2, 3, 4, 5, 6, 7],           // Admin sees all
+            'malsu' => [1, 7],                          // MALSU sees Inspections and Appeals
+            'province' => [1, 2, 3],                    // Province sees Inspections, Docketing, Hearing
+            'case_management' => [4, 5, 6],             // Case Management sees Review, Orders, Compliance
+        ];
+
+        // Return allowed tabs for user's role, default to empty if role not found
+        return $tabPermissions[$user->role] ?? [];
+    }
+
+    /**
+     * Check if user can access specific tab
+     */
+    private function canAccessTab($tabNumber)
+    {
+        return in_array($tabNumber, $this->getAllowedTabs());
+    }
+
     /**
      * Display the main case management page
      */
@@ -26,8 +54,11 @@ class CasesController extends Controller
             ->orderBy('created_at', 'desc')
             ->get();
 
+        $allowedTabs = $this->getAllowedTabs();
+
         return view('frontend.case', [
             'cases' => $cases,
+            'allowedTabs' => $allowedTabs,
             'inspections' => collect([]),
             'docketing' => collect([]),
             'hearingProcess' => collect([]),
@@ -43,6 +74,14 @@ class CasesController extends Controller
      */
     public function loadTabData(Request $request, $tabNumber)
     {
+        // Check if user has access to this tab
+        if (!$this->canAccessTab($tabNumber)) {
+            return response()->json([
+                'error' => 'You do not have access to this tab.',
+                'success' => false
+            ], 403);
+        }
+
         try {
             $data = null;
             $html = '';
@@ -143,8 +182,6 @@ class CasesController extends Controller
                     return response()->json(['error' => 'Invalid tab number'], 400);
             }
 
-            // ActivityLogger::log('Viewed case tab', ['tab' => $tabNumber]); //viewed tabs logger
-
             return response()->json([
                 'success' => true,
                 'html' => $html,
@@ -175,7 +212,7 @@ class CasesController extends Controller
             ActivityLogger::logAction(
                 'CREATE',
                 'Case',
-                $case->inspection_id,  // ← Use inspection_id instead of database ID
+                $case->inspection_id,
                 null,
                 [
                     'establishment' => $case->establishment_name,
@@ -194,80 +231,75 @@ class CasesController extends Controller
         }
     }
 
-/**
- * Update case
- */
-public function update(Request $request, $id)
-{
-    $validated = $request->validate([
-        'inspection_id' => 'required|string|max:255',
-        'case_no' => 'nullable|string|max:255',
-        'establishment_name' => 'required|string|max:255',
-        'current_stage' => 'required|in:1: Inspections,2: Docketing,3: Hearing,4: Review & Drafting,5: Orders & Disposition,6: Compliance & Awards,7: Appeals & Resolution',
-        'overall_status' => 'required|in:Active,Completed,Dismissed',
-    ]);
+    /**
+     * Update case
+     */
+    public function update(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'inspection_id' => 'required|string|max:255',
+            'case_no' => 'nullable|string|max:255',
+            'establishment_name' => 'required|string|max:255',
+            'current_stage' => 'required|in:1: Inspections,2: Docketing,3: Hearing,4: Review & Drafting,5: Orders & Disposition,6: Compliance & Awards,7: Appeals & Resolution',
+            'overall_status' => 'required|in:Active,Completed,Dismissed',
+        ]);
 
-    try {
-        $case = CaseFile::findOrFail($id);
-        $oldData = $case->toArray();
-        
-        // Update the case
-        $case->update($validated);
+        try {
+            $case = CaseFile::findOrFail($id);
+            $oldData = $case->toArray();
+            
+            $case->update($validated);
 
-        // Track what changed with details
-        $changes = [];
-        foreach ($validated as $key => $value) {
-            if (isset($oldData[$key]) && $oldData[$key] != $value) {
-                $fieldName = ucfirst(str_replace('_', ' ', $key));
-                $oldValue = $oldData[$key] ?: '(empty)';
-                $newValue = $value ?: '(empty)';
-                
-                if ($key === 'current_stage') {
-                    $oldValue = explode(': ', $oldValue)[1] ?? $oldValue;
-                    $newValue = explode(': ', $newValue)[1] ?? $newValue;
+            $changes = [];
+            foreach ($validated as $key => $value) {
+                if (isset($oldData[$key]) && $oldData[$key] != $value) {
+                    $fieldName = ucfirst(str_replace('_', ' ', $key));
+                    $oldValue = $oldData[$key] ?: '(empty)';
+                    $newValue = $value ?: '(empty)';
+                    
+                    if ($key === 'current_stage') {
+                        $oldValue = explode(': ', $oldValue)[1] ?? $oldValue;
+                        $newValue = explode(': ', $newValue)[1] ?? $newValue;
+                    }
+                    
+                    $changes[] = "{$fieldName}: '{$oldValue}' → '{$newValue}'";
                 }
-                
-                $changes[] = "{$fieldName}: '{$oldValue}' → '{$newValue}'";
             }
+
+            $changeDescription = !empty($changes) 
+                ? implode(', ', $changes)
+                : 'No changes detected';
+
+            ActivityLogger::logAction(
+                'UPDATE',
+                'Case',
+                $case->inspection_id,
+                "Updated: {$changeDescription}",
+                ['establishment' => $case->establishment_name]
+            );
+
+            return redirect()->route('case.index')->with('success', 'Case updated successfully!');
+        } catch (\Exception $e) {
+            Log::error('Error updating case: ' . $e->getMessage());
+            return redirect()->route('case.index')->with('error', 'Failed to update case.');
         }
-
-        $changeDescription = !empty($changes) 
-            ? implode(', ', $changes)
-            : 'No changes detected';
-
-        // Log the update
-        ActivityLogger::logAction(
-            'UPDATE',
-            'Case',
-            $case->inspection_id,
-            "Updated: {$changeDescription}",
-            ['establishment' => $case->establishment_name]
-        );
-
-        return redirect()->route('case.index')->with('success', 'Case updated successfully!');
-    } catch (\Exception $e) {
-        Log::error('Error updating case: ' . $e->getMessage());
-        return redirect()->route('case.index')->with('error', 'Failed to update case.');
     }
-}
 
     /**
      * Delete case
      */
-public function destroy($id)
-{
-    try {
-        $case = CaseFile::findOrFail($id);
-        $case->delete();
-        ActivityLogger::log('Deleted case', ['case_id' => $id]);
-        return response()->json(['success' => true, 'message' => 'Case deleted successfully.']);
-    } catch (\Exception $e) {
-        Log::error('Case delete failed: ' . $e->getMessage());
-        return response()->json(['success' => false, 'message' => 'Failed to delete case.'], 500);
+    public function destroy($id)
+    {
+        try {
+            $case = CaseFile::findOrFail($id);
+            $case->delete();
+            ActivityLogger::log('Deleted case', ['case_id' => $id]);
+            return response()->json(['success' => true, 'message' => 'Case deleted successfully.']);
+        } catch (\Exception $e) {
+            Log::error('Case delete failed: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Failed to delete case.'], 500);
+        }
     }
-}
-
-
 
     /**
      * Show case
@@ -275,7 +307,6 @@ public function destroy($id)
     public function show($id)
     {
         $case = CaseFile::findOrFail($id);
-        // ActivityLogger::log('Viewed case details', ['case_id' => $id]); //view tabs logger
         return response()->json($case);
     }
 
@@ -343,62 +374,57 @@ public function destroy($id)
         }
     }
 
-/**
- * Inline update (AJAX)
- */
-public function inlineUpdate(Request $request, $id)
-{
-    try {
-        $case = CaseFile::findOrFail($id);
-        $oldData = $case->toArray();
-        
-        // Update the case
-        $case->update($request->all());
-        $case->refresh();
+    /**
+     * Inline update (AJAX)
+     */
+    public function inlineUpdate(Request $request, $id)
+    {
+        try {
+            $case = CaseFile::findOrFail($id);
+            $oldData = $case->toArray();
+            
+            $case->update($request->all());
+            $case->refresh();
 
-        // Track what changed with old and new values
-        $changes = [];
-        foreach ($request->all() as $key => $value) {
-            if (isset($oldData[$key]) && $oldData[$key] != $value) {
-                $fieldName = ucfirst(str_replace('_', ' ', $key));
-                $oldValue = $oldData[$key] ?: '(empty)';
-                $newValue = $value ?: '(empty)';
-                
-                // Special handling for current_stage to show just the stage name
-                if ($key === 'current_stage') {
-                    $oldValue = explode(': ', $oldValue)[1] ?? $oldValue;
-                    $newValue = explode(': ', $newValue)[1] ?? $newValue;
+            $changes = [];
+            foreach ($request->all() as $key => $value) {
+                if (isset($oldData[$key]) && $oldData[$key] != $value) {
+                    $fieldName = ucfirst(str_replace('_', ' ', $key));
+                    $oldValue = $oldData[$key] ?: '(empty)';
+                    $newValue = $value ?: '(empty)';
+                    
+                    if ($key === 'current_stage') {
+                        $oldValue = explode(': ', $oldValue)[1] ?? $oldValue;
+                        $newValue = explode(': ', $newValue)[1] ?? $newValue;
+                    }
+                    
+                    $changes[] = "{$fieldName}: '{$oldValue}' → '{$newValue}'";
                 }
-                
-                $changes[] = "{$fieldName}: '{$oldValue}' → '{$newValue}'";
             }
+
+            $changeDescription = !empty($changes) 
+                ? implode(', ', $changes)
+                : 'No changes detected';
+
+            ActivityLogger::logAction(
+                'UPDATE',
+                'Case',
+                $case->inspection_id,
+                "Inline updated: {$changeDescription}",
+                ['establishment' => $case->establishment_name]
+            );
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Case updated successfully!',
+                'data' => $case
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Case inline update failed: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to update case.'
+            ], 500);
         }
-
-        // Build description
-        $changeDescription = !empty($changes) 
-            ? implode(', ', $changes)
-            : 'No changes detected';
-
-        // Log with detailed changes
-        ActivityLogger::logAction(
-            'UPDATE',
-            'Case',
-            $case->inspection_id,
-            "Inline updated: {$changeDescription}",
-            ['establishment' => $case->establishment_name]
-        );
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Case updated successfully!',
-            'data' => $case
-        ]);
-    } catch (\Exception $e) {
-        Log::error('Case inline update failed: ' . $e->getMessage());
-        return response()->json([
-            'success' => false,
-            'message' => 'Failed to update case.'
-        ], 500);
     }
-}
 }
