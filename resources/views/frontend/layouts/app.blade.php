@@ -33,7 +33,6 @@
     <!-- Page Wrapper -->
     <div id="wrapper">
         <!-- Sidebar -->
-<!-- Sidebar -->
 <ul class="navbar-nav bg-gradient-primary sidebar sidebar-dark accordion" id="accordionSidebar">
     <a class="sidebar-brand d-flex align-items-center justify-content-center" href="{{ route('home') }}">
         <div class="sidebar-brand-text mx-3">CMS</div>
@@ -46,6 +45,9 @@
     </li>
     <hr class="sidebar-divider">
     <div class="sidebar-heading">Interface</div>
+    
+    <!-- User Management - Only for Admin -->
+    @if(Auth::user()->isAdmin())
     <li class="nav-item">
         <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseTwo" aria-expanded="true" aria-controls="collapseTwo">
             <i class="fas fa-fw fa-cog"></i>
@@ -59,6 +61,10 @@
             </div>
         </div>
     </li>
+    @endif
+
+    <!-- Cases - Available for Admin, Province, MALSU, Case Management -->
+    @if(Auth::user()->isAdmin() || Auth::user()->isProvince() || Auth::user()->isMalsu() || Auth::user()->isCaseManagement())
     <li class="nav-item">
         <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseUtilities" aria-expanded="true" aria-controls="collapseUtilities">
             <i class="fas fa-fw fa-wrench"></i>
@@ -72,14 +78,22 @@
             </div>
         </div>
     </li>
+    @endif
+
+    <!-- Audit Logs - Only for Admin -->
+    @if(Auth::user()->isAdmin())
     <li class="nav-item">
         <a class="nav-link" href="{{ route('logs.index') }}">
             <i class="fas fa-fw fa-history"></i>
             <span>Audit Logs</span>
         </a>
     </li>
+    @endif
+
     <hr class="sidebar-divider">
     <div class="sidebar-heading">Addons</div>
+    
+    <!-- Pages - Available for All -->
     <li class="nav-item">
         <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapsePages" aria-expanded="true" aria-controls="collapsePages">
             <i class="fas fa-fw fa-folder"></i>
@@ -98,16 +112,25 @@
             </div>
         </div>
     </li>
+
+    <!-- Charts - Only for Admin -->
+    @if(Auth::user()->isAdmin())
     <li class="nav-item">
         <a class="nav-link" href="charts.html">
             <i class="fas fa-fw fa-chart-area"></i>
             <span>Charts</span></a>
     </li>
+    @endif
+
+    <!-- Tables - Available for Admin and Case Management -->
+    @if(Auth::user()->isAdmin() || Auth::user()->isCaseManagement())
     <li class="nav-item">
         <a class="nav-link" href="tables.html">
             <i class="fas fa-fw fa-table"></i>
             <span>Tables</span></a>
     </li>
+    @endif
+
     <hr class="sidebar-divider d-none d-md-block">
     <div class="text-center d-none d-md-inline">
         <button class="rounded-circle border-0" id="sidebarToggle"></button>
