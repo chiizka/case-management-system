@@ -4,9 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Models\HearingProcess;
 use App\Models\CaseFile;
+use App\Helpers\ActivityLogger;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Log;
+use Carbon\Carbon;
 
 class HearingProcessController extends Controller
 {
@@ -15,6 +17,13 @@ class HearingProcessController extends Controller
      */
     public function index()
     {
+        ActivityLogger::logAction(
+            'VIEW',
+            'HearingProcess',
+            null,
+            'Viewed hearing process list page'
+        );
+
         // Redirect to unified case view instead of loading data here
         return redirect()->route('case.index')
             ->with('active_tab', 'hearing');
@@ -55,7 +64,21 @@ class HearingProcessController extends Controller
         }
 
         try {
-            HearingProcess::create($request->all());
+            $hearingProcess = HearingProcess::create($request->all());
+            $case = $hearingProcess->case;
+
+            ActivityLogger::logAction(
+                'CREATE',
+                'HearingProcess',
+                $case->inspection_id ?? $hearingProcess->id,
+                'Created new hearing process record',
+                [
+                    'establishment' => $case->establishment_name ?? 'Unknown',
+                    'hearing_date' => $request->hearing_date ?? 'Not set',
+                    'hearing_officer' => $request->hearing_officer ?? 'Not assigned',
+                    'status' => $request->status ?? 'Not set'
+                ]
+            );
             
             return redirect()->route('case.index')
                 ->with('success', 'Hearing process created successfully.')
@@ -77,6 +100,16 @@ class HearingProcessController extends Controller
         try {
             $hearingProcess = HearingProcess::with('case')->findOrFail($id);
             
+            ActivityLogger::logAction(
+                'VIEW',
+                'HearingProcess',
+                $hearingProcess->case->inspection_id ?? $id,
+                'Viewed hearing process details',
+                [
+                    'establishment' => $hearingProcess->case->establishment_name ?? 'Unknown'
+                ]
+            );
+            
             return redirect()->route('case.index')
                 ->with('active_tab', 'hearing')
                 ->with('highlighted_id', $id);
@@ -94,6 +127,16 @@ class HearingProcessController extends Controller
     {
         try {
             $hearingProcess = HearingProcess::with('case')->findOrFail($id);
+            
+            ActivityLogger::logAction(
+                'VIEW',
+                'HearingProcess',
+                $hearingProcess->case->inspection_id ?? $id,
+                'Opened hearing process record for editing',
+                [
+                    'establishment' => $hearingProcess->case->establishment_name ?? 'Unknown'
+                ]
+            );
             
             // Return JSON for AJAX requests
             if (request()->expectsJson()) {
@@ -155,7 +198,27 @@ class HearingProcessController extends Controller
 
         try {
             $hearingProcess = HearingProcess::findOrFail($id);
+            $originalData = $hearingProcess->toArray();
             $hearingProcess->update($request->all());
+
+            $changes = [];
+            foreach ($request->all() as $key => $value) {
+                if (isset($originalData[$key]) && $originalData[$key] != $value) {
+                    $changes[] = ucfirst(str_replace('_', ' ', $key));
+                }
+            }
+
+            ActivityLogger::logAction(
+                'UPDATE',
+                'HearingProcess',
+                $hearingProcess->case->inspection_id ?? $id,
+                'Updated hearing process record',
+                [
+                    'establishment' => $hearingProcess->case->establishment_name ?? 'Unknown',
+                    'fields_changed' => !empty($changes) ? implode(', ', $changes) : 'No changes detected',
+                    'change_count' => count($changes)
+                ]
+            );
 
             return redirect()->route('case.index')
                 ->with('success', 'Hearing process updated successfully.')
@@ -175,8 +238,22 @@ class HearingProcessController extends Controller
     public function destroy($id)
     {
         try {
-            $hearingProcess = HearingProcess::findOrFail($id);
+            $hearingProcess = HearingProcess::with('case')->findOrFail($id);
+            $hearingProcessId = $hearingProcess->case->inspection_id ?? $id;
+            $establishment = $hearingProcess->case->establishment_name ?? 'Unknown';
+
             $hearingProcess->delete();
+
+            ActivityLogger::logAction(
+                'DELETE',
+                'HearingProcess',
+                $hearingProcessId,
+                'Deleted hearing process record',
+                [
+                    'establishment' => $establishment
+                ]
+            );
+
             Log::info('Hearing process ID: ' . $id . ' deleted successfully.');
 
             return redirect()->route('case.index')
@@ -200,7 +277,8 @@ class HearingProcessController extends Controller
         ]);
         
         try {
-            $hearingProcess = HearingProcess::findOrFail($id);
+            $hearingProcess = HearingProcess::with('case')->findOrFail($id);
+            $originalData = $hearingProcess->toArray();
             
             // Get all input data
             $inputData = $request->all();
@@ -224,10 +302,10 @@ class HearingProcessController extends Controller
             // Updated validation rules with proper field types
             $validator = Validator::make($cleanedData, [
                 'date_1st_mc_actual' => 'nullable|date',
-                'first_mc_pct' => 'nullable|string|max:255',  // Changed from date to string
+                'first_mc_pct' => 'nullable|string|max:255',
                 'status_1st_mc' => 'nullable|in:Pending,Ongoing,Completed',
                 'date_2nd_last_mc' => 'nullable|date',
-                'second_last_mc_pct' => 'nullable|string|max:255',  // Changed from date to string
+                'second_last_mc_pct' => 'nullable|string|max:255',
                 'status_2nd_mc' => 'nullable|in:Pending,In Progress,Completed',
                 'case_folder_forwarded_to_ro' => 'nullable|string|max:255',
                 'complete_case_folder' => 'nullable|in:Y,N',
@@ -255,6 +333,41 @@ class HearingProcessController extends Controller
             // Update the hearing process record
             $hearingProcess->update($validatedData);
             Log::info('Hearing process updated successfully');
+
+            // Track changes for activity log
+            $changeDetails = [];
+            foreach ($validatedData as $field => $newValue) {
+                $oldValue = $originalData[$field] ?? null;
+                if ($oldValue != $newValue) {
+                    $fieldLabel = ucfirst(str_replace('_', ' ', $field));
+                    $oldDisplay = $oldValue ?? 'empty';
+                    $newDisplay = $newValue ?? 'empty';
+
+                    // Format dates for better readability
+                    if (in_array($field, ['date_1st_mc_actual', 'date_2nd_last_mc'])) {
+                        $oldDisplay = $oldValue ? Carbon::parse($oldValue)->format('M d, Y') : 'not set';
+                        $newDisplay = $newValue ? Carbon::parse($newValue)->format('M d, Y') : 'not set';
+                    }
+
+                    $changeDetails[] = "{$fieldLabel}: '{$oldDisplay}' → '{$newDisplay}'";
+                }
+            }
+
+            // Log the activity if there were changes
+            if (!empty($changeDetails)) {
+                $logDetails = 'Updated: ' . implode('; ', $changeDetails);
+                ActivityLogger::logAction(
+                    'UPDATE',
+                    'HearingProcess',
+                    $hearingProcess->case->inspection_id ?? $id,
+                    $logDetails,
+                    [
+                        'establishment' => $hearingProcess->case->establishment_name ?? 'Unknown',
+                        'fields_count' => count($changeDetails),
+                        'method' => 'inline_edit'
+                    ]
+                );
+            }
 
             // Refresh to get updated data
             $hearingProcess->refresh();
@@ -325,6 +438,16 @@ class HearingProcessController extends Controller
         try {
             $hearingProcess = HearingProcess::with('case')->findOrFail($id);
             
+            ActivityLogger::logAction(
+                'VIEW',
+                'HearingProcess',
+                $hearingProcess->case->inspection_id ?? $id,
+                'Retrieved hearing process data via API',
+                [
+                    'establishment' => $hearingProcess->case->establishment_name ?? 'Unknown'
+                ]
+            );
+            
             return response()->json([
                 'success' => true,
                 'data' => [
@@ -350,4 +473,4 @@ class HearingProcessController extends Controller
             ], 404);
         }
     }
-}
+} 

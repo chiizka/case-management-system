@@ -4,9 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Models\AppealsAndResolution;
 use App\Models\CaseFile;
+use App\Helpers\ActivityLogger;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Log;
+use Carbon\Carbon;
 
 class AppealsAndResolutionController extends Controller
 {
@@ -15,6 +17,13 @@ class AppealsAndResolutionController extends Controller
      */
     public function index()
     {
+        ActivityLogger::logAction(
+            'VIEW',
+            'Appeals & Resolution',
+            null,
+            'Viewed appeals & resolution list page'
+        );
+
         $cases = CaseFile::all();
         $appealsAndResolutions = AppealsAndResolution::with('case')->get();
         
@@ -56,11 +65,32 @@ class AppealsAndResolutionController extends Controller
             return redirect()->back()->withErrors($validator)->withInput();
         }
 
-        AppealsAndResolution::create($request->all());
+        try {
+            $appealsAndResolution = AppealsAndResolution::create($request->all());
+            $case = $appealsAndResolution->case;
 
-        return redirect()->route('appeals-and-resolution.index')
-            ->with('success', 'Appeals and Resolution record created successfully.')
-            ->with('active_tab', 'appeals-and-resolution');
+            ActivityLogger::logAction(
+                'CREATE',
+                'Appeals & Resolution',
+                $case->inspection_id ?? $appealsAndResolution->id,
+                'Created new appeals & resolution record',
+                [
+                    'establishment' => $case->establishment_name ?? 'Unknown',
+                    'review_status' => $request->review_ct_cnpc ?? 'Not set',
+                    'date_returned' => $request->date_returned_case_mgmt ?? 'Not set'
+                ]
+            );
+
+            return redirect()->route('appeals-and-resolution.index')
+                ->with('success', 'Appeals and Resolution record created successfully.')
+                ->with('active_tab', 'appeals-and-resolution');
+        } catch (\Exception $e) {
+            Log::error('Error creating appeals & resolution: ' . $e->getMessage());
+
+            return redirect()->route('appeals-and-resolution.index')
+                ->with('error', 'Failed to create appeals & resolution: ' . $e->getMessage())
+                ->with('active_tab', 'appeals-and-resolution');
+        }
     }
 
     /**
@@ -68,15 +98,30 @@ class AppealsAndResolutionController extends Controller
      */
     public function show($id)
     {
-        $appealsAndResolution = AppealsAndResolution::with('case')->findOrFail($id);
-        
-        // Access case data through the relationship
-        $inspectionId = $appealsAndResolution->case->inspection_id;
-        $establishmentName = $appealsAndResolution->case->establishment_name;
-        
-        $cases = CaseFile::all();
-        $appealsAndResolutions = AppealsAndResolution::with('case')->get();
-        return view('frontend.case', compact('cases', 'appealsAndResolutions', 'appealsAndResolution'));
+        try {
+            $appealsAndResolution = AppealsAndResolution::with('case')->findOrFail($id);
+
+            ActivityLogger::logAction(
+                'VIEW',
+                'Appeals & Resolution',
+                $appealsAndResolution->case->inspection_id ?? $id,
+                'Viewed appeals & resolution details',
+                [
+                    'establishment' => $appealsAndResolution->case->establishment_name ?? 'Unknown'
+                ]
+            );
+            
+            $inspectionId = $appealsAndResolution->case->inspection_id;
+            $establishmentName = $appealsAndResolution->case->establishment_name;
+            
+            $cases = CaseFile::all();
+            $appealsAndResolutions = AppealsAndResolution::with('case')->get();
+            return view('frontend.case', compact('cases', 'appealsAndResolutions', 'appealsAndResolution'));
+        } catch (\Exception $e) {
+            return redirect()->route('case.index')
+                ->with('error', 'Appeals & Resolution record not found.')
+                ->with('active_tab', 'appeals-and-resolution');
+        }
     }
 
     /**
@@ -84,15 +129,55 @@ class AppealsAndResolutionController extends Controller
      */
     public function edit($id)
     {
-        $appealsAndResolution = AppealsAndResolution::with('case')->findOrFail($id);
-        
-        // Access case data through the relationship
-        $inspectionId = $appealsAndResolution->case->inspection_id;
-        $establishmentName = $appealsAndResolution->case->establishment_name;
-        
-        $cases = CaseFile::all();
-        $appealsAndResolutions = AppealsAndResolution::with('case')->get();
-        return view('frontend.case', compact('cases', 'appealsAndResolutions', 'appealsAndResolution'));
+        try {
+            $appealsAndResolution = AppealsAndResolution::with('case')->findOrFail($id);
+
+            ActivityLogger::logAction(
+                'VIEW',
+                'Appeals & Resolution',
+                $appealsAndResolution->case->inspection_id ?? $id,
+                'Opened appeals & resolution record for editing',
+                [
+                    'establishment' => $appealsAndResolution->case->establishment_name ?? 'Unknown'
+                ]
+            );
+
+            if (request()->expectsJson()) {
+                return response()->json([
+                    'id' => $appealsAndResolution->id,
+                    'case_id' => $appealsAndResolution->case_id,
+                    'inspection_id' => $appealsAndResolution->case->inspection_id ?? '',
+                    'establishment_name' => $appealsAndResolution->case->establishment_name ?? '',
+                    'date_returned_case_mgmt' => $appealsAndResolution->date_returned_case_mgmt,
+                    'review_ct_cnpc' => $appealsAndResolution->review_ct_cnpc,
+                    'date_received_drafter_finalization_2nd' => $appealsAndResolution->date_received_drafter_finalization_2nd,
+                    'date_returned_case_mgmt_signature_2nd' => $appealsAndResolution->date_returned_case_mgmt_signature_2nd,
+                    'date_order_2nd_cnpc' => $appealsAndResolution->date_order_2nd_cnpc,
+                    'released_date_2nd_cnpc' => $appealsAndResolution->released_date_2nd_cnpc,
+                    'date_forwarded_malsu' => $appealsAndResolution->date_forwarded_malsu,
+                    'motion_reconsideration_date' => $appealsAndResolution->motion_reconsideration_date,
+                    'date_received_malsu' => $appealsAndResolution->date_received_malsu,
+                    'date_resolution_mr' => $appealsAndResolution->date_resolution_mr,
+                    'released_date_resolution_mr' => $appealsAndResolution->released_date_resolution_mr,
+                    'date_appeal_received_records' => $appealsAndResolution->date_appeal_received_records,
+                ]);
+            }
+            
+            $inspectionId = $appealsAndResolution->case->inspection_id;
+            $establishmentName = $appealsAndResolution->case->establishment_name;
+            
+            $cases = CaseFile::all();
+            $appealsAndResolutions = AppealsAndResolution::with('case')->get();
+            return view('frontend.case', compact('cases', 'appealsAndResolutions', 'appealsAndResolution'));
+        } catch (\Exception $e) {
+            if (request()->expectsJson()) {
+                return response()->json(['error' => 'Appeals & Resolution record not found'], 404);
+            }
+
+            return redirect()->route('case.index')
+                ->with('error', 'Appeals & Resolution record not found.')
+                ->with('active_tab', 'appeals-and-resolution');
+        }
     }
 
     /**
@@ -100,8 +185,6 @@ class AppealsAndResolutionController extends Controller
      */
     public function update(Request $request, $id)
     {
-        $appealsAndResolution = AppealsAndResolution::findOrFail($id);
-
         $validator = Validator::make($request->all(), [
             'case_id' => 'required|exists:cases,id',
             'date_returned_case_mgmt' => 'nullable|date',
@@ -122,11 +205,40 @@ class AppealsAndResolutionController extends Controller
             return redirect()->back()->withErrors($validator)->withInput();
         }
 
-        $appealsAndResolution->update($request->all());
+        try {
+            $appealsAndResolution = AppealsAndResolution::findOrFail($id);
+            $originalData = $appealsAndResolution->toArray();
+            $appealsAndResolution->update($request->all());
 
-        return redirect()->route('appeals-and-resolution.index')
-            ->with('success', 'Appeals and Resolution record updated successfully.')
-            ->with('active_tab', 'appeals-and-resolution');
+            $changes = [];
+            foreach ($request->all() as $key => $value) {
+                if (isset($originalData[$key]) && $originalData[$key] != $value) {
+                    $changes[] = ucfirst(str_replace('_', ' ', $key));
+                }
+            }
+
+            ActivityLogger::logAction(
+                'UPDATE',
+                'Appeals & Resolution',
+                $appealsAndResolution->case->inspection_id ?? $id,
+                'Updated appeals & resolution record',
+                [
+                    'establishment' => $appealsAndResolution->case->establishment_name ?? 'Unknown',
+                    'fields_changed' => !empty($changes) ? implode(', ', $changes) : 'No changes detected',
+                    'change_count' => count($changes)
+                ]
+            );
+
+            return redirect()->route('appeals-and-resolution.index')
+                ->with('success', 'Appeals and Resolution record updated successfully.')
+                ->with('active_tab', 'appeals-and-resolution');
+        } catch (\Exception $e) {
+            Log::error('Error updating appeals & resolution ID: ' . $id . ' - ' . $e->getMessage());
+
+            return redirect()->route('appeals-and-resolution.index')
+                ->with('error', 'Failed to update appeals & resolution: ' . $e->getMessage())
+                ->with('active_tab', 'appeals-and-resolution');
+        }
     }
 
     /**
@@ -135,8 +247,22 @@ class AppealsAndResolutionController extends Controller
     public function destroy($id)
     {
         try {
-            $appealsAndResolution = AppealsAndResolution::findOrFail($id);
+            $appealsAndResolution = AppealsAndResolution::with('case')->findOrFail($id);
+            $appealsAndResolutionId = $appealsAndResolution->case->inspection_id ?? $id;
+            $establishment = $appealsAndResolution->case->establishment_name ?? 'Unknown';
+
             $appealsAndResolution->delete();
+
+            ActivityLogger::logAction(
+                'DELETE',
+                'Appeals & Resolution',
+                $appealsAndResolutionId,
+                'Deleted appeals & resolution record',
+                [
+                    'establishment' => $establishment
+                ]
+            );
+
             Log::info('Appeals and Resolution ID: ' . $id . ' deleted successfully.');
             
             return redirect()->route('case.index')
@@ -150,120 +276,93 @@ class AppealsAndResolutionController extends Controller
         }
     }
 
+    /**
+     * Inline update handler for AJAX.
+     */
     public function inlineUpdate(Request $request, $id)
-{
-    // Add debug logging
-    Log::info('Appeals and Resolution inline update request received', [
-        'appeals_id' => $id,
-        'request_data' => $request->all(),
-        'content_type' => $request->header('Content-Type')
-    ]);
-    
-    try {
-        $appealsAndResolution = AppealsAndResolution::findOrFail($id);
-        
-        // Get all input data
-        $inputData = $request->all();
-        
-        // Remove empty strings and convert them to null
-        $cleanedData = [];
-        foreach ($inputData as $key => $value) {
-            if ($value === '' || $value === '-') {
-                $cleanedData[$key] = null;
-            } else {
-                $cleanedData[$key] = $value;
-            }
-        }
-        
-        Log::info('Cleaned data for validation', ['cleaned_data' => $cleanedData]);
-        
-        // Validation rules
-        $validator = Validator::make($cleanedData, [
-            'date_returned_case_mgmt' => 'nullable|date',
-            'review_ct_cnpc' => 'nullable|string|max:255',
-            'date_received_drafter_finalization_2nd' => 'nullable|date',
-            'date_returned_case_mgmt_signature_2nd' => 'nullable|date',
-            'date_order_2nd_cnpc' => 'nullable|date',
-            'released_date_2nd_cnpc' => 'nullable|date',
-            'date_forwarded_malsu' => 'nullable|date',
-            'motion_reconsideration_date' => 'nullable|date',
-            'date_received_malsu' => 'nullable|date',
-            'date_resolution_mr' => 'nullable|date',
-            'released_date_resolution_mr' => 'nullable|date',
-            'date_appeal_received_records' => 'nullable|date',
-        ]);
+    {
+        Log::info('Appeals and Resolution inline update received', ['id' => $id, 'data' => $request->all()]);
 
-        if ($validator->fails()) {
-            Log::warning('Validation failed', [
-                'errors' => $validator->errors(),
-                'data' => $cleanedData
+        try {
+            $appealsAndResolution = AppealsAndResolution::with('case')->findOrFail($id);
+            $originalData = $appealsAndResolution->toArray();
+            $originalCase = $appealsAndResolution->case ? $appealsAndResolution->case->toArray() : [];
+
+            $inputData = $request->all();
+            foreach ($inputData as $key => $value) {
+                $inputData[$key] = ($value === '' || $value === '-') ? null : $value;
+            }
+
+            $validator = Validator::make($inputData, [
+                'date_returned_case_mgmt' => 'nullable|date',
+                'review_ct_cnpc' => 'nullable|string|max:255',
+                'date_received_drafter_finalization_2nd' => 'nullable|date',
+                'date_returned_case_mgmt_signature_2nd' => 'nullable|date',
+                'date_order_2nd_cnpc' => 'nullable|date',
+                'released_date_2nd_cnpc' => 'nullable|date',
+                'date_forwarded_malsu' => 'nullable|date',
+                'motion_reconsideration_date' => 'nullable|date',
+                'date_received_malsu' => 'nullable|date',
+                'date_resolution_mr' => 'nullable|date',
+                'released_date_resolution_mr' => 'nullable|date',
+                'date_appeal_received_records' => 'nullable|date',
             ]);
-            
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Validation failed: ' . $validator->errors()->first(),
+                    'errors' => $validator->errors()
+                ], 422);
+            }
+
+            $validatedData = $validator->validated();
+            $appealsAndResolution->update($validatedData);
+            $appealsAndResolution->refresh()->load('case');
+
+            $changeDetails = [];
+            foreach ($validatedData as $field => $newValue) {
+                $oldValue = $originalData[$field] ?? null;
+                if ($oldValue != $newValue) {
+                    $fieldLabel = ucfirst(str_replace('_', ' ', $field));
+                    $oldDisplay = $oldValue ?? 'empty';
+                    $newDisplay = $newValue ?? 'empty';
+
+                    if (strpos($field, 'date') === 0 || strpos($field, '_date') !== false) {
+                        $oldDisplay = $oldValue ? Carbon::parse($oldValue)->format('M d, Y') : 'not set';
+                        $newDisplay = $newValue ? Carbon::parse($newValue)->format('M d, Y') : 'not set';
+                    }
+
+                    $changeDetails[] = "{$fieldLabel}: '{$oldDisplay}' → '{$newDisplay}'";
+                }
+            }
+
+            if (!empty($changeDetails)) {
+                $logDetails = 'Updated: ' . implode('; ', $changeDetails);
+                ActivityLogger::logAction(
+                    'UPDATE',
+                    'Appeals & Resolution',
+                    $appealsAndResolution->case->inspection_id ?? $id,
+                    $logDetails,
+                    [
+                        'establishment' => $appealsAndResolution->case->establishment_name ?? 'Unknown',
+                        'fields_count' => count($changeDetails),
+                        'method' => 'inline_edit'
+                    ]
+                );
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Appeals & Resolution updated successfully!',
+                'data' => $appealsAndResolution
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Inline update failed: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
-                'message' => 'Validation failed: ' . $validator->errors()->first(),
-                'errors' => $validator->errors()
-            ], 422);
+                'message' => 'Failed to update appeals & resolution: ' . $e->getMessage()
+            ], 500);
         }
-
-        $validatedData = $validator->validated();
-        
-        Log::info('Validated data', ['validated_data' => $validatedData]);
-        
-        // Update the appeals and resolution record
-        $appealsAndResolution->update($validatedData);
-        Log::info('Appeals and Resolution updated successfully');
-
-        // Refresh the model to get updated values
-        $appealsAndResolution->refresh();
-        
-        // Also reload the case relationship
-        $appealsAndResolution->load('case');
-
-        // Prepare response data with proper formatting
-        $responseData = [
-            'date_returned_case_mgmt' => $appealsAndResolution->date_returned_case_mgmt ? 
-                \Carbon\Carbon::parse($appealsAndResolution->date_returned_case_mgmt)->format('Y-m-d') : '-',
-            'review_ct_cnpc' => $appealsAndResolution->review_ct_cnpc ?? '-',
-            'date_received_drafter_finalization_2nd' => $appealsAndResolution->date_received_drafter_finalization_2nd ? 
-                \Carbon\Carbon::parse($appealsAndResolution->date_received_drafter_finalization_2nd)->format('Y-m-d') : '-',
-            'date_returned_case_mgmt_signature_2nd' => $appealsAndResolution->date_returned_case_mgmt_signature_2nd ? 
-                \Carbon\Carbon::parse($appealsAndResolution->date_returned_case_mgmt_signature_2nd)->format('Y-m-d') : '-',
-            'date_order_2nd_cnpc' => $appealsAndResolution->date_order_2nd_cnpc ? 
-                \Carbon\Carbon::parse($appealsAndResolution->date_order_2nd_cnpc)->format('Y-m-d') : '-',
-            'released_date_2nd_cnpc' => $appealsAndResolution->released_date_2nd_cnpc ? 
-                \Carbon\Carbon::parse($appealsAndResolution->released_date_2nd_cnpc)->format('Y-m-d') : '-',
-            'date_forwarded_malsu' => $appealsAndResolution->date_forwarded_malsu ? 
-                \Carbon\Carbon::parse($appealsAndResolution->date_forwarded_malsu)->format('Y-m-d') : '-',
-            'motion_reconsideration_date' => $appealsAndResolution->motion_reconsideration_date ? 
-                \Carbon\Carbon::parse($appealsAndResolution->motion_reconsideration_date)->format('Y-m-d') : '-',
-            'date_received_malsu' => $appealsAndResolution->date_received_malsu ? 
-                \Carbon\Carbon::parse($appealsAndResolution->date_received_malsu)->format('Y-m-d') : '-',
-            'date_resolution_mr' => $appealsAndResolution->date_resolution_mr ? 
-                \Carbon\Carbon::parse($appealsAndResolution->date_resolution_mr)->format('Y-m-d') : '-',
-            'released_date_resolution_mr' => $appealsAndResolution->released_date_resolution_mr ? 
-                \Carbon\Carbon::parse($appealsAndResolution->released_date_resolution_mr)->format('Y-m-d') : '-',
-            'date_appeal_received_records' => $appealsAndResolution->date_appeal_received_records ? 
-                \Carbon\Carbon::parse($appealsAndResolution->date_appeal_received_records)->format('Y-m-d') : '-',
-        ];
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Appeals & Resolution updated successfully!',
-            'data' => $responseData
-        ]);
-
-    } catch (\Exception $e) {
-        Log::error('Appeals and Resolution inline update failed: ' . $e->getMessage(), [
-            'appeals_id' => $id,
-            'request_data' => $request->all(),
-            'error' => $e->getTraceAsString()
-        ]);
-
-        return response()->json([
-            'success' => false,
-            'message' => 'Failed to update appeals & resolution: ' . $e->getMessage()
-        ], 500);
     }
-}
 }

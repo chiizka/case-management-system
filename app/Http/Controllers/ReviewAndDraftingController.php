@@ -4,9 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Models\ReviewAndDrafting;
 use App\Models\CaseFile;
+use App\Helpers\ActivityLogger;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Log;
+use Carbon\Carbon;
 
 class ReviewAndDraftingController extends Controller
 {
@@ -15,6 +17,13 @@ class ReviewAndDraftingController extends Controller
      */
     public function index()
     {
+        ActivityLogger::logAction(
+            'VIEW',
+            'ReviewAndDrafting',
+            null,
+            'Viewed review and drafting list page'
+        );
+
         // Redirect to unified case view instead of loading data here
         return redirect()->route('case.index')
             ->with('active_tab', 'review-drafting');
@@ -58,7 +67,21 @@ class ReviewAndDraftingController extends Controller
         }
 
         try {
-            ReviewAndDrafting::create($request->all());
+            $reviewAndDrafting = ReviewAndDrafting::create($request->all());
+            $case = $reviewAndDrafting->case;
+
+            ActivityLogger::logAction(
+                'CREATE',
+                'ReviewAndDrafting',
+                $case->inspection_id ?? $reviewAndDrafting->id,
+                'Created new review and drafting process record',
+                [
+                    'establishment' => $case->establishment_name ?? 'Unknown',
+                    'draft_order_type' => $request->draft_order_type ?? 'Not set',
+                    'reviewer_drafter' => $request->reviewer_drafter ?? 'Not assigned',
+                    'status_po_pct' => $request->status_po_pct ?? 'Pending'
+                ]
+            );
             
             return redirect()->route('case.index')
                 ->with('success', 'Review and drafting process created successfully.')
@@ -80,6 +103,16 @@ class ReviewAndDraftingController extends Controller
         try {
             $reviewAndDrafting = ReviewAndDrafting::with('case')->findOrFail($id);
             
+            ActivityLogger::logAction(
+                'VIEW',
+                'ReviewAndDrafting',
+                $reviewAndDrafting->case->inspection_id ?? $id,
+                'Viewed review and drafting process details',
+                [
+                    'establishment' => $reviewAndDrafting->case->establishment_name ?? 'Unknown'
+                ]
+            );
+            
             return redirect()->route('case.index')
                 ->with('active_tab', 'review-drafting')
                 ->with('highlighted_id', $id);
@@ -97,6 +130,16 @@ class ReviewAndDraftingController extends Controller
     {
         try {
             $reviewAndDrafting = ReviewAndDrafting::with('case')->findOrFail($id);
+            
+            ActivityLogger::logAction(
+                'VIEW',
+                'ReviewAndDrafting',
+                $reviewAndDrafting->case->inspection_id ?? $id,
+                'Opened review and drafting process record for editing',
+                [
+                    'establishment' => $reviewAndDrafting->case->establishment_name ?? 'Unknown'
+                ]
+            );
             
             // Return JSON for AJAX requests
             if (request()->expectsJson()) {
@@ -164,7 +207,27 @@ class ReviewAndDraftingController extends Controller
 
         try {
             $reviewAndDrafting = ReviewAndDrafting::findOrFail($id);
+            $originalData = $reviewAndDrafting->toArray();
             $reviewAndDrafting->update($request->all());
+
+            $changes = [];
+            foreach ($request->all() as $key => $value) {
+                if (isset($originalData[$key]) && $originalData[$key] != $value) {
+                    $changes[] = ucfirst(str_replace('_', ' ', $key));
+                }
+            }
+
+            ActivityLogger::logAction(
+                'UPDATE',
+                'ReviewAndDrafting',
+                $reviewAndDrafting->case->inspection_id ?? $id,
+                'Updated review and drafting process record',
+                [
+                    'establishment' => $reviewAndDrafting->case->establishment_name ?? 'Unknown',
+                    'fields_changed' => !empty($changes) ? implode(', ', $changes) : 'No changes detected',
+                    'change_count' => count($changes)
+                ]
+            );
 
             return redirect()->route('case.index')
                 ->with('success', 'Review and drafting process updated successfully.')
@@ -184,8 +247,22 @@ class ReviewAndDraftingController extends Controller
     public function destroy($id)
     {
         try {
-            $reviewAndDrafting = ReviewAndDrafting::findOrFail($id);
+            $reviewAndDrafting = ReviewAndDrafting::with('case')->findOrFail($id);
+            $reviewDraftingId = $reviewAndDrafting->case->inspection_id ?? $id;
+            $establishment = $reviewAndDrafting->case->establishment_name ?? 'Unknown';
+
             $reviewAndDrafting->delete();
+
+            ActivityLogger::logAction(
+                'DELETE',
+                'ReviewAndDrafting',
+                $reviewDraftingId,
+                'Deleted review and drafting process record',
+                [
+                    'establishment' => $establishment
+                ]
+            );
+
             Log::info('Review and drafting process ID: ' . $id . ' deleted successfully.');
 
             return redirect()->route('case.index')
@@ -214,7 +291,8 @@ class ReviewAndDraftingController extends Controller
         ]);
         
         try {
-            $reviewAndDrafting = ReviewAndDrafting::findOrFail($id);
+            $reviewAndDrafting = ReviewAndDrafting::with('case')->findOrFail($id);
+            $originalData = $reviewAndDrafting->toArray();
             
             // Get all input data
             $inputData = $request->all();
@@ -278,6 +356,41 @@ class ReviewAndDraftingController extends Controller
             // Update the review and drafting record
             $reviewAndDrafting->update($validatedData);
             Log::info('Review and drafting updated successfully');
+
+            // Track changes for activity log
+            $changeDetails = [];
+            foreach ($validatedData as $field => $newValue) {
+                $oldValue = $originalData[$field] ?? null;
+                if ($oldValue != $newValue) {
+                    $fieldLabel = ucfirst(str_replace('_', ' ', $field));
+                    $oldDisplay = $oldValue ?? 'empty';
+                    $newDisplay = $newValue ?? 'empty';
+
+                    // Format dates for better readability
+                    if (in_array($field, ['date_received_from_po', 'date_received_by_reviewer', 'date_returned_from_drafter'])) {
+                        $oldDisplay = $oldValue ? Carbon::parse($oldValue)->format('M d, Y') : 'not set';
+                        $newDisplay = $newValue ? Carbon::parse($newValue)->format('M d, Y') : 'not set';
+                    }
+
+                    $changeDetails[] = "{$fieldLabel}: '{$oldDisplay}' → '{$newDisplay}'";
+                }
+            }
+
+            // Log the activity if there were changes
+            if (!empty($changeDetails)) {
+                $logDetails = 'Updated: ' . implode('; ', $changeDetails);
+                ActivityLogger::logAction(
+                    'UPDATE',
+                    'ReviewAndDrafting',
+                    $reviewAndDrafting->case->inspection_id ?? $id,
+                    $logDetails,
+                    [
+                        'establishment' => $reviewAndDrafting->case->establishment_name ?? 'Unknown',
+                        'fields_count' => count($changeDetails),
+                        'method' => 'inline_edit'
+                    ]
+                );
+            }
 
             // Refresh to get updated data
             $reviewAndDrafting->refresh();
@@ -351,6 +464,16 @@ class ReviewAndDraftingController extends Controller
     {
         try {
             $reviewAndDrafting = ReviewAndDrafting::with('case')->findOrFail($id);
+            
+            ActivityLogger::logAction(
+                'VIEW',
+                'ReviewAndDrafting',
+                $reviewAndDrafting->case->inspection_id ?? $id,
+                'Retrieved review and drafting process data via API',
+                [
+                    'establishment' => $reviewAndDrafting->case->establishment_name ?? 'Unknown'
+                ]
+            );
             
             return response()->json([
                 'success' => true,
