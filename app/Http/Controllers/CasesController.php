@@ -27,7 +27,7 @@ class CasesController extends Controller
         // Tab mapping: 1=Inspections, 2=Docketing, 3=Hearing, 4=Review&Drafting, 5=Orders&Disposition, 6=Compliance&Awards, 7=Appeals&Resolution
         $tabPermissions = [
             'admin' => [1, 2, 3, 4, 5, 6, 7],           // Admin sees all
-            'malsu' => [7],                          // MALSU sees Appeals
+            'malsu' => [7],                             // MALSU sees Appeals
             'province' => [1, 2, 3],                    // Province sees Inspections, Docketing, Hearing
             'case_management' => [4, 5, 6],             // Case Management sees Review, Orders, Compliance
         ];
@@ -77,8 +77,8 @@ class CasesController extends Controller
         // Check if user has access to this tab
         if (!$this->canAccessTab($tabNumber)) {
             return response()->json([
-                'error' => 'You do not have access to this tab.',
-                'success' => false
+                'success' => false,
+                'error' => 'You do not have access to this tab.'
             ], 403);
         }
 
@@ -113,7 +113,7 @@ class CasesController extends Controller
                     $html = view('frontend.partials.docketing_table', ['docketing' => $data])->render();
                     break;
 
-                case '3': // Hearing
+                case '3': // Hearing Process
                     $data = HearingProcess::with(['case' => function($query) {
                         $query->select('id', 'inspection_id', 'case_no', 'establishment_name', 'current_stage', 'overall_status');
                     }])
@@ -167,7 +167,7 @@ class CasesController extends Controller
 
                 case '7': // Appeals & Resolution
                     $data = AppealsAndResolution::with(['case' => function($query) {
-                        $query->select('id', 'inspection_id',  'case_no','establishment_name', 'current_stage', 'overall_status');
+                        $query->select('id', 'inspection_id', 'case_no', 'establishment_name', 'current_stage', 'overall_status');
                     }])
                     ->whereHas('case', function($query) {
                         $query->where('current_stage', '7: Appeals & Resolution')
@@ -179,7 +179,10 @@ class CasesController extends Controller
                     break;
 
                 default:
-                    return response()->json(['error' => 'Invalid tab number'], 400);
+                    return response()->json([
+                        'success' => false,
+                        'error' => 'Invalid tab number'
+                    ], 400);
             }
 
             return response()->json([
@@ -189,7 +192,10 @@ class CasesController extends Controller
             ]);
         } catch (\Exception $e) {
             Log::error('Error loading tab data: ' . $e->getMessage());
-            return response()->json(['error' => 'Failed to load data.'], 500);
+            return response()->json([
+                'success' => false,
+                'error' => 'Failed to load data. Please try again.'
+            ], 500);
         }
     }
 
@@ -199,7 +205,7 @@ class CasesController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'inspection_id' => 'required|string|max:255',
+            'inspection_id' => 'required|string|max:255|unique:cases,inspection_id',
             'case_no' => 'nullable|string|max:255',
             'establishment_name' => 'required|string|max:255',
             'current_stage' => 'required|in:1: Inspections,2: Docketing,3: Hearing,4: Review & Drafting,5: Orders & Disposition,6: Compliance & Awards,7: Appeals & Resolution',
@@ -220,6 +226,7 @@ class CasesController extends Controller
                 ]
             );
 
+            // Create related inspection record if starting at inspections stage
             if ($case->current_stage === '1: Inspections') {
                 Inspection::create(['case_id' => $case->id]);
             }
@@ -227,7 +234,7 @@ class CasesController extends Controller
             return redirect()->route('case.index')->with('success', 'Case created successfully!');
         } catch (\Exception $e) {
             Log::error('Error creating case: ' . $e->getMessage());
-            return redirect()->route('case.index')->with('error', 'Failed to create case.');
+            return redirect()->route('case.index')->with('error', 'Failed to create case: ' . $e->getMessage());
         }
     }
 
@@ -237,7 +244,7 @@ class CasesController extends Controller
     public function update(Request $request, $id)
     {
         $validated = $request->validate([
-            'inspection_id' => 'required|string|max:255',
+            'inspection_id' => 'required|string|max:255|unique:cases,inspection_id,' . $id,
             'case_no' => 'nullable|string|max:255',
             'establishment_name' => 'required|string|max:255',
             'current_stage' => 'required|in:1: Inspections,2: Docketing,3: Hearing,4: Review & Drafting,5: Orders & Disposition,6: Compliance & Awards,7: Appeals & Resolution',
@@ -250,38 +257,20 @@ class CasesController extends Controller
             
             $case->update($validated);
 
-            $changes = [];
-            foreach ($validated as $key => $value) {
-                if (isset($oldData[$key]) && $oldData[$key] != $value) {
-                    $fieldName = ucfirst(str_replace('_', ' ', $key));
-                    $oldValue = $oldData[$key] ?: '(empty)';
-                    $newValue = $value ?: '(empty)';
-                    
-                    if ($key === 'current_stage') {
-                        $oldValue = explode(': ', $oldValue)[1] ?? $oldValue;
-                        $newValue = explode(': ', $newValue)[1] ?? $newValue;
-                    }
-                    
-                    $changes[] = "{$fieldName}: '{$oldValue}' → '{$newValue}'";
-                }
-            }
-
-            $changeDescription = !empty($changes) 
-                ? implode(', ', $changes)
-                : 'No changes detected';
+            $changes = $this->getChanges($oldData, $validated);
 
             ActivityLogger::logAction(
                 'UPDATE',
                 'Case',
                 $case->inspection_id,
-                "Updated: {$changeDescription}",
+                "Updated: " . ($changes ?: 'No changes detected'),
                 ['establishment' => $case->establishment_name]
             );
 
             return redirect()->route('case.index')->with('success', 'Case updated successfully!');
         } catch (\Exception $e) {
             Log::error('Error updating case: ' . $e->getMessage());
-            return redirect()->route('case.index')->with('error', 'Failed to update case.');
+            return redirect()->route('case.index')->with('error', 'Failed to update case: ' . $e->getMessage());
         }
     }
 
@@ -292,12 +281,28 @@ class CasesController extends Controller
     {
         try {
             $case = CaseFile::findOrFail($id);
+            $caseInfo = $case->inspection_id . ' - ' . $case->establishment_name;
+            
             $case->delete();
-            ActivityLogger::log('Deleted case', ['case_id' => $id]);
-            return response()->json(['success' => true, 'message' => 'Case deleted successfully.']);
+            
+            ActivityLogger::logAction(
+                'DELETE',
+                'Case',
+                $caseInfo,
+                'Case deleted',
+                ['establishment' => $case->establishment_name]
+            );
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Case deleted successfully.'
+            ]);
         } catch (\Exception $e) {
             Log::error('Case delete failed: ' . $e->getMessage());
-            return response()->json(['success' => false, 'message' => 'Failed to delete case.'], 500);
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to delete case.'
+            ], 500);
         }
     }
 
@@ -306,8 +311,18 @@ class CasesController extends Controller
      */
     public function show($id)
     {
-        $case = CaseFile::findOrFail($id);
-        return response()->json($case);
+        try {
+            $case = CaseFile::findOrFail($id);
+            return response()->json([
+                'success' => true,
+                'data' => $case
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Case not found.'
+            ], 404);
+        }
     }
 
     /**
@@ -315,93 +330,141 @@ class CasesController extends Controller
      */
     public function edit($id)
     {
-        $case = CaseFile::findOrFail($id);
-        ActivityLogger::log('Opened case edit form', ['case_id' => $id]);
-        return response()->json($case);
+        try {
+            $case = CaseFile::findOrFail($id);
+            
+            ActivityLogger::logAction(
+                'VIEW',
+                'Case',
+                $case->inspection_id,
+                'Opened case edit form',
+                ['establishment' => $case->establishment_name]
+            );
+            
+            return response()->json([
+                'success' => true,
+                'data' => $case
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Case not found.'
+            ], 404);
+        }
     }
 
     /**
-     * Move case to next stage
+     * Move case to next stage with modal confirmation
      */
-public function moveToNextStage(Request $request, $id)
-{
-    try {
-        $case = CaseFile::findOrFail($id);
-        $oldStage = $case->current_stage;
-        $isCompletion = false;
+    public function moveToNextStage(Request $request, $id)
+    {
+        try {
+            $case = CaseFile::findOrFail($id);
+            $oldStage = $case->current_stage;
+            $isCompletion = false;
+            $newStage = null;
 
-        switch ($case->current_stage) {
-            case '1: Inspections':
-                Docketing::create(['case_id' => $case->id]);
-                $case->update(['current_stage' => '2: Docketing']);
-                break;
-            case '2: Docketing':
-                HearingProcess::create(['case_id' => $case->id]);
-                $case->update(['current_stage' => '3: Hearing']);
-                break;
-            case '3: Hearing':
-                ReviewAndDrafting::create(['case_id' => $case->id]);
-                $case->update(['current_stage' => '4: Review & Drafting']);
-                break;
-            case '4: Review & Drafting':
-                OrderAndDisposition::create(['case_id' => $case->id]);
-                $case->update(['current_stage' => '5: Orders & Disposition']);
-                break;
-            case '5: Orders & Disposition':
-                ComplianceAndAward::create(['case_id' => $case->id]);
-                $case->update(['current_stage' => '6: Compliance & Awards']);
-                break;
-            case '6: Compliance & Awards':
-                AppealsAndResolution::create(['case_id' => $case->id]);
-                $case->update(['current_stage' => '7: Appeals & Resolution']);
-                break;
-            case '7: Appeals & Resolution':
-                // This is the final stage - mark case as completed
-                $case->update(['overall_status' => 'Completed']);
-                $isCompletion = true;
-                break;
-            default:
-                return redirect()->back()->with('error', 'Invalid current stage');
+            switch ($case->current_stage) {
+                case '1: Inspections':
+                    Docketing::create(['case_id' => $case->id]);
+                    $newStage = '2: Docketing';
+                    $case->update(['current_stage' => $newStage]);
+                    break;
+                
+                case '2: Docketing':
+                    HearingProcess::create(['case_id' => $case->id]);
+                    $newStage = '3: Hearing';
+                    $case->update(['current_stage' => $newStage]);
+                    break;
+                
+                case '3: Hearing':
+                    ReviewAndDrafting::create(['case_id' => $case->id]);
+                    $newStage = '4: Review & Drafting';
+                    $case->update(['current_stage' => $newStage]);
+                    break;
+                
+                case '4: Review & Drafting':
+                    OrderAndDisposition::create(['case_id' => $case->id]);
+                    $newStage = '5: Orders & Disposition';
+                    $case->update(['current_stage' => $newStage]);
+                    break;
+                
+                case '5: Orders & Disposition':
+                    ComplianceAndAward::create(['case_id' => $case->id]);
+                    $newStage = '6: Compliance & Awards';
+                    $case->update(['current_stage' => $newStage]);
+                    break;
+                
+                case '6: Compliance & Awards':
+                    AppealsAndResolution::create(['case_id' => $case->id]);
+                    $newStage = '7: Appeals & Resolution';
+                    $case->update(['current_stage' => $newStage]);
+                    break;
+                
+                case '7: Appeals & Resolution':
+                    // Final stage - mark case as completed
+                    $case->update(['overall_status' => 'Completed']);
+                    $isCompletion = true;
+                    break;
+                
+                default:
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Invalid current stage.'
+                    ], 400);
+            }
+
+            // Log the action
+            if ($isCompletion) {
+                ActivityLogger::logAction(
+                    'COMPLETE',
+                    'Case',
+                    $case->inspection_id,
+                    'Case marked as completed in Appeals & Resolution',
+                    [
+                        'establishment' => $case->establishment_name,
+                        'final_stage' => '7: Appeals & Resolution',
+                        'status' => 'Moved to Archived Cases'
+                    ]
+                );
+                
+                $message = 'Case completed successfully and moved to archived cases!';
+            } else {
+                $oldStageName = explode(': ', $oldStage)[1] ?? $oldStage;
+                $newStageName = explode(': ', $newStage)[1] ?? $newStage;
+                
+                ActivityLogger::logAction(
+                    'PROGRESS',
+                    'Case',
+                    $case->inspection_id,
+                    "Moved from $oldStageName to $newStageName",
+                    [
+                        'establishment' => $case->establishment_name,
+                        'from_stage' => $oldStageName,
+                        'to_stage' => $newStageName
+                    ]
+                );
+                
+                $message = "Case moved from $oldStageName to $newStageName successfully!";
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => $message,
+                'data' => $case
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error moving case to next stage: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to move case to next stage.'
+            ], 500);
         }
-
-        // Log the action with different messages based on whether it's completion or stage progression
-        if ($isCompletion) {
-            ActivityLogger::logAction(
-                'COMPLETE',
-                'Case',
-                $case->inspection_id,
-                'Case marked as completed in Appeals & Resolution',
-                [
-                    'establishment' => $case->establishment_name,
-                    'status' => 'Moved to Archived Cases'
-                ]
-            );
-            
-            $successMessage = 'Case completed successfully and moved to archived cases!';
-        } else {
-            ActivityLogger::logAction(
-                'PROGRESS',
-                'Case',
-                $case->inspection_id,
-                "Moved to next stage",
-                [
-                    'establishment' => $case->establishment_name,
-                    'from_stage' => explode(': ', $oldStage)[1] ?? $oldStage,
-                    'to_stage' => explode(': ', $case->current_stage)[1] ?? $case->current_stage
-                ]
-            );
-            
-            $successMessage = 'Case moved to next stage successfully.';
-        }
-
-        return redirect()->back()->with('success', $successMessage);
-    } catch (\Exception $e) {
-        Log::error('Error moving case to next stage: ' . $e->getMessage());
-        return redirect()->back()->with('error', 'Failed to move case to next stage.');
     }
-}
+
     /**
-     * Inline update (AJAX)
+     * Inline update via AJAX
      */
     public function inlineUpdate(Request $request, $id)
     {
@@ -409,34 +472,27 @@ public function moveToNextStage(Request $request, $id)
             $case = CaseFile::findOrFail($id);
             $oldData = $case->toArray();
             
-            $case->update($request->all());
-            $case->refresh();
-
-            $changes = [];
-            foreach ($request->all() as $key => $value) {
-                if (isset($oldData[$key]) && $oldData[$key] != $value) {
-                    $fieldName = ucfirst(str_replace('_', ' ', $key));
-                    $oldValue = $oldData[$key] ?: '(empty)';
-                    $newValue = $value ?: '(empty)';
-                    
-                    if ($key === 'current_stage') {
-                        $oldValue = explode(': ', $oldValue)[1] ?? $oldValue;
-                        $newValue = explode(': ', $newValue)[1] ?? $newValue;
-                    }
-                    
-                    $changes[] = "{$fieldName}: '{$oldValue}' → '{$newValue}'";
-                }
+            // Only allow specific fields to be updated inline
+            $allowedFields = ['inspection_id', 'case_no', 'establishment_name', 'current_stage', 'overall_status'];
+            $updateData = $request->only($allowedFields);
+            
+            if (empty($updateData)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No valid fields to update.'
+                ], 422);
             }
 
-            $changeDescription = !empty($changes) 
-                ? implode(', ', $changes)
-                : 'No changes detected';
+            $case->update($updateData);
+            $case->refresh();
+
+            $changes = $this->getChanges($oldData, $updateData);
 
             ActivityLogger::logAction(
                 'UPDATE',
                 'Case',
                 $case->inspection_id,
-                "Inline updated: {$changeDescription}",
+                "Inline updated: " . ($changes ?: 'No changes detected'),
                 ['establishment' => $case->establishment_name]
             );
 
@@ -452,5 +508,30 @@ public function moveToNextStage(Request $request, $id)
                 'message' => 'Failed to update case.'
             ], 500);
         }
+    }
+
+    /**
+     * Helper function to format changes for logging
+     */
+    private function getChanges($oldData, $newData)
+    {
+        $changes = [];
+        
+        foreach ($newData as $key => $value) {
+            if (!isset($oldData[$key]) || $oldData[$key] != $value) {
+                $fieldName = ucfirst(str_replace('_', ' ', $key));
+                $oldValue = $oldData[$key] ?? '(empty)';
+                $newValue = $value ?? '(empty)';
+                
+                if ($key === 'current_stage') {
+                    $oldValue = explode(': ', $oldValue)[1] ?? $oldValue;
+                    $newValue = explode(': ', $newValue)[1] ?? $newValue;
+                }
+                
+                $changes[] = "$fieldName: '$oldValue' → '$newValue'";
+            }
+        }
+
+        return !empty($changes) ? implode(', ', $changes) : '';
     }
 }

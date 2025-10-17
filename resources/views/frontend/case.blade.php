@@ -251,20 +251,34 @@
                                         <td class="editable-cell" data-field="establishment_name" title="{{ $case->establishment_name ?? '' }}">
                                             {{ $case->establishment_name ? Str::limit($case->establishment_name, 25) : '-' }}
                                         </td>
-                                        <td class="editable-cell" data-field="current_stage" data-type="select">{{ explode(': ', $case->current_stage)[1] ?? $case->current_stage ?? '-' }}</td>
-                                        <td class="editable-cell" data-field="overall_status" data-type="select">{{ $case->overall_status ?? '-' }}</td>
-                                        <td class="non-editable">{{ $case->created_at ? \Carbon\Carbon::parse($case->created_at)->format('Y-m-d') : '-' }}</td>
+                                        <td class="editable-cell" data-field="current_stage" data-type="select">
+                                            {{ explode(': ', $case->current_stage)[1] ?? $case->current_stage ?? '-' }}
+                                        </td>
+                                        <td class="editable-cell" data-field="overall_status" data-type="select">
+                                            {{ $case->overall_status ?? '-' }}
+                                        </td>
+                                        <td class="non-editable">
+                                            {{ $case->created_at ? \Carbon\Carbon::parse($case->created_at)->format('Y-m-d') : '-' }}
+                                        </td>
                                         <td>
-                                            <button class="btn btn-warning btn-sm edit-row-btn-case" title="Edit Row">
+                                            <button class="btn btn-warning btn-sm edit-row-btn-case" 
+                                                    data-case-id="{{ $case->id }}"
+                                                    title="Edit Row">
                                                 <i class="fas fa-edit"></i>
                                             </button>
-                                                <button type="button" 
-                                                        class="btn btn-danger btn-sm delete-btn" 
-                                                        data-case-id="{{ $case->id }}" 
-                                                        title="Delete">
-                                                    <i class="fas fa-trash"></i>
-                                                </button>
-                                            <button class="btn btn-info btn-sm" title="View">
+                                            
+                                            <button type="button" 
+                                                    class="btn btn-danger btn-sm delete-btn" 
+                                                    data-case-id="{{ $case->id }}"
+                                                    data-case-no="{{ $case->case_no ?? 'N/A' }}"
+                                                    data-establishment="{{ $case->establishment_name ?? 'N/A' }}"
+                                                    title="Delete">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                            
+                                            <button class="btn btn-info btn-sm view-btn" 
+                                                    data-case-id="{{ $case->id }}"
+                                                    title="View Details">
                                                 <i class="fas fa-eye"></i>
                                             </button>
                                         </td>
@@ -464,6 +478,67 @@
         </div>
     </div>
 </div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteCaseModal" tabindex="-1" role="dialog" aria-labelledby="deleteCaseModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="deleteCaseModalLabel">Delete Record</h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-warning" role="alert">
+                    <i class="fas fa-exclamation-triangle mr-2"></i>
+                    <strong>Warning!</strong> This action cannot be undone.
+                </div>
+                <p>Are you sure you want to delete this record?</p>
+                <p id="deleteCaseInfo" class="text-muted small mb-0"></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteBtn">
+                    <i class="fas fa-trash mr-2"></i>Delete
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Stage Progression Modal -->
+<div class="modal fade" id="stageProgressionModal" tabindex="-1" role="dialog" aria-labelledby="stageProgressionModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title" id="stageProgressionModalLabel">Move to Next Stage</h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p id="stageProgressionMessage"></p>
+                <div class="card bg-light">
+                    <div class="card-body">
+                        <small class="text-muted">
+                            <strong>Case:</strong> <span id="stageCaseInfo"></span><br>
+                            <strong>Current Stage:</strong> <span id="stageCurrentStage"></span><br>
+                            <strong>Next Stage:</strong> <span id="stageNextStage"></span>
+                        </small>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="confirmStageBtn">
+                    <i class="fas fa-arrow-right mr-2"></i>Proceed
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 @endsection
 @section('scripts')
 <!-- DataTables plugins -->
@@ -719,81 +794,240 @@ $(document).ready(function() {
         }
     });
 
-    // Delete handler
-    $(document).on('click', '.delete-btn', function(e) {
-        e.preventDefault();
-        console.log('Delete button clicked');
-        
-        const button = $(this);
-        const caseId = button.data('case-id');
-        const row = button.closest('tr');
-        
-        console.log('Case ID:', caseId);
-        
-        const csrfToken = $('meta[name="csrf-token"]').attr('content');
-        console.log('CSRF Token:', csrfToken);
-        
-        if (!csrfToken) {
-            showAlert('error', 'CSRF token not found. Please refresh the page.');
-            return;
-        }
-        
-        if (confirm('Are you sure you want to delete this case? This action cannot be undone.')) {
-            console.log('User confirmed deletion');
+ let caseToDelete = null;
+
+// Universal delete handler for both cases and inspections
+$(document).on('click', '.delete-btn', function(e) {
+    e.preventDefault();
+    const button = $(this);
+    const row = button.closest('tr');
+    
+    // Check if it's an inspection or case delete
+    const inspectionId = button.data('inspection-id');
+    const caseId = button.data('case-id');
+    
+    console.log('Delete button clicked - inspectionId:', inspectionId, 'caseId:', caseId);
+    
+    if (!inspectionId && !caseId) {
+        console.error('No ID found on delete button');
+        showAlert('error', 'Error: Could not identify record');
+        return;
+    }
+    
+    const recordId = inspectionId || caseId;
+    const recordType = inspectionId ? 'inspection' : 'case';
+    
+    const establishment = button.data('establishment') || 'N/A';
+    const inspector = button.data('inspector') || 'N/A';
+    
+    caseToDelete = {
+        id: recordId,
+        type: recordType,
+        row: row,
+        button: button
+    };
+    
+    console.log('caseToDelete object:', caseToDelete);
+    
+    // Build the info display
+    let infoHtml = `<strong>Establishment:</strong> ${establishment}<br>`;
+    if (inspector && inspector !== 'N/A') {
+        infoHtml += `<strong>Inspector:</strong> ${inspector}`;
+    }
+    
+    $('#deleteCaseInfo').html(infoHtml);
+    $('#deleteCaseModal').modal('show');
+});
+
+// Confirm delete button
+$(document).off('click', '#confirmDeleteBtn').on('click', '#confirmDeleteBtn', function() {
+    if (!caseToDelete) {
+        console.error('caseToDelete is null');
+        return;
+    }
+    
+    const csrfToken = $('meta[name="csrf-token"]').attr('content');
+    let url;
+    
+    if (caseToDelete.type === 'inspection') {
+        url = `/inspection/${caseToDelete.id}`;
+    } else {
+        url = `/case/${caseToDelete.id}`;
+    }
+    
+    console.log('Deleting:', caseToDelete.type, 'at URL:', url);
+    
+    caseToDelete.button.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i>');
+    
+    $.ajax({
+        url: url,
+        type: 'DELETE',
+        headers: {
+            'X-CSRF-TOKEN': csrfToken,
+            'Accept': 'application/json'
+        },
+        success: function(response) {
+            console.log('Delete successful:', response);
+            $('#deleteCaseModal').modal('hide');
             
-            button.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i>');
-            
-            $.ajax({
-                url: `/case/${caseId}`,
-                type: 'DELETE',
-                headers: {
-                    'X-CSRF-TOKEN': csrfToken,
-                    'Accept': 'application/json'
-                },
-                beforeSend: function() {
-                    console.log('AJAX request starting...');
-                },
-                success: function(response) {
-                    console.log('Success response:', response);
-                    
-                    row.fadeOut(300, function() {
-                        $(this).remove();
-                        
-                        const tableBody = $('#dataTable0 tbody, #dataTable1 tbody').filter(':visible');
-                        if (tableBody.find('tr:visible').length === 0) {
-                            const colspan = tableBody.closest('table').find('thead th').length;
-                            tableBody.html(
-                                `<tr><td colspan="${colspan}" class="text-center">No records found.</td></tr>`
-                            );
-                        }
-                    });
-                    
-                    showAlert('success', response.message || 'Record deleted successfully!');
-                },
-                error: function(xhr, status, error) {
-                    console.log('=== ERROR RESPONSE ===');
-                    console.log('Error occurred:', xhr, status, error);
-                    console.log('Status Code:', xhr.status);
-                    console.log('Response Text:', xhr.responseText);
-                    console.log('Response Headers:', xhr.getAllResponseHeaders());
-                    
-                    button.prop('disabled', false).html('<i class="fas fa-trash"></i>');
-                    
-                    let errorMessage = 'Failed to delete record.';
-                    if (xhr.responseJSON && xhr.responseJSON.message) {
-                        errorMessage = xhr.responseJSON.message;
-                    } else if (xhr.status === 404) {
-                        errorMessage = 'Record not found.';
-                    } else if (xhr.status === 500) {
-                        errorMessage = 'Server error occurred.';
-                    }
-                    showAlert('error', errorMessage);
+            caseToDelete.row.fadeOut(300, function() {
+                $(this).remove();
+                
+                // Check if table is now empty
+                const table = caseToDelete.row.closest('table');
+                const tbody = table.find('tbody');
+                if (tbody.find('tr:visible').length === 0) {
+                    const colspan = table.find('thead th').length;
+                    tbody.html(`<tr><td colspan="${colspan}" class="text-center">No records found.</td></tr>`);
                 }
             });
-        } else {
-            console.log('User cancelled deletion');
+            
+            showAlert('success', response.message || 'Record deleted successfully!');
+            caseToDelete = null;
+        },
+        error: function(xhr, status, error) {
+            console.error('Delete error:', error, xhr);
+            caseToDelete.button.prop('disabled', false).html('<i class="fas fa-trash"></i>');
+            
+            let errorMessage = 'Failed to delete record.';
+            if (xhr.responseJSON?.message) {
+                errorMessage = xhr.responseJSON.message;
+            } else if (xhr.status === 404) {
+                errorMessage = 'Record not found.';
+            } else if (xhr.status === 500) {
+                errorMessage = 'Server error occurred.';
+            }
+            
+            showAlert('error', errorMessage);
+            $('#deleteCaseModal').modal('hide');
+            caseToDelete = null;
         }
     });
+});
+
+let caseToProgress = null;
+
+// Stage progression handler
+$(document).on('click', '.move-to-next-stage-btn', function(e) {
+    e.preventDefault();
+    const button = $(this);
+    const caseId = button.data('case-id');
+    
+    console.log('Next Stage button clicked - caseId:', caseId);
+    
+    if (!caseId) {
+        console.error('No case ID found on button');
+        showAlert('error', 'Error: Could not identify case');
+        return;
+    }
+    
+    const caseNo = button.data('case-no') || 'N/A';
+    const establishment = button.data('establishment') || 'N/A';
+    const currentStage = button.data('stage') || 'Unknown';
+    
+    const stageMap = {
+        'Inspections': 'Docketing',
+        'Docketing': 'Hearing Process',
+        'Hearing Process': 'Review & Drafting',
+        'Review & Drafting': 'Orders & Disposition',
+        'Orders & Disposition': 'Compliance & Awards',
+        'Compliance & Awards': 'Appeals & Resolution',
+        'Appeals & Resolution': 'Complete (Archive)'
+    };
+    
+    const nextStage = stageMap[currentStage] || 'Next Stage';
+    const isFinalStage = currentStage === 'Appeals & Resolution';
+    
+    caseToProgress = {
+        id: caseId,
+        button: button
+    };
+    
+    console.log('caseToProgress object:', caseToProgress);
+    
+    const message = isFinalStage 
+        ? `<strong>Complete ${currentStage} and move case to archived?</strong><br><small>This will mark the case as completed.</small>`
+        : `<strong>Complete ${currentStage} and move to ${nextStage}?</strong>`;
+    
+    $('#stageProgressionMessage').html(message);
+    $('#stageCaseInfo').text(`${caseNo} - ${establishment}`);
+    $('#stageCurrentStage').text(currentStage);
+    $('#stageNextStage').text(nextStage);
+    
+    console.log('Showing stage progression modal');
+    $('#stageProgressionModal').modal('show');
+});
+
+// Confirm stage progression
+$(document).off('click', '#confirmStageBtn').on('click', '#confirmStageBtn', function() {
+    if (!caseToProgress) {
+        console.error('caseToProgress is null');
+        return;
+    }
+    
+    const csrfToken = $('meta[name="csrf-token"]').attr('content');
+    const url = `/case/${caseToProgress.id}/next-stage`;
+    
+    console.log('Moving case to next stage at URL:', url);
+    
+    const button = caseToProgress.button;
+    button.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i>');
+    
+    $.ajax({
+        url: url,
+        type: 'POST',
+        headers: {
+            'X-CSRF-TOKEN': csrfToken,
+            'Accept': 'application/json'
+        },
+        success: function(response) {
+            console.log('Stage progression successful:', response);
+            $('#stageProgressionModal').modal('hide');
+            
+            showAlert('success', response.message || 'Case moved to next stage successfully!');
+            
+            // Reload page after 1.5 seconds to refresh the data
+            setTimeout(() => {
+                location.reload();
+            }, 1500);
+            
+            caseToProgress = null;
+        },
+        error: function(xhr, status, error) {
+            console.error('Stage progression error:', error, xhr);
+            button.prop('disabled', false).html('<i class="fas fa-arrow-right"></i> Next');
+            
+            let errorMessage = 'Failed to move case to next stage.';
+            if (xhr.responseJSON?.message) {
+                errorMessage = xhr.responseJSON.message;
+            } else if (xhr.status === 404) {
+                errorMessage = 'Case not found.';
+            } else if (xhr.status === 500) {
+                errorMessage = 'Server error occurred.';
+            }
+            
+            showAlert('error', errorMessage);
+            $('#stageProgressionModal').modal('hide');
+            caseToProgress = null;
+        }
+    });
+});
+
+// Fix aria-hidden warnings on modals by managing focus properly
+$(document).on('hide.bs.modal', '#deleteCaseModal, #stageProgressionModal', function() {
+    // Move focus to body before modal hides to prevent focus trap
+    setTimeout(() => {
+        $('body').focus();
+    }, 0);
+});
+
+$(document).on('shown.bs.modal', '#deleteCaseModal, #stageProgressionModal', function() {
+    // Focus the first focusable element in the modal
+    const firstFocusable = $(this).find('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])').first();
+    if (firstFocusable.length) {
+        firstFocusable.focus();
+    }
+});
 
     // Handle edit button click for Cases
     $(document).on('click', '.btn-warning[data-target="#addCaseModal"]', function() {

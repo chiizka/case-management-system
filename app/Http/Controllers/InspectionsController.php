@@ -230,44 +230,60 @@ class InspectionsController extends Controller
         }
     }
 
-    /**
-     * Remove the specified inspection from storage.
-     */
-    public function destroy($id)
-    {
-        try {
-            $inspection = Inspection::with('case')->findOrFail($id);
-            
-            // Store info for logging before deletion
-            $inspectionId = $inspection->case->inspection_id ?? $id;
-            $establishmentName = $inspection->case->establishment_name ?? 'Unknown';
-            
-            $inspection->delete();
-            
-            // Log deletion
-            ActivityLogger::logAction(
-                'DELETE',
-                'Inspection',
-                $inspectionId,
-                'Deleted inspection record',
-                [
-                    'establishment' => $establishmentName
-                ]
-            );
-            
-            Log::info('Inspection ID: ' . $id . ' deleted successfully.');
-            
-            return redirect()->route('case.index')
-                ->with('success', 'Inspection deleted successfully.')
-                ->with('active_tab', 'inspections');
-        } catch (\Exception $e) {
-            Log::error('Error deleting inspection ID: ' . $id . ' - ' . $e->getMessage());
-            
-            return redirect()->route('case.index')
-                ->with('error', 'Failed to delete inspection: ' . $e->getMessage())
-                ->with('active_tab', 'inspections');
+public function destroy($id)
+{
+    try {
+        $inspection = Inspection::with('case')->findOrFail($id);
+        
+        // Store info for logging before deletion
+        $inspectionId = $inspection->case->inspection_id ?? $id;
+        $establishmentName = $inspection->case->establishment_name ?? 'Unknown';
+        
+        $inspection->delete();
+        
+        // Log deletion
+        ActivityLogger::logAction(
+            'DELETE',
+            'Inspection',
+            $inspectionId,
+            'Deleted inspection record',
+            [
+                'establishment' => $establishmentName
+            ]
+        );
+        
+        Log::info('Inspection ID: ' . $id . ' deleted successfully.');
+        
+        // Return JSON response for AJAX requests
+        if (request()->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Inspection deleted successfully.'
+            ]);
         }
+        
+        // Fallback redirect for non-AJAX requests
+        return redirect()->route('case.index')
+            ->with('success', 'Inspection deleted successfully.')
+            ->with('active_tab', 'inspections');
+            
+    } catch (\Exception $e) {
+        Log::error('Error deleting inspection ID: ' . $id . ' - ' . $e->getMessage());
+        
+        // Return JSON response for AJAX requests
+        if (request()->expectsJson()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to delete inspection.'
+            ], 500);
+        }
+        
+        // Fallback redirect for non-AJAX requests
+        return redirect()->route('case.index')
+            ->with('error', 'Failed to delete inspection: ' . $e->getMessage())
+            ->with('active_tab', 'inspections');
     }
+}
 
     /**
      * Handle inline updates via AJAX.

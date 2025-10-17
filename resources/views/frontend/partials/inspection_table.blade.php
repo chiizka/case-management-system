@@ -42,41 +42,65 @@
             @if(isset($inspections) && $inspections->count() > 0)
                 @foreach($inspections as $inspection)
                     <tr data-id="{{ $inspection->id }}">
-                        <td class="editable-cell readonly-cell" data-field="inspection_id" title="From case record">{{ $inspection->case->inspection_id ?? '-' }}</td>
+                        <td class="editable-cell readonly-cell" data-field="inspection_id" title="From case record">
+                            {{ $inspection->case->inspection_id ?? '-' }}
+                        </td>
                         <td class="editable-cell readonly-cell" data-field="establishment_name" title="{{ $inspection->case->establishment_name ?? '' }}">
                             {{ $inspection->case ? Str::limit($inspection->case->establishment_name, 25) : '-' }}
                         </td>
-                        <td class="editable-cell" data-field="po_office">{{ $inspection->po_office ?? '-' }}</td>
-                        <td class="editable-cell" data-field="inspector_name">{{ $inspection->inspector_name ?? '-' }}</td>
-                        <td class="editable-cell" data-field="inspector_authority_no">{{ $inspection->inspector_authority_no ?? '-' }}</td>
-                        <td class="editable-cell" data-field="date_of_inspection" data-type="date">{{ $inspection->date_of_inspection ? \Carbon\Carbon::parse($inspection->date_of_inspection)->format('Y-m-d') : '-' }}</td>
-                        <td class="editable-cell" data-field="date_of_nr" data-type="date">{{ $inspection->date_of_nr ? \Carbon\Carbon::parse($inspection->date_of_nr)->format('Y-m-d') : '-' }}</td>
+                        <td class="editable-cell" data-field="po_office">
+                            {{ $inspection->po_office ?? '-' }}
+                        </td>
+                        <td class="editable-cell" data-field="inspector_name">
+                            {{ $inspection->inspector_name ?? '-' }}
+                        </td>
+                        <td class="editable-cell" data-field="inspector_authority_no">
+                            {{ $inspection->inspector_authority_no ?? '-' }}
+                        </td>
+                        <td class="editable-cell" data-field="date_of_inspection" data-type="date">
+                            {{ $inspection->date_of_inspection ? \Carbon\Carbon::parse($inspection->date_of_inspection)->format('Y-m-d') : '-' }}
+                        </td>
+                        <td class="editable-cell" data-field="date_of_nr" data-type="date">
+                            {{ $inspection->date_of_nr ? \Carbon\Carbon::parse($inspection->date_of_nr)->format('Y-m-d') : '-' }}
+                        </td>
                         <td class="editable-cell readonly-cell" data-field="lapse_20_day_period" data-type="date" title="Auto-calculated: 20 days after Date of NR">
                             {{ $inspection->lapse_20_day_period ? \Carbon\Carbon::parse($inspection->lapse_20_day_period)->format('Y-m-d') : '-' }}
                         </td>
-                        <td class="editable-cell" data-field="twg_ali">{{ $inspection->twg_ali ?? '-' }}</td>
+                        <td class="editable-cell" data-field="twg_ali">
+                            {{ $inspection->twg_ali ?? '-' }}
+                        </td>
                         <td>
-                            <a href="{{ route('inspection.show', $inspection->id) }}" class="btn btn-info btn-sm" title="View">
+                            <button class="btn btn-info btn-sm view-btn" 
+                                    data-inspection-id="{{ $inspection->id }}"
+                                    title="View Details">
                                 <i class="fas fa-eye"></i>
-                            </a>
-                            <button class="btn btn-warning btn-sm edit-row-btn" title="Edit Row">
+                            </button>
+                            
+                            <button class="btn btn-warning btn-sm edit-row-btn" 
+                                    data-inspection-id="{{ $inspection->id }}"
+                                    title="Edit Row">
                                 <i class="fas fa-edit"></i>
                             </button>
-                            <form action="{{ route('inspection.destroy', $inspection->id) }}" method="POST" style="display:inline;">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit" class="btn btn-danger btn-sm inspection-delete-btn" title="Delete" onclick="return confirm('Are you sure you want to delete this inspection?')">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                            </form>
+                            
+                            <button type="button" 
+                                    class="btn btn-danger btn-sm delete-btn" 
+                                    data-inspection-id="{{ $inspection->id }}"
+                                    data-establishment="{{ $inspection->case->establishment_name ?? 'N/A' }}"
+                                    data-inspector="{{ $inspection->inspector_name ?? 'N/A' }}"
+                                    title="Delete">
+                                <i class="fas fa-trash"></i>
+                            </button>
                             
                             @if($inspection->case && $inspection->case->current_stage === '1: Inspections')
-                                <form action="{{ route('case.nextStage', $inspection->case->id) }}" method="POST" style="display:inline;">
-                                    @csrf
-                                    <button type="submit" class="btn btn-success btn-sm ml-1" title="Move to Docketing" onclick="return confirm('Complete inspection and move to Docketing?')">
-                                        <i class="fas fa-arrow-right"></i> Next
-                                    </button>
-                                </form>
+                                <button type="button" 
+                                        class="btn btn-success btn-sm ml-1 move-to-next-stage-btn" 
+                                        data-case-id="{{ $inspection->case->id }}"
+                                        data-case-no="{{ $inspection->case->case_no ?? 'N/A' }}"
+                                        data-establishment="{{ $inspection->case->establishment_name ?? 'N/A' }}"
+                                        data-stage="Inspections"
+                                        title="Move to Docketing">
+                                    <i class="fas fa-arrow-right"></i> Next
+                                </button>
                             @endif
                         </td>
                     </tr>
