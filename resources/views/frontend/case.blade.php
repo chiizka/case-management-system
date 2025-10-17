@@ -1325,53 +1325,79 @@ $(document).ready(function() {
         });
     }
 
-    function updateRowDisplay(row, responseData, config) {
-        row.find('.editable-cell').each(function() {
-            const cell = $(this);
-            const field = cell.data('field');
-            let displayValue = responseData[field];
-            
-            if (displayValue === null || displayValue === undefined || displayValue === '') {
-                displayValue = '-';
-            }
-            
-            if (field === 'current_stage' && displayValue.includes(': ')) {
-                displayValue = displayValue.split(': ')[1];
-            }
-            
-            const statusFields = ['status_docket', 'status_1st_mc', 'status_2nd_mc', 'status_po_pct', 'status_reviewer_drafter', 'status_finalization', 'status_pct', 'status_all_employees_received'];
-            if (statusFields.includes(field) && displayValue !== '-') {
-                let badgeClass = 'secondary';
-                if (displayValue === 'Completed' || displayValue === 'Approved' || displayValue === 'Yes') {
-                    badgeClass = 'success';
-                } else if (displayValue === 'Ongoing' || displayValue === 'In Progress' || displayValue === 'Pending') {
-                    badgeClass = 'warning';
-                } else if (displayValue === 'Overdue') {
-                    badgeClass = 'danger';
-                } else if (displayValue === 'Returned') {
-                    badgeClass = 'info';
+function updateRowDisplay(row, responseData, config) {
+    row.find('.editable-cell').each(function() {
+        const cell = $(this);
+        const field = cell.data('field');
+        let displayValue = null;
+
+        // Special handling for docketing table - check both responseData and case relationship
+        if (config.name === 'docketing' && responseData.case) {
+            // If the field is from the case, get it from there
+            if (['inspection_id', 'case_no', 'establishment_name', 'current_stage', 'overall_status'].includes(field)) {
+                if (field === 'current_stage') {
+                    displayValue = responseData.case[field];
+                    if (displayValue && displayValue.includes(': ')) {
+                        displayValue = displayValue.split(': ')[1];
+                    }
+                } else if (field === 'establishment_name') {
+                    displayValue = responseData.case[field];
+                    cell.attr('title', displayValue);
+                    if (displayValue && displayValue.length > 25) {
+                        displayValue = displayValue.substring(0, 25) + '...';
+                    }
+                } else {
+                    displayValue = responseData.case[field];
                 }
-                displayValue = `<span class="badge badge-${badgeClass}">${displayValue}</span>`;
+            } else {
+                // Otherwise get it from the docketing record
+                displayValue = responseData[field];
             }
-            
-            const ynFields = ['complete_case_folder', 'applicable_draft_order', 'first_order_dismissal_cnpc', 'tavable_less_than_10_workers', 'with_deposited_monetary_claims', 'with_order_payment_notice', 'updated_ticked_in_mis'];
-            if (ynFields.includes(field) && displayValue !== '-') {
-                const badgeClass = (displayValue === 'Y' || displayValue === '1') ? 'success' : 'warning';
-                const displayText = (displayValue === 'Y' || displayValue === '1') ? 'Yes' : 'No';
-                displayValue = `<span class="badge badge-${badgeClass}">${displayText}</span>`;
+        } else {
+            // For other tables, just use responseData directly
+            displayValue = responseData[field];
+        }
+
+        if (displayValue === null || displayValue === undefined || displayValue === '') {
+            displayValue = '-';
+        }
+        
+        if (field === 'current_stage' && displayValue.includes(': ')) {
+            displayValue = displayValue.split(': ')[1];
+        }
+        
+        const statusFields = ['status_docket', 'status_1st_mc', 'status_2nd_mc', 'status_po_pct', 'status_reviewer_drafter', 'status_finalization', 'status_pct', 'status_all_employees_received'];
+        if (statusFields.includes(field) && displayValue !== '-') {
+            let badgeClass = 'secondary';
+            if (displayValue === 'Completed' || displayValue === 'Approved' || displayValue === 'Yes') {
+                badgeClass = 'success';
+            } else if (displayValue === 'Ongoing' || displayValue === 'In Progress' || displayValue === 'Pending') {
+                badgeClass = 'warning';
+            } else if (displayValue === 'Overdue') {
+                badgeClass = 'danger';
+            } else if (displayValue === 'Returned') {
+                badgeClass = 'info';
             }
-            
-            if (field === 'establishment_name' && displayValue !== '-') {
-                cell.attr('title', displayValue);
-                if (displayValue.length > 25) {
-                    displayValue = displayValue.substring(0, 25) + '...';
-                }
+            displayValue = `<span class="badge badge-${badgeClass}">${displayValue}</span>`;
+        }
+        
+        const ynFields = ['complete_case_folder', 'applicable_draft_order', 'first_order_dismissal_cnpc', 'tavable_less_than_10_workers', 'with_deposited_monetary_claims', 'with_order_payment_notice', 'updated_ticked_in_mis'];
+        if (ynFields.includes(field) && displayValue !== '-') {
+            const badgeClass = (displayValue === 'Y' || displayValue === '1') ? 'success' : 'warning';
+            const displayText = (displayValue === 'Y' || displayValue === '1') ? 'Yes' : 'No';
+            displayValue = `<span class="badge badge-${badgeClass}">${displayText}</span>`;
+        }
+        
+        if (field === 'establishment_name' && displayValue !== '-') {
+            if (displayValue.length > 25) {
+                displayValue = displayValue.substring(0, 25) + '...';
             }
-            
-            cell.html(displayValue);
-            cell.removeClass('edit-mode');
-        });
-    }
+        }
+        
+        cell.html(displayValue);
+        cell.removeClass('edit-mode');
+    });
+}
 
     function restoreButtons(saveBtn, cancelBtn, originalContent) {
         saveBtn.html(originalContent).prop('disabled', false);

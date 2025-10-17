@@ -253,85 +253,145 @@ class DocketingController extends Controller
     /**
      * Inline update handler for AJAX.
      */
-    public function inlineUpdate(Request $request, $id)
-    {
-        Log::info('Docketing inline update received', ['id' => $id, 'data' => $request->all()]);
+/**
+ * Inline update handler for AJAX - handles both Docketing and Case fields
+ */
+public function inlineUpdate(Request $request, $id)
+{
+    Log::info('Docketing inline update received', ['id' => $id, 'data' => $request->all()]);
 
-        try {
-            $docketing = Docketing::with('case')->findOrFail($id);
-            $originalData = $docketing->toArray();
-            $originalCase = $docketing->case ? $docketing->case->toArray() : [];
-
-            $inputData = $request->all();
-            foreach ($inputData as $key => $value) {
-                $inputData[$key] = ($value === '' || $value === '-') ? null : $value;
-            }
-
-            $validator = Validator::make($inputData, [
-                'pct_for_docketing' => 'nullable|numeric|min:0',
-                'date_scheduled_docketed' => 'nullable|date',
-                'aging_docket' => 'nullable|numeric|min:0',
-                'status_docket' => 'nullable|string|max:255',
-                'hearing_officer_mis' => 'nullable|string|max:255',
-            ]);
-
-            if ($validator->fails()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Validation failed: ' . $validator->errors()->first(),
-                    'errors' => $validator->errors()
-                ], 422);
-            }
-
-            $validatedData = $validator->validated();
-            $docketing->update($validatedData);
-            $docketing->refresh()->load('case');
-
-            $changeDetails = [];
-            foreach ($validatedData as $field => $newValue) {
-                $oldValue = $originalData[$field] ?? null;
-                if ($oldValue != $newValue) {
-                    $fieldLabel = ucfirst(str_replace('_', ' ', $field));
-                    $oldDisplay = $oldValue ?? 'empty';
-                    $newDisplay = $newValue ?? 'empty';
-
-                    if (in_array($field, ['date_scheduled_docketed'])) {
-                        $oldDisplay = $oldValue ? Carbon::parse($oldValue)->format('M d, Y') : 'not set';
-                        $newDisplay = $newValue ? Carbon::parse($newValue)->format('M d, Y') : 'not set';
-                    }
-
-                    $changeDetails[] = "{$fieldLabel}: '{$oldDisplay}' → '{$newDisplay}'";
-                }
-            }
-
-            if (!empty($changeDetails)) {
-                $logDetails = 'Updated: ' . implode('; ', $changeDetails);
-                ActivityLogger::logAction(
-                    'UPDATE',
-                    'Docketing',
-                    $docketing->case->inspection_id ?? $id,
-                    $logDetails,
-                    [
-                        'establishment' => $docketing->case->establishment_name ?? 'Unknown',
-                        'fields_count' => count($changeDetails),
-                        'method' => 'inline_edit'
-                    ]
-                );
-            }
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Docketing updated successfully!',
-                'data' => $docketing
-            ]);
-        } catch (\Exception $e) {
-            Log::error('Inline update failed: ' . $e->getMessage());
+    try {
+        $docketing = Docketing::with('case')->findOrFail($id);
+        $case = $docketing->case;
+        
+        if (!$case) {
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to update docketing: ' . $e->getMessage()
-            ], 500);
+                'message' => 'Associated case not found.'
+            ], 404);
         }
+
+        $originalDocketingData = $docketing->toArray();
+        $originalCaseData = $case->toArray();
+
+        $inputData = $request->all();
+        foreach ($inputData as $key => $value) {
+            $inputData[$key] = ($value === '' || $value === '-') ? null : $value;
+        }
+
+        // Validate all data
+        $validator = Validator::make($inputData, [
+            'inspection_id' => 'nullable|string|max:255',
+            'case_no' => 'nullable|string|max:255',
+            'establishment_name' => 'nullable|string|max:255',
+            'pct_for_docketing' => 'nullable|numeric|min:0',
+            'date_scheduled_docketed' => 'nullable|date',
+            'aging_docket' => 'nullable|numeric|min:0',
+            'status_docket' => 'nullable|string|max:255',
+            'hearing_officer_mis' => 'nullable|string|max:255',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed: ' . $validator->errors()->first(),
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        $validatedData = $validator->validated();
+
+        // Separate case fields from docketing fields
+        $caseFields = ['inspection_id', 'case_no', 'establishment_name'];
+        $docketingFields = ['pct_for_docketing', 'date_scheduled_docketed', 'aging_docket', 'status_docket', 'hearing_officer_mis'];
+
+        // Update case if any case fields changed
+        $caseDataToUpdate = array_intersect_key($validatedData, array_flip($caseFields));
+        if (!empty($caseDataToUpdate)) {
+            $case->update($caseDataToUpdate);
+        }
+
+        // Update docketing if any docketing fields changed
+        $docketingDataToUpdate = array_intersect_key($validatedData, array_flip($docketingFields));
+        if (!empty($docketingDataToUpdate)) {
+            $docketing->update($docketingDataToUpdate);
+        }
+
+        // Refresh both models
+        $docketing->refresh()->load('case');
+        $case->refresh();
+
+        // Build change details for logging
+        $changeDetails = [];
+
+        // Check case changes
+        foreach ($caseDataToUpdate as $field => $newValue) {
+            $oldValue = $originalCaseData[$field] ?? null;
+            if ($oldValue != $newValue) {
+                $fieldLabel = ucfirst(str_replace('_', ' ', $field));
+                $oldDisplay = $oldValue ?? 'empty';
+                $newDisplay = $newValue ?? 'empty';
+                $changeDetails[] = "{$fieldLabel}: '{$oldDisplay}' → '{$newDisplay}'";
+            }
+        }
+
+        // Check docketing changes
+        foreach ($docketingDataToUpdate as $field => $newValue) {
+            $oldValue = $originalDocketingData[$field] ?? null;
+            if ($oldValue != $newValue) {
+                $fieldLabel = ucfirst(str_replace('_', ' ', $field));
+                $oldDisplay = $oldValue ?? 'empty';
+                $newDisplay = $newValue ?? 'empty';
+
+                if (in_array($field, ['date_scheduled_docketed'])) {
+                    $oldDisplay = $oldValue ? Carbon::parse($oldValue)->format('M d, Y') : 'not set';
+                    $newDisplay = $newValue ? Carbon::parse($newValue)->format('M d, Y') : 'not set';
+                }
+
+                $changeDetails[] = "{$fieldLabel}: '{$oldDisplay}' → '{$newDisplay}'";
+            }
+        }
+
+        // Log the activity
+        if (!empty($changeDetails)) {
+            $logDetails = 'Updated: ' . implode('; ', $changeDetails);
+            ActivityLogger::logAction(
+                'UPDATE',
+                'Docketing',
+                $case->inspection_id,
+                $logDetails,
+                [
+                    'establishment' => $case->establishment_name,
+                    'fields_count' => count($changeDetails),
+                    'method' => 'inline_edit'
+                ]
+            );
+        }
+
+        // Return complete data with case relationship
+        return response()->json([
+            'success' => true,
+            'message' => 'Docketing updated successfully!',
+            'data' => array_merge(
+                $docketing->toArray(),
+                [
+                    'inspection_id' => $case->inspection_id,
+                    'case_no' => $case->case_no,
+                    'establishment_name' => $case->establishment_name,
+                    'current_stage' => $case->current_stage,
+                    'overall_status' => $case->overall_status,
+                    'case' => $case->only(['id', 'inspection_id', 'case_no', 'establishment_name', 'current_stage', 'overall_status'])
+                ]
+            )
+        ]);
+    } catch (\Exception $e) {
+        Log::error('Inline update failed: ' . $e->getMessage());
+        return response()->json([
+            'success' => false,
+            'message' => 'Failed to update docketing: ' . $e->getMessage()
+        ], 500);
     }
+}
 
     /**
      * Get docketing data via AJAX.
