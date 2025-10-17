@@ -27,7 +27,7 @@ class CasesController extends Controller
         // Tab mapping: 1=Inspections, 2=Docketing, 3=Hearing, 4=Review&Drafting, 5=Orders&Disposition, 6=Compliance&Awards, 7=Appeals&Resolution
         $tabPermissions = [
             'admin' => [1, 2, 3, 4, 5, 6, 7],           // Admin sees all
-            'malsu' => [1, 7],                          // MALSU sees Inspections and Appeals
+            'malsu' => [7],                          // MALSU sees Appeals
             'province' => [1, 2, 3],                    // Province sees Inspections, Docketing, Hearing
             'case_management' => [4, 5, 6],             // Case Management sees Review, Orders, Compliance
         ];
@@ -323,57 +323,83 @@ class CasesController extends Controller
     /**
      * Move case to next stage
      */
-    public function moveToNextStage(Request $request, $id)
-    {
-        try {
-            $case = CaseFile::findOrFail($id);
-            $oldStage = $case->current_stage;
+public function moveToNextStage(Request $request, $id)
+{
+    try {
+        $case = CaseFile::findOrFail($id);
+        $oldStage = $case->current_stage;
+        $isCompletion = false;
 
-            switch ($case->current_stage) {
-                case '1: Inspections':
-                    Docketing::create(['case_id' => $case->id]);
-                    $case->update(['current_stage' => '2: Docketing']);
-                    break;
-                case '2: Docketing':
-                    HearingProcess::create(['case_id' => $case->id]);
-                    $case->update(['current_stage' => '3: Hearing']);
-                    break;
-                case '3: Hearing':
-                    ReviewAndDrafting::create(['case_id' => $case->id]);
-                    $case->update(['current_stage' => '4: Review & Drafting']);
-                    break;
-                case '4: Review & Drafting':
-                    OrderAndDisposition::create(['case_id' => $case->id]);
-                    $case->update(['current_stage' => '5: Orders & Disposition']);
-                    break;
-                case '5: Orders & Disposition':
-                    ComplianceAndAward::create(['case_id' => $case->id]);
-                    $case->update(['current_stage' => '6: Compliance & Awards']);
-                    break;
-                case '6: Compliance & Awards':
-                    AppealsAndResolution::create(['case_id' => $case->id]);
-                    $case->update(['current_stage' => '7: Appeals & Resolution']);
-                    break;
-                case '7: Appeals & Resolution':
-                    $case->update(['overall_status' => 'Completed']);
-                    break;
-                default:
-                    return redirect()->back()->with('error', 'Invalid current stage');
-            }
-
-            ActivityLogger::log('Moved case to next stage', [
-                'case_id' => $case->id,
-                'from' => $oldStage,
-                'to' => $case->current_stage,
-            ]);
-
-            return redirect()->back()->with('success', 'Case moved to next stage successfully.');
-        } catch (\Exception $e) {
-            Log::error('Error moving case to next stage: ' . $e->getMessage());
-            return redirect()->back()->with('error', 'Failed to move case to next stage.');
+        switch ($case->current_stage) {
+            case '1: Inspections':
+                Docketing::create(['case_id' => $case->id]);
+                $case->update(['current_stage' => '2: Docketing']);
+                break;
+            case '2: Docketing':
+                HearingProcess::create(['case_id' => $case->id]);
+                $case->update(['current_stage' => '3: Hearing']);
+                break;
+            case '3: Hearing':
+                ReviewAndDrafting::create(['case_id' => $case->id]);
+                $case->update(['current_stage' => '4: Review & Drafting']);
+                break;
+            case '4: Review & Drafting':
+                OrderAndDisposition::create(['case_id' => $case->id]);
+                $case->update(['current_stage' => '5: Orders & Disposition']);
+                break;
+            case '5: Orders & Disposition':
+                ComplianceAndAward::create(['case_id' => $case->id]);
+                $case->update(['current_stage' => '6: Compliance & Awards']);
+                break;
+            case '6: Compliance & Awards':
+                AppealsAndResolution::create(['case_id' => $case->id]);
+                $case->update(['current_stage' => '7: Appeals & Resolution']);
+                break;
+            case '7: Appeals & Resolution':
+                // This is the final stage - mark case as completed
+                $case->update(['overall_status' => 'Completed']);
+                $isCompletion = true;
+                break;
+            default:
+                return redirect()->back()->with('error', 'Invalid current stage');
         }
-    }
 
+        // Log the action with different messages based on whether it's completion or stage progression
+        if ($isCompletion) {
+            ActivityLogger::logAction(
+                'COMPLETE',
+                'Case',
+                $case->inspection_id,
+                'Case marked as completed in Appeals & Resolution',
+                [
+                    'establishment' => $case->establishment_name,
+                    'status' => 'Moved to Archived Cases'
+                ]
+            );
+            
+            $successMessage = 'Case completed successfully and moved to archived cases!';
+        } else {
+            ActivityLogger::logAction(
+                'PROGRESS',
+                'Case',
+                $case->inspection_id,
+                "Moved to next stage",
+                [
+                    'establishment' => $case->establishment_name,
+                    'from_stage' => explode(': ', $oldStage)[1] ?? $oldStage,
+                    'to_stage' => explode(': ', $case->current_stage)[1] ?? $case->current_stage
+                ]
+            );
+            
+            $successMessage = 'Case moved to next stage successfully.';
+        }
+
+        return redirect()->back()->with('success', $successMessage);
+    } catch (\Exception $e) {
+        Log::error('Error moving case to next stage: ' . $e->getMessage());
+        return redirect()->back()->with('error', 'Failed to move case to next stage.');
+    }
+}
     /**
      * Inline update (AJAX)
      */

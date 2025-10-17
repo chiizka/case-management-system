@@ -54,20 +54,20 @@ Route::middleware('auth')->group(function () {
         Route::get('/case/load-tab/{tabNumber}', [CasesController::class, 'loadTabData'])->name('case.loadTab');
     });
 
-    // Inspections - Admin, MALSU, Case Management
-    Route::middleware('role:admin,malsu,case_management')->group(function () {
+    // Inspections - Admin, MALSU, Case Management, province
+    Route::middleware('role:admin,malsu,case_management,province')->group(function () {
         Route::resource('inspection', InspectionsController::class);
         Route::put('/inspection/{inspection}/inline-update', [InspectionsController::class, 'inlineUpdate'])->name('inspection.inlineUpdate');
     });
 
-    // Docketing - Admin, Case Management
-    Route::middleware('role:admin,case_management')->group(function () {
+    // Docketing - Admin, Case Management, province
+    Route::middleware('role:admin,case_management,province')->group(function () {
         Route::resource('docketing', DocketingController::class);
         Route::put('/docketing/{id}/inline-update', [DocketingController::class, 'inlineUpdate'])->name('docketing.inlineUpdate');
     });
 
-    // Hearing Process - Admin, Case Management
-    Route::middleware('role:admin,case_management')->group(function () {
+    // Hearing Process - Admin, Case Management, province
+    Route::middleware('role:admin,case_management,province')->group(function () {
         Route::resource('hearing', HearingProcessController::class);
         Route::post('hearing-process', [HearingProcessController::class, 'store'])->name('hearing-process.store');
         Route::get('hearing-process/{id}', [HearingProcessController::class, 'show'])->name('hearing-process.show');
@@ -97,8 +97,8 @@ Route::middleware('auth')->group(function () {
         Route::put('/compliance-and-awards/{id}/inline-update', [ComplianceAndAwardController::class, 'inlineUpdate'])->name('compliance-and-awards.inline-update');
     });
 
-    // Appeals and Resolution - Admin, Case Management
-    Route::middleware('role:admin,case_management')->group(function () {
+    // Appeals and Resolution - Admin, Case Management, Malsu
+    Route::middleware('role:admin,case_management,malsu')->group(function () {
         Route::resource('appeals-and-resolution', AppealsAndResolutionController::class);
         Route::put('/appeals-and-resolution/{id}/inline-update', [AppealsAndResolutionController::class, 'inlineUpdate'])->name('appeals-and-resolution.inline-update');
     });
