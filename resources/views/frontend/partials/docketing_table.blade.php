@@ -57,24 +57,30 @@
                         </td>
                         <td class="editable-cell" data-field="hearing_officer_mis">{{ $dock->hearing_officer_mis ?? '-' }}</td>
                         <td>
-                            <button class="btn btn-warning btn-sm edit-row-btn-docketing" title="Edit Row">
+                            <button class="btn btn-warning btn-sm edit-row-btn-docketing" 
+                                    data-docketing-id="{{ $dock->id }}"
+                                    title="Edit Row">
                                 <i class="fas fa-edit"></i>
                             </button>
-                            <form action="{{ route('docketing.destroy', $dock->id) }}" method="POST" style="display:inline;">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit" class="btn btn-danger btn-sm" title="Delete" onclick="return confirm('Are you sure?')">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                            </form>
+                            
+                            <button type="button" 
+                                    class="btn btn-danger btn-sm delete-btn" 
+                                    data-docketing-id="{{ $dock->id }}"
+                                    data-establishment="{{ $dock->case->establishment_name ?? 'N/A' }}"
+                                    title="Delete">
+                                <i class="fas fa-trash"></i>
+                            </button>
                             
                             @if($dock->case && $dock->case->current_stage === '2: Docketing')
-                                <form action="{{ route('case.nextStage', $dock->case->id) }}" method="POST" style="display:inline;">
-                                    @csrf
-                                    <button type="submit" class="btn btn-success btn-sm ml-1" title="Move to Hearing" onclick="return confirm('Complete docketing and move to Hearing?')">
-                                        <i class="fas fa-arrow-right"></i> Next
-                                    </button>
-                                </form>
+                                <button type="button" 
+                                        class="btn btn-success btn-sm ml-1 move-to-next-stage-btn" 
+                                        data-case-id="{{ $dock->case->id }}"
+                                        data-case-no="{{ $dock->case->case_no ?? 'N/A' }}"
+                                        data-establishment="{{ $dock->case->establishment_name ?? 'N/A' }}"
+                                        data-stage="Docketing"
+                                        title="Move to Hearing">
+                                    <i class="fas fa-arrow-right"></i> Next
+                                </button>
                             @endif
                         </td>
                     </tr>

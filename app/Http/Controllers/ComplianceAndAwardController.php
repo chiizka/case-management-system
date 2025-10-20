@@ -277,15 +277,34 @@ class ComplianceAndAwardController extends Controller
 
             Log::info('Compliance & Award ID: ' . $id . ' deleted successfully.');
 
+            // Return JSON response for AJAX requests
+            if (request()->expectsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Compliance & award deleted successfully.'
+                ]);
+            }
+
+            // Fallback redirect for non-AJAX requests
             return redirect()->route('case.index')
                 ->with('success', 'Compliance & Award deleted successfully.')
-                ->with('active_tab', 'compliance_awards');
+                ->with('active_tab', 'compliance-awards');
+                
         } catch (\Exception $e) {
             Log::error('Error deleting compliance & award ID: ' . $id . ' - ' . $e->getMessage());
 
+            // Return JSON response for AJAX requests
+            if (request()->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Failed to delete compliance & award.'
+                ], 500);
+            }
+
+            // Fallback redirect for non-AJAX requests
             return redirect()->route('case.index')
                 ->with('error', 'Failed to delete compliance & award: ' . $e->getMessage())
-                ->with('active_tab', 'compliance_awards');
+                ->with('active_tab', 'compliance-awards');
         }
     }
 

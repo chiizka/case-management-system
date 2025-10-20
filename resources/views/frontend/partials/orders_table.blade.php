@@ -77,24 +77,30 @@
                         <td class="editable-cell" data-field="date_of_order_actual" data-type="date">{{ $order->date_of_order_actual ? \Carbon\Carbon::parse($order->date_of_order_actual)->format('Y-m-d') : '-' }}</td>
                         <td class="editable-cell" data-field="released_date_actual" data-type="date">{{ $order->released_date_actual ? \Carbon\Carbon::parse($order->released_date_actual)->format('Y-m-d') : '-' }}</td>
                         <td>
-                            <button class="btn btn-warning btn-sm edit-row-btn-orders" title="Edit Row">
+                            <button class="btn btn-warning btn-sm edit-row-btn-orders" 
+                                    data-order-id="{{ $order->id }}"
+                                    title="Edit Row">
                                 <i class="fas fa-edit"></i>
                             </button>
-                            <form action="{{ route('orders-and-disposition.destroy', $order->id) }}" method="POST" style="display:inline;">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit" class="btn btn-danger btn-sm" title="Delete" onclick="return confirm('Are you sure?')">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                            </form>
+                            
+                            <button type="button" 
+                                    class="btn btn-danger btn-sm delete-btn" 
+                                    data-order-id="{{ $order->id }}"
+                                    data-establishment="{{ $order->case->establishment_name ?? 'N/A' }}"
+                                    title="Delete">
+                                <i class="fas fa-trash"></i>
+                            </button>
                             
                             @if($order->case && $order->case->current_stage === '5: Orders & Disposition')
-                                <form action="{{ route('case.nextStage', $order->case->id) }}" method="POST" style="display:inline;">
-                                    @csrf
-                                    <button type="submit" class="btn btn-success btn-sm ml-1" title="Move to Compliance & Awards" onclick="return confirm('Complete orders & disposition and move to Compliance & Awards?')">
-                                        <i class="fas fa-arrow-right"></i> Next
-                                    </button>
-                                </form>
+                                <button type="button" 
+                                        class="btn btn-success btn-sm ml-1 move-to-next-stage-btn" 
+                                        data-case-id="{{ $order->case->id }}"
+                                        data-case-no="{{ $order->case->case_no ?? 'N/A' }}"
+                                        data-establishment="{{ $order->case->establishment_name ?? 'N/A' }}"
+                                        data-stage="Orders & Disposition"
+                                        title="Move to Compliance & Awards">
+                                    <i class="fas fa-arrow-right"></i> Next
+                                </button>
                             @endif
                         </td>
                     </tr>

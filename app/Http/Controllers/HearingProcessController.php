@@ -256,12 +256,31 @@ class HearingProcessController extends Controller
 
             Log::info('Hearing process ID: ' . $id . ' deleted successfully.');
 
+            // Return JSON response for AJAX requests
+            if (request()->expectsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Hearing process deleted successfully.'
+                ]);
+            }
+
+            // Fallback redirect for non-AJAX requests
             return redirect()->route('case.index')
                 ->with('success', 'Hearing process deleted successfully.')
                 ->with('active_tab', 'hearing');
+                
         } catch (\Exception $e) {
             Log::error('Error deleting hearing process ID: ' . $id . ' - ' . $e->getMessage());
-            
+
+            // Return JSON response for AJAX requests
+            if (request()->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Failed to delete hearing process.'
+                ], 500);
+            }
+
+            // Fallback redirect for non-AJAX requests
             return redirect()->route('case.index')
                 ->with('error', 'Failed to delete hearing process: ' . $e->getMessage())
                 ->with('active_tab', 'hearing');

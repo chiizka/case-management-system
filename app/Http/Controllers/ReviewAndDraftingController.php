@@ -265,12 +265,31 @@ class ReviewAndDraftingController extends Controller
 
             Log::info('Review and drafting process ID: ' . $id . ' deleted successfully.');
 
+            // Return JSON response for AJAX requests
+            if (request()->expectsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Review and drafting process deleted successfully.'
+                ]);
+            }
+
+            // Fallback redirect for non-AJAX requests
             return redirect()->route('case.index')
                 ->with('success', 'Review and drafting process deleted successfully.')
                 ->with('active_tab', 'review-drafting');
+                
         } catch (\Exception $e) {
             Log::error('Error deleting review and drafting process ID: ' . $id . ' - ' . $e->getMessage());
-            
+
+            // Return JSON response for AJAX requests
+            if (request()->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Failed to delete review and drafting process.'
+                ], 500);
+            }
+
+            // Fallback redirect for non-AJAX requests
             return redirect()->route('case.index')
                 ->with('error', 'Failed to delete review and drafting process: ' . $e->getMessage())
                 ->with('active_tab', 'review-drafting');

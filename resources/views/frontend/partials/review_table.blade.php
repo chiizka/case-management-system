@@ -85,24 +85,30 @@
                         </td>
                         <td class="editable-cell" data-field="draft_order_tssd_reviewer">{{ $review->draft_order_tssd_reviewer ?? '-' }}</td>
                         <td>
-                            <button class="btn btn-warning btn-sm edit-row-btn-review" title="Edit Row">
+                            <button class="btn btn-warning btn-sm edit-row-btn-review" 
+                                    data-review-id="{{ $review->id }}"
+                                    title="Edit Row">
                                 <i class="fas fa-edit"></i>
                             </button>
-                            <form action="{{ route('review-and-drafting.destroy', $review->id) }}" method="POST" style="display:inline;">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit" class="btn btn-danger btn-sm" title="Delete" onclick="return confirm('Are you sure?')">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                            </form>
+                            
+                            <button type="button" 
+                                    class="btn btn-danger btn-sm delete-btn" 
+                                    data-review-id="{{ $review->id }}"
+                                    data-establishment="{{ $review->case->establishment_name ?? 'N/A' }}"
+                                    title="Delete">
+                                <i class="fas fa-trash"></i>
+                            </button>
                             
                             @if($review->case && $review->case->current_stage === '4: Review & Drafting')
-                                <form action="{{ route('case.nextStage', $review->case->id) }}" method="POST" style="display:inline;">
-                                    @csrf
-                                    <button type="submit" class="btn btn-success btn-sm ml-1" title="Move to Orders & Disposition" onclick="return confirm('Complete review & drafting and move to Orders & Disposition?')">
-                                        <i class="fas fa-arrow-right"></i> Next
-                                    </button>
-                                </form>
+                                <button type="button" 
+                                        class="btn btn-success btn-sm ml-1 move-to-next-stage-btn" 
+                                        data-case-id="{{ $review->case->id }}"
+                                        data-case-no="{{ $review->case->case_no ?? 'N/A' }}"
+                                        data-establishment="{{ $review->case->establishment_name ?? 'N/A' }}"
+                                        data-stage="Review & Drafting"
+                                        title="Move to Orders & Disposition">
+                                    <i class="fas fa-arrow-right"></i> Next
+                                </button>
                             @endif
                         </td>
                     </tr>

@@ -61,24 +61,30 @@
                         <td class="editable-cell" data-field="released_date_resolution_mr" data-type="date">{{ $appeal->released_date_resolution_mr ? \Carbon\Carbon::parse($appeal->released_date_resolution_mr)->format('Y-m-d') : '-' }}</td>
                         <td class="editable-cell" data-field="date_appeal_received_records" data-type="date">{{ $appeal->date_appeal_received_records ? \Carbon\Carbon::parse($appeal->date_appeal_received_records)->format('Y-m-d') : '-' }}</td>
                         <td>
-                            <button class="btn btn-warning btn-sm edit-row-btn-appeals" title="Edit Row">
+                            <button class="btn btn-warning btn-sm edit-row-btn-appeals" 
+                                    data-appeal-id="{{ $appeal->id }}"
+                                    title="Edit Row">
                                 <i class="fas fa-edit"></i>
                             </button>
-                            <form action="{{ route('appeals-and-resolution.destroy', $appeal->id) }}" method="POST" style="display:inline;">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit" class="btn btn-danger btn-sm" title="Delete" onclick="return confirm('Are you sure?')">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                            </form>
+                            
+                            <button type="button" 
+                                    class="btn btn-danger btn-sm delete-btn" 
+                                    data-appeal-id="{{ $appeal->id }}"
+                                    data-establishment="{{ $appeal->case->establishment_name ?? 'N/A' }}"
+                                    title="Delete">
+                                <i class="fas fa-trash"></i>
+                            </button>
                             
                             @if($appeal->case && $appeal->case->current_stage === '7: Appeals & Resolution')
-                                <form action="{{ route('case.nextStage', $appeal->case->id) }}" method="POST" style="display:inline;">
-                                    @csrf
-                                    <button type="submit" class="btn btn-success btn-sm ml-1" title="Complete Case" onclick="return confirm('Mark this case as completed?')">
-                                        <i class="fas fa-check"></i> Complete
-                                    </button>
-                                </form>
+                                <button type="button" 
+                                        class="btn btn-success btn-sm ml-1 move-to-next-stage-btn" 
+                                        data-case-id="{{ $appeal->case->id }}"
+                                        data-case-no="{{ $appeal->case->case_no ?? 'N/A' }}"
+                                        data-establishment="{{ $appeal->case->establishment_name ?? 'N/A' }}"
+                                        data-stage="Appeals & Resolution"
+                                        title="Complete Case">
+                                    <i class="fas fa-check"></i> Complete
+                                </button>
                             @endif
                         </td>
                     </tr>

@@ -264,12 +264,32 @@ class AppealsAndResolutionController extends Controller
             );
 
             Log::info('Appeals and Resolution ID: ' . $id . ' deleted successfully.');
-            
+
+            // Return JSON response for AJAX requests
+            if (request()->expectsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Appeals and resolution deleted successfully.'
+                ]);
+            }
+
+            // Fallback redirect for non-AJAX requests
             return redirect()->route('case.index')
                 ->with('success', 'Appeals and Resolution record deleted successfully.')
                 ->with('active_tab', 'appeals-and-resolution');
+                
         } catch (\Exception $e) {
             Log::error('Error deleting Appeals and Resolution ID: ' . $id . ' - ' . $e->getMessage());
+
+            // Return JSON response for AJAX requests
+            if (request()->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Failed to delete appeals and resolution.'
+                ], 500);
+            }
+
+            // Fallback redirect for non-AJAX requests
             return redirect()->route('case.index')
                 ->with('error', 'Failed to delete Appeals and Resolution record: ' . $e->getMessage())
                 ->with('active_tab', 'appeals-and-resolution');
@@ -286,7 +306,6 @@ class AppealsAndResolutionController extends Controller
         try {
             $appealsAndResolution = AppealsAndResolution::with('case')->findOrFail($id);
             $originalData = $appealsAndResolution->toArray();
-            $originalCase = $appealsAndResolution->case ? $appealsAndResolution->case->toArray() : [];
 
             $inputData = $request->all();
             foreach ($inputData as $key => $value) {
@@ -352,10 +371,29 @@ class AppealsAndResolutionController extends Controller
                 );
             }
 
+            // Format response with all fields properly formatted including case fields
+            $responseData = [
+                'inspection_id' => $appealsAndResolution->case->inspection_id ?? '-',
+                'case_no' => $appealsAndResolution->case->case_no ?? '-',
+                'establishment_name' => $appealsAndResolution->case->establishment_name ?? '-',
+                'date_returned_case_mgmt' => $appealsAndResolution->date_returned_case_mgmt ? Carbon::parse($appealsAndResolution->date_returned_case_mgmt)->format('Y-m-d') : '-',
+                'review_ct_cnpc' => $appealsAndResolution->review_ct_cnpc ?? '-',
+                'date_received_drafter_finalization_2nd' => $appealsAndResolution->date_received_drafter_finalization_2nd ? Carbon::parse($appealsAndResolution->date_received_drafter_finalization_2nd)->format('Y-m-d') : '-',
+                'date_returned_case_mgmt_signature_2nd' => $appealsAndResolution->date_returned_case_mgmt_signature_2nd ? Carbon::parse($appealsAndResolution->date_returned_case_mgmt_signature_2nd)->format('Y-m-d') : '-',
+                'date_order_2nd_cnpc' => $appealsAndResolution->date_order_2nd_cnpc ? Carbon::parse($appealsAndResolution->date_order_2nd_cnpc)->format('Y-m-d') : '-',
+                'released_date_2nd_cnpc' => $appealsAndResolution->released_date_2nd_cnpc ? Carbon::parse($appealsAndResolution->released_date_2nd_cnpc)->format('Y-m-d') : '-',
+                'date_forwarded_malsu' => $appealsAndResolution->date_forwarded_malsu ? Carbon::parse($appealsAndResolution->date_forwarded_malsu)->format('Y-m-d') : '-',
+                'motion_reconsideration_date' => $appealsAndResolution->motion_reconsideration_date ? Carbon::parse($appealsAndResolution->motion_reconsideration_date)->format('Y-m-d') : '-',
+                'date_received_malsu' => $appealsAndResolution->date_received_malsu ? Carbon::parse($appealsAndResolution->date_received_malsu)->format('Y-m-d') : '-',
+                'date_resolution_mr' => $appealsAndResolution->date_resolution_mr ? Carbon::parse($appealsAndResolution->date_resolution_mr)->format('Y-m-d') : '-',
+                'released_date_resolution_mr' => $appealsAndResolution->released_date_resolution_mr ? Carbon::parse($appealsAndResolution->released_date_resolution_mr)->format('Y-m-d') : '-',
+                'date_appeal_received_records' => $appealsAndResolution->date_appeal_received_records ? Carbon::parse($appealsAndResolution->date_appeal_received_records)->format('Y-m-d') : '-',
+            ];
+
             return response()->json([
                 'success' => true,
                 'message' => 'Appeals & Resolution updated successfully!',
-                'data' => $appealsAndResolution
+                'data' => $responseData
             ]);
         } catch (\Exception $e) {
             Log::error('Inline update failed: ' . $e->getMessage());

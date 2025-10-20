@@ -150,9 +150,11 @@ class OrderAndDispositionController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(OrderAndDisposition $orderAndDisposition)
-    {
-        $orderId = $orderAndDisposition->case->inspection_id ?? $orderAndDisposition->id;
+public function destroy($id)
+{
+    try {
+        $orderAndDisposition = OrderAndDisposition::with('case')->findOrFail($id);
+        $orderId = $orderAndDisposition->case->inspection_id ?? $id;
         $establishment = $orderAndDisposition->case->establishment_name ?? 'Unknown';
 
         $orderAndDisposition->delete();
@@ -167,10 +169,38 @@ class OrderAndDispositionController extends Controller
             ]
         );
 
-        return response()->json([
-            'message' => 'Order and Disposition deleted successfully'
-        ]);
+        Log::info('Order and disposition ID: ' . $id . ' deleted successfully.');
+
+        // Return JSON response for AJAX requests
+        if (request()->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Order and disposition deleted successfully.'
+            ]);
+        }
+
+        // Fallback redirect for non-AJAX requests
+        return redirect()->route('case.index')
+            ->with('success', 'Order and disposition deleted successfully.')
+            ->with('active_tab', 'orders-and-disposition');
+            
+    } catch (\Exception $e) {
+        Log::error('Error deleting order and disposition ID: ' . $id . ' - ' . $e->getMessage());
+
+        // Return JSON response for AJAX requests
+        if (request()->expectsJson()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to delete order and disposition.'
+            ], 500);
+        }
+
+        // Fallback redirect for non-AJAX requests
+        return redirect()->route('case.index')
+            ->with('error', 'Failed to delete order and disposition: ' . $e->getMessage())
+            ->with('active_tab', 'orders-and-disposition');
     }
+}
 
     /**
      * Get orders and dispositions for a specific case

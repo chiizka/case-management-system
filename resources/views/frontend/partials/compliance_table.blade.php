@@ -117,24 +117,30 @@
                         <td class="editable-cell" data-field="second_order_drafter">{{ $compliance->second_order_drafter ?? '-' }}</td>
                         <td class="editable-cell" data-field="date_received_by_drafter_ct_cnpc" data-type="date">{{ $compliance->date_received_by_drafter_ct_cnpc ? \Carbon\Carbon::parse($compliance->date_received_by_drafter_ct_cnpc)->format('Y-m-d') : '-' }}</td>
                         <td>
-                            <button class="btn btn-warning btn-sm edit-row-btn-compliance" title="Edit Row">
+                            <button class="btn btn-warning btn-sm edit-row-btn-compliance" 
+                                    data-compliance-id="{{ $compliance->id }}"
+                                    title="Edit Row">
                                 <i class="fas fa-edit"></i>
                             </button>
-                            <form action="{{ route('compliance-and-awards.destroy', $compliance->id) }}" method="POST" style="display:inline;">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit" class="btn btn-danger btn-sm" title="Delete" onclick="return confirm('Are you sure?')">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                            </form>
+                            
+                            <button type="button" 
+                                    class="btn btn-danger btn-sm delete-btn" 
+                                    data-compliance-id="{{ $compliance->id }}"
+                                    data-establishment="{{ $compliance->case->establishment_name ?? 'N/A' }}"
+                                    title="Delete">
+                                <i class="fas fa-trash"></i>
+                            </button>
                             
                             @if($compliance->case && $compliance->case->current_stage === '6: Compliance & Awards')
-                                <form action="{{ route('case.nextStage', $compliance->case->id) }}" method="POST" style="display:inline;">
-                                    @csrf
-                                    <button type="submit" class="btn btn-success btn-sm ml-1" title="Move to Appeals & Resolution" onclick="return confirm('Complete compliance & awards and move to Appeals & Resolution?')">
-                                        <i class="fas fa-arrow-right"></i> Next
-                                    </button>
-                                </form>
+                                <button type="button" 
+                                        class="btn btn-success btn-sm ml-1 move-to-next-stage-btn" 
+                                        data-case-id="{{ $compliance->case->id }}"
+                                        data-case-no="{{ $compliance->case->case_no ?? 'N/A' }}"
+                                        data-establishment="{{ $compliance->case->establishment_name ?? 'N/A' }}"
+                                        data-stage="Compliance & Awards"
+                                        title="Move to Appeals & Resolution">
+                                    <i class="fas fa-arrow-right"></i> Next
+                                </button>
                             @endif
                         </td>
                     </tr>

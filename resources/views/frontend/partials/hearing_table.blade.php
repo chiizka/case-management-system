@@ -71,24 +71,30 @@
                             @endif
                         </td>
                         <td>
-                            <button class="btn btn-warning btn-sm edit-row-btn-hearing" title="Edit Row">
+                            <button class="btn btn-warning btn-sm edit-row-btn-hearing" 
+                                    data-hearing-id="{{ $hearing->id }}"
+                                    title="Edit Row">
                                 <i class="fas fa-edit"></i>
                             </button>
-                            <form action="{{ route('hearing-process.destroy', $hearing->id) }}" method="POST" style="display:inline;">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit" class="btn btn-danger btn-sm" title="Delete" onclick="return confirm('Are you sure?')">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                            </form>
+                            
+                            <button type="button" 
+                                    class="btn btn-danger btn-sm delete-btn" 
+                                    data-hearing-id="{{ $hearing->id }}"
+                                    data-establishment="{{ $hearing->case->establishment_name ?? 'N/A' }}"
+                                    title="Delete">
+                                <i class="fas fa-trash"></i>
+                            </button>
                             
                             @if($hearing->case && $hearing->case->current_stage === '3: Hearing')
-                                <form action="{{ route('case.nextStage', $hearing->case->id) }}" method="POST" style="display:inline;">
-                                    @csrf
-                                    <button type="submit" class="btn btn-success btn-sm ml-1" title="Move to Review & Drafting" onclick="return confirm('Complete hearing and move to Review & Drafting?')">
-                                        <i class="fas fa-arrow-right"></i> Next
-                                    </button>
-                                </form>
+                                <button type="button" 
+                                        class="btn btn-success btn-sm ml-1 move-to-next-stage-btn" 
+                                        data-case-id="{{ $hearing->case->id }}"
+                                        data-case-no="{{ $hearing->case->case_no ?? 'N/A' }}"
+                                        data-establishment="{{ $hearing->case->establishment_name ?? 'N/A' }}"
+                                        data-stage="Hearing Process"
+                                        title="Move to Review & Drafting">
+                                    <i class="fas fa-arrow-right"></i> Next
+                                </button>
                             @endif
                         </td>
                     </tr>

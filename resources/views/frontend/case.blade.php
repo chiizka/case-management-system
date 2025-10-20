@@ -794,116 +794,122 @@ $(document).ready(function() {
         }
     });
 
- let caseToDelete = null;
+    let caseToDelete = null;
 
-// Universal delete handler for both cases and inspections
-$(document).on('click', '.delete-btn', function(e) {
-    e.preventDefault();
-    const button = $(this);
-    const row = button.closest('tr');
-    
-    // Check if it's an inspection or case delete
-    const inspectionId = button.data('inspection-id');
-    const caseId = button.data('case-id');
-    
-    console.log('Delete button clicked - inspectionId:', inspectionId, 'caseId:', caseId);
-    
-    if (!inspectionId && !caseId) {
-        console.error('No ID found on delete button');
-        showAlert('error', 'Error: Could not identify record');
-        return;
-    }
-    
-    const recordId = inspectionId || caseId;
-    const recordType = inspectionId ? 'inspection' : 'case';
-    
-    const establishment = button.data('establishment') || 'N/A';
-    const inspector = button.data('inspector') || 'N/A';
-    
-    caseToDelete = {
-        id: recordId,
-        type: recordType,
-        row: row,
-        button: button
-    };
-    
-    console.log('caseToDelete object:', caseToDelete);
-    
-    // Build the info display
-    let infoHtml = `<strong>Establishment:</strong> ${establishment}<br>`;
-    if (inspector && inspector !== 'N/A') {
-        infoHtml += `<strong>Inspector:</strong> ${inspector}`;
-    }
-    
-    $('#deleteCaseInfo').html(infoHtml);
-    $('#deleteCaseModal').modal('show');
-});
-
-// Confirm delete button
-$(document).off('click', '#confirmDeleteBtn').on('click', '#confirmDeleteBtn', function() {
-    if (!caseToDelete) {
-        console.error('caseToDelete is null');
-        return;
-    }
-    
-    const csrfToken = $('meta[name="csrf-token"]').attr('content');
-    let url;
-    
-    if (caseToDelete.type === 'inspection') {
-        url = `/inspection/${caseToDelete.id}`;
-    } else {
-        url = `/case/${caseToDelete.id}`;
-    }
-    
-    console.log('Deleting:', caseToDelete.type, 'at URL:', url);
-    
-    caseToDelete.button.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i>');
-    
-    $.ajax({
-        url: url,
-        type: 'DELETE',
-        headers: {
-            'X-CSRF-TOKEN': csrfToken,
-            'Accept': 'application/json'
-        },
-        success: function(response) {
-            console.log('Delete successful:', response);
-            $('#deleteCaseModal').modal('hide');
-            
-            caseToDelete.row.fadeOut(300, function() {
-                $(this).remove();
-                
-                // Check if table is now empty
-                const table = caseToDelete.row.closest('table');
-                const tbody = table.find('tbody');
-                if (tbody.find('tr:visible').length === 0) {
-                    const colspan = table.find('thead th').length;
-                    tbody.html(`<tr><td colspan="${colspan}" class="text-center">No records found.</td></tr>`);
-                }
-            });
-            
-            showAlert('success', response.message || 'Record deleted successfully!');
-            caseToDelete = null;
-        },
-        error: function(xhr, status, error) {
-            console.error('Delete error:', error, xhr);
-            caseToDelete.button.prop('disabled', false).html('<i class="fas fa-trash"></i>');
-            
-            let errorMessage = 'Failed to delete record.';
-            if (xhr.responseJSON?.message) {
-                errorMessage = xhr.responseJSON.message;
-            } else if (xhr.status === 404) {
-                errorMessage = 'Record not found.';
-            } else if (xhr.status === 500) {
-                errorMessage = 'Server error occurred.';
-            }
-            
-            showAlert('error', errorMessage);
-            $('#deleteCaseModal').modal('hide');
-            caseToDelete = null;
+    // Universal delete handler for all record types
+    $(document).on('click', '.delete-btn', function(e) {
+        e.preventDefault();
+        const button = $(this);
+        const row = button.closest('tr');
+        
+        // Check all record types
+        const inspectionId = button.data('inspection-id');
+        const caseId = button.data('case-id');
+        const docketingId = button.data('docketing-id');
+        const hearingId = button.data('hearing-id');
+        const reviewId = button.data('review-id');
+        const orderId = button.data('order-id');
+        const complianceId = button.data('compliance-id');
+        const appealId = button.data('appeal-id');
+        
+        console.log('Delete button clicked - inspectionId:', inspectionId, 'caseId:', caseId, 'docketingId:', docketingId, 'hearingId:', hearingId, 'reviewId:', reviewId, 'orderId:', orderId, 'complianceId:', complianceId, 'appealId:', appealId);
+        
+        if (!inspectionId && !caseId && !docketingId && !hearingId && !reviewId && !orderId && !complianceId && !appealId) {
+            console.error('No ID found on delete button');
+            showAlert('error', 'Error: Could not identify record');
+            return;
         }
+        
+        const recordId = inspectionId || caseId || docketingId || hearingId || reviewId || orderId || complianceId || appealId;
+        const recordType = inspectionId ? 'inspection' : (caseId ? 'case' : (docketingId ? 'docketing' : (hearingId ? 'hearing' : (reviewId ? 'review' : (orderId ? 'order' : (complianceId ? 'compliance' : 'appeal'))))));
+        
+        const establishment = button.data('establishment') || 'N/A';
+        const inspector = button.data('inspector') || 'N/A';
+        
+        caseToDelete = {
+            id: recordId,
+            type: recordType,
+            row: row,
+            button: button
+        };
+        
+        console.log('caseToDelete object:', caseToDelete);
+        
+        // Build the info display
+        let infoHtml = `<strong>Establishment:</strong> ${establishment}<br>`;
+        if (inspector && inspector !== 'N/A') {
+            infoHtml += `<strong>Inspector:</strong> ${inspector}`;
+        }
+        
+        $('#deleteCaseInfo').html(infoHtml);
+        $('#deleteCaseModal').modal('show');
     });
-});
+
+    // Confirm delete button
+    $(document).off('click', '#confirmDeleteBtn').on('click', '#confirmDeleteBtn', function() {
+        if (!caseToDelete) {
+            console.error('caseToDelete is null');
+            return;
+        }
+        
+        const csrfToken = $('meta[name="csrf-token"]').attr('content');
+        let url;
+        
+        if (caseToDelete.type === 'inspection') {
+            url = `/inspection/${caseToDelete.id}`;
+        } else {
+            url = `/case/${caseToDelete.id}`;
+        }
+        
+        console.log('Deleting:', caseToDelete.type, 'at URL:', url);
+        
+        caseToDelete.button.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i>');
+        
+        $.ajax({
+            url: url,
+            type: 'DELETE',
+            headers: {
+                'X-CSRF-TOKEN': csrfToken,
+                'Accept': 'application/json'
+            },
+            success: function(response) {
+                console.log('Delete successful:', response);
+                $('#deleteCaseModal').modal('hide');
+                
+                caseToDelete.row.fadeOut(300, function() {
+                    $(this).remove();
+                    
+                    // Check if table is now empty
+                    const table = caseToDelete.row.closest('table');
+                    const tbody = table.find('tbody');
+                    if (tbody.find('tr:visible').length === 0) {
+                        const colspan = table.find('thead th').length;
+                        tbody.html(`<tr><td colspan="${colspan}" class="text-center">No records found.</td></tr>`);
+                    }
+                });
+                
+                showAlert('success', response.message || 'Record deleted successfully!');
+                caseToDelete = null;
+            },
+            error: function(xhr, status, error) {
+                console.error('Delete error:', error, xhr);
+                caseToDelete.button.prop('disabled', false).html('<i class="fas fa-trash"></i>');
+                
+                let errorMessage = 'Failed to delete record.';
+                if (xhr.responseJSON?.message) {
+                    errorMessage = xhr.responseJSON.message;
+                } else if (xhr.status === 404) {
+                    errorMessage = 'Record not found.';
+                } else if (xhr.status === 500) {
+                    errorMessage = 'Server error occurred.';
+                }
+                
+                showAlert('error', errorMessage);
+                $('#deleteCaseModal').modal('hide');
+                caseToDelete = null;
+            }
+        });
+    });
 
 let caseToProgress = null;
 

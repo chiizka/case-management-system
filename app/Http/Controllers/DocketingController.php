@@ -217,38 +217,57 @@ class DocketingController extends Controller
     /**
      * Remove the specified docketing record.
      */
-    public function destroy($id)
-    {
-        try {
-            $docketing = Docketing::with('case')->findOrFail($id);
-            $docketingId = $docketing->case->inspection_id ?? $id;
-            $establishment = $docketing->case->establishment_name ?? 'Unknown';
+public function destroy($id)
+{
+    try {
+        $docketing = Docketing::with('case')->findOrFail($id);
+        $docketingId = $docketing->case->inspection_id ?? $id;
+        $establishment = $docketing->case->establishment_name ?? 'Unknown';
 
-            $docketing->delete();
+        $docketing->delete();
 
-            ActivityLogger::logAction(
-                'DELETE',
-                'Docketing',
-                $docketingId,
-                'Deleted docketing record',
-                [
-                    'establishment' => $establishment
-                ]
-            );
+        ActivityLogger::logAction(
+            'DELETE',
+            'Docketing',
+            $docketingId,
+            'Deleted docketing record',
+            [
+                'establishment' => $establishment
+            ]
+        );
 
-            Log::info('Docketing ID: ' . $id . ' deleted successfully.');
+        Log::info('Docketing ID: ' . $id . ' deleted successfully.');
 
-            return redirect()->route('case.index')
-                ->with('success', 'Docketing deleted successfully.')
-                ->with('active_tab', 'docketing');
-        } catch (\Exception $e) {
-            Log::error('Error deleting docketing ID: ' . $id . ' - ' . $e->getMessage());
-
-            return redirect()->route('case.index')
-                ->with('error', 'Failed to delete docketing: ' . $e->getMessage())
-                ->with('active_tab', 'docketing');
+        // Return JSON response for AJAX requests
+        if (request()->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Docketing deleted successfully.'
+            ]);
         }
+
+        // Fallback redirect for non-AJAX requests
+        return redirect()->route('case.index')
+            ->with('success', 'Docketing deleted successfully.')
+            ->with('active_tab', 'docketing');
+            
+    } catch (\Exception $e) {
+        Log::error('Error deleting docketing ID: ' . $id . ' - ' . $e->getMessage());
+
+        // Return JSON response for AJAX requests
+        if (request()->expectsJson()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to delete docketing.'
+            ], 500);
+        }
+
+        // Fallback redirect for non-AJAX requests
+        return redirect()->route('case.index')
+            ->with('error', 'Failed to delete docketing: ' . $e->getMessage())
+            ->with('active_tab', 'docketing');
     }
+}
 
     /**
      * Inline update handler for AJAX.
