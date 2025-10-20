@@ -78,11 +78,32 @@
                                 @endif
                             </td>
                             <td>
+                                <!-- Edit Button -->
+                                <button class="btn btn-info btn-sm" 
+                                        data-toggle="modal" 
+                                        data-target="#editUserModal{{ $user->id }}"
+                                        title="Edit User">
+                                    <i class="fas fa-edit"></i> Edit
+                                </button>
+                                
+                                <!-- Reset Password Button -->
                                 <form method="POST" action="{{ route('user.reset-password', $user->id) }}" style="display: inline;">
                                     @csrf
                                     <button type="submit" class="btn btn-warning btn-sm" 
-                                            onclick="return confirm('Send password reset link to {{ $user->email }}?')">
-                                        Reset Password
+                                            onclick="return confirm('Send password reset link to {{ $user->email }}?')"
+                                            title="Reset Password">
+                                        <i class="fas fa-key"></i> Reset
+                                    </button>
+                                </form>
+                                
+                                <!-- Delete Button -->
+                                <form method="POST" action="{{ route('user.destroy', $user->id) }}" style="display: inline;">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="btn btn-danger btn-sm" 
+                                            onclick="return confirm('Are you sure you want to delete {{ $user->fname }} {{ $user->lname }}? This action cannot be undone.')"
+                                            title="Delete User">
+                                        <i class="fas fa-trash"></i> Delete
                                     </button>
                                 </form>
                             </td>
@@ -159,5 +180,61 @@
     </div>
 </div>
 </div>
+
+<!-- Edit User Modals -->
+@foreach($users as $user)
+<div class="modal fade" id="editUserModal{{ $user->id }}" tabindex="-1" role="dialog" aria-labelledby="editUserModalLabel{{ $user->id }}" aria-hidden="true">
+    <div class="modal-dialog modal-md" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editUserModalLabel{{ $user->id }}">Edit User</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+
+            <form method="POST" action="{{ route('user.update', $user->id) }}">
+                @csrf
+                @method('PUT')
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="fname{{ $user->id }}">First Name</label>
+                        <input type="text" class="form-control" id="fname{{ $user->id }}" 
+                               name="fname" value="{{ $user->fname }}" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="lname{{ $user->id }}">Last Name</label>
+                        <input type="text" class="form-control" id="lname{{ $user->id }}" 
+                               name="lname" value="{{ $user->lname }}" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="email{{ $user->id }}">Email</label>
+                        <input type="email" class="form-control" id="email{{ $user->id }}" 
+                               name="email" value="{{ $user->email }}" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="role{{ $user->id }}">Role</label>
+                        <select class="form-control" id="role{{ $user->id }}" name="role" required>
+                            <option value="user" {{ $user->role === 'user' ? 'selected' : '' }}>User</option>
+                            <option value="admin" {{ $user->role === 'admin' ? 'selected' : '' }}>Admin</option>
+                            <option value="province" {{ $user->role === 'province' ? 'selected' : '' }}>Province</option>
+                            <option value="malsu" {{ $user->role === 'malsu' ? 'selected' : '' }}>MALSU</option>
+                            <option value="case_management" {{ $user->role === 'case_management' ? 'selected' : '' }}>Case Management</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-primary">Update User</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+@endforeach
 
 @stop

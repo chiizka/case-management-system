@@ -43,6 +43,8 @@ Route::middleware('auth')->group(function () {
         Route::post('/user', [UserController::class, 'store'])->name('user.post');
         Route::post('/user/{id}/reset-password', [UserController::class, 'resetPassword'])->name('user.reset-password');
         Route::get('/logs', [LogController::class, 'index'])->name('logs.index');
+        Route::put('/user/{id}', [UserController::class, 'update'])->name('user.update');
+        Route::delete('/user/{id}', [UserController::class, 'destroy'])->name('user.destroy');
     });
     
     // Cases - Admin, Province, MALSU, Case Management
