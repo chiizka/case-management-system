@@ -21,12 +21,30 @@
     <!-- Custom styles for DataTables -->
     <link href="{{ asset('vendor/datatables/dataTables.bootstrap4.min.css') }}" rel="stylesheet">
 
-    <style>
-        .custom-table td,
-        .custom-table th {
-            padding: 0.6rem 0.5rem;
-        }
-    </style>
+<style>
+    /* Force solid background on sidebar */
+    .sidebar {
+        background: linear-gradient(180deg, #4e73df 10%, #224abe 100%) !important;
+        background-color: #4e73df !important;
+        z-index: 1050 !important;
+    }
+
+    /* Ensure all sidebar inner elements have proper background */
+    .sidebar .nav-item,
+    .sidebar .sidebar-brand,
+    .sidebar .sidebar-heading {
+        background-color: transparent;
+        position: relative;
+        z-index: 1051;
+    }
+
+    /* Fix for when sidebar is toggled */
+    .sidebar.toggled {
+        width: 6.5rem !important;
+        background: linear-gradient(180deg, #4e73df 10%, #224abe 100%) !important;
+    }
+    
+</style>
 </head>
 
 <body id="page-top">
@@ -279,10 +297,6 @@
                             <a class="dropdown-item" href="{{ route('profile.index') }}">
                                 <i class="fas fa-user fa-sm fa-fw mr-2 text-gray-400"></i>
                                 Profile
-                            </a>
-                            <a class="dropdown-item" href="#">
-                                <i class="fas fa-list fa-sm fa-fw mr-2 text-gray-400"></i>
-                                Activity Log
                             </a>
                             <div class="dropdown-divider"></div>
                             <a class="dropdown-item" href="#" data-toggle="modal" data-target="#logoutModal">
