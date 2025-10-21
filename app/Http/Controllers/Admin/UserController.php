@@ -24,13 +24,13 @@ class UserController extends Controller
             return back()->withErrors($validator)->withInput();
         }
 
-        // Create user with null password
+        // Create user with null password (no hashing needed for null)
         $user = User::create([
             'fname' => $request->fname,
             'lname' => $request->lname,
             'email' => $request->email,
             'role' => $request->role,
-            'password' => null,
+            'password' => null, // This stays null
             'two_factor_enabled' => true,
         ]);
 

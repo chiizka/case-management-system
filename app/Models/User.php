@@ -43,13 +43,8 @@ class User extends Authenticatable
     const ROLE_MALSU = 'malsu';
     const ROLE_CASE_MANAGEMENT = 'case_management';
 
-    // Override the password mutator to handle hashing
-    public function setPasswordAttribute($value)
-    {
-        if ($value !== null) {
-            $this->attributes['password'] = Hash::make($value);
-        }
-    }
+    // REMOVED: Password mutator (it was causing issues)
+    // We'll handle password hashing manually where needed
 
     // Check if user needs to set password
     public function needsPasswordSetup()

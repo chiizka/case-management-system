@@ -33,6 +33,13 @@ Route::get('/password/reset/{token}', [App\Http\Controllers\Auth\ResetPasswordCo
 Route::post('/password/reset', [App\Http\Controllers\Auth\ResetPasswordController::class, 'reset'])->name('password.update');
 
 Route::middleware('auth')->group(function () {
+
+    // Profile Routes (must be authenticated)
+    Route::middleware(['auth'])->group(function () {
+        Route::get('/profile', [App\Http\Controllers\ProfileController::class, 'index'])->name('profile.index');
+        Route::put('/profile/update', [App\Http\Controllers\ProfileController::class, 'update'])->name('profile.update');
+        Route::put('/profile/password', [App\Http\Controllers\ProfileController::class, 'updatePassword'])->name('profile.password');
+    });
     
     // Dashboard/Home
     Route::get('/', [FrontController::class, 'index'])->name('home');
