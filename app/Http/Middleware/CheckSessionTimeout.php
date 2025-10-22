@@ -5,23 +5,31 @@ namespace App\Http\Middleware;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Symfony\Component\HttpFoundation\Response;
 
 class CheckSessionTimeout
 {
-    /**
-     * Handle an incoming request.
-     *
-     * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
-     */
     public function handle(Request $request, Closure $next): Response
     {
+        // DEBUG: Log that middleware is running
+        Log::info('CheckSessionTimeout middleware is running');
+        
         if (Auth::check()) {
-            $lastActivity = session('last_activity');
-            $sessionLifetime = config('session.lifetime') * 60; // Convert minutes to seconds
+            Log::info('User is authenticated', ['user_id' => Auth::id()]);
             
-            // Check if session has expired
+            $lastActivity = session('last_activity');
+            $sessionLifetime = config('session.lifetime') * 60;
+            
+            Log::info('Session data', [
+                'last_activity' => $lastActivity,
+                'current_time' => now()->timestamp,
+                'lifetime' => $sessionLifetime,
+                'session_expire_on_close' => config('session.expire_on_close')
+            ]);
+            
             if ($lastActivity && (now()->timestamp - $lastActivity) > $sessionLifetime) {
+                Log::info('Session expired - logging out');
                 Auth::logout();
                 $request->session()->invalidate();
                 $request->session()->regenerateToken();
@@ -30,7 +38,6 @@ class CheckSessionTimeout
                     ->with('error', 'Your session has expired due to inactivity. Please login again.');
             }
             
-            // Update last activity timestamp
             session(['last_activity' => now()->timestamp]);
         }
         

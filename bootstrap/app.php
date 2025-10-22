@@ -1,7 +1,6 @@
 <?php
 
 use App\Http\Middleware\CheckRole;
-use App\Http\Middleware\CheckSessionTimeout;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -13,15 +12,12 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        // Add session timeout middleware to web routes
-        $middleware->web(append: [
-            CheckSessionTimeout::class,
-        ]);
-        
-        // Middleware aliases
+        // Middleware aliases only
         $middleware->alias([
             'role' => CheckRole::class,
         ]);
+        
+        // No need for CheckSessionTimeout with cookie driver!
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //
