@@ -7,11 +7,16 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class LoginController extends Controller
 {
     public function login(Request $request)
     {
+        Log::info('=== LOGIN ATTEMPT START ===');
+        Log::info('Email: ' . $request->email);
+        
         $request->validate([
             'email' => 'required|email',
             'password' => 'required',
@@ -19,41 +24,69 @@ class LoginController extends Controller
 
         $user = User::where('email', $request->email)->first();
 
-        // Check if user exists
         if (!$user) {
+            Log::warning('Login failed: User not found', ['email' => $request->email]);
             return back()->withErrors(['email' => 'No account found with this email address.']);
         }
 
-        // Check if user needs to set password
         if ($user->needsPasswordSetup()) {
+            Log::warning('Login failed: Password setup needed', ['user_id' => $user->id]);
             return back()->withErrors(['email' => 'Please check your email to set up your password first.']);
         }
 
-        // Attempt authentication - this will fire the Login event
-        if (Auth::attempt($request->only('email', 'password'), $request->filled('remember'))) {
+        // Delete ALL existing sessions for this user
+        Log::info('Checking for existing sessions', ['user_id' => $user->id]);
+        
+        if (config('session.driver') === 'database') {
+            $existingSessions = DB::table('sessions')->where('user_id', $user->id)->count();
+            Log::info('Found existing database sessions', ['count' => $existingSessions]);
+            
+            $deleted = DB::table('sessions')->where('user_id', $user->id)->delete();
+            Log::info('Deleted existing sessions', ['deleted_count' => $deleted]);
+        }
+
+        // Attempt authentication
+        if (Auth::attempt($request->only('email', 'password'), false)) {  // Always false = no remember me
+            Log::info('✓ Authentication successful', ['user_id' => $user->id]);
+            
             $user = Auth::user();
 
-            // Check if 2FA is enabled
             if ($user->two_factor_enabled) {
-                // Store user ID in session and logout temporarily
+                Log::info('2FA enabled - sending code', ['user_id' => $user->id]);
+                
                 session(['2fa_user_id' => $user->id]);
-                session(['2fa_in_progress' => true]); // Flag to prevent logout logging
+                session(['2fa_in_progress' => true]);
                 
                 Auth::logout();
-                session()->forget('2fa_in_progress'); // Clear flag immediately
+                session()->forget('2fa_in_progress');
 
-                // Generate and send 2FA code
                 $otpCode = $this->generateOTPForUser($user);
                 $this->send2FACode($user, $otpCode);
 
                 return redirect()->route('2fa.verify')->with('success', 'A 6-digit verification code has been sent to your email.');
             }
 
-            // If 2FA is disabled, login directly (already logged in via Auth::attempt)
+            // Regenerate session
             $request->session()->regenerate();
+            
+            // Set initial last activity
+            session(['last_activity' => now()->timestamp]);
+            
+            Log::info('✓ Login successful', [
+                'user_id' => $user->id,
+                'session_id' => session()->getId(),
+                'session_driver' => config('session.driver'),
+                'last_activity' => now()->timestamp,
+            ]);
+            
+            Log::info('=== LOGIN ATTEMPT END - SUCCESS ===');
+            
             return redirect()->intended('/');
         }
 
+        Log::warning('✗ Authentication failed - Invalid credentials', ['email' => $request->email]);
+        Log::info('=== LOGIN ATTEMPT END - FAILED ===');
+        
         return back()->withErrors(['email' => 'Invalid email or password.']);
     }
 
@@ -68,38 +101,60 @@ class LoginController extends Controller
 
     public function verify2FA(Request $request)
     {
+        Log::info('=== 2FA VERIFICATION START ===');
+        
         $request->validate([
             'otp_code' => 'required|digits:6',
         ]);
 
         $userId = session('2fa_user_id');
         if (!$userId) {
+            Log::warning('2FA failed: No user_id in session');
             return redirect()->route('login')->withErrors(['email' => 'Session expired. Please login again.']);
         }
 
         $user = User::find($userId);
         if (!$user) {
+            Log::warning('2FA failed: User not found', ['user_id' => $userId]);
             return redirect()->route('login')->withErrors(['email' => 'User not found.']);
         }
 
         if ($this->verifyOTPForUser($user, $request->otp_code)) {
+            Log::info('✓ 2FA verification successful', ['user_id' => $user->id]);
+            
             session()->forget('2fa_user_id');
             
-            // Login WITHOUT firing the event (we already logged it during Auth::attempt)
-            session(['skip_login_log' => true]); // Flag to skip logging
-            Auth::login($user, true);
-            session()->forget('skip_login_log'); // Clear flag
+            // Delete existing sessions
+            if (config('session.driver') === 'database') {
+                $deleted = DB::table('sessions')->where('user_id', $user->id)->delete();
+                Log::info('Deleted existing sessions after 2FA', ['count' => $deleted]);
+            }
+            
+            session(['skip_login_log' => true]);
+            Auth::login($user, false);  // FIXED: Changed from true to false
+            session()->forget('skip_login_log');
             
             $request->session()->regenerate();
+            session(['last_activity' => now()->timestamp]);
+            
+            Log::info('✓ 2FA login complete', [
+                'user_id' => $user->id,
+                'session_id' => session()->getId(),
+            ]);
+            Log::info('=== 2FA VERIFICATION END - SUCCESS ===');
             
             return redirect()->intended('/')->with('success', 'Login successful!');
         }
 
         if ($this->isOTPExpiredForUser($user)) {
+            Log::warning('2FA failed: OTP expired', ['user_id' => $user->id]);
             return back()->withErrors(['otp_code' => 'Verification code has expired. Please request a new one.'])
                         ->with('show_resend', true);
         }
 
+        Log::warning('2FA failed: Invalid OTP', ['user_id' => $user->id]);
+        Log::info('=== 2FA VERIFICATION END - FAILED ===');
+        
         return back()->withErrors(['otp_code' => 'Invalid verification code.']);
     }
 
@@ -117,6 +172,8 @@ class LoginController extends Controller
 
         $otpCode = $this->generateOTPForUser($user);
         $this->send2FACode($user, $otpCode);
+
+        Log::info('2FA code resent', ['user_id' => $user->id]);
 
         return back()->with('success', 'A new verification code has been sent to your email.');
     }
@@ -157,9 +214,22 @@ class LoginController extends Controller
 
     public function logout(Request $request)
     {
+        $userId = Auth::id();
+        
+        Log::info('=== LOGOUT START ===', ['user_id' => $userId]);
+        
+        // Delete from database if using database driver
+        if (config('session.driver') === 'database' && $userId) {
+            $deleted = DB::table('sessions')->where('user_id', $userId)->delete();
+            Log::info('Deleted sessions on logout', ['count' => $deleted]);
+        }
+        
         Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
+        
+        Log::info('✓ Logout successful');
+        Log::info('=== LOGOUT END ===');
         
         return redirect()->route('login')->with('success', 'You have been logged out successfully.');
     }
