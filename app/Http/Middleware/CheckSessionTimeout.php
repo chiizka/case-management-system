@@ -6,6 +6,7 @@ use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use App\Helpers\ActivityLogger;
 use Symfony\Component\HttpFoundation\Response;
 
 class CheckSessionTimeout
@@ -29,7 +30,16 @@ class CheckSessionTimeout
             ]);
             
             if ($lastActivity && (now()->timestamp - $lastActivity) > $sessionLifetime) {
-                Log::info('Session expired - logging out');
+                Log::info('Session expired - logging out', ['user_id' => Auth::id()]);
+                
+                // Log session expiration BEFORE logout
+                ActivityLogger::logAction(
+                    'LOGOUT',
+                    'Authentication',
+                    null,
+                    'Session expired due to inactivity'
+                );
+                
                 Auth::logout();
                 $request->session()->invalidate();
                 $request->session()->regenerateToken();
