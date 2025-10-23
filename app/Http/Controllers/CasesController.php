@@ -14,6 +14,7 @@ use App\Models\AppealsAndResolution;
 use App\Helpers\ActivityLogger;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB; 
 
 class CasesController extends Controller
 {
@@ -49,6 +50,7 @@ class CasesController extends Controller
      */
     public function index()
     {
+        // Eager load to prevent N+1 on the main tab too
         $cases = CaseFile::select('id', 'inspection_id', 'case_no', 'establishment_name', 'current_stage', 'overall_status', 'created_at')
             ->where('overall_status', '!=', 'Completed')
             ->orderBy('created_at', 'desc')
@@ -87,10 +89,10 @@ class CasesController extends Controller
             $html = '';
 
             switch ($tabNumber) {
-                case '1': // Inspections
-                    $data = Inspection::with(['case' => function($query) {
-                        $query->select('id', 'inspection_id', 'case_no', 'establishment_name', 'current_stage', 'overall_status');
-                    }])
+                case '1':
+                    $data = Inspection::with([
+                        'case:id,inspection_id,case_no,establishment_name,current_stage,overall_status'
+                    ])
                     ->whereHas('case', function($query) {
                         $query->where('current_stage', '1: Inspections')
                             ->where('overall_status', '!=', 'Completed');
@@ -100,10 +102,10 @@ class CasesController extends Controller
                     $html = view('frontend.partials.inspection_table', ['inspections' => $data])->render();
                     break;
 
-                case '2': // Docketing
-                    $data = Docketing::with(['case' => function($query) {
-                        $query->select('id', 'inspection_id', 'case_no', 'establishment_name', 'current_stage', 'overall_status');
-                    }])
+                case '2':
+                    $data = Docketing::with([
+                        'case:id,inspection_id,case_no,establishment_name,current_stage,overall_status'
+                    ])
                     ->whereHas('case', function($query) {
                         $query->where('current_stage', '2: Docketing')
                             ->where('overall_status', '!=', 'Completed');
@@ -113,10 +115,10 @@ class CasesController extends Controller
                     $html = view('frontend.partials.docketing_table', ['docketing' => $data])->render();
                     break;
 
-                case '3': // Hearing Process
-                    $data = HearingProcess::with(['case' => function($query) {
-                        $query->select('id', 'inspection_id', 'case_no', 'establishment_name', 'current_stage', 'overall_status');
-                    }])
+                case '3':
+                    $data = HearingProcess::with([
+                        'case:id,inspection_id,case_no,establishment_name,current_stage,overall_status'
+                    ])
                     ->whereHas('case', function($query) {
                         $query->where('current_stage', '3: Hearing')
                             ->where('overall_status', '!=', 'Completed');
@@ -126,10 +128,10 @@ class CasesController extends Controller
                     $html = view('frontend.partials.hearing_table', ['hearingProcess' => $data])->render();
                     break;
 
-                case '4': // Review & Drafting
-                    $data = ReviewAndDrafting::with(['case' => function($query) {
-                        $query->select('id', 'inspection_id', 'case_no', 'establishment_name', 'current_stage', 'overall_status');
-                    }])
+                case '4':
+                    $data = ReviewAndDrafting::with([
+                        'case:id,inspection_id,case_no,establishment_name,current_stage,overall_status'
+                    ])
                     ->whereHas('case', function($query) {
                         $query->where('current_stage', '4: Review & Drafting')
                             ->where('overall_status', '!=', 'Completed');
@@ -139,10 +141,10 @@ class CasesController extends Controller
                     $html = view('frontend.partials.review_table', ['reviewAndDrafting' => $data])->render();
                     break;
 
-                case '5': // Orders & Disposition
-                    $data = OrderAndDisposition::with(['case' => function($query) {
-                        $query->select('id', 'inspection_id', 'case_no', 'establishment_name', 'current_stage', 'overall_status');
-                    }])
+                case '5':
+                    $data = OrderAndDisposition::with([
+                        'case:id,inspection_id,case_no,establishment_name,current_stage,overall_status'
+                    ])
                     ->whereHas('case', function($query) {
                         $query->where('current_stage', '5: Orders & Disposition')
                             ->where('overall_status', '!=', 'Completed');
@@ -152,10 +154,10 @@ class CasesController extends Controller
                     $html = view('frontend.partials.orders_table', ['ordersAndDisposition' => $data])->render();
                     break;
 
-                case '6': // Compliance & Awards
-                    $data = ComplianceAndAward::with(['case' => function($query) {
-                        $query->select('id', 'inspection_id', 'case_no', 'establishment_name', 'current_stage', 'overall_status');
-                    }])
+                case '6':
+                    $data = ComplianceAndAward::with([
+                        'case:id,inspection_id,case_no,establishment_name,current_stage,overall_status'
+                    ])
                     ->whereHas('case', function($query) {
                         $query->where('current_stage', '6: Compliance & Awards')
                             ->where('overall_status', '!=', 'Completed');
@@ -165,10 +167,10 @@ class CasesController extends Controller
                     $html = view('frontend.partials.compliance_table', ['complianceAndAwards' => $data])->render();
                     break;
 
-                case '7': // Appeals & Resolution
-                    $data = AppealsAndResolution::with(['case' => function($query) {
-                        $query->select('id', 'inspection_id', 'case_no', 'establishment_name', 'current_stage', 'overall_status');
-                    }])
+                case '7':
+                    $data = AppealsAndResolution::with([
+                        'case:id,inspection_id,case_no,establishment_name,current_stage,overall_status'
+                    ])
                     ->whereHas('case', function($query) {
                         $query->where('current_stage', '7: Appeals & Resolution')
                             ->where('overall_status', '!=', 'Completed');
@@ -190,8 +192,10 @@ class CasesController extends Controller
                 'html' => $html,
                 'count' => $data ? $data->count() : 0
             ]);
+            
         } catch (\Exception $e) {
             Log::error('Error loading tab data: ' . $e->getMessage());
+            
             return response()->json([
                 'success' => false,
                 'error' => 'Failed to load data. Please try again.'
