@@ -1,6 +1,8 @@
 <?php
+
 namespace App\Http\Controllers\Admin;
 
+use App\Helpers\ActivityLogger;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -24,15 +26,28 @@ class UserController extends Controller
             return back()->withErrors($validator)->withInput();
         }
 
-        // Create user with null password (no hashing needed for null)
+        // Create user with null password
         $user = User::create([
             'fname' => $request->fname,
             'lname' => $request->lname,
             'email' => $request->email,
             'role' => $request->role,
-            'password' => null, // This stays null
+            'password' => null,
             'two_factor_enabled' => true,
         ]);
+
+        // Log user creation
+        ActivityLogger::logAction(
+            action: 'CREATE',
+            resourceType: 'User',
+            resourceId: $user->id,
+            description: "Created user account for {$user->fname} {$user->lname} ({$user->email})",
+            metadata: [
+                'email' => $user->email,
+                'role' => $user->role,
+                'full_name' => "{$user->fname} {$user->lname}"
+            ]
+        );
 
         // Send password reset notification
         $status = Password::sendResetLink(['email' => $user->email]);
@@ -40,6 +55,19 @@ class UserController extends Controller
         if ($status === Password::RESET_LINK_SENT) {
             // Update the timestamp
             $user->update(['password_reset_sent_at' => now()]);
+            
+            // Log password reset sent
+            ActivityLogger::logAction(
+                action: 'UPDATE',
+                resourceType: 'User',
+                resourceId: $user->id,
+                description: "Sent password reset link to {$user->fname} {$user->lname}",
+                metadata: [
+                    'email' => $user->email,
+                    'action_type' => 'password_reset_sent'
+                ]
+            );
+            
             return back()->with('success', 'User created successfully! Password setup email sent.');
         }
 
@@ -57,6 +85,19 @@ class UserController extends Controller
         if ($status === Password::RESET_LINK_SENT) {
             // Update the timestamp
             $user->update(['password_reset_sent_at' => now()]);
+            
+            // Log password reset sent
+            ActivityLogger::logAction(
+                action: 'UPDATE',
+                resourceType: 'User',
+                resourceId: $user->id,
+                description: "Sent password reset link to {$user->fname} {$user->lname}",
+                metadata: [
+                    'email' => $user->email,
+                    'action_type' => 'password_reset_sent'
+                ]
+            );
+            
             return back()->with('success', 'Password reset link sent to ' . $user->email);
         }
 
@@ -66,6 +107,14 @@ class UserController extends Controller
     public function update(Request $request, $id)
     {
         $user = User::findOrFail($id);
+        
+        // Store old values for comparison
+        $oldData = [
+            'fname' => $user->fname,
+            'lname' => $user->lname,
+            'email' => $user->email,
+            'role' => $user->role,
+        ];
         
         // Validate input
         $validator = Validator::make($request->all(), [
@@ -79,6 +128,34 @@ class UserController extends Controller
             return back()->withErrors($validator)->withInput();
         }
 
+        // Track changes for logging
+        $changes = [];
+        $changesText = [];
+        
+        if ($oldData['fname'] !== $request->fname) {
+            $changes['first_name_old'] = $oldData['fname'];
+            $changes['first_name_new'] = $request->fname;
+            $changesText[] = "First Name: {$oldData['fname']} → {$request->fname}";
+        }
+        
+        if ($oldData['lname'] !== $request->lname) {
+            $changes['last_name_old'] = $oldData['lname'];
+            $changes['last_name_new'] = $request->lname;
+            $changesText[] = "Last Name: {$oldData['lname']} → {$request->lname}";
+        }
+        
+        if ($oldData['email'] !== $request->email) {
+            $changes['email_old'] = $oldData['email'];
+            $changes['email_new'] = $request->email;
+            $changesText[] = "Email: {$oldData['email']} → {$request->email}";
+        }
+        
+        if ($oldData['role'] !== $request->role) {
+            $changes['role_old'] = $oldData['role'];
+            $changes['role_new'] = $request->role;
+            $changesText[] = "Role: {$oldData['role']} → {$request->role}";
+        }
+
         // Update user
         $user->update([
             'fname' => $request->fname,
@@ -86,6 +163,23 @@ class UserController extends Controller
             'email' => $request->email,
             'role' => $request->role,
         ]);
+
+        // Log the update with changes
+        $description = "Updated user account for {$request->fname} {$request->lname}";
+        if (!empty($changesText)) {
+            $description .= " - Changes: " . implode(', ', $changesText);
+        }
+
+        ActivityLogger::logAction(
+            action: 'UPDATE',
+            resourceType: 'User',
+            resourceId: $user->id,
+            description: $description,
+            metadata: array_merge($changes, [
+                'full_name' => "{$request->fname} {$request->lname}",
+                'current_email' => $request->email,
+            ])
+        );
 
         return back()->with('success', 'User updated successfully!');
     }
@@ -100,6 +194,24 @@ class UserController extends Controller
         }
         
         $userName = $user->fname . ' ' . $user->lname;
+        $userEmail = $user->email;
+        $userRole = $user->role;
+        $userId = $user->id;
+        
+        // Log the deletion BEFORE deleting (so we still have user data)
+        ActivityLogger::logAction(
+            action: 'DELETE',
+            resourceType: 'User',
+            resourceId: $userId,
+            description: "Deleted user account: {$userName} ({$userEmail})",
+            metadata: [
+                'deleted_user_name' => $userName,
+                'deleted_user_email' => $userEmail,
+                'deleted_user_role' => $userRole,
+            ]
+        );
+        
+        // Delete the user
         $user->delete();
         
         return back()->with('success', 'User "' . $userName . '" deleted successfully!');
