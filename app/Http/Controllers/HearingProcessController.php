@@ -8,6 +8,7 @@ use App\Helpers\ActivityLogger;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 
 class HearingProcessController extends Controller
@@ -63,6 +64,7 @@ class HearingProcessController extends Controller
                 ->with('active_tab', 'hearing');
         }
 
+        DB::beginTransaction();
         try {
             $hearingProcess = HearingProcess::create($request->all());
             $case = $hearingProcess->case;
@@ -79,12 +81,17 @@ class HearingProcessController extends Controller
                     'status' => $request->status ?? 'Not set'
                 ]
             );
+
+            DB::commit();
             
             return redirect()->route('case.index')
                 ->with('success', 'Hearing process created successfully.')
                 ->with('active_tab', 'hearing');
+                
         } catch (\Exception $e) {
+            DB::rollBack();
             Log::error('Error creating hearing process: ' . $e->getMessage());
+            Log::error('Stack trace: ' . $e->getTraceAsString());
             
             return redirect()->route('case.index')
                 ->with('error', 'Failed to create hearing process: ' . $e->getMessage())
@@ -196,11 +203,16 @@ class HearingProcessController extends Controller
                 ->with('active_tab', 'hearing');
         }
 
+        DB::beginTransaction();
         try {
-            $hearingProcess = HearingProcess::findOrFail($id);
+            // Lock the record to prevent race conditions
+            $hearingProcess = HearingProcess::lockForUpdate()->findOrFail($id);
             $originalData = $hearingProcess->toArray();
+            
+            // Update the record
             $hearingProcess->update($request->all());
 
+            // Track changes
             $changes = [];
             foreach ($request->all() as $key => $value) {
                 if (isset($originalData[$key]) && $originalData[$key] != $value) {
@@ -220,11 +232,16 @@ class HearingProcessController extends Controller
                 ]
             );
 
+            DB::commit();
+
             return redirect()->route('case.index')
                 ->with('success', 'Hearing process updated successfully.')
                 ->with('active_tab', 'hearing');
+                
         } catch (\Exception $e) {
+            DB::rollBack();
             Log::error('Error updating hearing process ID: ' . $id . ' - ' . $e->getMessage());
+            Log::error('Stack trace: ' . $e->getTraceAsString());
             
             return redirect()->route('case.index')
                 ->with('error', 'Failed to update hearing process: ' . $e->getMessage())
@@ -237,11 +254,16 @@ class HearingProcessController extends Controller
      */
     public function destroy($id)
     {
+        DB::beginTransaction();
         try {
-            $hearingProcess = HearingProcess::with('case')->findOrFail($id);
+            // Lock the record
+            $hearingProcess = HearingProcess::lockForUpdate()->with('case')->findOrFail($id);
+            
+            // Store info for logging before deletion
             $hearingProcessId = $hearingProcess->case->inspection_id ?? $id;
             $establishment = $hearingProcess->case->establishment_name ?? 'Unknown';
 
+            // Delete the record
             $hearingProcess->delete();
 
             ActivityLogger::logAction(
@@ -253,6 +275,8 @@ class HearingProcessController extends Controller
                     'establishment' => $establishment
                 ]
             );
+
+            DB::commit();
 
             Log::info('Hearing process ID: ' . $id . ' deleted successfully.');
 
@@ -270,7 +294,9 @@ class HearingProcessController extends Controller
                 ->with('active_tab', 'hearing');
                 
         } catch (\Exception $e) {
+            DB::rollBack();
             Log::error('Error deleting hearing process ID: ' . $id . ' - ' . $e->getMessage());
+            Log::error('Stack trace: ' . $e->getTraceAsString());
 
             // Return JSON response for AJAX requests
             if (request()->expectsJson()) {
@@ -287,6 +313,9 @@ class HearingProcessController extends Controller
         }
     }
 
+    /**
+     * Handle inline updates via AJAX
+     */
     public function inlineUpdate(Request $request, $id)
     {
         Log::info('Hearing process inline update request received', [
@@ -295,8 +324,10 @@ class HearingProcessController extends Controller
             'content_type' => $request->header('Content-Type')
         ]);
         
+        DB::beginTransaction();
         try {
-            $hearingProcess = HearingProcess::with('case')->findOrFail($id);
+            // Lock the hearing process row
+            $hearingProcess = HearingProcess::lockForUpdate()->with('case')->findOrFail($id);
             $originalData = $hearingProcess->toArray();
             
             // Get all input data
@@ -331,6 +362,7 @@ class HearingProcessController extends Controller
             ]);
 
             if ($validator->fails()) {
+                DB::rollBack();
                 Log::warning('Hearing process validation failed', [
                     'errors' => $validator->errors(),
                     'data' => $cleanedData
@@ -386,6 +418,17 @@ class HearingProcessController extends Controller
                         'method' => 'inline_edit'
                     ]
                 );
+            } else {
+                ActivityLogger::logAction(
+                    'UPDATE',
+                    'HearingProcess',
+                    $hearingProcess->case->inspection_id ?? $id,
+                    'Attempted update with no changes',
+                    [
+                        'establishment' => $hearingProcess->case->establishment_name ?? 'Unknown',
+                        'method' => 'inline_edit'
+                    ]
+                );
             }
 
             // Refresh to get updated data
@@ -398,15 +441,17 @@ class HearingProcessController extends Controller
             $responseData = [
                 'inspection_id' => $hearingProcess->case->inspection_id ?? '-',
                 'establishment_name' => $hearingProcess->case->establishment_name ?? '-',
-                'date_1st_mc_actual' => $hearingProcess->date_1st_mc_actual ? \Carbon\Carbon::parse($hearingProcess->date_1st_mc_actual)->format('Y-m-d') : '-',
+                'date_1st_mc_actual' => $hearingProcess->date_1st_mc_actual ? Carbon::parse($hearingProcess->date_1st_mc_actual)->format('Y-m-d') : '-',
                 'first_mc_pct' => $hearingProcess->first_mc_pct ?? '-',
                 'status_1st_mc' => $hearingProcess->status_1st_mc ?? 'Pending',
-                'date_2nd_last_mc' => $hearingProcess->date_2nd_last_mc ? \Carbon\Carbon::parse($hearingProcess->date_2nd_last_mc)->format('Y-m-d') : '-',
+                'date_2nd_last_mc' => $hearingProcess->date_2nd_last_mc ? Carbon::parse($hearingProcess->date_2nd_last_mc)->format('Y-m-d') : '-',
                 'second_last_mc_pct' => $hearingProcess->second_last_mc_pct ?? '-',
                 'status_2nd_mc' => $hearingProcess->status_2nd_mc ?? 'Pending',
                 'case_folder_forwarded_to_ro' => $hearingProcess->case_folder_forwarded_to_ro ?? '-',
                 'complete_case_folder' => $hearingProcess->complete_case_folder ?? 'N',
             ];
+
+            DB::commit();
 
             return response()->json([
                 'success' => true,
@@ -415,6 +460,7 @@ class HearingProcessController extends Controller
             ]);
 
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            DB::rollBack();
             Log::error('Hearing process not found: ' . $id);
             return response()->json([
                 'success' => false,
@@ -422,10 +468,12 @@ class HearingProcessController extends Controller
             ], 404);
             
         } catch (\Illuminate\Database\QueryException $e) {
+            DB::rollBack();
             Log::error('Database error in hearing process update: ' . $e->getMessage(), [
                 'hearing_id' => $id,
                 'sql_state' => $e->errorInfo[0] ?? 'Unknown',
                 'error_code' => $e->errorInfo[1] ?? 'Unknown',
+                'stack_trace' => $e->getTraceAsString()
             ]);
             
             return response()->json([
@@ -434,12 +482,14 @@ class HearingProcessController extends Controller
             ], 500);
             
         } catch (\Exception $e) {
+            DB::rollBack();
             Log::error('Hearing process inline update failed: ' . $e->getMessage(), [
                 'hearing_id' => $id,
                 'request_data' => $request->all(),
                 'error_class' => get_class($e),
                 'error_line' => $e->getLine(),
                 'error_file' => $e->getFile(),
+                'stack_trace' => $e->getTraceAsString()
             ]);
 
             return response()->json([
@@ -492,4 +542,4 @@ class HearingProcessController extends Controller
             ], 404);
         }
     }
-} 
+}

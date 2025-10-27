@@ -10,10 +10,13 @@ class OrderAndDisposition extends Model
 
     protected $fillable = [
         'case_id',
+        'aging_2_days_finalization',  // ← ADD THIS
         'status_finalization',
+        'pct_96_days',                // ← ADD THIS
         'date_signed_mis',
         'status_pct',
         'reference_date_pct',
+        'aging_pct',                  // ← ADD THIS (if you use it)
         'disposition_mis',
         'disposition_actual',
         'findings_to_comply',
@@ -26,10 +29,13 @@ class OrderAndDisposition extends Model
         'reference_date_pct' => 'date',
         'date_of_order_actual' => 'date',
         'released_date_actual' => 'date',
+        'aging_2_days_finalization' => 'integer',  // ← ADD THIS for proper type casting
+        'pct_96_days' => 'integer',                 // ← ADD THIS for proper type casting
+        'aging_pct' => 'integer',                   // ← ADD THIS if you use it
     ];
 
     // Define the belongs-to relationship with CaseFile
-        public function case()
+    public function case()
     {
         return $this->belongsTo(CaseFile::class, 'case_id');
     }

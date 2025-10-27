@@ -203,112 +203,139 @@ class CasesController extends Controller
         }
     }
 
-    /**
-     * Store new case
-     */
-    public function store(Request $request)
-    {
-        $validated = $request->validate([
-            'inspection_id' => 'required|string|max:255|unique:cases,inspection_id',
-            'case_no' => 'nullable|string|max:255',
-            'establishment_name' => 'required|string|max:255',
-            'current_stage' => 'required|in:1: Inspections,2: Docketing,3: Hearing,4: Review & Drafting,5: Orders & Disposition,6: Compliance & Awards,7: Appeals & Resolution',
-            'overall_status' => 'required|in:Active,Completed,Dismissed',
+/**
+ * Store new case
+ */
+public function store(Request $request)
+{
+    $validated = $request->validate([
+        'inspection_id' => 'required|string|max:255|unique:cases,inspection_id',
+        'case_no' => 'nullable|string|max:255',
+        'establishment_name' => 'required|string|max:255',
+        'current_stage' => 'required|in:1: Inspections,2: Docketing,3: Hearing,4: Review & Drafting,5: Orders & Disposition,6: Compliance & Awards,7: Appeals & Resolution',
+        'overall_status' => 'required|in:Active,Completed,Dismissed',
+    ]);
+
+    DB::beginTransaction();
+    try {
+        // Create the case
+        $case = CaseFile::create($validated);
+
+        // Create related inspection record if starting at inspections stage
+        if ($case->current_stage === '1: Inspections') {
+            Inspection::create(['case_id' => $case->id]);
+        }
+
+        // Log the action
+        ActivityLogger::logAction(
+            'CREATE',
+            'Case',
+            $case->inspection_id,
+            null,
+            [
+                'establishment' => $case->establishment_name,
+                'stage' => $case->current_stage
+            ]
+        );
+
+        DB::commit();
+
+        return redirect()->route('case.index')->with('success', 'Case created successfully!');
+        
+    } catch (\Exception $e) {
+        DB::rollBack();
+        Log::error('Error creating case: ' . $e->getMessage());
+        Log::error('Stack trace: ' . $e->getTraceAsString());
+        
+        return redirect()->route('case.index')
+            ->with('error', 'Failed to create case: ' . $e->getMessage());
+    }
+}
+
+/**
+ * Update case
+ */
+public function update(Request $request, $id)
+{
+    $validated = $request->validate([
+        'inspection_id' => 'required|string|max:255|unique:cases,inspection_id,' . $id,
+        'case_no' => 'nullable|string|max:255',
+        'establishment_name' => 'required|string|max:255',
+        'current_stage' => 'required|in:1: Inspections,2: Docketing,3: Hearing,4: Review & Drafting,5: Orders & Disposition,6: Compliance & Awards,7: Appeals & Resolution',
+        'overall_status' => 'required|in:Active,Completed,Dismissed',
+    ]);
+
+    DB::beginTransaction();
+    try {
+        $case = CaseFile::lockForUpdate()->findOrFail($id);
+        $oldData = $case->toArray();
+        
+        $case->update($validated);
+
+        $changes = $this->getChanges($oldData, $validated);
+
+        ActivityLogger::logAction(
+            'UPDATE',
+            'Case',
+            $case->inspection_id,
+            "Updated: " . ($changes ?: 'No changes detected'),
+            ['establishment' => $case->establishment_name]
+        );
+
+        DB::commit();
+
+        return redirect()->route('case.index')->with('success', 'Case updated successfully!');
+        
+    } catch (\Exception $e) {
+        DB::rollBack();
+        Log::error('Error updating case: ' . $e->getMessage());
+        Log::error('Stack trace: ' . $e->getTraceAsString());
+        
+        return redirect()->route('case.index')
+            ->with('error', 'Failed to update case: ' . $e->getMessage());
+    }
+}
+
+/**
+ * Delete case
+ */
+public function destroy($id)
+{
+    DB::beginTransaction();
+    try {
+        $case = CaseFile::lockForUpdate()->findOrFail($id);
+        $caseInfo = $case->inspection_id . ' - ' . $case->establishment_name;
+        $establishmentName = $case->establishment_name;
+        
+        // Delete the case (will cascade to related records if foreign keys are set up)
+        $case->delete();
+        
+        ActivityLogger::logAction(
+            'DELETE',
+            'Case',
+            $caseInfo,
+            'Case deleted',
+            ['establishment' => $establishmentName]
+        );
+
+        DB::commit();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Case deleted successfully.'
         ]);
-
-        try {
-            $case = CaseFile::create($validated);
-
-            ActivityLogger::logAction(
-                'CREATE',
-                'Case',
-                $case->inspection_id,
-                null,
-                [
-                    'establishment' => $case->establishment_name,
-                    'stage' => $case->current_stage
-                ]
-            );
-
-            // Create related inspection record if starting at inspections stage
-            if ($case->current_stage === '1: Inspections') {
-                Inspection::create(['case_id' => $case->id]);
-            }
-
-            return redirect()->route('case.index')->with('success', 'Case created successfully!');
-        } catch (\Exception $e) {
-            Log::error('Error creating case: ' . $e->getMessage());
-            return redirect()->route('case.index')->with('error', 'Failed to create case: ' . $e->getMessage());
-        }
+        
+    } catch (\Exception $e) {
+        DB::rollBack();
+        Log::error('Case delete failed: ' . $e->getMessage());
+        Log::error('Stack trace: ' . $e->getTraceAsString());
+        
+        return response()->json([
+            'success' => false,
+            'message' => 'Failed to delete case.'
+        ], 500);
     }
-
-    /**
-     * Update case
-     */
-    public function update(Request $request, $id)
-    {
-        $validated = $request->validate([
-            'inspection_id' => 'required|string|max:255|unique:cases,inspection_id,' . $id,
-            'case_no' => 'nullable|string|max:255',
-            'establishment_name' => 'required|string|max:255',
-            'current_stage' => 'required|in:1: Inspections,2: Docketing,3: Hearing,4: Review & Drafting,5: Orders & Disposition,6: Compliance & Awards,7: Appeals & Resolution',
-            'overall_status' => 'required|in:Active,Completed,Dismissed',
-        ]);
-
-        try {
-            $case = CaseFile::findOrFail($id);
-            $oldData = $case->toArray();
-            
-            $case->update($validated);
-
-            $changes = $this->getChanges($oldData, $validated);
-
-            ActivityLogger::logAction(
-                'UPDATE',
-                'Case',
-                $case->inspection_id,
-                "Updated: " . ($changes ?: 'No changes detected'),
-                ['establishment' => $case->establishment_name]
-            );
-
-            return redirect()->route('case.index')->with('success', 'Case updated successfully!');
-        } catch (\Exception $e) {
-            Log::error('Error updating case: ' . $e->getMessage());
-            return redirect()->route('case.index')->with('error', 'Failed to update case: ' . $e->getMessage());
-        }
-    }
-
-    /**
-     * Delete case
-     */
-    public function destroy($id)
-    {
-        try {
-            $case = CaseFile::findOrFail($id);
-            $caseInfo = $case->inspection_id . ' - ' . $case->establishment_name;
-            
-            $case->delete();
-            
-            ActivityLogger::logAction(
-                'DELETE',
-                'Case',
-                $caseInfo,
-                'Case deleted',
-                ['establishment' => $case->establishment_name]
-            );
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Case deleted successfully.'
-            ]);
-        } catch (\Exception $e) {
-            Log::error('Case delete failed: ' . $e->getMessage());
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to delete case.'
-            ], 500);
-        }
-    }
+}
 
     /**
      * Show case
@@ -357,162 +384,174 @@ class CasesController extends Controller
         }
     }
 
-    /**
-     * Move case to next stage with modal confirmation
-     */
-    public function moveToNextStage(Request $request, $id)
-    {
-        try {
-            $case = CaseFile::findOrFail($id);
-            $oldStage = $case->current_stage;
-            $isCompletion = false;
-            $newStage = null;
+/**
+ * Move case to next stage with modal confirmation
+ */
+public function moveToNextStage(Request $request, $id)
+{
+    DB::beginTransaction();
+    try {
+        // Lock the row to prevent concurrent modifications
+        $case = CaseFile::lockForUpdate()->findOrFail($id);
+        $oldStage = $case->current_stage;
+        $isCompletion = false;
+        $newStage = null;
 
-            switch ($case->current_stage) {
-                case '1: Inspections':
-                    Docketing::create(['case_id' => $case->id]);
-                    $newStage = '2: Docketing';
-                    $case->update(['current_stage' => $newStage]);
-                    break;
-                
-                case '2: Docketing':
-                    HearingProcess::create(['case_id' => $case->id]);
-                    $newStage = '3: Hearing';
-                    $case->update(['current_stage' => $newStage]);
-                    break;
-                
-                case '3: Hearing':
-                    ReviewAndDrafting::create(['case_id' => $case->id]);
-                    $newStage = '4: Review & Drafting';
-                    $case->update(['current_stage' => $newStage]);
-                    break;
-                
-                case '4: Review & Drafting':
-                    OrderAndDisposition::create(['case_id' => $case->id]);
-                    $newStage = '5: Orders & Disposition';
-                    $case->update(['current_stage' => $newStage]);
-                    break;
-                
-                case '5: Orders & Disposition':
-                    ComplianceAndAward::create(['case_id' => $case->id]);
-                    $newStage = '6: Compliance & Awards';
-                    $case->update(['current_stage' => $newStage]);
-                    break;
-                
-                case '6: Compliance & Awards':
-                    AppealsAndResolution::create(['case_id' => $case->id]);
-                    $newStage = '7: Appeals & Resolution';
-                    $case->update(['current_stage' => $newStage]);
-                    break;
-                
-                case '7: Appeals & Resolution':
-                    // Final stage - mark case as completed
-                    $case->update(['overall_status' => 'Completed']);
-                    $isCompletion = true;
-                    break;
-                
-                default:
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Invalid current stage.'
-                    ], 400);
-            }
-
-            // Log the action
-            if ($isCompletion) {
-                ActivityLogger::logAction(
-                    'COMPLETE',
-                    'Case',
-                    $case->inspection_id,
-                    'Case marked as completed in Appeals & Resolution',
-                    [
-                        'establishment' => $case->establishment_name,
-                        'final_stage' => '7: Appeals & Resolution',
-                        'status' => 'Moved to Archived Cases'
-                    ]
-                );
-                
-                $message = 'Case completed successfully and moved to archived cases!';
-            } else {
-                $oldStageName = explode(': ', $oldStage)[1] ?? $oldStage;
-                $newStageName = explode(': ', $newStage)[1] ?? $newStage;
-                
-                ActivityLogger::logAction(
-                    'PROGRESS',
-                    'Case',
-                    $case->inspection_id,
-                    "Moved from $oldStageName to $newStageName",
-                    [
-                        'establishment' => $case->establishment_name,
-                        'from_stage' => $oldStageName,
-                        'to_stage' => $newStageName
-                    ]
-                );
-                
-                $message = "Case moved from $oldStageName to $newStageName successfully!";
-            }
-
-            return response()->json([
-                'success' => true,
-                'message' => $message,
-                'data' => $case
-            ]);
-
-        } catch (\Exception $e) {
-            Log::error('Error moving case to next stage: ' . $e->getMessage());
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to move case to next stage.'
-            ], 500);
+        switch ($case->current_stage) {
+            case '1: Inspections':
+                Docketing::create(['case_id' => $case->id]);
+                $newStage = '2: Docketing';
+                $case->update(['current_stage' => $newStage]);
+                break;
+            
+            case '2: Docketing':
+                HearingProcess::create(['case_id' => $case->id]);
+                $newStage = '3: Hearing';
+                $case->update(['current_stage' => $newStage]);
+                break;
+            
+            case '3: Hearing':
+                ReviewAndDrafting::create(['case_id' => $case->id]);
+                $newStage = '4: Review & Drafting';
+                $case->update(['current_stage' => $newStage]);
+                break;
+            
+            case '4: Review & Drafting':
+                OrderAndDisposition::create(['case_id' => $case->id]);
+                $newStage = '5: Orders & Disposition';
+                $case->update(['current_stage' => $newStage]);
+                break;
+            
+            case '5: Orders & Disposition':
+                ComplianceAndAward::create(['case_id' => $case->id]);
+                $newStage = '6: Compliance & Awards';
+                $case->update(['current_stage' => $newStage]);
+                break;
+            
+            case '6: Compliance & Awards':
+                AppealsAndResolution::create(['case_id' => $case->id]);
+                $newStage = '7: Appeals & Resolution';
+                $case->update(['current_stage' => $newStage]);
+                break;
+            
+            case '7: Appeals & Resolution':
+                // Final stage - mark case as completed
+                $case->update(['overall_status' => 'Completed']);
+                $isCompletion = true;
+                break;
+            
+            default:
+                throw new \Exception('Invalid current stage.');
         }
-    }
 
-    /**
-     * Inline update via AJAX
-     */
-    public function inlineUpdate(Request $request, $id)
-    {
-        try {
-            $case = CaseFile::findOrFail($id);
-            $oldData = $case->toArray();
-            
-            // Only allow specific fields to be updated inline
-            $allowedFields = ['inspection_id', 'case_no', 'establishment_name', 'current_stage', 'overall_status'];
-            $updateData = $request->only($allowedFields);
-            
-            if (empty($updateData)) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'No valid fields to update.'
-                ], 422);
-            }
-
-            $case->update($updateData);
-            $case->refresh();
-
-            $changes = $this->getChanges($oldData, $updateData);
-
+        // Log the action
+        if ($isCompletion) {
             ActivityLogger::logAction(
-                'UPDATE',
+                'COMPLETE',
                 'Case',
                 $case->inspection_id,
-                "Inline updated: " . ($changes ?: 'No changes detected'),
-                ['establishment' => $case->establishment_name]
+                'Case marked as completed in Appeals & Resolution',
+                [
+                    'establishment' => $case->establishment_name,
+                    'final_stage' => '7: Appeals & Resolution',
+                    'status' => 'Moved to Archived Cases'
+                ]
             );
+            
+            $message = 'Case completed successfully and moved to archived cases!';
+        } else {
+            $oldStageName = explode(': ', $oldStage)[1] ?? $oldStage;
+            $newStageName = explode(': ', $newStage)[1] ?? $newStage;
+            
+            ActivityLogger::logAction(
+                'PROGRESS',
+                'Case',
+                $case->inspection_id,
+                "Moved from $oldStageName to $newStageName",
+                [
+                    'establishment' => $case->establishment_name,
+                    'from_stage' => $oldStageName,
+                    'to_stage' => $newStageName
+                ]
+            );
+            
+            $message = "Case moved from $oldStageName to $newStageName successfully!";
+        }
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Case updated successfully!',
-                'data' => $case
-            ]);
-        } catch (\Exception $e) {
-            Log::error('Case inline update failed: ' . $e->getMessage());
+        DB::commit();
+
+        return response()->json([
+            'success' => true,
+            'message' => $message,
+            'data' => $case
+        ]);
+
+    } catch (\Exception $e) {
+        DB::rollBack();
+        Log::error('Error moving case to next stage: ' . $e->getMessage());
+        Log::error('Stack trace: ' . $e->getTraceAsString());
+        
+        return response()->json([
+            'success' => false,
+            'message' => 'Failed to move case to next stage: ' . $e->getMessage()
+        ], 500);
+    }
+}
+
+/**
+ * Inline update via AJAX
+ */
+public function inlineUpdate(Request $request, $id)
+{
+    DB::beginTransaction();
+    try {
+        $case = CaseFile::lockForUpdate()->findOrFail($id);
+        $oldData = $case->toArray();
+        
+        // Only allow specific fields to be updated inline
+        $allowedFields = ['inspection_id', 'case_no', 'establishment_name', 'current_stage', 'overall_status'];
+        $updateData = $request->only($allowedFields);
+        
+        if (empty($updateData)) {
+            DB::rollBack();
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to update case.'
-            ], 500);
+                'message' => 'No valid fields to update.'
+            ], 422);
         }
+
+        $case->update($updateData);
+        $case->refresh();
+
+        $changes = $this->getChanges($oldData, $updateData);
+
+        ActivityLogger::logAction(
+            'UPDATE',
+            'Case',
+            $case->inspection_id,
+            "Inline updated: " . ($changes ?: 'No changes detected'),
+            ['establishment' => $case->establishment_name]
+        );
+
+        DB::commit();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Case updated successfully!',
+            'data' => $case
+        ]);
+        
+    } catch (\Exception $e) {
+        DB::rollBack();
+        Log::error('Case inline update failed: ' . $e->getMessage());
+        Log::error('Stack trace: ' . $e->getTraceAsString());
+        
+        return response()->json([
+            'success' => false,
+            'message' => 'Failed to update case: ' . $e->getMessage()
+        ], 500);
     }
+}
 
     /**
      * Helper function to format changes for logging

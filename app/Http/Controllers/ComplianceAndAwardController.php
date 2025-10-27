@@ -8,6 +8,7 @@ use App\Helpers\ActivityLogger;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 
 class ComplianceAndAwardController extends Controller
@@ -69,6 +70,7 @@ class ComplianceAndAwardController extends Controller
             return redirect()->back()->withErrors($validator)->withInput();
         }
 
+        DB::beginTransaction();
         try {
             $complianceAndAward = ComplianceAndAward::create($request->all());
             $case = $complianceAndAward->case;
@@ -85,11 +87,16 @@ class ComplianceAndAwardController extends Controller
                 ]
             );
 
+            DB::commit();
+
             return redirect()->route('compliance-awards.index')
                 ->with('success', 'Compliance & Award created successfully.')
                 ->with('active_tab', 'compliance_awards');
+                
         } catch (\Exception $e) {
+            DB::rollBack();
             Log::error('Error creating compliance & award: ' . $e->getMessage());
+            Log::error('Stack trace: ' . $e->getTraceAsString());
 
             return redirect()->route('compliance-awards.index')
                 ->with('error', 'Failed to create compliance & award: ' . $e->getMessage())
@@ -217,11 +224,16 @@ class ComplianceAndAwardController extends Controller
             return redirect()->back()->withErrors($validator)->withInput();
         }
 
+        DB::beginTransaction();
         try {
-            $complianceAndAward = ComplianceAndAward::findOrFail($id);
+            // Lock the record to prevent race conditions
+            $complianceAndAward = ComplianceAndAward::lockForUpdate()->findOrFail($id);
             $originalData = $complianceAndAward->toArray();
+            
+            // Update the record
             $complianceAndAward->update($request->all());
 
+            // Track changes
             $changes = [];
             foreach ($request->all() as $key => $value) {
                 if (isset($originalData[$key]) && $originalData[$key] != $value) {
@@ -241,11 +253,16 @@ class ComplianceAndAwardController extends Controller
                 ]
             );
 
+            DB::commit();
+
             return redirect()->route('compliance-awards.index')
                 ->with('success', 'Compliance & Award updated successfully.')
                 ->with('active_tab', 'compliance_awards');
+                
         } catch (\Exception $e) {
+            DB::rollBack();
             Log::error('Error updating compliance & award ID: ' . $id . ' - ' . $e->getMessage());
+            Log::error('Stack trace: ' . $e->getTraceAsString());
 
             return redirect()->route('compliance-awards.index')
                 ->with('error', 'Failed to update compliance & award: ' . $e->getMessage())
@@ -258,11 +275,16 @@ class ComplianceAndAwardController extends Controller
      */
     public function destroy($id)
     {
+        DB::beginTransaction();
         try {
-            $complianceAndAward = ComplianceAndAward::with('case')->findOrFail($id);
+            // Lock the record
+            $complianceAndAward = ComplianceAndAward::lockForUpdate()->with('case')->findOrFail($id);
+            
+            // Store info for logging before deletion
             $complianceAwardId = $complianceAndAward->case->inspection_id ?? $id;
             $establishment = $complianceAndAward->case->establishment_name ?? 'Unknown';
 
+            // Delete the record
             $complianceAndAward->delete();
 
             ActivityLogger::logAction(
@@ -274,6 +296,8 @@ class ComplianceAndAwardController extends Controller
                     'establishment' => $establishment
                 ]
             );
+
+            DB::commit();
 
             Log::info('Compliance & Award ID: ' . $id . ' deleted successfully.');
 
@@ -291,7 +315,9 @@ class ComplianceAndAwardController extends Controller
                 ->with('active_tab', 'compliance-awards');
                 
         } catch (\Exception $e) {
+            DB::rollBack();
             Log::error('Error deleting compliance & award ID: ' . $id . ' - ' . $e->getMessage());
+            Log::error('Stack trace: ' . $e->getTraceAsString());
 
             // Return JSON response for AJAX requests
             if (request()->expectsJson()) {
@@ -313,18 +339,25 @@ class ComplianceAndAwardController extends Controller
      */
     public function inlineUpdate(Request $request, $id)
     {
-        Log::info('Compliance & Award inline update received', ['id' => $id, 'data' => $request->all()]);
+        Log::info('Compliance & Award inline update received', [
+            'id' => $id, 
+            'data' => $request->all()
+        ]);
 
+        DB::beginTransaction();
         try {
-            $complianceAndAward = ComplianceAndAward::with('case')->findOrFail($id);
+            // Lock the compliance and award row
+            $complianceAndAward = ComplianceAndAward::lockForUpdate()->with('case')->findOrFail($id);
             $originalData = $complianceAndAward->toArray();
             $originalCase = $complianceAndAward->case ? $complianceAndAward->case->toArray() : [];
 
+            // Clean input data
             $inputData = $request->all();
             foreach ($inputData as $key => $value) {
                 $inputData[$key] = ($value === '' || $value === '-') ? null : $value;
             }
 
+            // Validate data
             $validator = Validator::make($inputData, [
                 'compliance_order_monetary_award' => 'nullable|numeric',
                 'osh_penalty' => 'nullable|numeric',
@@ -345,6 +378,12 @@ class ComplianceAndAwardController extends Controller
             ]);
 
             if ($validator->fails()) {
+                DB::rollBack();
+                Log::warning('Compliance & Award validation failed', [
+                    'errors' => $validator->errors(),
+                    'data' => $inputData
+                ]);
+                
                 return response()->json([
                     'success' => false,
                     'message' => 'Validation failed: ' . $validator->errors()->first(),
@@ -353,9 +392,12 @@ class ComplianceAndAwardController extends Controller
             }
 
             $validatedData = $validator->validated();
+            
+            // Update the record
             $complianceAndAward->update($validatedData);
             $complianceAndAward->refresh()->load('case');
 
+            // Track changes for activity log
             $changeDetails = [];
             foreach ($validatedData as $field => $newValue) {
                 $oldValue = $originalData[$field] ?? null;
@@ -364,6 +406,7 @@ class ComplianceAndAwardController extends Controller
                     $oldDisplay = $oldValue ?? 'empty';
                     $newDisplay = $newValue ?? 'empty';
 
+                    // Format dates for better readability
                     if (in_array($field, ['date_notice_finality_dismissed', 'released_date_notice_finality', 'date_received_by_drafter_ct_cnpc'])) {
                         $oldDisplay = $oldValue ? Carbon::parse($oldValue)->format('M d, Y') : 'not set';
                         $newDisplay = $newValue ? Carbon::parse($newValue)->format('M d, Y') : 'not set';
@@ -373,6 +416,7 @@ class ComplianceAndAwardController extends Controller
                 }
             }
 
+            // Log the activity if there were changes
             if (!empty($changeDetails)) {
                 $logDetails = 'Updated: ' . implode('; ', $changeDetails);
                 ActivityLogger::logAction(
@@ -386,15 +430,60 @@ class ComplianceAndAwardController extends Controller
                         'method' => 'inline_edit'
                     ]
                 );
+            } else {
+                ActivityLogger::logAction(
+                    'UPDATE',
+                    'Compliance & Award',
+                    $complianceAndAward->case->inspection_id ?? $id,
+                    'Attempted update with no changes',
+                    [
+                        'establishment' => $complianceAndAward->case->establishment_name ?? 'Unknown',
+                        'method' => 'inline_edit'
+                    ]
+                );
             }
+
+            DB::commit();
 
             return response()->json([
                 'success' => true,
                 'message' => 'Compliance & Award updated successfully!',
                 'data' => $complianceAndAward
             ]);
+            
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            DB::rollBack();
+            Log::error('Compliance & Award not found: ' . $id);
+            return response()->json([
+                'success' => false,
+                'message' => 'Compliance & Award record not found'
+            ], 404);
+            
+        } catch (\Illuminate\Database\QueryException $e) {
+            DB::rollBack();
+            Log::error('Database error in compliance & award update: ' . $e->getMessage(), [
+                'compliance_award_id' => $id,
+                'sql_state' => $e->errorInfo[0] ?? 'Unknown',
+                'error_code' => $e->errorInfo[1] ?? 'Unknown',
+                'stack_trace' => $e->getTraceAsString()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Database error occurred. Please check your data and try again.'
+            ], 500);
+            
         } catch (\Exception $e) {
-            Log::error('Inline update failed: ' . $e->getMessage());
+            DB::rollBack();
+            Log::error('Compliance & Award inline update failed: ' . $e->getMessage(), [
+                'compliance_award_id' => $id,
+                'request_data' => $request->all(),
+                'error_class' => get_class($e),
+                'error_line' => $e->getLine(),
+                'error_file' => $e->getFile(),
+                'stack_trace' => $e->getTraceAsString()
+            ]);
+
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to update compliance & award: ' . $e->getMessage()

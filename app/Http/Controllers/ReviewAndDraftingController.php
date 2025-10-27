@@ -8,6 +8,7 @@ use App\Helpers\ActivityLogger;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 
 class ReviewAndDraftingController extends Controller
@@ -66,6 +67,7 @@ class ReviewAndDraftingController extends Controller
                 ->with('active_tab', 'review-drafting');
         }
 
+        DB::beginTransaction();
         try {
             $reviewAndDrafting = ReviewAndDrafting::create($request->all());
             $case = $reviewAndDrafting->case;
@@ -82,12 +84,17 @@ class ReviewAndDraftingController extends Controller
                     'status_po_pct' => $request->status_po_pct ?? 'Pending'
                 ]
             );
+
+            DB::commit();
             
             return redirect()->route('case.index')
                 ->with('success', 'Review and drafting process created successfully.')
                 ->with('active_tab', 'review-drafting');
+                
         } catch (\Exception $e) {
+            DB::rollBack();
             Log::error('Error creating review and drafting process: ' . $e->getMessage());
+            Log::error('Stack trace: ' . $e->getTraceAsString());
             
             return redirect()->route('case.index')
                 ->with('error', 'Failed to create review and drafting process: ' . $e->getMessage())
@@ -205,11 +212,16 @@ class ReviewAndDraftingController extends Controller
                 ->with('active_tab', 'review-drafting');
         }
 
+        DB::beginTransaction();
         try {
-            $reviewAndDrafting = ReviewAndDrafting::findOrFail($id);
+            // Lock the record to prevent race conditions
+            $reviewAndDrafting = ReviewAndDrafting::lockForUpdate()->findOrFail($id);
             $originalData = $reviewAndDrafting->toArray();
+            
+            // Update the record
             $reviewAndDrafting->update($request->all());
 
+            // Track changes
             $changes = [];
             foreach ($request->all() as $key => $value) {
                 if (isset($originalData[$key]) && $originalData[$key] != $value) {
@@ -229,11 +241,16 @@ class ReviewAndDraftingController extends Controller
                 ]
             );
 
+            DB::commit();
+
             return redirect()->route('case.index')
                 ->with('success', 'Review and drafting process updated successfully.')
                 ->with('active_tab', 'review-drafting');
+                
         } catch (\Exception $e) {
+            DB::rollBack();
             Log::error('Error updating review and drafting process ID: ' . $id . ' - ' . $e->getMessage());
+            Log::error('Stack trace: ' . $e->getTraceAsString());
             
             return redirect()->route('case.index')
                 ->with('error', 'Failed to update review and drafting process: ' . $e->getMessage())
@@ -246,11 +263,16 @@ class ReviewAndDraftingController extends Controller
      */
     public function destroy($id)
     {
+        DB::beginTransaction();
         try {
-            $reviewAndDrafting = ReviewAndDrafting::with('case')->findOrFail($id);
+            // Lock the record
+            $reviewAndDrafting = ReviewAndDrafting::lockForUpdate()->with('case')->findOrFail($id);
+            
+            // Store info for logging before deletion
             $reviewDraftingId = $reviewAndDrafting->case->inspection_id ?? $id;
             $establishment = $reviewAndDrafting->case->establishment_name ?? 'Unknown';
 
+            // Delete the record
             $reviewAndDrafting->delete();
 
             ActivityLogger::logAction(
@@ -262,6 +284,8 @@ class ReviewAndDraftingController extends Controller
                     'establishment' => $establishment
                 ]
             );
+
+            DB::commit();
 
             Log::info('Review and drafting process ID: ' . $id . ' deleted successfully.');
 
@@ -279,7 +303,9 @@ class ReviewAndDraftingController extends Controller
                 ->with('active_tab', 'review-drafting');
                 
         } catch (\Exception $e) {
+            DB::rollBack();
             Log::error('Error deleting review and drafting process ID: ' . $id . ' - ' . $e->getMessage());
+            Log::error('Stack trace: ' . $e->getTraceAsString());
 
             // Return JSON response for AJAX requests
             if (request()->expectsJson()) {
@@ -309,8 +335,10 @@ class ReviewAndDraftingController extends Controller
             'url' => $request->url()
         ]);
         
+        DB::beginTransaction();
         try {
-            $reviewAndDrafting = ReviewAndDrafting::with('case')->findOrFail($id);
+            // Lock the review and drafting row
+            $reviewAndDrafting = ReviewAndDrafting::lockForUpdate()->with('case')->findOrFail($id);
             $originalData = $reviewAndDrafting->toArray();
             
             // Get all input data
@@ -354,6 +382,7 @@ class ReviewAndDraftingController extends Controller
             ]);
 
             if ($validator->fails()) {
+                DB::rollBack();
                 Log::warning('Review and drafting validation failed', [
                     'errors' => $validator->errors(),
                     'data' => $cleanedData
@@ -409,6 +438,17 @@ class ReviewAndDraftingController extends Controller
                         'method' => 'inline_edit'
                     ]
                 );
+            } else {
+                ActivityLogger::logAction(
+                    'UPDATE',
+                    'ReviewAndDrafting',
+                    $reviewAndDrafting->case->inspection_id ?? $id,
+                    'Attempted update with no changes',
+                    [
+                        'establishment' => $reviewAndDrafting->case->establishment_name ?? 'Unknown',
+                        'method' => 'inline_edit'
+                    ]
+                );
             }
 
             // Refresh to get updated data
@@ -426,14 +466,16 @@ class ReviewAndDraftingController extends Controller
                 'po_pct' => $reviewAndDrafting->po_pct ?? '-',
                 'aging_po_pct' => $reviewAndDrafting->aging_po_pct ?? '-',
                 'status_po_pct' => $reviewAndDrafting->status_po_pct ?? 'Pending',
-                'date_received_from_po' => $reviewAndDrafting->date_received_from_po ? \Carbon\Carbon::parse($reviewAndDrafting->date_received_from_po)->format('Y-m-d') : '-',
+                'date_received_from_po' => $reviewAndDrafting->date_received_from_po ? Carbon::parse($reviewAndDrafting->date_received_from_po)->format('Y-m-d') : '-',
                 'reviewer_drafter' => $reviewAndDrafting->reviewer_drafter ?? '-',
-                'date_received_by_reviewer' => $reviewAndDrafting->date_received_by_reviewer ? \Carbon\Carbon::parse($reviewAndDrafting->date_received_by_reviewer)->format('Y-m-d') : '-',
-                'date_returned_from_drafter' => $reviewAndDrafting->date_returned_from_drafter ? \Carbon\Carbon::parse($reviewAndDrafting->date_returned_from_drafter)->format('Y-m-d') : '-',
+                'date_received_by_reviewer' => $reviewAndDrafting->date_received_by_reviewer ? Carbon::parse($reviewAndDrafting->date_received_by_reviewer)->format('Y-m-d') : '-',
+                'date_returned_from_drafter' => $reviewAndDrafting->date_returned_from_drafter ? Carbon::parse($reviewAndDrafting->date_returned_from_drafter)->format('Y-m-d') : '-',
                 'aging_10_days_tssd' => $reviewAndDrafting->aging_10_days_tssd ?? '-',
                 'status_reviewer_drafter' => $reviewAndDrafting->status_reviewer_drafter ?? 'Pending',
                 'draft_order_tssd_reviewer' => $reviewAndDrafting->draft_order_tssd_reviewer ?? '-',
             ];
+
+            DB::commit();
 
             return response()->json([
                 'success' => true,
@@ -442,6 +484,7 @@ class ReviewAndDraftingController extends Controller
             ]);
 
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            DB::rollBack();
             Log::error('Review and drafting process not found: ' . $id);
             return response()->json([
                 'success' => false,
@@ -449,10 +492,12 @@ class ReviewAndDraftingController extends Controller
             ], 404);
             
         } catch (\Illuminate\Database\QueryException $e) {
+            DB::rollBack();
             Log::error('Database error in review and drafting update: ' . $e->getMessage(), [
                 'review_drafting_id' => $id,
                 'sql_state' => $e->errorInfo[0] ?? 'Unknown',
                 'error_code' => $e->errorInfo[1] ?? 'Unknown',
+                'stack_trace' => $e->getTraceAsString()
             ]);
             
             return response()->json([
@@ -461,12 +506,14 @@ class ReviewAndDraftingController extends Controller
             ], 500);
             
         } catch (\Exception $e) {
+            DB::rollBack();
             Log::error('Review and drafting inline update failed: ' . $e->getMessage(), [
                 'review_drafting_id' => $id,
                 'request_data' => $request->all(),
                 'error_class' => get_class($e),
                 'error_line' => $e->getLine(),
                 'error_file' => $e->getFile(),
+                'stack_trace' => $e->getTraceAsString()
             ]);
 
             return response()->json([
