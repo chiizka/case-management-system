@@ -87,25 +87,26 @@
                                 </button>
                                 
                                 <!-- Reset Password Button -->
-                                <form method="POST" action="{{ route('user.reset-password', $user->id) }}" style="display: inline;">
-                                    @csrf
-                                    <button type="submit" class="btn btn-warning btn-sm" 
-                                            onclick="return confirm('Send password reset link to {{ $user->email }}?')"
-                                            title="Reset Password">
-                                        <i class="fas fa-key"></i> Reset
-                                    </button>
-                                </form>
+                                <button type="button" class="btn btn-warning btn-sm" 
+                                        data-toggle="modal" 
+                                        data-target="#resetPasswordModal"
+                                        data-user-id="{{ $user->id }}"
+                                        data-user-name="{{ $user->fname }} {{ $user->lname }}"
+                                        data-user-email="{{ $user->email }}"
+                                        title="Reset Password">
+                                    <i class="fas fa-key"></i> Reset
+                                </button>
                                 
                                 <!-- Delete Button -->
-                                <form method="POST" action="{{ route('user.destroy', $user->id) }}" style="display: inline;">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="btn btn-danger btn-sm" 
-                                            onclick="return confirm('Are you sure you want to delete {{ $user->fname }} {{ $user->lname }}? This action cannot be undone.')"
-                                            title="Delete User">
-                                        <i class="fas fa-trash"></i> Delete
-                                    </button>
-                                </form>
+                                <button type="button" class="btn btn-danger btn-sm" 
+                                        data-toggle="modal" 
+                                        data-target="#deleteUserModal"
+                                        data-user-id="{{ $user->id }}"
+                                        data-user-name="{{ $user->fname }} {{ $user->lname }}"
+                                        data-user-email="{{ $user->email }}"
+                                        title="Delete User">
+                                    <i class="fas fa-trash"></i> Delete
+                                </button>
                             </td>
                         </tr>
                     @empty
@@ -193,7 +194,7 @@
                 </button>
             </div>
 
-            <form method="POST" action="{{ route('user.update', $user->id) }}">
+            <form method="POST" action="{{ route('user.update', $user->id) }}" id="editUserForm{{ $user->id }}">
                 @csrf
                 @method('PUT')
                 <div class="modal-body">
@@ -229,7 +230,14 @@
 
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-                    <button type="submit" class="btn btn-primary">Update User</button>
+                    <button type="button" class="btn btn-primary" 
+                            data-toggle="modal" 
+                            data-target="#confirmEditUserModal"
+                            data-user-id="{{ $user->id }}"
+                            data-user-name="{{ $user->fname }} {{ $user->lname }}"
+                            data-dismiss="modal">
+                        Update User
+                    </button>
                 </div>
             </form>
         </div>
@@ -237,4 +245,145 @@
 </div>
 @endforeach
 
+<!-- Edit Confirmation Modal -->
+<div class="modal fade" id="confirmEditUserModal" tabindex="-1" role="dialog" aria-labelledby="confirmEditUserModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="confirmEditUserModalLabel">Confirm Update</h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info" role="alert">
+                    <i class="fas fa-info-circle mr-2"></i>
+                    <strong>Confirmation Required</strong>
+                </div>
+                <p>Are you sure you want to update this user's information?</p>
+                <p class="text-muted small mb-0">User: <strong><span id="editUserInfo"></span></strong></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="confirmEditBtn">
+                    <i class="fas fa-check mr-2"></i>Confirm Update
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteUserModal" tabindex="-1" role="dialog" aria-labelledby="deleteUserModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="deleteUserModalLabel">Delete User</h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-warning" role="alert">
+                    <i class="fas fa-exclamation-triangle mr-2"></i>
+                    <strong>Warning!</strong> This action cannot be undone.
+                </div>
+                <p>Are you sure you want to delete <strong><span id="deleteUserName"></span></strong>?</p>
+                <p class="text-muted small mb-0">Email: <strong><span id="deleteUserEmail"></span></strong></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                <form method="POST" id="deleteUserForm" style="display: inline;">
+                    @csrf
+                    @method('DELETE')
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash mr-2"></i>Delete
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Reset Password Confirmation Modal -->
+<div class="modal fade" id="resetPasswordModal" tabindex="-1" role="dialog" aria-labelledby="resetPasswordModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-warning text-dark">
+                <h5 class="modal-title" id="resetPasswordModalLabel">Reset Password</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info" role="alert">
+                    <i class="fas fa-info-circle mr-2"></i>
+                    <strong>Password Reset Confirmation</strong>
+                </div>
+                <p>Send password reset link to <strong><span id="resetPasswordEmail"></span></strong>?</p>
+                <p class="text-muted small mb-0">User: <strong><span id="resetPasswordUserName"></span></strong></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                <form method="POST" id="resetPasswordForm" style="display: inline;">
+                    @csrf
+                    <button type="submit" class="btn btn-warning">
+                        <i class="fas fa-key mr-2"></i>Send Reset Link
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
 @stop
+
+@section('scripts')
+<script>
+$(document).ready(function() {
+    // Handle Delete Modal
+    $('#deleteUserModal').on('show.bs.modal', function (event) {
+        var button = $(event.relatedTarget);
+        var userId = button.data('user-id');
+        var userName = button.data('user-name');
+        var userEmail = button.data('user-email');
+        
+        var modal = $(this);
+        modal.find('#deleteUserName').text(userName);
+        modal.find('#deleteUserEmail').text(userEmail);
+        modal.find('#deleteUserForm').attr('action', '{{ route("user.destroy", ":id") }}'.replace(':id', userId));
+    });
+
+    // Handle Reset Password Modal
+    $('#resetPasswordModal').on('show.bs.modal', function (event) {
+        var button = $(event.relatedTarget);
+        var userId = button.data('user-id');
+        var userName = button.data('user-name');
+        var userEmail = button.data('user-email');
+        
+        var modal = $(this);
+        modal.find('#resetPasswordEmail').text(userEmail);
+        modal.find('#resetPasswordUserName').text(userName);
+        modal.find('#resetPasswordForm').attr('action', '{{ route("user.reset-password", ":id") }}'.replace(':id', userId));
+    });
+
+    // Handle Edit Confirmation Modal
+    var currentEditUserId = null;
+    
+    $('#confirmEditUserModal').on('show.bs.modal', function (event) {
+        var button = $(event.relatedTarget);
+        currentEditUserId = button.data('user-id');
+        var userName = button.data('user-name');
+        
+        var modal = $(this);
+        modal.find('#editUserInfo').text(userName);
+    });
+
+    $('#confirmEditBtn').on('click', function() {
+        if (currentEditUserId) {
+            $('#editUserForm' + currentEditUserId).submit();
+        }
+    });
+});
+</script>
+@endsection
