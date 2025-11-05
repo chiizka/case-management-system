@@ -93,6 +93,9 @@
                 <h6 class="collapse-header">Custom Utilities:</h6>
                 <a class="collapse-item" href="{{ route('case.index') }}">Active Cases</a>
                 <a class="collapse-item" href="{{ route('archive.index') }}">Archived Cases</a>
+                <a class="collapse-item" href="{{ route('documents.tracking') }}">
+                <i class="fas fa-map-marker-alt"></i> Document Tracking
+            </a>
             </div>
         </div>
     </li>

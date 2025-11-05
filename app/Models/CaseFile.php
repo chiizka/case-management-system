@@ -55,4 +55,10 @@ class CaseFile extends Model
     {
         return $this->hasMany(AppealsAndResolution::class, 'case_id');
     }
+
+    // ✅ ADD THIS NEW RELATIONSHIP
+    public function documentTracking()
+    {
+        return $this->hasOne(DocumentTracking::class, 'case_id');
+    }
 }

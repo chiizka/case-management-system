@@ -14,6 +14,8 @@ use App\Http\Controllers\ComplianceAndAwardController;
 use App\Http\Controllers\AppealsAndResolutionController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\LogController;
+use App\Http\Controllers\DocumentTrackingController;
+
 
 Route::get('/', [FrontController::class, 'index'])->name('home');
 
@@ -112,4 +114,10 @@ Route::middleware('auth')->group(function () {
         Route::put('/appeals-and-resolution/{id}/inline-update', [AppealsAndResolutionController::class, 'inlineUpdate'])->name('appeals-and-resolution.inline-update');
     });
 
+    Route::middleware(['auth'])->group(function() {
+    Route::get('/documents/tracking', [DocumentTrackingController::class, 'index'])->name('documents.tracking');
+    Route::post('/documents/transfer', [DocumentTrackingController::class, 'transfer'])->name('documents.transfer');
+    Route::post('/documents/update', [DocumentTrackingController::class, 'update'])->name('documents.update');
+    Route::get('/documents/{id}/history', [DocumentTrackingController::class, 'history'])->name('documents.history');
+    });
 });
