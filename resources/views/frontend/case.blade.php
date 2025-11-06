@@ -540,7 +540,7 @@
 </div>
 
 @endsection
-@section('scripts')
+@push('scripts')
 <!-- DataTables plugins -->
 <script src="{{ asset('vendor/datatables/jquery.dataTables.min.js') }}"></script>
 <script src="{{ asset('vendor/datatables/dataTables.bootstrap4.min.js') }}"></script>
@@ -1738,4 +1738,4 @@ function updateRowDisplay(row, responseData, config) {
     });
 });
 </script>
-@endsection
+@endpush

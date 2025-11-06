@@ -21,31 +21,31 @@
     <!-- Custom styles for DataTables -->
     <link href="{{ asset('vendor/datatables/dataTables.bootstrap4.min.css') }}" rel="stylesheet">
 
-<style>
-    /* Force solid background on sidebar */
-    .sidebar {
-        background: linear-gradient(180deg, #4e73df 10%, #224abe 100%) !important;
-        background-color: #4e73df !important;
-        z-index: 1050 !important;
-    }
+    <style>
+        /* Force solid background on sidebar */
+        .sidebar {
+            background: linear-gradient(180deg, #4e73df 10%, #224abe 100%) !important;
+            background-color: #4e73df !important;
+            z-index: 1050 !important;
+        }
 
-    /* Ensure all sidebar inner elements have proper background */
-    .sidebar .nav-item,
-    .sidebar .sidebar-brand,
-    .sidebar .sidebar-heading {
-        background-color: transparent;
-        position: relative;
-        z-index: 1051;
-    }
+        /* Ensure all sidebar inner elements have proper background */
+        .sidebar .nav-item,
+        .sidebar .sidebar-brand,
+        .sidebar .sidebar-heading {
+            background-color: transparent;
+            position: relative;
+            z-index: 1051;
+        }
 
-    /* Fix for when sidebar is toggled */
-    .sidebar.toggled {
-        width: 6.5rem !important;
-        background: linear-gradient(180deg, #4e73df 10%, #224abe 100%) !important;
-    }
-    
-</style>
+        /* Fix for when sidebar is toggled */
+        .sidebar.toggled {
+            width: 6.5rem !important;
+            background: linear-gradient(180deg, #4e73df 10%, #224abe 100%) !important;
+        }
+    </style>
 </head>
+
 
 <body id="page-top">
     <!-- Page Wrapper -->
@@ -335,27 +335,35 @@
                     </div>
                 </div>
             </div>
-@stack('scripts')
-<!-- Bootstrap core JavaScript-->
-<script src="{{ asset('vendor/jquery/jquery.min.js') }}"></script>
-<script src="{{ asset('vendor/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
+            
+    <!-- ============================================ -->
+    <!-- CRITICAL: Load Core JavaScript Libraries FIRST -->
+    <!-- ============================================ -->
 
-<!-- Core plugin JavaScript-->
-<script src="{{ asset('vendor/jquery-easing/jquery.easing.min.js') }}"></script>
+    <!-- jQuery (MUST be first!) -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
-<!-- Custom scripts for all pages-->
-<script src="{{ asset('js/sb-admin-2.min.js') }}"></script>
+    <!-- Bootstrap Bundle (includes Popper) -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
 
-{{-- <!-- Chart.js -->
-<script src="{{ asset('vendor/chart.js/Chart.min.js') }}"></script>
+    <!-- jQuery Easing -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-easing/1.4.1/jquery.easing.min.js"></script>
 
-<!-- Demo scripts for charts -->
-<script src="{{ asset('js/demo/chart-area-demo.js') }}"></script>
-<script src="{{ asset('js/demo/chart-pie-demo.js') }}"></script> --}}
+    <!-- SB Admin 2 -->
+    <script src="{{ asset('js/sb-admin-2.min.js') }}"></script>
 
+    <!-- DataTables - ONLY if used on multiple pages -->
+    <script src="{{ asset('vendor/datatables/jquery.dataTables.min.js') }}"></script>
+    <script src="{{ asset('vendor/datatables/dataTables.bootstrap4.min.js') }}"></script>
 
-@yield('scripts')
-        </div>
-    </div>
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <!-- ============================================ -->
+    <!-- Page-Specific Scripts Load Here -->
+    <!-- ============================================ -->
+    @stack('scripts')
+
 </body>
+
 </html>

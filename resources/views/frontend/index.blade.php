@@ -120,30 +120,73 @@
                 </div>
             </div>
 
-            <!-- Cases by Stage Pie Chart -->
+            <!-- Pending Documents Widget -->
             <div class="col-xl-4 col-lg-5">
                 <div class="card shadow mb-4">
                     <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-                        <h6 class="m-0 font-weight-bold text-primary">Cases by Stage</h6>
+                        <h6 class="m-0 font-weight-bold text-warning">
+                            <i class="fas fa-clock"></i> Pending Documents
+                        </h6>
+                        @if($totalPendingDocs > 0)
+                            <span class="badge badge-warning badge-pill">{{ $totalPendingDocs }}</span>
+                        @endif
                     </div>
-                    <div class="card-body">
-                        <div class="chart-pie pt-4 pb-2">
-                            <canvas id="casesByStageChart"></canvas>
-                        </div>
-                        <div class="mt-4 text-center small">
-                            <span class="mr-2">
-                                <i class="fas fa-circle text-primary"></i> Inspection
-                            </span>
-                            <span class="mr-2">
-                                <i class="fas fa-circle text-success"></i> Docketing
-                            </span>
-                            <span class="mr-2">
-                                <i class="fas fa-circle text-info"></i> Hearing
-                            </span>
-                            <span class="mr-2">
-                                <i class="fas fa-circle text-warning"></i> Resolution
-                            </span>
-                        </div>
+                    <div class="card-body" style="max-height: 400px; overflow-y: auto;">
+                        @forelse($pendingDocuments as $doc)
+                            <div class="border-left-warning shadow-sm p-3 mb-3" style="border-left: 4px solid #f6c23e !important;">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <div>
+                                        <h6 class="font-weight-bold text-primary mb-1">{{ $doc->case->case_no ?? 'N/A' }}</h6>
+                                        <p class="text-sm text-gray-800 mb-1" style="font-size: 0.85rem;">
+                                            {{ Str::limit($doc->case->establishment_name ?? 'N/A', 35) }}
+                                        </p>
+                                    </div>
+                                </div>
+                                
+                                <div class="row text-sm mb-2" style="font-size: 0.75rem;">
+                                    <div class="col-6">
+                                        <small class="text-muted d-block">From:</small>
+                                        <strong>{{ $doc->transferredBy ? $doc->transferredBy->fname : 'System' }}</strong>
+                                    </div>
+                                    <div class="col-6 text-right">
+                                        <small class="text-muted d-block">Waiting:</small>
+                                        @if($doc->transferred_at)
+                                            @php
+                                                $days = floor($doc->transferred_at->diffInDays(now()));
+                                                $badgeClass = $days > 7 ? 'danger' : ($days > 3 ? 'warning' : 'success');
+                                            @endphp
+                                            <span class="badge badge-{{ $badgeClass }}">{{ $days }} days</span>
+                                        @else
+                                            <span class="badge badge-secondary">N/A</span>
+                                        @endif
+                                    </div>
+                                </div>
+                                
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <small class="text-muted">{{ $doc->transferred_at ? $doc->transferred_at->format('M d, Y') : 'N/A' }}</small>
+                                    <button class="btn btn-sm btn-success receive-doc-btn" 
+                                            data-doc-id="{{ $doc->id }}"
+                                            data-case-no="{{ $doc->case->case_no ?? 'N/A' }}"
+                                            style="font-size: 0.75rem; padding: 0.25rem 0.75rem;">
+                                        <i class="fas fa-check"></i> Receive
+                                    </button>
+                                </div>
+                            </div>
+                        @empty
+                            <div class="text-center text-muted py-4">
+                                <i class="fas fa-check-circle fa-3x mb-3 d-block text-success"></i>
+                                <p class="mb-0">No pending documents</p>
+                                <small>All caught up!</small>
+                            </div>
+                        @endforelse
+                        
+                        @if($totalPendingDocs > 5)
+                            <div class="text-center mt-3">
+                                <a href="{{ route('documents.tracking') }}" class="btn btn-sm btn-outline-primary">
+                                    View All {{ $totalPendingDocs }} Documents <i class="fas fa-arrow-right"></i>
+                                </a>
+                            </div>
+                        @endif
                     </div>
                 </div>
             </div>
@@ -404,9 +447,15 @@
 
 @endsection
 
+
+
 @push('scripts')
 <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
 <script>
+
+    if (typeof $ === 'undefined') {
+    console.error('jQuery is not loaded!');
+}
 console.log('Dashboard scripts section reached');
 
 // Cases Trend Area Chart
@@ -487,39 +536,6 @@ var casesAreaChart = new Chart(ctx, {
     }
 });
 
-// Cases by Stage Pie Chart
-var ctxPie = document.getElementById("casesByStageChart");
-var casesByStageChart = new Chart(ctxPie, {
-    type: 'doughnut',
-    data: {
-        labels: ['Inspection', 'Docketing', 'Hearing', 'Resolution'],
-        datasets: [{
-            data: {!! json_encode($stageData) !!},
-            backgroundColor: ['#4e73df', '#1cc88a', '#36b9cc', '#f6c23e'],
-            hoverBackgroundColor: ['#2e59d9', '#17a673', '#2c9faf', '#f4b619'],
-            hoverBorderColor: "rgba(234, 236, 244, 1)",
-        }],
-    },
-    options: {
-        maintainAspectRatio: false,
-        plugins: {
-            tooltip: {
-                backgroundColor: "rgb(255,255,255)",
-                bodyColor: "#858796",
-                borderColor: '#dddfeb',
-                borderWidth: 1,
-                padding: 15,
-                displayColors: false,
-                caretPadding: 10,
-            },
-            legend: {
-                display: false
-            }
-        },
-        cutout: '80%',
-    },
-});
-
 // Cases by Location Bar Chart
 var ctxBar = document.getElementById("locationChart");
 var locationChart = new Chart(ctxBar, {
@@ -584,6 +600,118 @@ var locationChart = new Chart(ctxBar, {
                 caretPadding: 10,
             }
         }
+    }
+});
+
+// Receive document functionality - FIXED VERSION
+$(document).ready(function() {
+    console.log('Document ready - setting up receive handlers');
+    
+    let docToReceive = null;
+    
+    // Receive button click handler
+    $(document).on('click', '.receive-doc-btn', function(e) {
+        e.preventDefault();
+        console.log('Receive button clicked');
+        
+        docToReceive = $(this).data('doc-id');
+        const caseNo = $(this).data('case-no');
+        
+        console.log('Document ID:', docToReceive);
+        console.log('Case No:', caseNo);
+        
+        // Show confirmation using SweetAlert2 if available, otherwise use native confirm
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                title: 'Receive Document?',
+                text: 'Case: ' + caseNo,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Yes, receive it!',
+                cancelButtonText: 'Cancel'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    receiveDocument(docToReceive, caseNo);
+                }
+            });
+        } else {
+            // Fallback to native confirm
+            if (confirm('Receive document for case: ' + caseNo + '?')) {
+                receiveDocument(docToReceive, caseNo);
+            }
+        }
+    });
+    
+    // Function to receive document
+    function receiveDocument(docId, caseNo) {
+        console.log('Attempting to receive document:', docId);
+        
+        // Show loading state
+        const button = $(`.receive-doc-btn[data-doc-id="${docId}"]`);
+        const originalHtml = button.html();
+        button.html('<i class="fas fa-spinner fa-spin"></i> Receiving...').prop('disabled', true);
+        
+        $.ajax({
+            url: '/documents/' + docId + '/receive',
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'),
+                'Accept': 'application/json'
+            },
+            success: function(response) {
+                console.log('Success response:', response);
+                
+                // Show success message
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Success!',
+                        text: response.message || 'Document received successfully!',
+                        timer: 2000,
+                        showConfirmButton: false
+                    }).then(() => {
+                        location.reload();
+                    });
+                } else {
+                    alert(response.message || 'Document received successfully!');
+                    location.reload();
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('Error receiving document:', xhr, status, error);
+                
+                // Restore button
+                button.html(originalHtml).prop('disabled', false);
+                
+                let errorMsg = 'Failed to receive document.';
+                
+                if (xhr.responseJSON?.message) {
+                    errorMsg = xhr.responseJSON.message;
+                } else if (xhr.responseText) {
+                    try {
+                        const response = JSON.parse(xhr.responseText);
+                        errorMsg = response.message || errorMsg;
+                    } catch(e) {
+                        errorMsg = xhr.statusText || errorMsg;
+                    }
+                }
+                
+                console.error('Error message:', errorMsg);
+                
+                // Show error message
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error!',
+                        text: errorMsg
+                    });
+                } else {
+                    alert(errorMsg);
+                }
+            }
+        });
     }
 });
 </script>

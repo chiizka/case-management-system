@@ -338,7 +338,7 @@
 
 @stop
 
-@section('scripts')
+@push('scripts')
 <script>
 $(document).ready(function() {
     // Handle Delete Modal
@@ -386,4 +386,4 @@ $(document).ready(function() {
     });
 });
 </script>
-@endsection
+@endpush

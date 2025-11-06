@@ -8,30 +8,46 @@ use App\Models\Inspection;
 use App\Models\DocumentTracking;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 
 class FrontController extends Controller
 {
-    public function index()
-    {
-        // Statistics Cards
-        $totalCases = CaseFile::count();
-        $activeCases = CaseFile::where('overall_status', 'active')->count();
-        
-        // Pending Inspections - Inspections within the 20-day lapse period or without date_of_nr
-        $pendingInspections = Inspection::where(function($query) {
-            $query->whereNull('date_of_nr')
-                  ->orWhere('lapse_20_day_period', '>=', Carbon::now()->format('Y-m-d'));
-        })->count();
-        
-        $closedCases = CaseFile::where('overall_status', 'completed')->count();
-        
-        // Cases by Stage Distribution
-        $stageData = [
-            CaseFile::where('current_stage', 'inspection')->count(),
-            CaseFile::where('current_stage', 'docketing')->count(),
-            CaseFile::where('current_stage', 'hearing')->count(),
-            CaseFile::where('current_stage', 'resolution')->count(),
-        ];
+public function index()
+{
+    // Statistics Cards
+    $totalCases = CaseFile::count();
+    $activeCases = CaseFile::where('overall_status', 'active')->count();
+    
+    // Pending Inspections
+    $pendingInspections = Inspection::where(function($query) {
+        $query->whereNull('date_of_nr')
+              ->orWhere('lapse_20_day_period', '>=', Carbon::now()->format('Y-m-d'));
+    })->count();
+    
+    $closedCases = CaseFile::where('overall_status', 'completed')->count();
+    
+    $userRole = Auth::user()->role;
+    $pendingDocuments = DocumentTracking::where('current_role', $userRole)
+        ->where('status', 'Pending Receipt')
+        ->whereNull('received_by_user_id')
+        ->with(['case', 'transferredBy'])
+        ->orderBy('transferred_at', 'desc')
+        ->limit(5) // Show only top 5 on dashboard
+        ->get();
+    
+    // Count total pending for this user's role
+    $totalPendingDocs = DocumentTracking::where('current_role', $userRole)
+        ->where('status', 'Pending Receipt')
+        ->whereNull('received_by_user_id')
+        ->count();
+    
+    // Cases by Stage Distribution
+    $stageData = [
+        CaseFile::where('current_stage', 'inspection')->count(),
+        CaseFile::where('current_stage', 'docketing')->count(),
+        CaseFile::where('current_stage', 'hearing')->count(),
+        CaseFile::where('current_stage', 'resolution')->count(),
+    ];
         
         // Monthly Trend (Last 6 Months)
         $monthLabels = [];
@@ -102,6 +118,8 @@ class FrontController extends Controller
             'activeCases',
             'pendingInspections',
             'closedCases',
+            'pendingDocuments',        // ADD THIS
+            'totalPendingDocs',         // ADD THIS
             'stageData',
             'monthLabels',
             'monthlyData',
