@@ -4,78 +4,107 @@ namespace App\Http\Controllers;
 
 use App\Models\DocumentTracking;
 use App\Models\DocumentTrackingHistory;
-use App\Models\CaseFile; // ✅ CHANGED from Cases
+use App\Models\CaseFile;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
 
 class DocumentTrackingController extends Controller
 {
     public function index()
     {
-        $documents = DocumentTracking::with('case')->get();
-        $cases = CaseFile::where('overall_status', 'Active')->get(); // ✅ CHANGED
+        $user = Auth::user();
         
-        // Count documents by location
-        $locationCounts = [
-            'Records' => DocumentTracking::where('current_location', 'Records')->count(),
-            'MALSU' => DocumentTracking::where('current_location', 'MALSU')->count(),
-            'Regional Director' => DocumentTracking::where('current_location', 'Regional Director')->count(),
-            'Labor Arbiter' => DocumentTracking::where('current_location', 'Labor Arbiter')->count(),
+        // Get documents based on user role
+        $myDocuments = DocumentTracking::with(['case', 'transferredBy', 'receivedBy'])
+            ->where('current_role', $user->role)
+            ->where('status', 'Received')
+            ->get();
+        
+        // Get pending documents for user's role
+        $pendingDocuments = DocumentTracking::with(['case', 'transferredBy'])
+            ->where('current_role', $user->role)
+            ->where('status', 'Pending Receipt')
+            ->get();
+        
+        // All documents (for admin overview)
+        $allDocuments = DocumentTracking::with(['case', 'transferredBy', 'receivedBy'])->get();
+        
+        $cases = CaseFile::where('overall_status', 'Active')->get();
+        
+        // Count documents by role
+        $roleCounts = [
+            'admin' => DocumentTracking::where('current_role', 'admin')->count(),
+            'malsu' => DocumentTracking::where('current_role', 'malsu')->count(),
+            'case_management' => DocumentTracking::where('current_role', 'case_management')->count(),
+            'province' => DocumentTracking::where('current_role', 'province')->count(),
         ];
 
-        return view('frontend.document-tracking', compact('documents', 'cases', 'locationCounts'));
+        return view('frontend.document-tracking', compact(
+            'myDocuments',
+            'pendingDocuments',
+            'allDocuments',
+            'cases',
+            'roleCounts'
+        ));
     }
 
     public function transfer(Request $request)
     {
         $request->validate([
-            'case_id' => 'required|exists:cases,id', // ✅ Table name stays 'cases'
-            'current_location' => 'required|string',
-            'received_by' => 'required|string',
-            'date_received' => 'required|date',
-            'notes' => 'nullable|string'
+            'case_id' => 'required|exists:cases,id',
+            'target_role' => 'required|in:admin,malsu,case_management,province',
+            'transfer_notes' => 'nullable|string'
         ]);
 
         DB::beginTransaction();
         try {
-            // Check if document tracking already exists for this case
+            $user = Auth::user();
+            
+            // Check if document tracking exists
             $document = DocumentTracking::where('case_id', $request->case_id)->first();
 
             if ($document) {
-                // Save current location to history
+                // Save current state to history
                 DocumentTrackingHistory::create([
                     'document_tracking_id' => $document->id,
-                    'location' => $document->current_location,
-                    'received_by' => $document->received_by,
-                    'date_received' => $document->date_received,
-                    'notes' => $document->notes
+                    'from_role' => $document->current_role,
+                    'to_role' => $request->target_role,
+                    'transferred_by_user_id' => $user->id,
+                    'transferred_at' => now(),
+                    'received_by_user_id' => $document->received_by_user_id,
+                    'received_at' => $document->received_at,
+                    'notes' => $request->transfer_notes
                 ]);
 
-                // Update current location
+                // Update document
                 $document->update([
-                    'current_location' => $request->current_location === 'Other' ? $request->other_location : $request->current_location,
-                    'received_by' => $request->received_by,
-                    'date_received' => $request->date_received,
-                    'notes' => $request->notes,
-                    'status' => 'Active'
+                    'current_role' => $request->target_role,
+                    'status' => 'Pending Receipt',
+                    'transferred_by_user_id' => $user->id,
+                    'transferred_at' => now(),
+                    'received_by_user_id' => null,
+                    'received_at' => null,
+                    'transfer_notes' => $request->transfer_notes
                 ]);
             } else {
                 // Create new document tracking
                 $document = DocumentTracking::create([
                     'case_id' => $request->case_id,
-                    'current_location' => $request->current_location === 'Other' ? $request->other_location : $request->current_location,
-                    'received_by' => $request->received_by,
-                    'date_received' => $request->date_received,
-                    'notes' => $request->notes,
-                    'status' => 'Active'
+                    'current_role' => $request->target_role,
+                    'status' => 'Pending Receipt',
+                    'transferred_by_user_id' => $user->id,
+                    'transferred_at' => now(),
+                    'transfer_notes' => $request->transfer_notes
                 ]);
             }
 
             DB::commit();
             return response()->json([
                 'success' => true,
-                'message' => 'Document transferred successfully!'
+                'message' => 'Document transferred successfully to ' . DocumentTracking::ROLE_NAMES[$request->target_role] . '!'
             ]);
 
         } catch (\Exception $e) {
@@ -87,29 +116,89 @@ class DocumentTrackingController extends Controller
         }
     }
 
+    public function receive(Request $request, $id)
+    {
+        $user = Auth::user();
+        $document = DocumentTracking::findOrFail($id);
+
+        // Check if user's role matches the document's target role
+        if ($document->current_role !== $user->role) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You do not have permission to receive this document.'
+            ], 403);
+        }
+
+        // Check if already received
+        if ($document->status === 'Received') {
+            return response()->json([
+                'success' => false,
+                'message' => 'This document has already been received.'
+            ], 400);
+        }
+
+        DB::beginTransaction();
+        try {
+            // Update document as received
+            $document->update([
+                'status' => 'Received',
+                'received_by_user_id' => $user->id,
+                'received_at' => now()
+            ]);
+
+            // Update the latest history record with receiver info
+            $latestHistory = $document->history()->latest()->first();
+            if ($latestHistory && !$latestHistory->received_by_user_id) {
+                $latestHistory->update([
+                    'received_by_user_id' => $user->id,
+                    'received_at' => now()
+                ]);
+            }
+
+            DB::commit();
+            return response()->json([
+                'success' => true,
+                'message' => 'Document received successfully!'
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollback();
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to receive document: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
     public function history($id)
     {
-        $document = DocumentTracking::with(['case', 'history'])->findOrFail($id);
+        $document = DocumentTracking::with(['case', 'history.transferredBy', 'history.receivedBy'])->findOrFail($id);
         
         $historyData = [];
         
-        // Add current location
+        // Add current state
         $historyData[] = [
-            'location' => $document->current_location,
-            'received_by' => $document->received_by,
-            'date' => Carbon::parse($document->date_received)->format('M d, Y'),
-            'time_ago' => Carbon::parse($document->date_received)->diffForHumans(),
-            'notes' => $document->notes
+            'role' => DocumentTracking::ROLE_NAMES[$document->current_role],
+            'status' => $document->status,
+            'transferred_by' => $document->transferredBy ? $document->transferredBy->fname . ' ' . $document->transferredBy->lname : 'N/A',
+            'transferred_at' => $document->transferred_at ? $document->transferred_at->format('M d, Y h:i A') : 'N/A',
+            'received_by' => $document->receivedBy ? $document->receivedBy->fname . ' ' . $document->receivedBy->lname : 'Pending',
+            'received_at' => $document->received_at ? $document->received_at->format('M d, Y h:i A') : 'Pending',
+            'notes' => $document->transfer_notes,
+            'time_ago' => $document->transferred_at ? $document->transferred_at->diffForHumans() : 'N/A'
         ];
 
-        // Add historical locations
+        // Add historical records
         foreach ($document->history as $history) {
             $historyData[] = [
-                'location' => $history->location,
-                'received_by' => $history->received_by,
-                'date' => Carbon::parse($history->date_received)->format('M d, Y'),
-                'time_ago' => Carbon::parse($history->date_received)->diffForHumans(),
-                'notes' => $history->notes
+                'role' => DocumentTracking::ROLE_NAMES[$history->to_role],
+                'from_role' => $history->from_role ? DocumentTracking::ROLE_NAMES[$history->from_role] : 'Initial',
+                'transferred_by' => $history->transferredBy ? $history->transferredBy->fname . ' ' . $history->transferredBy->lname : 'N/A',
+                'transferred_at' => $history->transferred_at ? $history->transferred_at->format('M d, Y h:i A') : 'N/A',
+                'received_by' => $history->receivedBy ? $history->receivedBy->fname . ' ' . $history->receivedBy->lname : 'Not Received',
+                'received_at' => $history->received_at ? $history->received_at->format('M d, Y h:i A') : 'N/A',
+                'notes' => $history->notes,
+                'time_ago' => $history->transferred_at ? $history->transferred_at->diffForHumans() : 'N/A'
             ];
         }
 
@@ -119,51 +208,5 @@ class DocumentTrackingController extends Controller
             'establishment' => $document->case->establishment_name ?? 'N/A',
             'history' => $historyData
         ]);
-    }
-
-    public function update(Request $request)
-    {
-        $request->validate([
-            'document_id' => 'required|exists:document_tracking,id',
-            'current_location' => 'required|string',
-            'received_by' => 'required|string',
-            'date_received' => 'required|date',
-            'notes' => 'nullable|string'
-        ]);
-
-        DB::beginTransaction();
-        try {
-            $document = DocumentTracking::findOrFail($request->document_id);
-
-            // Save current location to history
-            DocumentTrackingHistory::create([
-                'document_tracking_id' => $document->id,
-                'location' => $document->current_location,
-                'received_by' => $document->received_by,
-                'date_received' => $document->date_received,
-                'notes' => $document->notes
-            ]);
-
-            // Update document
-            $document->update([
-                'current_location' => $request->current_location === 'Other' ? $request->other_location : $request->current_location,
-                'received_by' => $request->received_by,
-                'date_received' => $request->date_received,
-                'notes' => $request->notes
-            ]);
-
-            DB::commit();
-            return response()->json([
-                'success' => true,
-                'message' => 'Document location updated successfully!'
-            ]);
-
-        } catch (\Exception $e) {
-            DB::rollback();
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to update document: ' . $e->getMessage()
-            ], 500);
-        }
     }
 }

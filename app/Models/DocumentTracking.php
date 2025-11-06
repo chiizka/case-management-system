@@ -13,26 +13,50 @@ class DocumentTracking extends Model
 
     protected $fillable = [
         'case_id',
-        'current_location',
-        'received_by',
-        'date_received',
+        'current_role',
         'status',
-        'notes'
+        'transferred_by_user_id',
+        'transferred_at',
+        'received_by_user_id',
+        'received_at',
+        'transfer_notes'
     ];
 
     protected $casts = [
-        'date_received' => 'date'
+        'transferred_at' => 'datetime',
+        'received_at' => 'datetime'
     ];
 
-    // ✅ UPDATED: Use CaseFile instead of Cases
+    // Role display names
+    const ROLE_NAMES = [
+        'admin' => 'Admin',
+        'malsu' => 'MALSU',
+        'case_management' => 'Case Management',
+        'province' => 'Province'
+    ];
+
     public function case()
     {
         return $this->belongsTo(CaseFile::class, 'case_id');
     }
 
-    // Relationship to History
+    public function transferredBy()
+    {
+        return $this->belongsTo(User::class, 'transferred_by_user_id');
+    }
+
+    public function receivedBy()
+    {
+        return $this->belongsTo(User::class, 'received_by_user_id');
+    }
+
     public function history()
     {
-        return $this->hasMany(DocumentTrackingHistory::class)->orderBy('date_received', 'desc');
+        return $this->hasMany(DocumentTrackingHistory::class)->orderBy('created_at', 'desc');
+    }
+
+    public function getRoleDisplayName()
+    {
+        return self::ROLE_NAMES[$this->current_role] ?? $this->current_role;
     }
 }

@@ -115,9 +115,9 @@ Route::middleware('auth')->group(function () {
     });
 
     Route::middleware(['auth'])->group(function() {
-    Route::get('/documents/tracking', [DocumentTrackingController::class, 'index'])->name('documents.tracking');
-    Route::post('/documents/transfer', [DocumentTrackingController::class, 'transfer'])->name('documents.transfer');
-    Route::post('/documents/update', [DocumentTrackingController::class, 'update'])->name('documents.update');
-    Route::get('/documents/{id}/history', [DocumentTrackingController::class, 'history'])->name('documents.history');
+        Route::get('/documents/tracking', [DocumentTrackingController::class, 'index'])->name('documents.tracking');
+        Route::post('/documents/transfer', [DocumentTrackingController::class, 'transfer'])->name('documents.transfer');
+        Route::post('/documents/{id}/receive', [DocumentTrackingController::class, 'receive'])->name('documents.receive');
+        Route::get('/documents/{id}/history', [DocumentTrackingController::class, 'history'])->name('documents.history');
     });
 });

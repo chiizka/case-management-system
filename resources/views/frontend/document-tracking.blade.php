@@ -2,20 +2,8 @@
 @section('content')
 
 <style>
-/* Modern card styling */
-.location-card {
-    transition: all 0.3s ease;
-    border-left: 4px solid #4e73df;
-    margin-bottom: 1rem;
-}
-
-.location-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-}
-
-/* Location badges with colors */
-.location-badge {
+/* Role-based badges */
+.role-badge {
     padding: 0.5rem 1rem;
     border-radius: 20px;
     font-weight: 600;
@@ -23,12 +11,22 @@
     display: inline-block;
 }
 
-.loc-records { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
-.loc-malsu { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; }
-.loc-regionaldirector { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; }
-.loc-laborarbiter { background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); color: white; }
-.loc-hearingofficer { background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); color: white; }
-.loc-other { background: linear-gradient(135deg, #30cfd0 0%, #330867 100%); color: white; }
+.role-admin { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+.role-malsu { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; }
+.role-case_management { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; }
+.role-province { background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); color: white; }
+
+/* Status badges */
+.status-badge {
+    padding: 0.35rem 0.75rem;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 0.75rem;
+}
+
+.status-received { background: #1cc88a; color: white; }
+.status-pending { background: #f6c23e; color: white; }
+.status-transferred { background: #36b9cc; color: white; }
 
 /* Timeline styling */
 .timeline {
@@ -64,7 +62,7 @@
     box-shadow: 0 0 0 2px #e3e6f0;
 }
 
-/* Search and filter bar */
+/* Filter bar */
 .filter-bar {
     background: #f8f9fc;
     padding: 1.5rem;
@@ -92,12 +90,12 @@
     background: #f8f9fc;
 }
 
-.stat-card.records { border-color: #667eea; }
+.stat-card.admin { border-color: #667eea; }
 .stat-card.malsu { border-color: #f5576c; }
-.stat-card.regional { border-color: #00f2fe; }
-.stat-card.labor { border-color: #38f9d7; }
+.stat-card.case-mgmt { border-color: #00f2fe; }
+.stat-card.province { border-color: #38f9d7; }
 
-/* Compact table styling */
+/* Table styling */
 .tracking-table {
     font-size: 0.9rem;
 }
@@ -115,13 +113,7 @@
     vertical-align: middle;
 }
 
-/* Action buttons */
-.btn-track {
-    padding: 0.25rem 0.75rem;
-    font-size: 0.8rem;
-}
-
-/* Modal improvements */
+/* Modal */
 .modal-header {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
@@ -136,45 +128,40 @@
     opacity: 1;
 }
 
-/* Form styling */
-.form-control:focus {
-    border-color: #667eea;
-    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+/* Tabs */
+.nav-tabs .nav-link {
+    color: #858796;
+    font-weight: 600;
 }
 
-/* Quick filters */
-.quick-filter {
-    cursor: pointer;
-    transition: all 0.2s;
-    border: 2px solid transparent;
+.nav-tabs .nav-link.active {
+    color: #4e73df;
+    border-bottom: 3px solid #4e73df;
 }
 
-.quick-filter:hover {
-    border-color: #667eea;
-    transform: scale(1.02);
+/* Pending badge pulse */
+.pending-pulse {
+    animation: pulse 2s infinite;
 }
 
-.quick-filter.active {
-    border-color: #667eea;
-    background: #f8f9fc;
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.6; }
+    100% { opacity: 1; }
 }
 
-/* Status indicators */
-.status-indicator {
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    display: inline-block;
-    margin-right: 0.5rem;
+/* Receive button highlight */
+.btn-receive {
+    background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+    border: none;
+    color: white;
+    font-weight: 600;
 }
 
-.status-active { background: #1cc88a; }
-.status-pending { background: #f6c23e; }
-.status-archived { background: #858796; }
-
-.status-row {
-    display: flex;
-    align-items: center;
+.btn-receive:hover {
+    background: linear-gradient(135deg, #38f9d7 0%, #43e97b 100%);
+    color: white;
+    transform: scale(1.05);
 }
 </style>
 
@@ -187,7 +174,7 @@
                 <h1 class="h3 mb-0 text-gray-800">
                     <i class="fas fa-map-marker-alt text-primary"></i> Document Location Tracking
                 </h1>
-                <p class="text-muted small mb-0">Track physical case documents across offices</p>
+                <p class="text-muted small mb-0">Track physical case documents across departments</p>
             </div>
             <button class="btn btn-primary" data-toggle="modal" data-target="#transferModal">
                 <i class="fas fa-exchange-alt"></i> Transfer Document
@@ -197,15 +184,15 @@
         <!-- Statistics Cards -->
         <div class="row mb-4">
             <div class="col-xl-3 col-md-6 mb-3">
-                <div class="card stat-card records quick-filter" data-location="Records">
+                <div class="card stat-card admin quick-filter" data-role="admin">
                     <div class="card-body">
                         <div class="d-flex justify-content-between align-items-center">
                             <div>
-                                <div class="text-xs font-weight-bold text-uppercase mb-1">Records</div>
-                                <div class="h5 mb-0 font-weight-bold">{{ $locationCounts['Records'] ?? 0 }}</div>
+                                <div class="text-xs font-weight-bold text-uppercase mb-1">Admin</div>
+                                <div class="h5 mb-0 font-weight-bold">{{ $roleCounts['admin'] ?? 0 }}</div>
                             </div>
                             <div class="text-muted">
-                                <i class="fas fa-archive fa-2x"></i>
+                                <i class="fas fa-user-shield fa-2x"></i>
                             </div>
                         </div>
                     </div>
@@ -213,12 +200,12 @@
             </div>
 
             <div class="col-xl-3 col-md-6 mb-3">
-                <div class="card stat-card malsu quick-filter" data-location="MALSU">
+                <div class="card stat-card malsu quick-filter" data-role="malsu">
                     <div class="card-body">
                         <div class="d-flex justify-content-between align-items-center">
                             <div>
                                 <div class="text-xs font-weight-bold text-uppercase mb-1">MALSU</div>
-                                <div class="h5 mb-0 font-weight-bold">{{ $locationCounts['MALSU'] ?? 0 }}</div>
+                                <div class="h5 mb-0 font-weight-bold">{{ $roleCounts['malsu'] ?? 0 }}</div>
                             </div>
                             <div class="text-muted">
                                 <i class="fas fa-balance-scale fa-2x"></i>
@@ -229,15 +216,15 @@
             </div>
 
             <div class="col-xl-3 col-md-6 mb-3">
-                <div class="card stat-card regional quick-filter" data-location="Regional Director">
+                <div class="card stat-card case-mgmt quick-filter" data-role="case_management">
                     <div class="card-body">
                         <div class="d-flex justify-content-between align-items-center">
                             <div>
-                                <div class="text-xs font-weight-bold text-uppercase mb-1">Regional Dir.</div>
-                                <div class="h5 mb-0 font-weight-bold">{{ $locationCounts['Regional Director'] ?? 0 }}</div>
+                                <div class="text-xs font-weight-bold text-uppercase mb-1">Case Management</div>
+                                <div class="h5 mb-0 font-weight-bold">{{ $roleCounts['case_management'] ?? 0 }}</div>
                             </div>
                             <div class="text-muted">
-                                <i class="fas fa-user-tie fa-2x"></i>
+                                <i class="fas fa-folder-open fa-2x"></i>
                             </div>
                         </div>
                     </div>
@@ -245,15 +232,15 @@
             </div>
 
             <div class="col-xl-3 col-md-6 mb-3">
-                <div class="card stat-card labor quick-filter" data-location="Labor Arbiter">
+                <div class="card stat-card province quick-filter" data-role="province">
                     <div class="card-body">
                         <div class="d-flex justify-content-between align-items-center">
                             <div>
-                                <div class="text-xs font-weight-bold text-uppercase mb-1">Labor Arbiter</div>
-                                <div class="h5 mb-0 font-weight-bold">{{ $locationCounts['Labor Arbiter'] ?? 0 }}</div>
+                                <div class="text-xs font-weight-bold text-uppercase mb-1">Province</div>
+                                <div class="h5 mb-0 font-weight-bold">{{ $roleCounts['province'] ?? 0 }}</div>
                             </div>
                             <div class="text-muted">
-                                <i class="fas fa-gavel fa-2x"></i>
+                                <i class="fas fa-building fa-2x"></i>
                             </div>
                         </div>
                     </div>
@@ -269,24 +256,22 @@
                     <input type="text" class="form-control" id="searchInput" placeholder="Case No., Establishment...">
                 </div>
                 <div class="col-md-3 mb-2 mb-md-0">
-                    <label class="small font-weight-bold text-uppercase mb-1">Current Location</label>
-                    <select class="form-control" id="locationFilter">
-                        <option value="">All Locations</option>
-                        <option value="Records">Records</option>
-                        <option value="MALSU">MALSU</option>
-                        <option value="Regional Director">Regional Director</option>
-                        <option value="Labor Arbiter">Labor Arbiter</option>
-                        <option value="Hearing Officer">Hearing Officer</option>
-                        <option value="Other">Other</option>
+                    <label class="small font-weight-bold text-uppercase mb-1">Department</label>
+                    <select class="form-control" id="roleFilter">
+                        <option value="">All Departments</option>
+                        <option value="admin">Admin</option>
+                        <option value="malsu">MALSU</option>
+                        <option value="case_management">Case Management</option>
+                        <option value="province">Province</option>
                     </select>
                 </div>
                 <div class="col-md-3 mb-2 mb-md-0">
                     <label class="small font-weight-bold text-uppercase mb-1">Status</label>
                     <select class="form-control" id="statusFilter">
                         <option value="">All Status</option>
-                        <option value="Active">Active</option>
-                        <option value="Pending Transfer">Pending Transfer</option>
-                        <option value="Archived">Archived</option>
+                        <option value="Received">Received</option>
+                        <option value="Pending Receipt">Pending Receipt</option>
+                        <option value="Transferred">Transferred</option>
                     </select>
                 </div>
                 <div class="col-md-2">
@@ -312,102 +297,289 @@
             </button>
         </div>
 
-        <!-- Document Tracking Table -->
-        <div class="card shadow mb-4">
-            <div class="card-header py-3 d-flex justify-content-between align-items-center">
-                <h6 class="m-0 font-weight-bold text-primary">Document Locations</h6>
-                <span class="badge badge-primary badge-pill" id="totalCount">{{ $documents->count() ?? 0 }} Documents</span>
-            </div>
-            <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table table-hover tracking-table" id="trackingTable">
-                        <thead>
-                            <tr>
-                                <th>Case No.</th>
-                                <th>Establishment</th>
-                                <th>Current Location</th>
-                                <th>Received By</th>
-                                <th>Date Received</th>
-                                <th>Days at Location</th>
-                                <th>Status</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @forelse($documents ?? [] as $doc)
-                            <tr data-case-id="{{ $doc->case_id }}">
-                                <td class="font-weight-bold text-primary">{{ $doc->case->case_no ?? 'N/A' }}</td>
-                                <td>
-                                    <div class="text-truncate" style="max-width: 200px;" title="{{ $doc->case->establishment_name ?? 'N/A' }}">
-                                        {{ $doc->case->establishment_name ?? 'N/A' }}
-                                    </div>
-                                </td>
-                                <td>
-                                    <span class="location-badge loc-{{ strtolower(str_replace(' ', '', $doc->current_location)) }}">
-                                        {{ $doc->current_location }}
-                                    </span>
-                                </td>
-                                <td>{{ $doc->received_by ?? '-' }}</td>
-                                <td>{{ $doc->date_received ? \Carbon\Carbon::parse($doc->date_received)->format('M d, Y') : '-' }}</td>
-                                <td>
-                                    @if($doc->date_received)
-                                        @php
-                                            $days = floor(\Carbon\Carbon::parse($doc->date_received)->diffInDays(now()));
-                                            $badgeClass = $days > 30 ? 'danger' : ($days > 14 ? 'warning' : 'success');
-                                        @endphp
-                                        <span class="badge badge-{{ $badgeClass }}">{{ $days }} days</span>
-                                    @else
-                                        -
-                                    @endif
-                                </td>
-                                <td>
-                                    <div class="status-row">
-                                        <span class="status-indicator status-{{ strtolower(str_replace(' ', '', $doc->status ?? 'active')) }}"></span>
-                                        {{ $doc->status ?? 'Active' }}
-                                    </div>
-                                </td>
-                                <td>
-                                    <button class="btn btn-info btn-sm btn-track view-history-btn" 
-                                            data-doc-id="{{ $doc->id }}"
-                                            title="View History">
-                                        <i class="fas fa-history"></i>
-                                    </button>
-                                    <button class="btn btn-warning btn-sm btn-track transfer-btn" 
-                                            data-doc-id="{{ $doc->id }}"
-                                            data-case-id="{{ $doc->case_id }}"
-                                            data-case-no="{{ $doc->case->case_no ?? 'N/A' }}"
-                                            title="Transfer">
-                                        <i class="fas fa-exchange-alt"></i>
-                                    </button>
-                                </td>
-                            </tr>
-                            @empty
-                            <tr>
-                                <td colspan="8" class="text-center text-muted py-4">
-                                    <i class="fas fa-inbox fa-3x mb-3 d-block"></i>
-                                    No documents being tracked yet. Click "Transfer Document" to start tracking.
-                                </td>
-                            </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
+        <!-- Tabs -->
+        <ul class="nav nav-tabs mb-3" id="documentTabs" role="tablist">
+            <li class="nav-item">
+                <a class="nav-link active" id="pending-tab" data-toggle="tab" href="#pending" role="tab">
+                    <i class="fas fa-clock"></i> Pending Receipts
+                    @if($pendingDocuments->count() > 0)
+                        <span class="badge badge-warning ml-2">{{ $pendingDocuments->count() }}</span>
+                    @endif
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" id="my-docs-tab" data-toggle="tab" href="#myDocs" role="tab">
+                    <i class="fas fa-folder"></i> My Documents
+                </a>
+            </li>
+            @if(Auth::user()->isAdmin())
+            <li class="nav-item">
+                <a class="nav-link" id="all-docs-tab" data-toggle="tab" href="#allDocs" role="tab">
+                    <i class="fas fa-list"></i> All Documents
+                </a>
+            </li>
+            @endif
+        </ul>
+
+        <div class="tab-content" id="documentTabsContent">
+            
+            <!-- Pending Receipts Tab -->
+            <div class="tab-pane fade show active" id="pending" role="tabpanel">
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                        <h6 class="m-0 font-weight-bold text-warning">
+                            <i class="fas fa-clock"></i> Pending Receipts for {{ Auth::user()->role == 'case_management' ? 'Case Management' : ucfirst(Auth::user()->role) }}
+                        </h6>
+                        <span class="badge badge-warning badge-pill">{{ $pendingDocuments->count() }} Pending</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover tracking-table" id="pendingTable">
+                                <thead>
+                                    <tr>
+                                        <th>Case No.</th>
+                                        <th>Establishment</th>
+                                        <th>Transferred By</th>
+                                        <th>Transferred At</th>
+                                        <th>Days Waiting</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @forelse($pendingDocuments as $doc)
+                                    <tr>
+                                        <td class="font-weight-bold text-primary">{{ $doc->case->case_no ?? 'N/A' }}</td>
+                                        <td>
+                                            <div class="text-truncate" style="max-width: 200px;" title="{{ $doc->case->establishment_name ?? 'N/A' }}">
+                                                {{ $doc->case->establishment_name ?? 'N/A' }}
+                                            </div>
+                                        </td>
+                                        <td>
+                                            @if($doc->transferredBy)
+                                                {{ $doc->transferredBy->fname }} {{ $doc->transferredBy->lname }}
+                                            @else
+                                                System
+                                            @endif
+                                        </td>
+                                        <td>{{ $doc->transferred_at ? $doc->transferred_at->format('M d, Y h:i A') : 'N/A' }}</td>
+                                        <td>
+                                            @if($doc->transferred_at)
+                                                @php
+                                                    $days = floor($doc->transferred_at->diffInDays(now()));
+                                                    $badgeClass = $days > 7 ? 'danger' : ($days > 3 ? 'warning' : 'success');
+                                                @endphp
+                                                <span class="badge badge-{{ $badgeClass }} pending-pulse">{{ $days }} days</span>
+                                            @else
+                                                -
+                                            @endif
+                                        </td>
+                                        <td>
+                                            <span class="status-badge status-pending">{{ $doc->status }}</span>
+                                        </td>
+                                        <td>
+                                            <button class="btn btn-sm btn-receive receive-btn" 
+                                                    data-doc-id="{{ $doc->id }}"
+                                                    data-case-no="{{ $doc->case->case_no ?? 'N/A' }}"
+                                                    title="Receive Document">
+                                                <i class="fas fa-check"></i> Receive
+                                            </button>
+                                            <button class="btn btn-info btn-sm view-history-btn" 
+                                                    data-doc-id="{{ $doc->id }}"
+                                                    title="View History">
+                                                <i class="fas fa-history"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    @empty
+                                    <tr>
+                                        <td colspan="7" class="text-center text-muted py-4">
+                                            <i class="fas fa-check-circle fa-3x mb-3 d-block text-success"></i>
+                                            No pending documents. All caught up!
+                                        </td>
+                                    </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
             </div>
+
+            <!-- My Documents Tab -->
+            <div class="tab-pane fade" id="myDocs" role="tabpanel">
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                        <h6 class="m-0 font-weight-bold text-primary">My Received Documents</h6>
+                        <span class="badge badge-primary badge-pill">{{ $myDocuments->count() }} Documents</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover tracking-table" id="myDocsTable">
+                                <thead>
+                                    <tr>
+                                        <th>Case No.</th>
+                                        <th>Establishment</th>
+                                        <th>Department</th>
+                                        <th>Received At</th>
+                                        <th>Days Here</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @forelse($myDocuments as $doc)
+                                    <tr>
+                                        <td class="font-weight-bold text-primary">{{ $doc->case->case_no ?? 'N/A' }}</td>
+                                        <td>
+                                            <div class="text-truncate" style="max-width: 200px;" title="{{ $doc->case->establishment_name ?? 'N/A' }}">
+                                                {{ $doc->case->establishment_name ?? 'N/A' }}
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span class="role-badge role-{{ $doc->current_role }}">
+                                                {{ $doc->getRoleDisplayName() }}
+                                            </span>
+                                        </td>
+                                        <td>{{ $doc->received_at ? $doc->received_at->format('M d, Y h:i A') : 'N/A' }}</td>
+                                        <td>
+                                            @if($doc->received_at)
+                                                @php
+                                                    $days = floor($doc->received_at->diffInDays(now()));
+                                                    $badgeClass = $days > 30 ? 'danger' : ($days > 14 ? 'warning' : 'success');
+                                                @endphp
+                                                <span class="badge badge-{{ $badgeClass }}">{{ $days }} days</span>
+                                            @else
+                                                -
+                                            @endif
+                                        </td>
+                                        <td>
+                                            <span class="status-badge status-received">{{ $doc->status }}</span>
+                                        </td>
+                                        <td>
+                                            <button class="btn btn-warning btn-sm transfer-from-my-docs-btn" 
+                                                    data-doc-id="{{ $doc->id }}"
+                                                    data-case-id="{{ $doc->case_id }}"
+                                                    data-case-no="{{ $doc->case->case_no ?? 'N/A' }}"
+                                                    title="Transfer">
+                                                <i class="fas fa-exchange-alt"></i>
+                                            </button>
+                                            <button class="btn btn-info btn-sm view-history-btn" 
+                                                    data-doc-id="{{ $doc->id }}"
+                                                    title="View History">
+                                                <i class="fas fa-history"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    @empty
+                                    <tr>
+                                        <td colspan="7" class="text-center text-muted py-4">
+                                            <i class="fas fa-inbox fa-3x mb-3 d-block"></i>
+                                            No documents received yet.
+                                        </td>
+                                    </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- All Documents Tab (Admin Only) -->
+            @if(Auth::user()->isAdmin())
+            <div class="tab-pane fade" id="allDocs" role="tabpanel">
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                        <h6 class="m-0 font-weight-bold text-primary">All Documents (Admin View)</h6>
+                        <span class="badge badge-primary badge-pill">{{ $allDocuments->count() }} Total</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover tracking-table" id="allDocsTable">
+                                <thead>
+                                    <tr>
+                                        <th>Case No.</th>
+                                        <th>Establishment</th>
+                                        <th>Current Department</th>
+                                        <th>Status</th>
+                                        <th>Transferred By</th>
+                                        <th>Received By</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @forelse($allDocuments as $doc)
+                                    <tr>
+                                        <td class="font-weight-bold text-primary">{{ $doc->case->case_no ?? 'N/A' }}</td>
+                                        <td>
+                                            <div class="text-truncate" style="max-width: 180px;" title="{{ $doc->case->establishment_name ?? 'N/A' }}">
+                                                {{ $doc->case->establishment_name ?? 'N/A' }}
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span class="role-badge role-{{ $doc->current_role }}">
+                                                {{ $doc->getRoleDisplayName() }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <span class="status-badge status-{{ strtolower(str_replace(' ', '', $doc->status)) }}">
+                                                {{ $doc->status }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            @if($doc->transferredBy)
+                                                {{ $doc->transferredBy->fname }} {{ $doc->transferredBy->lname }}
+                                            @else
+                                                System
+                                            @endif
+                                        </td>
+                                        <td>
+                                            @if($doc->receivedBy)
+                                                {{ $doc->receivedBy->fname }} {{ $doc->receivedBy->lname }}
+                                            @else
+                                                <span class="text-muted">Pending</span>
+                                            @endif
+                                        </td>
+                                        <td>
+                                            <button class="btn btn-info btn-sm view-history-btn" 
+                                                    data-doc-id="{{ $doc->id }}"
+                                                    title="View History">
+                                                <i class="fas fa-history"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    @empty
+                                    <tr>
+                                        <td colspan="7" class="text-center text-muted py-4">
+                                            <i class="fas fa-inbox fa-3x mb-3 d-block"></i>
+                                            No documents being tracked yet.
+                                        </td>
+                                    </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            @endif
+
         </div>
 
     </div>
 </div>
 
 <!-- Transfer Document Modal -->
-<div class="modal fade" id="transferModal" tabindex="-1" role="dialog" aria-labelledby="transferModalLabel" aria-hidden="true">
+<div class="modal fade" id="transferModal" tabindex="-1" role="dialog">
     <div class="modal-dialog modal-lg" role="document">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="transferModalLabel">
+                <h5 class="modal-title">
                     <i class="fas fa-exchange-alt"></i> Transfer Document
                 </h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
+                <button type="button" class="close" data-dismiss="modal">
+                    <span>&times;</span>
                 </button>
             </div>
             <form id="transferForm">
@@ -430,43 +602,25 @@
                         </div>
                         <div class="col-md-6">
                             <div class="form-group">
-                                <label class="font-weight-bold">Transfer To <span class="text-danger">*</span></label>
-                                <select class="form-control" name="current_location" id="current_location" required>
-                                    <option value="">Select Location</option>
-                                    <option value="Records">Records</option>
-                                    <option value="MALSU">MALSU</option>
-                                    <option value="Regional Director">Regional Director</option>
-                                    <option value="Labor Arbiter">Labor Arbiter</option>
-                                    <option value="Hearing Officer">Hearing Officer</option>
-                                    <option value="Other">Other (Specify)</option>
+                                <label class="font-weight-bold">Transfer To Department <span class="text-danger">*</span></label>
+                                <select class="form-control" name="target_role" id="target_role" required>
+                                    <option value="">Select Department</option>
+                                    <option value="admin">Admin</option>
+                                    <option value="malsu">MALSU</option>
+                                    <option value="case_management">Case Management</option>
+                                    <option value="province">Province</option>
                                 </select>
                             </div>
                         </div>
                     </div>
 
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label class="font-weight-bold">Received By <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control" name="received_by" id="received_by" placeholder="Name of receiver" required>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label class="font-weight-bold">Date Received <span class="text-danger">*</span></label>
-                                <input type="date" class="form-control" name="date_received" id="date_received" required>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="form-group" id="otherLocationGroup" style="display: none;">
-                        <label class="font-weight-bold">Specify Other Location <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" name="other_location" id="other_location" placeholder="Enter location">
-                    </div>
-
                     <div class="form-group">
-                        <label class="font-weight-bold">Notes/Remarks</label>
-                        <textarea class="form-control" name="notes" id="notes" rows="3" placeholder="Optional notes about this transfer..."></textarea>
+                        <label class="font-weight-bold">Transfer Notes</label>
+                        <textarea class="form-control" name="transfer_notes" id="transfer_notes" rows="3" placeholder="Optional notes about this transfer..."></textarea>
+                    </div>
+
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i> The document will be marked as "Pending Receipt" until someone from the target department receives it.
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -474,7 +628,7 @@
                         <i class="fas fa-times"></i> Cancel
                     </button>
                     <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-check"></i> Confirm Transfer
+                        <i class="fas fa-paper-plane"></i> Transfer Document
                     </button>
                 </div>
             </form>
@@ -483,15 +637,15 @@
 </div>
 
 <!-- History Modal -->
-<div class="modal fade" id="historyModal" tabindex="-1" role="dialog" aria-labelledby="historyModalLabel" aria-hidden="true">
+<div class="modal fade" id="historyModal" tabindex="-1" role="dialog">
     <div class="modal-dialog modal-lg" role="document">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="historyModalLabel">
+                <h5 class="modal-title">
                     <i class="fas fa-history"></i> Document Transfer History
                 </h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
+                <button type="button" class="close" data-dismiss="modal">
+                    <span>&times;</span>
                 </button>
             </div>
             <div class="modal-body">
@@ -501,7 +655,6 @@
                 </div>
                 <hr>
                 <div class="timeline" id="historyTimeline">
-                    <!-- Timeline items will be loaded here via AJAX -->
                     <div class="text-center py-4">
                         <div class="spinner-border text-primary" role="status">
                             <span class="sr-only">Loading...</span>
@@ -516,81 +669,111 @@
     </div>
 </div>
 
+<!-- Receive Confirmation Modal -->
+<div class="modal fade" id="receiveModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-check-circle"></i> Receive Document
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to receive this document?</p>
+                <p class="mb-0"><strong>Case:</strong> <span id="receiveCaseNo"></span></p>
+                <small class="text-muted">This will mark you as the receiver and move the document to your "My Documents" tab.</small>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-success" id="confirmReceiveBtn">
+                    <i class="fas fa-check"></i> Confirm Receipt
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 @endsection
 
 @section('scripts')
 <script>
 $(document).ready(function() {
     
-    // Set today's date as default
-    $('#date_received').val(new Date().toISOString().split('T')[0]);
-
-    // Show/hide other location field
-    $('#current_location').on('change', function() {
-        if ($(this).val() === 'Other') {
-            $('#otherLocationGroup').slideDown();
-            $('#other_location').prop('required', true);
-        } else {
-            $('#otherLocationGroup').slideUp();
-            $('#other_location').prop('required', false);
-        }
-    });
+    let docToReceive = null;
 
     // Quick filter cards
     $('.quick-filter').on('click', function() {
-        const location = $(this).data('location');
+        const role = $(this).data('role');
         $('.quick-filter').removeClass('active');
         $(this).addClass('active');
-        $('#locationFilter').val(location).trigger('change');
+        $('#roleFilter').val(role).trigger('change');
     });
 
     // Search functionality
     $('#searchInput').on('keyup', function() {
-        filterTable();
+        filterTables();
     });
 
-    $('#locationFilter, #statusFilter').on('change', function() {
-        filterTable();
+    $('#roleFilter, #statusFilter').on('change', function() {
+        filterTables();
     });
 
-    function filterTable() {
+    function filterTables() {
         const searchTerm = $('#searchInput').val().toLowerCase();
-        const location = $('#locationFilter').val();
+        const role = $('#roleFilter').val();
         const status = $('#statusFilter').val();
 
-        $('#trackingTable tbody tr').each(function() {
+        // Filter all tables
+        $('table.tracking-table tbody tr').each(function() {
             const row = $(this);
-            const caseNo = row.find('td:eq(0)').text().toLowerCase();
+            
+            // Skip "no data" rows
+            if (row.find('td[colspan]').length > 0) {
+                return;
+            }
+
+            const caseNo = row.find('td:first').text().toLowerCase();
             const establishment = row.find('td:eq(1)').text().toLowerCase();
-            const rowLocation = row.find('.location-badge').text().trim();
-            const rowStatus = row.find('.status-row').text().trim();
+            
+            let rowRole = '';
+            const roleBadge = row.find('.role-badge');
+            if (roleBadge.length > 0) {
+                const classes = roleBadge.attr('class').split(' ');
+                classes.forEach(cls => {
+                    if (cls.startsWith('role-')) {
+                        rowRole = cls.replace('role-', '');
+                    }
+                });
+            }
+
+            let rowStatus = '';
+            const statusBadge = row.find('.status-badge');
+            if (statusBadge.length > 0) {
+                rowStatus = statusBadge.text().trim();
+            }
 
             const matchesSearch = caseNo.includes(searchTerm) || establishment.includes(searchTerm);
-            const matchesLocation = !location || rowLocation === location;
-            const matchesStatus = !status || rowStatus.includes(status);
+            const matchesRole = !role || rowRole === role;
+            const matchesStatus = !status || rowStatus === status;
 
-            if (matchesSearch && matchesLocation && matchesStatus) {
+            if (matchesSearch && matchesRole && matchesStatus) {
                 row.show();
             } else {
                 row.hide();
             }
         });
-
-        updateVisibleCount();
-    }
-
-    function updateVisibleCount() {
-        const visibleCount = $('#trackingTable tbody tr:visible').length;
-        $('#totalCount').text(visibleCount + ' Documents');
     }
 
     // Clear filters
     $('#clearFilters').on('click', function() {
         $('#searchInput').val('');
-        $('#locationFilter').val('');
+        $('#roleFilter').val('');
         $('#statusFilter').val('');
         $('.quick-filter').removeClass('active');
-        filterTable();
+        filterTables();
     });
 
     // Transfer form submission
@@ -598,10 +781,9 @@ $(document).ready(function() {
         e.preventDefault();
         
         const formData = $(this).serialize();
-        const url = $('#document_id').val() ? '/documents/update' : '/documents/transfer';
 
         $.ajax({
-            url: url,
+            url: '/documents/transfer',
             method: 'POST',
             data: formData,
             headers: {
@@ -622,16 +804,61 @@ $(document).ready(function() {
         });
     });
 
-    // Transfer button click
-    $(document).on('click', '.transfer-btn', function() {
-        const docId = $(this).data('doc-id');
+    // Transfer from My Documents
+    $(document).on('click', '.transfer-from-my-docs-btn', function() {
         const caseId = $(this).data('case-id');
         const caseNo = $(this).data('case-no');
         
-        $('#document_id').val(docId);
         $('#case_id').val(caseId);
-        $('#transferModalLabel').html('<i class="fas fa-exchange-alt"></i> Transfer Document - ' + caseNo);
+        $('#transferModal .modal-title').html('<i class="fas fa-exchange-alt"></i> Transfer Document - ' + caseNo);
         $('#transferModal').modal('show');
+    });
+
+    // Regular transfer button (from header)
+    $('[data-target="#transferModal"]').on('click', function() {
+        $('#transferModal .modal-title').html('<i class="fas fa-exchange-alt"></i> Transfer Document');
+        $('#case_id').val('');
+    });
+
+    // Receive button click
+    $(document).on('click', '.receive-btn', function() {
+        const docId = $(this).data('doc-id');
+        const caseNo = $(this).data('case-no');
+        
+        docToReceive = docId;
+        $('#receiveCaseNo').text(caseNo);
+        $('#receiveModal').modal('show');
+    });
+
+    // Confirm receive
+    $('#confirmReceiveBtn').on('click', function() {
+        if (!docToReceive) return;
+
+        const button = $(this);
+        const originalHtml = button.html();
+        button.html('<i class="fas fa-spinner fa-spin"></i> Receiving...').prop('disabled', true);
+
+        $.ajax({
+            url: '/documents/' + docToReceive + '/receive',
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            },
+            success: function(response) {
+                $('#receiveModal').modal('hide');
+                showAlert(response.message || 'Document received successfully!', 'success');
+                setTimeout(() => location.reload(), 1500);
+            },
+            error: function(xhr) {
+                button.html(originalHtml).prop('disabled', false);
+                let errorMsg = 'Failed to receive document.';
+                if (xhr.responseJSON?.message) {
+                    errorMsg = xhr.responseJSON.message;
+                }
+                showAlert(errorMsg, 'danger');
+                $('#receiveModal').modal('hide');
+            }
+        });
     });
 
     // View history button
@@ -657,28 +884,48 @@ $(document).ready(function() {
                 
                 let timelineHtml = '';
                 response.history.forEach((item, index) => {
+                    const statusClass = item.status ? item.status.toLowerCase().replace(' ', '') : 'received';
+                    const roleClass = item.role ? item.role.toLowerCase().replace(' ', '_') : '';
+                    
                     timelineHtml += `
                         <div class="timeline-item">
                             <div class="card mb-0">
-                                <div class="card-body py-2">
-                                    <div class="d-flex justify-content-between align-items-start">
+                                <div class="card-body py-3">
+                                    <div class="d-flex justify-content-between align-items-start mb-2">
                                         <div>
-                                            <strong class="text-primary">${item.location}</strong>
-                                            <div class="small text-muted">
-                                                Received by: ${item.received_by}<br>
-                                                ${item.notes ? 'Notes: ' + item.notes : ''}
-                                            </div>
+                                            <span class="role-badge role-${roleClass}">${item.role}</span>
+                                            ${item.from_role ? '<small class="text-muted ml-2">from ' + item.from_role + '</small>' : ''}
                                         </div>
                                         <div class="text-right">
-                                            <div class="small font-weight-bold">${item.date}</div>
-                                            <div class="small text-muted">${item.time_ago}</div>
+                                            <small class="text-muted">${item.time_ago}</small>
                                         </div>
                                     </div>
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <small class="text-muted d-block">Transferred By:</small>
+                                            <strong>${item.transferred_by}</strong>
+                                            <br>
+                                            <small class="text-muted">${item.transferred_at}</small>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <small class="text-muted d-block">Received By:</small>
+                                            <strong class="${item.received_by === 'Pending' || item.received_by === 'Not Received' ? 'text-warning' : 'text-success'}">
+                                                ${item.received_by}
+                                            </strong>
+                                            <br>
+                                            <small class="text-muted">${item.received_at}</small>
+                                        </div>
+                                    </div>
+                                    ${item.notes ? '<hr class="my-2"><small class="text-muted">Notes: ' + item.notes + '</small>' : ''}
                                 </div>
                             </div>
                         </div>
                     `;
                 });
+                
+                if (timelineHtml === '') {
+                    timelineHtml = '<div class="alert alert-info">No history available</div>';
+                }
                 
                 $('#historyTimeline').html(timelineHtml);
             },
@@ -692,9 +939,11 @@ $(document).ready(function() {
     $('#transferModal').on('hidden.bs.modal', function() {
         $('#transferForm')[0].reset();
         $('#document_id').val('');
-        $('#otherLocationGroup').hide();
-        $('#transferModalLabel').html('<i class="fas fa-exchange-alt"></i> Transfer Document');
-        $('#date_received').val(new Date().toISOString().split('T')[0]);
+    });
+
+    $('#receiveModal').on('hidden.bs.modal', function() {
+        docToReceive = null;
+        $('#confirmReceiveBtn').html('<i class="fas fa-check"></i> Confirm Receipt').prop('disabled', false);
     });
 
 });

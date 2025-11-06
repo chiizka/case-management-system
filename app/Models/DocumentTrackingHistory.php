@@ -13,18 +13,32 @@ class DocumentTrackingHistory extends Model
 
     protected $fillable = [
         'document_tracking_id',
-        'location',
-        'received_by',
-        'date_received',
+        'from_role',
+        'to_role',
+        'transferred_by_user_id',
+        'transferred_at',
+        'received_by_user_id',
+        'received_at',
         'notes'
     ];
 
     protected $casts = [
-        'date_received' => 'date'
+        'transferred_at' => 'datetime',
+        'received_at' => 'datetime'
     ];
 
     public function documentTracking()
     {
         return $this->belongsTo(DocumentTracking::class);
+    }
+
+    public function transferredBy()
+    {
+        return $this->belongsTo(User::class, 'transferred_by_user_id');
+    }
+
+    public function receivedBy()
+    {
+        return $this->belongsTo(User::class, 'received_by_user_id');
     }
 }
