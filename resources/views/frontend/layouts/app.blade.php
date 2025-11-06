@@ -335,7 +335,7 @@
                     </div>
                 </div>
             </div>
-
+@stack('scripts')
 <!-- Bootstrap core JavaScript-->
 <script src="{{ asset('vendor/jquery/jquery.min.js') }}"></script>
 <script src="{{ asset('vendor/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
@@ -346,12 +346,12 @@
 <!-- Custom scripts for all pages-->
 <script src="{{ asset('js/sb-admin-2.min.js') }}"></script>
 
-<!-- Chart.js -->
+{{-- <!-- Chart.js -->
 <script src="{{ asset('vendor/chart.js/Chart.min.js') }}"></script>
 
 <!-- Demo scripts for charts -->
 <script src="{{ asset('js/demo/chart-area-demo.js') }}"></script>
-<script src="{{ asset('js/demo/chart-pie-demo.js') }}"></script>
+<script src="{{ asset('js/demo/chart-pie-demo.js') }}"></script> --}}
 
 
 @yield('scripts')
