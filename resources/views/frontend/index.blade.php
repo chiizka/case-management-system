@@ -94,7 +94,7 @@
 
             <!-- Cases Trend Chart -->
             <div class="col-xl-8 col-lg-7">
-                <div class="card shadow mb-4">
+                <div class="card shadow mb-4" style="height: 500px;">
                     <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
                         <h6 class="m-0 font-weight-bold text-primary">Cases Overview (Last 6 Months)</h6>
                         <div class="dropdown no-arrow">
@@ -112,8 +112,8 @@
                             </div>
                         </div>
                     </div>
-                    <div class="card-body">
-                        <div class="chart-area">
+                    <div class="card-body" style="height: calc(100% - 60px);">
+                        <div class="chart-area" style="height: 100%;">
                             <canvas id="casesAreaChart"></canvas>
                         </div>
                     </div>
@@ -122,7 +122,7 @@
 
             <!-- Pending Documents Widget -->
             <div class="col-xl-4 col-lg-5">
-                <div class="card shadow mb-4">
+                <div class="card shadow mb-4" style="height: 500px; display: flex; flex-direction: column;">
                     <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
                         <h6 class="m-0 font-weight-bold text-warning">
                             <i class="fas fa-clock"></i> Pending Documents
@@ -131,7 +131,7 @@
                             <span class="badge badge-warning badge-pill">{{ $totalPendingDocs }}</span>
                         @endif
                     </div>
-                    <div class="card-body" style="max-height: 400px; overflow-y: auto;">
+                    <div class="card-body" style="flex: 1; overflow-y: auto; overflow-x: hidden;">
                         @forelse($pendingDocuments as $doc)
                             <div class="border-left-warning shadow-sm p-3 mb-3" style="border-left: 4px solid #f6c23e !important;">
                                 <div class="d-flex justify-content-between align-items-start mb-2">
@@ -447,13 +447,11 @@
 
 @endsection
 
-
-
 @push('scripts')
 <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
 <script>
 
-    if (typeof $ === 'undefined') {
+if (typeof $ === 'undefined') {
     console.error('jQuery is not loaded!');
 }
 console.log('Dashboard scripts section reached');
