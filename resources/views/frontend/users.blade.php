@@ -59,6 +59,8 @@
                                     <span class="badge badge-info">MALSU</span>
                                 @elseif($user->role === 'case_management')
                                     <span class="badge badge-warning">Case Management</span>
+                                @elseif($user->role === 'records')
+                                    <span class="badge badge-success">Records</span> {{-- ✅ Added this --}}
                                 @else
                                     <span class="badge badge-secondary">User</span>
                                 @endif
@@ -163,13 +165,14 @@
 
             <div class="form-group">
                 <label for="role">Role</label>
-                <select class="form-control" id="role" name="role">
-                    <option value="user" {{ old('role') === 'user' ? 'selected' : '' }}>User</option>
-                    <option value="admin" {{ old('role') === 'admin' ? 'selected' : '' }}>Admin</option>
-                    <option value="province" {{ old('role') === 'province' ? 'selected' : '' }}>Province</option>
-                    <option value="malsu" {{ old('role') === 'malsu' ? 'selected' : '' }}>MALSU</option>
-                    <option value="case_management" {{ old('role') === 'case_management' ? 'selected' : '' }}>Case Management</option>
-                </select>
+                    <select class="form-control" id="role{{ $user->id }}" name="role" required>
+                        <option value="user" {{ $user->role === 'user' ? 'selected' : '' }}>User</option>
+                        <option value="admin" {{ $user->role === 'admin' ? 'selected' : '' }}>Admin</option>
+                        <option value="province" {{ $user->role === 'province' ? 'selected' : '' }}>Province</option>
+                        <option value="malsu" {{ $user->role === 'malsu' ? 'selected' : '' }}>MALSU</option>
+                        <option value="case_management" {{ $user->role === 'case_management' ? 'selected' : '' }}>Case Management</option>
+                        <option value="records" {{ $user->role === 'records' ? 'selected' : '' }}>Records</option> 
+                    </select>
             </div>
         </div>
 

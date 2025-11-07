@@ -12,7 +12,7 @@ class RoleHelper
      */
     private static $rolePermissions = [
         'user_management' => ['admin'],
-        'cases' => ['admin', 'province', 'malsu', 'case_management'],
+        'cases' => ['admin', 'province', 'malsu', 'case_management', 'records'],
         'audit_logs' => ['admin'],
         'charts' => ['admin'],
         'tables' => ['admin', 'case_management'],
@@ -110,8 +110,10 @@ class RoleHelper
             'province' => 'Province Officer',
             'malsu' => 'MALSU Officer',
             'case_management' => 'Case Manager',
+            'records' => 'Records Officer', 
         ];
 
         return $roleNames[$role] ?? ucfirst(str_replace('_', ' ', $role));
     }
+
 }

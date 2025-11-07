@@ -176,9 +176,11 @@
                 </h1>
                 <p class="text-muted small mb-0">Track physical case documents across departments</p>
             </div>
-            <button class="btn btn-primary" data-toggle="modal" data-target="#transferModal">
-                <i class="fas fa-exchange-alt"></i> Transfer Document
-            </button>
+            @if(Auth::user()->isAdmin())
+                <button class="btn btn-primary" data-toggle="modal" data-target="#transferModal">
+                    <i class="fas fa-exchange-alt"></i> Transfer Document
+                </button>
+            @endif
         </div>
 
         <!-- Statistics Cards -->
@@ -263,6 +265,7 @@
                         <option value="malsu">MALSU</option>
                         <option value="case_management">Case Management</option>
                         <option value="province">Province</option>
+                        <option value="records">Records</option>
                     </select>
                 </div>
                 <div class="col-md-3 mb-2 mb-md-0">
@@ -609,6 +612,7 @@
                                     <option value="malsu">MALSU</option>
                                     <option value="case_management">Case Management</option>
                                     <option value="province">Province</option>
+                                    <option value="records">Records</option>
                                 </select>
                             </div>
                         </div>

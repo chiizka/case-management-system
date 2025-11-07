@@ -42,6 +42,7 @@ class User extends Authenticatable
     const ROLE_PROVINCE = 'province';
     const ROLE_MALSU = 'malsu';
     const ROLE_CASE_MANAGEMENT = 'case_management';
+    const ROLE_RECORDS = 'records';
 
     // REMOVED: Password mutator (it was causing issues)
     // We'll handle password hashing manually where needed
@@ -110,5 +111,10 @@ class User extends Authenticatable
     public function hasRole($role)
     {
         return $this->role === $role;
+    }
+
+    public function isRecords()
+    {
+        return $this->role === self::ROLE_RECORDS;
     }
 }

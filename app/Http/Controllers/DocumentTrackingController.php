@@ -40,6 +40,7 @@ class DocumentTrackingController extends Controller
             'malsu' => DocumentTracking::where('current_role', 'malsu')->count(),
             'case_management' => DocumentTracking::where('current_role', 'case_management')->count(),
             'province' => DocumentTracking::where('current_role', 'province')->count(),
+            'records' => DocumentTracking::where('current_role', 'records')->count(),
         ];
 
         return view('frontend.document-tracking', compact(
@@ -55,7 +56,7 @@ class DocumentTrackingController extends Controller
     {
         $request->validate([
             'case_id' => 'required|exists:cases,id',
-            'target_role' => 'required|in:admin,malsu,case_management,province',
+            'target_role' => 'required|in:admin,malsu,case_management,province,records',
             'transfer_notes' => 'nullable|string'
         ]);
 

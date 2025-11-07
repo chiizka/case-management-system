@@ -27,12 +27,12 @@ class DocumentTracking extends Model
         'received_at' => 'datetime'
     ];
 
-    // Role display names
     const ROLE_NAMES = [
         'admin' => 'Admin',
         'malsu' => 'MALSU',
         'case_management' => 'Case Management',
-        'province' => 'Province'
+        'province' => 'Province',
+        'records' => 'Records',
     ];
 
     public function case()

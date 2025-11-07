@@ -19,7 +19,7 @@ class UserController extends Controller
             'fname' => 'required|string|max:255',
             'lname' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
-            'role' => 'required|in:admin,user,province,malsu,case_management',
+            'role' => 'required|in:admin,user,province,malsu,case_management,records',
         ]);
 
         if ($validator->fails()) {

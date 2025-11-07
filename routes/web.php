@@ -56,14 +56,15 @@ Route::middleware('auth')->group(function () {
         Route::delete('/user/{id}', [UserController::class, 'destroy'])->name('user.destroy');
     });
     
-    // Cases - Admin, Province, MALSU, Case Management
-    Route::middleware('role:admin,province,malsu,case_management')->group(function () {
+    // Cases - Admin, Province, MALSU, Case Management, Records
+    Route::middleware('role:admin,province,malsu,case_management,records')->group(function () {
         Route::resource('case', CasesController::class);
         Route::get('/archive', [ArchivedController::class, 'index'])->name('archive.index');
         Route::post('/case/{id}/next-stage', [CasesController::class, 'moveToNextStage'])->name('case.nextStage');
         Route::put('/case/{id}/inline-update', [CasesController::class, 'inlineUpdate'])->name('case.inlineUpdate');
         Route::get('/case/load-tab/{tabNumber}', [CasesController::class, 'loadTabData'])->name('case.loadTab');
     });
+
 
     // Inspections - Admin, MALSU, Case Management, province
     Route::middleware('role:admin,malsu,case_management,province')->group(function () {
