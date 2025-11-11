@@ -183,10 +183,10 @@
             @endif
         </div>
 
-        <!-- Statistics Cards -->
+        @if(Auth::user()->isAdmin())
         <div class="row mb-4">
             <div class="col-xl-3 col-md-6 mb-3">
-                <div class="card stat-card admin quick-filter" data-role="admin">
+                <div class="card stat-card admin">
                     <div class="card-body">
                         <div class="d-flex justify-content-between align-items-center">
                             <div>
@@ -202,7 +202,7 @@
             </div>
 
             <div class="col-xl-3 col-md-6 mb-3">
-                <div class="card stat-card malsu quick-filter" data-role="malsu">
+                <div class="card stat-card malsu">
                     <div class="card-body">
                         <div class="d-flex justify-content-between align-items-center">
                             <div>
@@ -218,7 +218,7 @@
             </div>
 
             <div class="col-xl-3 col-md-6 mb-3">
-                <div class="card stat-card case-mgmt quick-filter" data-role="case_management">
+                <div class="card stat-card case-mgmt">
                     <div class="card-body">
                         <div class="d-flex justify-content-between align-items-center">
                             <div>
@@ -234,7 +234,7 @@
             </div>
 
             <div class="col-xl-3 col-md-6 mb-3">
-                <div class="card stat-card province quick-filter" data-role="province">
+                <div class="card stat-card province">
                     <div class="card-body">
                         <div class="d-flex justify-content-between align-items-center">
                             <div>
@@ -249,6 +249,7 @@
                 </div>
             </div>
         </div>
+        @endif
 
         <!-- Filter Bar -->
         <div class="filter-bar">
