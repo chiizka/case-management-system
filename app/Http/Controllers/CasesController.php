@@ -577,4 +577,98 @@ public function inlineUpdate(Request $request, $id)
 
         return !empty($changes) ? implode(', ', $changes) : '';
     }
+        public function getDocumentHistory($id)
+    {
+        try {
+            $case = CaseFile::findOrFail($id);
+            
+            // Check if document tracking exists for this case
+            $documentTracking = \App\Models\DocumentTracking::where('case_id', $id)->first();
+            
+            if (!$documentTracking) {
+                return response()->json([
+                    'success' => true,
+                    'has_tracking' => false,
+                    'message' => 'No document tracking history available for this case.'
+                ]);
+            }
+            
+            // Load the history
+            $documentTracking->load(['history.transferredBy', 'history.receivedBy', 'transferredBy', 'receivedBy']);
+            
+            $historyData = [];
+            
+            // Add current state
+            $historyData[] = [
+                'role' => \App\Models\DocumentTracking::ROLE_NAMES[$documentTracking->current_role] ?? $documentTracking->current_role,
+                'status' => $documentTracking->status,
+                'transferred_by' => $documentTracking->transferredBy 
+                    ? $documentTracking->transferredBy->fname . ' ' . $documentTracking->transferredBy->lname 
+                    : 'N/A',
+                'transferred_at' => $documentTracking->transferred_at 
+                    ? $documentTracking->transferred_at->format('M d, Y h:i A') 
+                    : 'N/A',
+                'received_by' => $documentTracking->receivedBy 
+                    ? $documentTracking->receivedBy->fname . ' ' . $documentTracking->receivedBy->lname 
+                    : 'Pending',
+                'received_at' => $documentTracking->received_at 
+                    ? $documentTracking->received_at->format('M d, Y h:i A') 
+                    : 'Pending',
+                'notes' => $documentTracking->transfer_notes,
+                'time_ago' => $documentTracking->transferred_at 
+                    ? $documentTracking->transferred_at->diffForHumans() 
+                    : 'N/A'
+            ];
+            
+            // Add historical records
+            foreach ($documentTracking->history as $history) {
+                $historyData[] = [
+                    'role' => \App\Models\DocumentTracking::ROLE_NAMES[$history->to_role] ?? $history->to_role,
+                    'from_role' => $history->from_role 
+                        ? (\App\Models\DocumentTracking::ROLE_NAMES[$history->from_role] ?? $history->from_role)
+                        : 'Initial',
+                    'transferred_by' => $history->transferredBy 
+                        ? $history->transferredBy->fname . ' ' . $history->transferredBy->lname 
+                        : 'N/A',
+                    'transferred_at' => $history->transferred_at 
+                        ? $history->transferred_at->format('M d, Y h:i A') 
+                        : 'N/A',
+                    'received_by' => $history->receivedBy 
+                        ? $history->receivedBy->fname . ' ' . $history->receivedBy->lname 
+                        : 'Not Received',
+                    'received_at' => $history->received_at 
+                        ? $history->received_at->format('M d, Y h:i A') 
+                        : 'N/A',
+                    'notes' => $history->notes,
+                    'time_ago' => $history->transferred_at 
+                        ? $history->transferred_at->diffForHumans() 
+                        : 'N/A'
+                ];
+            }
+            
+            // ActivityLogger::logAction(
+            //     'VIEW',
+            //     'Document History',
+            //     $case->inspection_id,
+            //     'Viewed document tracking history',
+            //     ['establishment' => $case->establishment_name]
+            // );
+            
+            return response()->json([
+                'success' => true,
+                'has_tracking' => true,
+                'case_no' => $case->case_no ?? 'N/A',
+                'establishment' => $case->establishment_name ?? 'N/A',
+                'history' => $historyData
+            ]);
+            
+        } catch (\Exception $e) {
+            Log::error('Error fetching document history: ' . $e->getMessage());
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to load document history.'
+            ], 500);
+        }
+    }
 }

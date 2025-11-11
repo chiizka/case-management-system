@@ -276,10 +276,12 @@
                                                 <i class="fas fa-trash"></i>
                                             </button>
                                             
-                                            <button class="btn btn-info btn-sm view-btn" 
+                                            <button class="btn btn-info btn-sm view-history-btn" 
                                                     data-case-id="{{ $case->id }}"
-                                                    title="View Details">
-                                                <i class="fas fa-eye"></i>
+                                                    data-case-no="{{ $case->case_no ?? 'N/A' }}"
+                                                    data-establishment="{{ $case->establishment_name ?? 'N/A' }}"
+                                                    title="View Document History">
+                                                <i class="fas fa-history"></i>
                                             </button>
                                         </td>
                                     </tr>
@@ -534,6 +536,39 @@
                 <button type="button" class="btn btn-primary" id="confirmStageBtn">
                     <i class="fas fa-arrow-right mr-2"></i>Proceed
                 </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Document History Modal -->
+<div class="modal fade" id="caseHistoryModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                <h5 class="modal-title">
+                    <i class="fas fa-history"></i> Document Transfer History
+                </h5>
+                <button type="button" class="close" data-dismiss="modal" style="color: white;">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <strong>Case:</strong> <span id="historyCaseNo"></span><br>
+                    <strong>Establishment:</strong> <span id="historyEstablishment"></span>
+                </div>
+                <hr>
+                <div id="historyContent">
+                    <div class="text-center py-4">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="sr-only">Loading...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
             </div>
         </div>
     </div>
@@ -1737,5 +1772,142 @@ function updateRowDisplay(row, responseData, config) {
         }
     });
 });
+
+// View Document History Button Handler
+$(document).on('click', '.view-history-btn', function(e) {
+    e.preventDefault();
+    const caseId = $(this).data('case-id');
+    const caseNo = $(this).data('case-no');
+    const establishment = $(this).data('establishment');
+    
+    console.log('View History clicked - caseId:', caseId);
+    
+    if (!caseId) {
+        showAlert('error', 'Invalid case ID');
+        return;
+    }
+    
+    // Set modal header info
+    $('#historyCaseNo').text(caseNo);
+    $('#historyEstablishment').text(establishment);
+    
+    // Show modal with loading state
+    $('#caseHistoryModal').modal('show');
+    $('#historyContent').html(`
+        <div class="text-center py-4">
+            <div class="spinner-border text-primary" role="status">
+                <span class="sr-only">Loading...</span>
+            </div>
+            <p class="text-muted mt-2">Loading document history...</p>
+        </div>
+    `);
+    
+    // Load history via AJAX
+    $.ajax({
+        url: `/case/${caseId}/document-history`,
+        method: 'GET',
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'),
+            'Accept': 'application/json'
+        },
+        success: function(response) {
+            console.log('History response:', response);
+            
+            if (response.success) {
+                if (response.has_tracking) {
+                    displayHistory(response.history);
+                } else {
+                    $('#historyContent').html(`
+                        <div class="alert alert-info text-center">
+                            <i class="fas fa-info-circle fa-2x mb-3 d-block"></i>
+                            <p class="mb-0">No document tracking history available for this case.</p>
+                            <small class="text-muted">Documents have not been transferred yet.</small>
+                        </div>
+                    `);
+                }
+            } else {
+                $('#historyContent').html(`
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-triangle"></i> 
+                        ${response.message || 'Failed to load history'}
+                    </div>
+                `);
+            }
+        },
+        error: function(xhr) {
+            console.error('History load error:', xhr);
+            let errorMsg = 'Failed to load document history.';
+            if (xhr.responseJSON?.message) {
+                errorMsg = xhr.responseJSON.message;
+            }
+            $('#historyContent').html(`
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle"></i> ${errorMsg}
+                </div>
+            `);
+        }
+    });
+});
+
+// Helper function to display history timeline
+function displayHistory(historyData) {
+    if (!historyData || historyData.length === 0) {
+        $('#historyContent').html(`
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle"></i> No transfer history available yet.
+            </div>
+        `);
+        return;
+    }
+    
+    let timelineHtml = '<div class="timeline" style="position: relative; padding-left: 30px;">';
+    timelineHtml += '<div style="content: \'\'; position: absolute; left: 10px; top: 0; bottom: 0; width: 2px; background: #e3e6f0;"></div>';
+    
+    historyData.forEach((item, index) => {
+        const roleClass = item.role ? item.role.toLowerCase().replace(/\s+/g, '_') : '';
+        const statusClass = item.status === 'Received' ? 'success' : 'warning';
+        
+        timelineHtml += `
+            <div class="timeline-item" style="position: relative; margin-bottom: 1.5rem;">
+                <div style="content: ''; position: absolute; left: -24px; top: 5px; width: 12px; height: 12px; border-radius: 50%; background: #4e73df; border: 2px solid white; box-shadow: 0 0 0 2px #e3e6f0;"></div>
+                <div class="card mb-0">
+                    <div class="card-body py-3">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <div>
+                                <span class="badge badge-${statusClass}" style="font-size: 0.85rem; padding: 0.5rem 1rem;">
+                                    ${item.role}
+                                </span>
+                                ${item.from_role ? '<small class="text-muted ml-2">from ' + item.from_role + '</small>' : ''}
+                            </div>
+                            <div class="text-right">
+                                <small class="text-muted"><i class="fas fa-clock"></i> ${item.time_ago}</small>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <small class="text-muted d-block">Transferred By:</small>
+                                <strong>${item.transferred_by}</strong>
+                                <br>
+                                <small class="text-muted">${item.transferred_at}</small>
+                            </div>
+                            <div class="col-md-6">
+                                <small class="text-muted d-block">Received By:</small>
+                                <strong class="${item.received_by === 'Pending' || item.received_by === 'Not Received' ? 'text-warning' : 'text-success'}">
+                                    ${item.received_by}
+                                </strong>
+                                <br>
+                                <small class="text-muted">${item.received_at}</small>
+                            </div>
+                        </div>
+                        ${item.notes ? '<hr class="my-2"><small class="text-muted"><i class="fas fa-sticky-note"></i> <strong>Notes:</strong> ' + item.notes + '</small>' : ''}
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    timelineHtml += '</div>';
+    $('#historyContent').html(timelineHtml);
+}
 </script>
 @endpush
