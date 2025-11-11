@@ -251,7 +251,7 @@
         </div>
         @endif
 
-        <!-- Filter Bar -->
+        {{-- <!-- Filter Bar -->
         <div class="filter-bar">
             <div class="row align-items-end">
                 <div class="col-md-4 mb-2 mb-md-0">
@@ -284,7 +284,7 @@
                     </button>
                 </div>
             </div>
-        </div>
+        </div> --}}
 
         <!-- Alert Messages -->
         <div class="alert alert-success alert-dismissible fade" role="alert" id="success-alert" style="display: none;">
