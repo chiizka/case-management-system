@@ -707,6 +707,7 @@
 $(document).ready(function() {
     
     let docToReceive = null;
+    let isTransferLocked = false; // Track if case is locked
 
     // Quick filter cards
     $('.quick-filter').on('click', function() {
@@ -784,7 +785,17 @@ $(document).ready(function() {
     $('#transferForm').on('submit', function(e) {
         e.preventDefault();
         
+        // If case is locked (disabled), temporarily enable it for submission
+        if (isTransferLocked) {
+            $('#case_id').prop('disabled', false);
+        }
+        
         const formData = $(this).serialize();
+        
+        // Re-disable it if it was locked
+        if (isTransferLocked) {
+            $('#case_id').prop('disabled', true);
+        }
 
         $.ajax({
             url: '/documents/transfer',
@@ -808,20 +819,51 @@ $(document).ready(function() {
         });
     });
 
-    // Transfer from My Documents
+    // Transfer from My Documents - Lock the case selection
     $(document).on('click', '.transfer-from-my-docs-btn', function() {
+        const docId = $(this).data('doc-id');
         const caseId = $(this).data('case-id');
         const caseNo = $(this).data('case-no');
         
-        $('#case_id').val(caseId);
+        // Mark as locked transfer
+        isTransferLocked = true;
+        
+        // Store document ID for reference
+        $('#document_id').val(docId);
+        
+        // Set case and disable it completely
+        $('#case_id').val(caseId).prop('disabled', true);
+        
+        // Visually indicate the field is locked
+        $('#case_id').css('background-color', '#e9ecef')
+                    .css('cursor', 'not-allowed')
+                    .css('opacity', '0.6');
+        
+        // Add a visual indicator
+        if (!$('#case-locked-msg').length) {
+            $('#case_id').after('<small class="text-info d-block mt-1" id="case-locked-msg"><i class="fas fa-lock"></i> Case is locked for this transfer</small>');
+        }
+        
+        // Update modal title
         $('#transferModal .modal-title').html('<i class="fas fa-exchange-alt"></i> Transfer Document - ' + caseNo);
+        
+        // Show modal
         $('#transferModal').modal('show');
     });
 
-    // Regular transfer button (from header)
+    // Regular transfer button (from header) - Enable case selection
     $('[data-target="#transferModal"]').on('click', function() {
+        // Mark as unlocked transfer
+        isTransferLocked = false;
+        
         $('#transferModal .modal-title').html('<i class="fas fa-exchange-alt"></i> Transfer Document');
-        $('#case_id').val('');
+        $('#case_id').val('')
+                    .prop('disabled', false)
+                    .css('background-color', '')
+                    .css('cursor', '')
+                    .css('opacity', '');
+        $('#document_id').val('');
+        $('#case-locked-msg').remove();
     });
 
     // Receive button click
@@ -939,12 +981,19 @@ $(document).ready(function() {
         });
     });
 
-    // Reset modal on close
+    // Reset transfer modal on close
     $('#transferModal').on('hidden.bs.modal', function() {
         $('#transferForm')[0].reset();
         $('#document_id').val('');
+        isTransferLocked = false;
+        $('#case_id').prop('disabled', false)
+                    .css('background-color', '')
+                    .css('cursor', '')
+                    .css('opacity', '');
+        $('#case-locked-msg').remove();
     });
 
+    // Reset receive modal on close
     $('#receiveModal').on('hidden.bs.modal', function() {
         docToReceive = null;
         $('#confirmReceiveBtn').html('<i class="fas fa-check"></i> Confirm Receipt').prop('disabled', false);
