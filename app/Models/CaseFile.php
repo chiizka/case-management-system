@@ -5,6 +5,43 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * @property int $id
+ * @property string $inspection_id
+ * @property string|null $case_no
+ * @property string $establishment_name
+ * @property string $current_stage
+ * @property string $overall_status
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\AppealsAndResolution> $appealsAndResolutions
+ * @property-read int|null $appeals_and_resolutions_count
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\ComplianceAndAward> $complianceAndAwards
+ * @property-read int|null $compliance_and_awards_count
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\docketing> $docketing
+ * @property-read int|null $docketing_count
+ * @property-read \App\Models\DocumentTracking|null $documentTracking
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\HearingProcess> $hearingProcesses
+ * @property-read int|null $hearing_processes_count
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Inspection> $inspections
+ * @property-read int|null $inspections_count
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\OrderAndDisposition> $ordersAndDisposition
+ * @property-read int|null $orders_and_disposition_count
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\ReviewAndDrafting> $reviewAndDrafting
+ * @property-read int|null $review_and_drafting_count
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|CaseFile newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|CaseFile newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|CaseFile query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|CaseFile whereCaseNo($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|CaseFile whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|CaseFile whereCurrentStage($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|CaseFile whereEstablishmentName($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|CaseFile whereId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|CaseFile whereInspectionId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|CaseFile whereOverallStatus($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|CaseFile whereUpdatedAt($value)
+ * @mixin \Eloquent
+ */
 class CaseFile extends Model
 {
     use HasFactory;

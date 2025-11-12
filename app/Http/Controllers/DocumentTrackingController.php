@@ -17,30 +17,34 @@ class DocumentTrackingController extends Controller
     {
         $user = Auth::user();
         
-        // Get documents based on user role
+        // Get documents based on user role - ONLY ACTIVE CASES
         $myDocuments = DocumentTracking::with(['case', 'transferredBy', 'receivedBy'])
+            ->active() // Use the scope
             ->where('current_role', $user->role)
             ->where('status', 'Received')
             ->get();
         
-        // Get pending documents for user's role
+        // Get pending documents for user's role - ONLY ACTIVE CASES
         $pendingDocuments = DocumentTracking::with(['case', 'transferredBy'])
+            ->active() // Use the scope
             ->where('current_role', $user->role)
             ->where('status', 'Pending Receipt')
             ->get();
         
-        // All documents (for admin overview)
-        $allDocuments = DocumentTracking::with(['case', 'transferredBy', 'receivedBy'])->get();
+        // All documents (for admin overview) - ONLY ACTIVE CASES
+        $allDocuments = DocumentTracking::with(['case', 'transferredBy', 'receivedBy'])
+            ->active() // Use the scope
+            ->get();
         
         $cases = CaseFile::where('overall_status', 'Active')->get();
         
-        // Count documents by role
+        // Count documents by role - ONLY ACTIVE CASES
         $roleCounts = [
-            'admin' => DocumentTracking::where('current_role', 'admin')->count(),
-            'malsu' => DocumentTracking::where('current_role', 'malsu')->count(),
-            'case_management' => DocumentTracking::where('current_role', 'case_management')->count(),
-            'province' => DocumentTracking::where('current_role', 'province')->count(),
-            'records' => DocumentTracking::where('current_role', 'records')->count(),
+            'admin' => DocumentTracking::active()->where('current_role', 'admin')->count(),
+            'malsu' => DocumentTracking::active()->where('current_role', 'malsu')->count(),
+            'case_management' => DocumentTracking::active()->where('current_role', 'case_management')->count(),
+            'province' => DocumentTracking::active()->where('current_role', 'province')->count(),
+            'records' => DocumentTracking::active()->where('current_role', 'records')->count(),
         ];
 
         return view('frontend.document-tracking', compact(
@@ -173,7 +177,7 @@ class DocumentTrackingController extends Controller
 
     public function history($id)
     {
-        $document = DocumentTracking::with(['case', 'history.transferredBy', 'history.receivedBy'])->findOrFail($id);
+        $document = DocumentTracking::with(['case', 'history.transferredBy', 'history.receivedBy', 'transferredBy', 'receivedBy'])->findOrFail($id);
         
         $historyData = [];
         
@@ -181,7 +185,7 @@ class DocumentTrackingController extends Controller
         $historyData[] = [
             'role' => DocumentTracking::ROLE_NAMES[$document->current_role],
             'status' => $document->status,
-            'transferred_by' => $document->transferredBy ? $document->transferredBy->fname . ' ' . $document->transferredBy->lname : 'N/A',
+            'transferred_by' => $document->transferredBy ? $document->transferredBy->fname . ' ' . $document->transferredBy->lname : 'System',
             'transferred_at' => $document->transferred_at ? $document->transferred_at->format('M d, Y h:i A') : 'N/A',
             'received_by' => $document->receivedBy ? $document->receivedBy->fname . ' ' . $document->receivedBy->lname : 'Pending',
             'received_at' => $document->received_at ? $document->received_at->format('M d, Y h:i A') : 'Pending',
@@ -194,7 +198,7 @@ class DocumentTrackingController extends Controller
             $historyData[] = [
                 'role' => DocumentTracking::ROLE_NAMES[$history->to_role],
                 'from_role' => $history->from_role ? DocumentTracking::ROLE_NAMES[$history->from_role] : 'Initial',
-                'transferred_by' => $history->transferredBy ? $history->transferredBy->fname . ' ' . $history->transferredBy->lname : 'N/A',
+                'transferred_by' => $history->transferredBy ? $history->transferredBy->fname . ' ' . $history->transferredBy->lname : 'System',
                 'transferred_at' => $history->transferred_at ? $history->transferred_at->format('M d, Y h:i A') : 'N/A',
                 'received_by' => $history->receivedBy ? $history->receivedBy->fname . ' ' . $history->receivedBy->lname : 'Not Received',
                 'received_at' => $history->received_at ? $history->received_at->format('M d, Y h:i A') : 'N/A',

@@ -15,6 +15,7 @@ use App\Helpers\ActivityLogger;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB; 
+use App\Models\DocumentTracking;
 
 class CasesController extends Controller
 {
@@ -391,109 +392,64 @@ public function moveToNextStage(Request $request, $id)
 {
     DB::beginTransaction();
     try {
-        // Lock the row to prevent concurrent modifications
-        $case = CaseFile::lockForUpdate()->findOrFail($id);
-        $oldStage = $case->current_stage;
-        $isCompletion = false;
-        $newStage = null;
-
-        switch ($case->current_stage) {
-            case '1: Inspections':
-                Docketing::create(['case_id' => $case->id]);
-                $newStage = '2: Docketing';
-                $case->update(['current_stage' => $newStage]);
-                break;
-            
-            case '2: Docketing':
-                HearingProcess::create(['case_id' => $case->id]);
-                $newStage = '3: Hearing';
-                $case->update(['current_stage' => $newStage]);
-                break;
-            
-            case '3: Hearing':
-                ReviewAndDrafting::create(['case_id' => $case->id]);
-                $newStage = '4: Review & Drafting';
-                $case->update(['current_stage' => $newStage]);
-                break;
-            
-            case '4: Review & Drafting':
-                OrderAndDisposition::create(['case_id' => $case->id]);
-                $newStage = '5: Orders & Disposition';
-                $case->update(['current_stage' => $newStage]);
-                break;
-            
-            case '5: Orders & Disposition':
-                ComplianceAndAward::create(['case_id' => $case->id]);
-                $newStage = '6: Compliance & Awards';
-                $case->update(['current_stage' => $newStage]);
-                break;
-            
-            case '6: Compliance & Awards':
-                AppealsAndResolution::create(['case_id' => $case->id]);
-                $newStage = '7: Appeals & Resolution';
-                $case->update(['current_stage' => $newStage]);
-                break;
-            
-            case '7: Appeals & Resolution':
-                // Final stage - mark case as completed
-                $case->update(['overall_status' => 'Completed']);
-                $isCompletion = true;
-                break;
-            
-            default:
-                throw new \Exception('Invalid current stage.');
+        $case = CaseFile::findOrFail($id);
+        
+        // Define stage progression
+        $stageMap = [
+            '1: Inspections' => '2: Docketing',
+            '2: Docketing' => '3: Hearing',
+            '3: Hearing' => '4: Review & Drafting',
+            '4: Review & Drafting' => '5: Orders & Disposition',
+            '5: Orders & Disposition' => '6: Compliance & Awards',
+            '6: Compliance & Awards' => '7: Appeals & Resolution',
+            '7: Appeals & Resolution' => 'Completed'
+        ];
+        
+        $currentStage = $case->current_stage;
+        $nextStage = $stageMap[$currentStage] ?? null;
+        
+        if (!$nextStage) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid stage progression'
+            ], 400);
         }
-
-        // Log the action
-        if ($isCompletion) {
-            ActivityLogger::logAction(
-                'COMPLETE',
-                'Case',
-                $case->inspection_id,
-                'Case marked as completed in Appeals & Resolution',
-                [
-                    'establishment' => $case->establishment_name,
-                    'final_stage' => '7: Appeals & Resolution',
-                    'status' => 'Moved to Archived Cases'
-                ]
-            );
+        
+        // If completing the final stage (Appeals & Resolution)
+        if ($currentStage === '7: Appeals & Resolution' && $nextStage === 'Completed') {
+            // Update case status to Completed
+            $case->update([
+                'overall_status' => 'Completed',
+                // Keep current_stage as is, or you can set it to a final stage
+            ]);
             
-            $message = 'Case completed successfully and moved to archived cases!';
-        } else {
-            $oldStageName = explode(': ', $oldStage)[1] ?? $oldStage;
-            $newStageName = explode(': ', $newStage)[1] ?? $newStage;
+            // No need to update document_tracking - it will automatically be filtered out
+            // because the scope checks case.overall_status = 'Active'
             
-            ActivityLogger::logAction(
-                'PROGRESS',
-                'Case',
-                $case->inspection_id,
-                "Moved from $oldStageName to $newStageName",
-                [
-                    'establishment' => $case->establishment_name,
-                    'from_stage' => $oldStageName,
-                    'to_stage' => $newStageName
-                ]
-            );
-            
-            $message = "Case moved from $oldStageName to $newStageName successfully!";
+            DB::commit();
+            return response()->json([
+                'success' => true,
+                'message' => 'Case completed and moved to archived cases! Document removed from tracking.'
+            ]);
         }
-
+        
+        // Normal stage progression
+        $case->update([
+            'current_stage' => $nextStage
+        ]);
+        
         DB::commit();
-
         return response()->json([
             'success' => true,
-            'message' => $message,
-            'data' => $case
+            'message' => "Case moved to {$nextStage} successfully!"
         ]);
-
-    } catch (\Exception $e) {
-        DB::rollBack();
-        Log::error('Error moving case to next stage: ' . $e->getMessage());
-        Log::error('Stack trace: ' . $e->getTraceAsString());
         
+    } catch (\Exception $e) {
+        DB::rollback();
+        Log::error('Failed to move case to next stage: ' . $e->getMessage());
         return response()->json([
             'success' => false,
-            'message' => 'Failed to move case to next stage: ' . $e->getMessage()
+            'message' => 'Failed to move case: ' . $e->getMessage()
         ], 500);
     }
 }
@@ -577,34 +533,35 @@ public function inlineUpdate(Request $request, $id)
 
         return !empty($changes) ? implode(', ', $changes) : '';
     }
-        public function getDocumentHistory($id)
+
+
+    public function getDocumentHistory($id)
     {
         try {
             $case = CaseFile::findOrFail($id);
             
             // Check if document tracking exists for this case
-            $documentTracking = \App\Models\DocumentTracking::where('case_id', $id)->first();
+            $documentTracking = DocumentTracking::with(['history.transferredBy', 'history.receivedBy', 'transferredBy', 'receivedBy'])
+                ->where('case_id', $case->id)
+                ->first();
             
             if (!$documentTracking) {
                 return response()->json([
                     'success' => true,
                     'has_tracking' => false,
-                    'message' => 'No document tracking history available for this case.'
+                    'message' => 'No document tracking found for this case'
                 ]);
             }
-            
-            // Load the history
-            $documentTracking->load(['history.transferredBy', 'history.receivedBy', 'transferredBy', 'receivedBy']);
             
             $historyData = [];
             
             // Add current state
             $historyData[] = [
-                'role' => \App\Models\DocumentTracking::ROLE_NAMES[$documentTracking->current_role] ?? $documentTracking->current_role,
+                'role' => DocumentTracking::ROLE_NAMES[$documentTracking->current_role] ?? $documentTracking->current_role,
                 'status' => $documentTracking->status,
                 'transferred_by' => $documentTracking->transferredBy 
                     ? $documentTracking->transferredBy->fname . ' ' . $documentTracking->transferredBy->lname 
-                    : 'N/A',
+                    : 'System',
                 'transferred_at' => $documentTracking->transferred_at 
                     ? $documentTracking->transferred_at->format('M d, Y h:i A') 
                     : 'N/A',
@@ -620,16 +577,16 @@ public function inlineUpdate(Request $request, $id)
                     : 'N/A'
             ];
             
-            // Add historical records
-            foreach ($documentTracking->history as $history) {
+            // Add historical records (oldest first for timeline display)
+            foreach ($documentTracking->history()->orderBy('created_at', 'asc')->get() as $history) {
                 $historyData[] = [
-                    'role' => \App\Models\DocumentTracking::ROLE_NAMES[$history->to_role] ?? $history->to_role,
+                    'role' => DocumentTracking::ROLE_NAMES[$history->to_role] ?? $history->to_role,
                     'from_role' => $history->from_role 
-                        ? (\App\Models\DocumentTracking::ROLE_NAMES[$history->from_role] ?? $history->from_role)
-                        : 'Initial',
+                        ? (DocumentTracking::ROLE_NAMES[$history->from_role] ?? $history->from_role)
+                        : null,
                     'transferred_by' => $history->transferredBy 
                         ? $history->transferredBy->fname . ' ' . $history->transferredBy->lname 
-                        : 'N/A',
+                        : 'System',
                     'transferred_at' => $history->transferred_at 
                         ? $history->transferred_at->format('M d, Y h:i A') 
                         : 'N/A',
@@ -646,29 +603,19 @@ public function inlineUpdate(Request $request, $id)
                 ];
             }
             
-            // ActivityLogger::logAction(
-            //     'VIEW',
-            //     'Document History',
-            //     $case->inspection_id,
-            //     'Viewed document tracking history',
-            //     ['establishment' => $case->establishment_name]
-            // );
-            
             return response()->json([
                 'success' => true,
                 'has_tracking' => true,
-                'case_no' => $case->case_no ?? 'N/A',
-                'establishment' => $case->establishment_name ?? 'N/A',
-                'history' => $historyData
+                'history' => array_reverse($historyData) // Reverse to show newest first
             ]);
             
         } catch (\Exception $e) {
             Log::error('Error fetching document history: ' . $e->getMessage());
-            
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to load document history.'
+                'message' => 'Failed to load document history: ' . $e->getMessage()
             ], 500);
         }
     }
+    
 }
