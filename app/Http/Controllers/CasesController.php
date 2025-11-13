@@ -95,8 +95,7 @@ class CasesController extends Controller
                         'case:id,inspection_id,case_no,establishment_name,current_stage,overall_status'
                     ])
                     ->whereHas('case', function($query) {
-                        $query->where('current_stage', '1: Inspections')
-                            ->where('overall_status', '!=', 'Completed');
+                        $query->where('overall_status', '!=', 'Completed');
                     })
                     ->get();
 
@@ -108,8 +107,7 @@ class CasesController extends Controller
                         'case:id,inspection_id,case_no,establishment_name,current_stage,overall_status'
                     ])
                     ->whereHas('case', function($query) {
-                        $query->where('current_stage', '2: Docketing')
-                            ->where('overall_status', '!=', 'Completed');
+                        $query->where('overall_status', '!=', 'Completed');
                     })
                     ->get();
 
@@ -121,8 +119,7 @@ class CasesController extends Controller
                         'case:id,inspection_id,case_no,establishment_name,current_stage,overall_status'
                     ])
                     ->whereHas('case', function($query) {
-                        $query->where('current_stage', '3: Hearing')
-                            ->where('overall_status', '!=', 'Completed');
+                        $query->where('overall_status', '!=', 'Completed');
                     })
                     ->get();
 
@@ -134,8 +131,7 @@ class CasesController extends Controller
                         'case:id,inspection_id,case_no,establishment_name,current_stage,overall_status'
                     ])
                     ->whereHas('case', function($query) {
-                        $query->where('current_stage', '4: Review & Drafting')
-                            ->where('overall_status', '!=', 'Completed');
+                        $query->where('overall_status', '!=', 'Completed');
                     })
                     ->get();
 
@@ -147,8 +143,7 @@ class CasesController extends Controller
                         'case:id,inspection_id,case_no,establishment_name,current_stage,overall_status'
                     ])
                     ->whereHas('case', function($query) {
-                        $query->where('current_stage', '5: Orders & Disposition')
-                            ->where('overall_status', '!=', 'Completed');
+                        $query->where('overall_status', '!=', 'Completed');
                     })
                     ->get();
 
@@ -160,8 +155,7 @@ class CasesController extends Controller
                         'case:id,inspection_id,case_no,establishment_name,current_stage,overall_status'
                     ])
                     ->whereHas('case', function($query) {
-                        $query->where('current_stage', '6: Compliance & Awards')
-                            ->where('overall_status', '!=', 'Completed');
+                        $query->where('overall_status', '!=', 'Completed');
                     })
                     ->get();
 
@@ -173,8 +167,7 @@ class CasesController extends Controller
                         'case:id,inspection_id,case_no,establishment_name,current_stage,overall_status'
                     ])
                     ->whereHas('case', function($query) {
-                        $query->where('current_stage', '7: Appeals & Resolution')
-                            ->where('overall_status', '!=', 'Completed');
+                        $query->where('overall_status', '!=', 'Completed');
                     })
                     ->get();
 
@@ -204,54 +197,212 @@ class CasesController extends Controller
         }
     }
 
-/**
- * Store new case
- */
-public function store(Request $request)
-{
-    $validated = $request->validate([
-        'inspection_id' => 'required|string|max:255|unique:cases,inspection_id',
-        'case_no' => 'nullable|string|max:255',
-        'establishment_name' => 'required|string|max:255',
-        'current_stage' => 'required|in:1: Inspections,2: Docketing,3: Hearing,4: Review & Drafting,5: Orders & Disposition,6: Compliance & Awards,7: Appeals & Resolution',
-        'overall_status' => 'required|in:Active,Completed,Dismissed',
-    ]);
+    /**
+     * Store new case
+     */
+    public function store(Request $request)
+    {
+        Log::info('=== CASE CREATION STARTED ===');
+        Log::info('Request data:', $request->all());
 
-    DB::beginTransaction();
-    try {
-        // Create the case
-        $case = CaseFile::create($validated);
+        try {
+            $validated = $request->validate([
+                'inspection_id' => 'required|string|max:255|unique:cases,inspection_id',
+                'case_no' => 'nullable|string|max:255',
+                'establishment_name' => 'required|string|max:255',
+            ]);
 
-        // Create related inspection record if starting at inspections stage
-        if ($case->current_stage === '1: Inspections') {
-            Inspection::create(['case_id' => $case->id]);
+            Log::info('Validation passed:', $validated);
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            Log::error('Validation failed:', $e->errors());
+            return redirect()->route('case.index')
+                ->withErrors($e->errors())
+                ->withInput()
+                ->with('error', 'Validation failed: ' . implode(', ', array_map(fn($errors) => implode(', ', $errors), $e->errors())));
         }
 
-        // Log the action
-        ActivityLogger::logAction(
-            'CREATE',
-            'Case',
-            $case->inspection_id,
-            null,
-            [
-                'establishment' => $case->establishment_name,
-                'stage' => $case->current_stage
-            ]
-        );
+        DB::beginTransaction();
+        Log::info('Database transaction started');
 
-        DB::commit();
+        try {
+            // Create the case with fixed values
+            Log::info('Creating CaseFile record...');
+            $case = CaseFile::create([
+                'inspection_id' => $validated['inspection_id'],
+                'case_no' => $validated['case_no'],
+                'establishment_name' => $validated['establishment_name'],
+                'current_stage' => '1: Inspections',
+                'overall_status' => 'Active'
+            ]);
+            Log::info('CaseFile created successfully', ['id' => $case->id, 'inspection_id' => $case->inspection_id]);
 
-        return redirect()->route('case.index')->with('success', 'Case created successfully!');
-        
-    } catch (\Exception $e) {
-        DB::rollBack();
-        Log::error('Error creating case: ' . $e->getMessage());
-        Log::error('Stack trace: ' . $e->getTraceAsString());
-        
-        return redirect()->route('case.index')
-            ->with('error', 'Failed to create case: ' . $e->getMessage());
+            // Create Inspection record
+            Log::info('Creating Inspection record...');
+            $inspection = Inspection::create(['case_id' => $case->id]);
+            Log::info('Inspection created', ['id' => $inspection->id]);
+
+            // Create Docketing record
+            Log::info('Creating Docketing record...');
+            $docketing = Docketing::create(['case_id' => $case->id]);
+            Log::info('Docketing created', ['id' => $docketing->id]);
+
+            // Create HearingProcess record
+            Log::info('Creating HearingProcess record...');
+            $hearing = HearingProcess::create(['case_id' => $case->id]);
+            Log::info('HearingProcess created', ['id' => $hearing->id]);
+
+            // Create ReviewAndDrafting record - WITH MORE DEFAULT VALUES
+            Log::info('Creating ReviewAndDrafting record...');
+            try {
+                $review = ReviewAndDrafting::create([
+                    'case_id' => $case->id,
+                    'draft_order_type' => null,
+                    'applicable_draft_order' => 'N',
+                    'po_pct' => null,
+                    'aging_po_pct' => null,
+                    'status_po_pct' => 'Pending', // Changed from empty string
+                    'date_received_from_po' => null,
+                    'reviewer_drafter' => null,
+                    'date_received_by_reviewer' => null,
+                    'date_returned_from_drafter' => null,
+                    'aging_10_days_tssd' => null,
+                    'status_reviewer_drafter' => 'Pending', // Changed from empty string
+                    'draft_order_tssd_reviewer' => null,
+                ]);
+                Log::info('ReviewAndDrafting created', ['id' => $review->id]);
+            } catch (\Exception $e) {
+                Log::error('ReviewAndDrafting creation failed specifically');
+                Log::error('Error: ' . $e->getMessage());
+                throw $e; // Re-throw to be caught by outer catch
+            }
+
+            // Create OrderAndDisposition record
+            Log::info('Creating OrderAndDisposition record...');
+            try {
+                $order = OrderAndDisposition::create([
+                    'case_id' => $case->id,
+                    'aging_2_days_finalization' => null,
+                    'status_finalization' => null,
+                    'pct_96_days' => null,
+                    'date_signed_mis' => null,
+                    'status_pct' => null,
+                    'reference_date_pct' => null,
+                    'aging_pct' => null,
+                    'disposition_mis' => null,
+                    'disposition_actual' => null,
+                    'findings_to_comply' => null,
+                    'date_of_order_actual' => null,
+                    'released_date_actual' => null,
+                ]);
+                Log::info('OrderAndDisposition created', ['id' => $order->id]);
+            } catch (\Exception $e) {
+                Log::error('OrderAndDisposition creation failed specifically');
+                Log::error('Error: ' . $e->getMessage());
+                throw $e;
+            }
+
+            // Create ComplianceAndAward record
+            Log::info('Creating ComplianceAndAward record...');
+            try {
+                $compliance = ComplianceAndAward::create([
+                    'case_id' => $case->id,
+                    'compliance_order_monetary_award' => null,
+                    'osh_penalty' => null,
+                    'affected_male' => null,
+                    'affected_female' => null,
+                    'first_order_dismissal_cnpc' => 0,
+                    'tavable_less_than_10_workers' => 0,
+                    'with_deposited_monetary_claims' => 0,
+                    'amount_deposited' => null,
+                    'with_order_payment_notice' => 0,
+                    'status_all_employees_received' => null,
+                    'status_case_after_first_order' => null,
+                    'date_notice_finality_dismissed' => null,
+                    'released_date_notice_finality' => null,
+                    'updated_ticked_in_mis' => 0,
+                    'second_order_drafter' => null,
+                    'date_received_by_drafter_ct_cnpc' => null,
+                ]);
+                Log::info('ComplianceAndAward created', ['id' => $compliance->id]);
+            } catch (\Exception $e) {
+                Log::error('ComplianceAndAward creation failed specifically');
+                Log::error('Error: ' . $e->getMessage());
+                throw $e;
+            }
+
+            // Create AppealsAndResolution record
+            Log::info('Creating AppealsAndResolution record...');
+            try {
+                $appeal = AppealsAndResolution::create([
+                    'case_id' => $case->id,
+                    'date_returned_case_mgmt' => null,
+                    'review_ct_cnpc' => null,
+                    'date_received_drafter_finalization_2nd' => null,
+                    'date_returned_case_mgmt_signature_2nd' => null,
+                    'date_order_2nd_cnpc' => null,
+                    'released_date_2nd_cnpc' => null,
+                    'date_forwarded_malsu' => null,
+                    'motion_reconsideration_date' => null,
+                    'date_received_malsu' => null,
+                    'date_resolution_mr' => null,
+                    'released_date_resolution_mr' => null,
+                    'date_appeal_received_records' => null,
+                ]);
+                Log::info('AppealsAndResolution created', ['id' => $appeal->id]);
+            } catch (\Exception $e) {
+                Log::error('AppealsAndResolution creation failed specifically');
+                Log::error('Error: ' . $e->getMessage());
+                throw $e;
+            }
+
+            // Log the action
+            Log::info('Logging activity...');
+            ActivityLogger::logAction(
+                'CREATE',
+                'Case',
+                $case->inspection_id,
+                null,
+                [
+                    'establishment' => $case->establishment_name,
+                    'stage' => $case->current_stage,
+                    'note' => 'Created with all stage records'
+                ]
+            );
+            Log::info('Activity logged successfully');
+
+            DB::commit();
+            Log::info('Transaction committed successfully');
+            Log::info('=== CASE CREATION COMPLETED SUCCESSFULLY ===');
+
+            return redirect()->route('case.index')->with('success', 'Case created successfully with all stage records!');
+            
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('=== CASE CREATION FAILED ===');
+            Log::error('Error type: ' . get_class($e));
+            Log::error('Error message: ' . $e->getMessage());
+            Log::error('Error code: ' . $e->getCode());
+            Log::error('File: ' . $e->getFile());
+            Log::error('Line: ' . $e->getLine());
+            Log::error('Stack trace: ' . $e->getTraceAsString());
+            
+            // Additional context logging
+            if (isset($case)) {
+                Log::error('Case was created before error', ['case_id' => $case->id]);
+            }
+            if (isset($inspection)) Log::error('Inspection record was created', ['id' => $inspection->id]);
+            if (isset($docketing)) Log::error('Docketing record was created', ['id' => $docketing->id]);
+            if (isset($hearing)) Log::error('HearingProcess record was created', ['id' => $hearing->id]);
+            if (isset($review)) Log::error('ReviewAndDrafting record was created', ['id' => $review->id]);
+            if (isset($order)) Log::error('OrderAndDisposition record was created', ['id' => $order->id]);
+            if (isset($compliance)) Log::error('ComplianceAndAward record was created', ['id' => $compliance->id]);
+            if (isset($appeal)) Log::error('AppealsAndResolution record was created', ['id' => $appeal->id]);
+            
+            return redirect()->route('case.index')
+                ->with('error', 'Failed to create case: ' . $e->getMessage());
+        }
     }
-}
 
 /**
  * Update case
@@ -394,7 +545,43 @@ public function moveToNextStage(Request $request, $id)
     try {
         $case = CaseFile::findOrFail($id);
         
-        // Define stage progression
+        // Get the stage from the request (sent from the button)
+        $completingStage = $request->input('stage', $case->current_stage);
+        
+        Log::info('Move to next stage requested', [
+            'case_id' => $case->id,
+            'current_stage' => $case->current_stage,
+            'completing_stage' => $completingStage,
+            'overall_status' => $case->overall_status
+        ]);
+        
+        // Check if completing from Appeals & Resolution (the final stage)
+        if ($completingStage === 'Appeals & Resolution' || $completingStage === '7: Appeals & Resolution') {
+            Log::info('Completing final stage - marking as Completed');
+            
+            $case->update([
+                'overall_status' => 'Completed',
+                'current_stage' => '7: Appeals & Resolution'
+            ]);
+            
+            ActivityLogger::logAction(
+                'COMPLETE',
+                'Case',
+                $case->inspection_id,
+                'Case completed and archived',
+                ['establishment' => $case->establishment_name]
+            );
+            
+            DB::commit();
+            Log::info('Case marked as completed successfully');
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Case completed and moved to archived cases!'
+            ]);
+        }
+        
+        // Define stage progression (for UI tracking only)
         $stageMap = [
             '1: Inspections' => '2: Docketing',
             '2: Docketing' => '3: Hearing',
@@ -402,51 +589,49 @@ public function moveToNextStage(Request $request, $id)
             '4: Review & Drafting' => '5: Orders & Disposition',
             '5: Orders & Disposition' => '6: Compliance & Awards',
             '6: Compliance & Awards' => '7: Appeals & Resolution',
-            '7: Appeals & Resolution' => 'Completed'
         ];
         
         $currentStage = $case->current_stage;
         $nextStage = $stageMap[$currentStage] ?? null;
         
         if (!$nextStage) {
+            Log::warning('Invalid stage progression', [
+                'current_stage' => $currentStage
+            ]);
             return response()->json([
                 'success' => false,
                 'message' => 'Invalid stage progression'
             ], 400);
         }
         
-        // If completing the final stage (Appeals & Resolution)
-        if ($currentStage === '7: Appeals & Resolution' && $nextStage === 'Completed') {
-            // Update case status to Completed
-            $case->update([
-                'overall_status' => 'Completed',
-                // Keep current_stage as is, or you can set it to a final stage
-            ]);
-            
-            // No need to update document_tracking - it will automatically be filtered out
-            // because the scope checks case.overall_status = 'Active'
-            
-            DB::commit();
-            return response()->json([
-                'success' => true,
-                'message' => 'Case completed and moved to archived cases! Document removed from tracking.'
-            ]);
-        }
-        
-        // Normal stage progression
+        // Normal stage progression (UI tracking only)
         $case->update([
             'current_stage' => $nextStage
         ]);
         
+        ActivityLogger::logAction(
+            'UPDATE',
+            'Case',
+            $case->inspection_id,
+            "Stage updated to {$nextStage}",
+            ['establishment' => $case->establishment_name]
+        );
+        
         DB::commit();
+        Log::info('Stage updated successfully', ['new_stage' => $nextStage]);
+        
         return response()->json([
             'success' => true,
-            'message' => "Case moved to {$nextStage} successfully!"
+            'message' => "Case stage updated to {$nextStage} successfully!"
         ]);
         
     } catch (\Exception $e) {
         DB::rollback();
-        Log::error('Failed to move case to next stage: ' . $e->getMessage());
+        Log::error('Failed to move case to next stage', [
+            'error' => $e->getMessage(),
+            'trace' => $e->getTraceAsString()
+        ]);
+        
         return response()->json([
             'success' => false,
             'message' => 'Failed to move case: ' . $e->getMessage()

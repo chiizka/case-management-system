@@ -953,8 +953,9 @@ $(document).on('click', '.move-to-next-stage-btn', function(e) {
     e.preventDefault();
     const button = $(this);
     const caseId = button.data('case-id');
+    const stage = button.data('stage');  // ← Capture the stage
     
-    console.log('Next Stage button clicked - caseId:', caseId);
+    console.log('Next Stage button clicked - caseId:', caseId, 'stage:', stage);
     
     if (!caseId) {
         console.error('No case ID found on button');
@@ -964,11 +965,12 @@ $(document).on('click', '.move-to-next-stage-btn', function(e) {
     
     const caseNo = button.data('case-no') || 'N/A';
     const establishment = button.data('establishment') || 'N/A';
-    const currentStage = button.data('stage') || 'Unknown';
+    const currentStage = stage || 'Unknown';
     
     const stageMap = {
         'Inspections': 'Docketing',
         'Docketing': 'Hearing Process',
+        'Hearing': 'Review & Drafting',
         'Hearing Process': 'Review & Drafting',
         'Review & Drafting': 'Orders & Disposition',
         'Orders & Disposition': 'Compliance & Awards',
@@ -981,13 +983,14 @@ $(document).on('click', '.move-to-next-stage-btn', function(e) {
     
     caseToProgress = {
         id: caseId,
-        button: button
+        button: button,
+        stage: currentStage  // ← Store the stage
     };
     
     console.log('caseToProgress object:', caseToProgress);
     
     const message = isFinalStage 
-        ? `<strong>Complete ${currentStage} and move case to archived?</strong><br><small>This will mark the case as completed.</small>`
+        ? `<strong>Complete this case and move to archived?</strong><br><small>This will mark the case as completed and remove it from active cases.</small>`
         : `<strong>Complete ${currentStage} and move to ${nextStage}?</strong>`;
     
     $('#stageProgressionMessage').html(message);
@@ -1010,6 +1013,7 @@ $(document).off('click', '#confirmStageBtn').on('click', '#confirmStageBtn', fun
     const url = `/case/${caseToProgress.id}/next-stage`;
     
     console.log('Moving case to next stage at URL:', url);
+    console.log('Stage data:', caseToProgress.stage);
     
     const button = caseToProgress.button;
     button.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i>');
@@ -1020,6 +1024,9 @@ $(document).off('click', '#confirmStageBtn').on('click', '#confirmStageBtn', fun
         headers: {
             'X-CSRF-TOKEN': csrfToken,
             'Accept': 'application/json'
+        },
+        data: {
+            stage: caseToProgress.stage  // ← ADD THIS LINE - send the stage
         },
         success: function(response) {
             console.log('Stage progression successful:', response);

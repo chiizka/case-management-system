@@ -75,15 +75,16 @@
                                 <i class="fas fa-trash"></i>
                             </button>
                             
-                            @if($appeal->case && $appeal->case->current_stage === '7: Appeals & Resolution')
+                            {{-- Complete button now shows for all cases in this tab --}}
+                            @if($appeal->case)
                                 <button type="button" 
                                         class="btn btn-success btn-sm ml-1 move-to-next-stage-btn" 
                                         data-case-id="{{ $appeal->case->id }}"
                                         data-case-no="{{ $appeal->case->case_no ?? 'N/A' }}"
                                         data-establishment="{{ $appeal->case->establishment_name ?? 'N/A' }}"
                                         data-stage="Appeals & Resolution"
-                                        title="Complete Case">
-                                    <i class="fas fa-check"></i> Complete
+                                        title="Complete Case and Move to Archive">
+                                    <i class="fas fa-check-circle"></i> Complete
                                 </button>
                             @endif
                         </td>
