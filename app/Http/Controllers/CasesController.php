@@ -14,7 +14,8 @@ use App\Models\AppealsAndResolution;
 use App\Helpers\ActivityLogger;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB; 
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
 use App\Models\DocumentTracking;
 
 class CasesController extends Controller
@@ -802,5 +803,238 @@ public function inlineUpdate(Request $request, $id)
             ], 500);
         }
     }
+
+    public function downloadTemplate()
+{
+    $filename = 'case_import_template.csv';
+    $headers = [
+        'Content-Type' => 'text/csv',
+        'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+    ];
+
+    $columns = [
+        'inspection_id',
+        'case_no',
+        'establishment_name'
+    ];
+
+    $callback = function() use ($columns) {
+        $file = fopen('php://output', 'w');
+        
+        // Write headers
+        fputcsv($file, $columns);
+        
+        // Write sample data
+        fputcsv($file, [
+            'INSP-2024-001',
+            'CASE-2024-001',
+            'Sample Company Inc.'
+        ]);
+        
+        fputcsv($file, [
+            'INSP-2024-002',
+            '',
+            'Another Business Corp.'
+        ]);
+        
+        fclose($file);
+    };
+
+    return response()->stream($callback, 200, $headers);
+}
+
+/**
+ * Upload and import CSV file
+ */
+public function uploadCsv(Request $request)
+{
+    try {
+        // Validate the uploaded file
+        $validator = Validator::make($request->all(), [
+            'csv_file' => 'required|file|mimes:csv,txt|max:5120', // 5MB max
+            'skip_duplicates' => 'boolean'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        $file = $request->file('csv_file');
+        $skipDuplicates = $request->input('skip_duplicates', true);
+
+        // Read and parse CSV
+        $csvData = array_map('str_getcsv', file($file->getRealPath()));
+        
+        if (empty($csvData)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'CSV file is empty'
+            ], 422);
+        }
+
+        // Get headers from first row
+        $headers = array_map('trim', $csvData[0]);
+        unset($csvData[0]); // Remove header row
+
+        // Validate required columns
+        $requiredColumns = ['inspection_id', 'establishment_name'];
+        $missingColumns = array_diff($requiredColumns, $headers);
+        
+        if (!empty($missingColumns)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Missing required columns: ' . implode(', ', $missingColumns)
+            ], 422);
+        }
+
+        // Find column indices
+        $columnIndices = [];
+        foreach ($headers as $index => $header) {
+            $columnIndices[$header] = $index;
+        }
+
+        // Statistics
+        $stats = [
+            'total_rows' => count($csvData),
+            'imported' => 0,
+            'skipped' => 0,
+            'failed' => 0
+        ];
+
+        $errors = [];
+
+        DB::beginTransaction();
+        
+        try {
+            foreach ($csvData as $rowIndex => $row) {
+                $actualRow = $rowIndex + 2; // +2 because we removed header and arrays are 0-indexed
+                
+                // Skip empty rows
+                if (empty(array_filter($row))) {
+                    continue;
+                }
+
+                // Extract data
+                $inspectionId = isset($columnIndices['inspection_id']) 
+                    ? trim($row[$columnIndices['inspection_id']] ?? '') 
+                    : '';
+                    
+                $caseNo = isset($columnIndices['case_no']) 
+                    ? trim($row[$columnIndices['case_no']] ?? '') 
+                    : null;
+                    
+                $establishmentName = isset($columnIndices['establishment_name']) 
+                    ? trim($row[$columnIndices['establishment_name']] ?? '') 
+                    : '';
+
+                // Validate required fields
+                if (empty($inspectionId) || empty($establishmentName)) {
+                    $errors[] = "Row {$actualRow}: Missing required fields";
+                    $stats['failed']++;
+                    continue;
+                }
+
+                // Check for duplicates
+                if ($skipDuplicates) {
+                    $exists = CaseFile::where('inspection_id', $inspectionId)->exists();
+                    if ($exists) {
+                        $stats['skipped']++;
+                        continue;
+                    }
+                }
+
+                try {
+                    // Create case
+                    $case = CaseFile::create([
+                        'inspection_id' => $inspectionId,
+                        'case_no' => $caseNo,
+                        'establishment_name' => $establishmentName,
+                        'current_stage' => '1: Inspections',
+                        'overall_status' => 'Active'
+                    ]);
+
+                    // Create related records
+                    Inspection::create(['case_id' => $case->id]);
+                    Docketing::create(['case_id' => $case->id]);
+                    HearingProcess::create(['case_id' => $case->id]);
+                    
+                    ReviewAndDrafting::create([
+                        'case_id' => $case->id,
+                        'applicable_draft_order' => 'N',
+                        'status_po_pct' => 'Pending',
+                        'status_reviewer_drafter' => 'Pending',
+                    ]);
+                    
+                    OrderAndDisposition::create(['case_id' => $case->id]);
+                    
+                    ComplianceAndAward::create([
+                        'case_id' => $case->id,
+                        'first_order_dismissal_cnpc' => 0,
+                        'tavable_less_than_10_workers' => 0,
+                        'with_deposited_monetary_claims' => 0,
+                        'with_order_payment_notice' => 0,
+                        'updated_ticked_in_mis' => 0,
+                    ]);
+                    
+                    AppealsAndResolution::create(['case_id' => $case->id]);
+
+                    $stats['imported']++;
+
+                } catch (\Exception $e) {
+                    $errors[] = "Row {$actualRow}: " . $e->getMessage();
+                    $stats['failed']++;
+                    Log::error("CSV Import Error - Row {$actualRow}: " . $e->getMessage());
+                }
+            }
+
+            // Log the import action
+            ActivityLogger::logAction(
+                'IMPORT',
+                'Case',
+                'CSV Import',
+                "Imported {$stats['imported']} cases from CSV",
+                ['stats' => $stats]
+            );
+
+            DB::commit();
+
+            $message = "CSV import completed! Imported: {$stats['imported']}, Skipped: {$stats['skipped']}, Failed: {$stats['failed']}";
+            
+            if (!empty($errors) && count($errors) <= 10) {
+                $message .= "\n\nErrors:\n" . implode("\n", $errors);
+            } elseif (!empty($errors)) {
+                $message .= "\n\n" . count($errors) . " errors occurred. Check logs for details.";
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => $message,
+                'stats' => $stats,
+                'errors' => array_slice($errors, 0, 10) // Return first 10 errors
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('CSV Import Transaction Failed: ' . $e->getMessage());
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Import failed: ' . $e->getMessage()
+            ], 500);
+        }
+
+    } catch (\Exception $e) {
+        Log::error('CSV Upload Error: ' . $e->getMessage());
+        
+        return response()->json([
+            'success' => false,
+            'message' => 'Upload failed: ' . $e->getMessage()
+        ], 500);
+    }
+}
     
 }

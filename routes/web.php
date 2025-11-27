@@ -56,14 +56,17 @@ Route::middleware('auth')->group(function () {
         Route::delete('/user/{id}', [UserController::class, 'destroy'])->name('user.destroy');
     });
     
-    // Cases - Admin, Province, MALSU, Case Management, Records
     Route::middleware('role:admin,province,malsu,case_management,records')->group(function () {
         Route::resource('case', CasesController::class);
         Route::get('/archive', [ArchivedController::class, 'index'])->name('archive.index');
         Route::post('/case/{id}/next-stage', [CasesController::class, 'moveToNextStage'])->name('case.nextStage');
         Route::put('/case/{id}/inline-update', [CasesController::class, 'inlineUpdate'])->name('case.inlineUpdate');
         Route::get('/case/load-tab/{tabNumber}', [CasesController::class, 'loadTabData'])->name('case.loadTab');
-         Route::get('/case/{id}/document-history', [CasesController::class, 'getDocumentHistory'])->name('case.documentHistory');
+        Route::get('/case/{id}/document-history', [CasesController::class, 'getDocumentHistory'])->name('case.documentHistory');
+        
+        // ⭐ ADD THESE TWO NEW ROUTES HERE ⭐
+        Route::get('/case/download-template', [CasesController::class, 'downloadTemplate'])->name('case.download-template');
+        Route::post('/case/upload-csv', [CasesController::class, 'uploadCsv'])->name('case.upload-csv');
     });
 
 

@@ -119,6 +119,63 @@
     text-align: center;
     padding: 3rem;
 }
+
+#uploadCsvModal .modal-header {
+    border-bottom: 3px solid #28a745;
+}
+
+#uploadAlert {
+    border-radius: 0.5rem;
+}
+
+#uploadAlert ul {
+    padding-left: 1.5rem;
+    margin-top: 0.5rem;
+}
+
+.custom-file-label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+#uploadProgress {
+    padding: 1rem;
+    background: #f8f9fa;
+    border-radius: 0.5rem;
+}
+
+.progress {
+    height: 25px;
+    border-radius: 0.5rem;
+}
+
+.progress-bar {
+    font-size: 14px;
+    line-height: 25px;
+    font-weight: 600;
+}
+
+/* Button styles */
+.btn-success {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    border: none;
+    transition: all 0.3s ease;
+}
+
+.btn-success:hover {
+    background: linear-gradient(135deg, #218838 0%, #1aa179 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(40, 167, 69, 0.3);
+}
+
+.alert-info code {
+    background: #d1ecf1;
+    padding: 2px 6px;
+    border-radius: 3px;
+    color: #0c5460;
+    font-size: 0.9em;
+}
 </style>
 
 <!-- Main Content -->
@@ -189,227 +246,315 @@
             </li>
             @endif
         </ul>
-
+        
         <!-- Tabs Content -->
         <div class="tab-content mt-3" id="dataTableTabsContent">
             
-        <!-- Tabs Content -->
-<div class="tab-content mt-3" id="dataTableTabsContent">
-    
-    <!-- Tab 0: All Active Cases (KEEP EXISTING - Loads on page load) -->
-    <div class="tab-pane fade show active" id="tab0" role="tabpanel" aria-labelledby="tab0-tab">
-        <div class="card shadow mb-4">
-            <div class="card-body">
-                <!-- Success/Error alerts for AJAX -->
-                <div class="alert alert-success alert-dismissible fade" role="alert" id="success-alert-tab0" style="display: none;">
-                    <span id="success-message-tab0"></span>
-                    <button type="button" class="close" onclick="hideAlert('success-alert-tab0')">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
-                </div>
-                
-                <div class="alert alert-danger alert-dismissible fade" role="alert" id="error-alert-tab0" style="display: none;">
-                    <span id="error-message-tab0"></span>
-                    <button type="button" class="close" onclick="hideAlert('error-alert-tab0')">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
-                </div>
+            <!-- Tab 0: All Active Cases (KEEP EXISTING - Loads on page load) -->
+            <div class="tab-pane fade show active" id="tab0" role="tabpanel" aria-labelledby="tab0-tab">
+                <div class="card shadow mb-4">
+                    <div class="card-body">
+                        <!-- Success/Error alerts for AJAX -->
+                        <div class="alert alert-success alert-dismissible fade" role="alert" id="success-alert-tab0" style="display: none;">
+                            <span id="success-message-tab0"></span>
+                            <button type="button" class="close" onclick="hideAlert('success-alert-tab0')">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        
+                        <div class="alert alert-danger alert-dismissible fade" role="alert" id="error-alert-tab0" style="display: none;">
+                            <span id="error-message-tab0"></span>
+                            <button type="button" class="close" onclick="hideAlert('error-alert-tab0')">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
 
-                <!-- Search + Buttons Row -->
-                <div class="d-flex justify-content-between align-items-center mb-3 custom-search-container">
-                    <div class="d-flex align-items-center">
-                        <label class="mr-2 mb-0" style="font-size: 0.8rem;">Search:</label>
-                        <input type="search" class="form-control form-control-sm" id="customSearch0" placeholder="Search all active cases..." style="width: 200px;">
-                    </div>
-                    <div>
-                        <button class="btn btn-primary btn-sm" data-toggle="modal" data-target="#addCaseModal" data-mode="add">
-                            + Add Case
-                        </button>
-                    </div>
-                </div>
-                
-                <!-- Table Container -->
-                <div class="table-container">
-                    <table class="table table-bordered compact-table sticky-table" id="dataTable0" width="100%" cellspacing="0">
-                        <thead>
-                            <tr>
-                                <th>Inspection ID</th>
-                                <th>Case No.</th>
-                                <th>Establishment Name</th>
-                                <th>Current Stage</th>
-                                <th>Overall Status</th>
-                                <th>Created At</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @if(isset($cases) && $cases->count() > 0)
-                                @foreach($cases as $case)
-                                    <tr data-id="{{ $case->id }}">
-                                        <td class="editable-cell" data-field="inspection_id">{{ $case->inspection_id ?? '-' }}</td>
-                                        <td class="editable-cell" data-field="case_no">{{ $case->case_no ?? '-' }}</td>
-                                        <td class="editable-cell" data-field="establishment_name" title="{{ $case->establishment_name ?? '' }}">
-                                            {{ $case->establishment_name ? Str::limit($case->establishment_name, 25) : '-' }}
-                                        </td>
-                                        <td class="editable-cell" data-field="current_stage" data-type="select">
-                                            {{ explode(': ', $case->current_stage)[1] ?? $case->current_stage ?? '-' }}
-                                        </td>
-                                        <td class="editable-cell" data-field="overall_status" data-type="select">
-                                            {{ $case->overall_status ?? '-' }}
-                                        </td>
-                                        <td class="non-editable">
-                                            {{ $case->created_at ? \Carbon\Carbon::parse($case->created_at)->format('Y-m-d') : '-' }}
-                                        </td>
-                                        <td>
-                                            <button class="btn btn-warning btn-sm edit-row-btn-case" 
-                                                    data-case-id="{{ $case->id }}"
-                                                    title="Edit Row">
-                                                <i class="fas fa-edit"></i>
-                                            </button>
-                                            
-                                            <button type="button" 
-                                                    class="btn btn-danger btn-sm delete-btn" 
-                                                    data-case-id="{{ $case->id }}"
-                                                    data-case-no="{{ $case->case_no ?? 'N/A' }}"
-                                                    data-establishment="{{ $case->establishment_name ?? 'N/A' }}"
-                                                    title="Delete">
-                                                <i class="fas fa-trash"></i>
-                                            </button>
-                                            
-                                            <button class="btn btn-info btn-sm view-history-btn" 
-                                                    data-case-id="{{ $case->id }}"
-                                                    data-case-no="{{ $case->case_no ?? 'N/A' }}"
-                                                    data-establishment="{{ $case->establishment_name ?? 'N/A' }}"
-                                                    title="View Document History">
-                                                <i class="fas fa-history"></i>
-                                            </button>
-                                        </td>
+                        <!-- Search + Buttons Row -->
+                        <div class="d-flex justify-content-between align-items-center mb-3 custom-search-container">
+                            <div class="d-flex align-items-center">
+                                <label class="mr-2 mb-0" style="font-size: 0.8rem;">Search:</label>
+                                <input type="search" class="form-control form-control-sm" id="customSearch0" placeholder="Search all active cases..." style="width: 200px;">
+                            </div>
+                            <div>
+                                <button class="btn btn-success btn-sm mr-2" data-toggle="modal" data-target="#uploadCsvModal">
+                                    <i class="fas fa-upload"></i> Upload CSV
+                                </button>
+                                <button class="btn btn-primary btn-sm" data-toggle="modal" data-target="#addCaseModal" data-mode="add">
+                                    <i class="fas fa-plus"></i> Add Case
+                                </button>
+                            </div>
+                        </div>
+
+                        
+                        <!-- Table Container -->
+                        <div class="table-container">
+                            <table class="table table-bordered compact-table sticky-table" id="dataTable0" width="100%" cellspacing="0">
+                                <thead>
+                                    <tr>
+                                        <th>Inspection ID</th>
+                                        <th>Case No.</th>
+                                        <th>Establishment Name</th>
+                                        <th>Current Stage</th>
+                                        <th>Overall Status</th>
+                                        <th>Created At</th>
+                                        <th>Actions</th>
                                     </tr>
-                                @endforeach
-                            @else
-                                <tr>
-                                    <td colspan="7" class="text-center">No cases found. Click "Add Case" to create your first case.</td>
-                                </tr>
-                            @endif
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Tab 1: Inspection (LAZY LOAD) -->
-    <div class="tab-pane fade" id="tab1" role="tabpanel" aria-labelledby="tab1-tab">
-        <div class="card shadow mb-4">
-            <div class="card-body">
-                <!-- This will be replaced with actual content via AJAX when tab is clicked -->
-                <div class="tab-loading text-center" style="padding: 3rem;">
-                    <div class="spinner-border text-primary mb-3" role="status" style="width: 3rem; height: 3rem;">
-                        <span class="sr-only">Loading...</span>
+                                </thead>
+                                <tbody>
+                                    @if(isset($cases) && $cases->count() > 0)
+                                        @foreach($cases as $case)
+                                            <tr data-id="{{ $case->id }}">
+                                                <td class="editable-cell" data-field="inspection_id">{{ $case->inspection_id ?? '-' }}</td>
+                                                <td class="editable-cell" data-field="case_no">{{ $case->case_no ?? '-' }}</td>
+                                                <td class="editable-cell" data-field="establishment_name" title="{{ $case->establishment_name ?? '' }}">
+                                                    {{ $case->establishment_name ? Str::limit($case->establishment_name, 25) : '-' }}
+                                                </td>
+                                                <td class="editable-cell" data-field="current_stage" data-type="select">
+                                                    {{ explode(': ', $case->current_stage)[1] ?? $case->current_stage ?? '-' }}
+                                                </td>
+                                                <td class="editable-cell" data-field="overall_status" data-type="select">
+                                                    {{ $case->overall_status ?? '-' }}
+                                                </td>
+                                                <td class="non-editable">
+                                                    {{ $case->created_at ? \Carbon\Carbon::parse($case->created_at)->format('Y-m-d') : '-' }}
+                                                </td>
+                                                <td>
+                                                    <button class="btn btn-warning btn-sm edit-row-btn-case" 
+                                                            data-case-id="{{ $case->id }}"
+                                                            title="Edit Row">
+                                                        <i class="fas fa-edit"></i>
+                                                    </button>
+                                                    
+                                                    <button type="button" 
+                                                            class="btn btn-danger btn-sm delete-btn" 
+                                                            data-case-id="{{ $case->id }}"
+                                                            data-case-no="{{ $case->case_no ?? 'N/A' }}"
+                                                            data-establishment="{{ $case->establishment_name ?? 'N/A' }}"
+                                                            title="Delete">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                    
+                                                    <button class="btn btn-info btn-sm view-history-btn" 
+                                                            data-case-id="{{ $case->id }}"
+                                                            data-case-no="{{ $case->case_no ?? 'N/A' }}"
+                                                            data-establishment="{{ $case->establishment_name ?? 'N/A' }}"
+                                                            title="View Document History">
+                                                        <i class="fas fa-history"></i>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        @endforeach
+                                    @else
+                                        <tr>
+                                            <td colspan="7" class="text-center">No cases found. Click "Add Case" to create your first case.</td>
+                                        </tr>
+                                    @endif
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
-                    <p class="text-muted">Loading inspection data...</p>
-                    <small class="text-muted">This may take a moment for the first load</small>
                 </div>
             </div>
-        </div>
-    </div>
 
-    <!-- Tab 2: Docketing (LAZY LOAD) -->
-    <div class="tab-pane fade" id="tab2" role="tabpanel" aria-labelledby="tab2-tab">
-        <div class="card shadow mb-4">
-            <div class="card-body">
-                <div class="tab-loading text-center" style="padding: 3rem;">
-                    <div class="spinner-border text-primary mb-3" role="status" style="width: 3rem; height: 3rem;">
-                        <span class="sr-only">Loading...</span>
+            <!-- Tab 1: Inspection (LAZY LOAD) -->
+            <div class="tab-pane fade" id="tab1" role="tabpanel" aria-labelledby="tab1-tab">
+                <div class="card shadow mb-4">
+                    <div class="card-body">
+                        <!-- This will be replaced with actual content via AJAX when tab is clicked -->
+                        <div class="tab-loading text-center" style="padding: 3rem;">
+                            <div class="spinner-border text-primary mb-3" role="status" style="width: 3rem; height: 3rem;">
+                                <span class="sr-only">Loading...</span>
+                            </div>
+                            <p class="text-muted">Loading inspection data...</p>
+                            <small class="text-muted">This may take a moment for the first load</small>
+                        </div>
                     </div>
-                    <p class="text-muted">Loading docketing data...</p>
-                    <small class="text-muted">This may take a moment for the first load</small>
                 </div>
             </div>
-        </div>
-    </div>
 
-    <!-- Tab 3: Hearing Process (LAZY LOAD) -->
-    <div class="tab-pane fade" id="tab3" role="tabpanel" aria-labelledby="tab3-tab">
-        <div class="card shadow mb-4">
-            <div class="card-body">
-                <div class="tab-loading text-center" style="padding: 3rem;">
-                    <div class="spinner-border text-primary mb-3" role="status" style="width: 3rem; height: 3rem;">
-                        <span class="sr-only">Loading...</span>
+            <!-- Tab 2: Docketing (LAZY LOAD) -->
+            <div class="tab-pane fade" id="tab2" role="tabpanel" aria-labelledby="tab2-tab">
+                <div class="card shadow mb-4">
+                    <div class="card-body">
+                        <div class="tab-loading text-center" style="padding: 3rem;">
+                            <div class="spinner-border text-primary mb-3" role="status" style="width: 3rem; height: 3rem;">
+                                <span class="sr-only">Loading...</span>
+                            </div>
+                            <p class="text-muted">Loading docketing data...</p>
+                            <small class="text-muted">This may take a moment for the first load</small>
+                        </div>
                     </div>
-                    <p class="text-muted">Loading hearing process data...</p>
-                    <small class="text-muted">This may take a moment for the first load</small>
                 </div>
             </div>
-        </div>
-    </div>
 
-    <!-- Tab 4: Review & Drafting (LAZY LOAD) -->
-    <div class="tab-pane fade" id="tab4" role="tabpanel" aria-labelledby="tab4-tab">
-        <div class="card shadow mb-4">
-            <div class="card-body">
-                <div class="tab-loading text-center" style="padding: 3rem;">
-                    <div class="spinner-border text-primary mb-3" role="status" style="width: 3rem; height: 3rem;">
-                        <span class="sr-only">Loading...</span>
+            <!-- Tab 3: Hearing Process (LAZY LOAD) -->
+            <div class="tab-pane fade" id="tab3" role="tabpanel" aria-labelledby="tab3-tab">
+                <div class="card shadow mb-4">
+                    <div class="card-body">
+                        <div class="tab-loading text-center" style="padding: 3rem;">
+                            <div class="spinner-border text-primary mb-3" role="status" style="width: 3rem; height: 3rem;">
+                                <span class="sr-only">Loading...</span>
+                            </div>
+                            <p class="text-muted">Loading hearing process data...</p>
+                            <small class="text-muted">This may take a moment for the first load</small>
+                        </div>
                     </div>
-                    <p class="text-muted">Loading review & drafting data...</p>
-                    <small class="text-muted">This may take a moment for the first load</small>
                 </div>
             </div>
-        </div>
-    </div>
 
-    <!-- Tab 5: Orders & Disposition (LAZY LOAD) -->
-    <div class="tab-pane fade" id="tab5" role="tabpanel" aria-labelledby="tab5-tab">
-        <div class="card shadow mb-4">
-            <div class="card-body">
-                <div class="tab-loading text-center" style="padding: 3rem;">
-                    <div class="spinner-border text-primary mb-3" role="status" style="width: 3rem; height: 3rem;">
-                        <span class="sr-only">Loading...</span>
+            <!-- Tab 4: Review & Drafting (LAZY LOAD) -->
+            <div class="tab-pane fade" id="tab4" role="tabpanel" aria-labelledby="tab4-tab">
+                <div class="card shadow mb-4">
+                    <div class="card-body">
+                        <div class="tab-loading text-center" style="padding: 3rem;">
+                            <div class="spinner-border text-primary mb-3" role="status" style="width: 3rem; height: 3rem;">
+                                <span class="sr-only">Loading...</span>
+                            </div>
+                            <p class="text-muted">Loading review & drafting data...</p>
+                            <small class="text-muted">This may take a moment for the first load</small>
+                        </div>
                     </div>
-                    <p class="text-muted">Loading orders & disposition data...</p>
-                    <small class="text-muted">This may take a moment for the first load</small>
                 </div>
             </div>
-        </div>
-    </div>
 
-    <!-- Tab 6: Compliance & Awards (LAZY LOAD) -->
-    <div class="tab-pane fade" id="tab6" role="tabpanel" aria-labelledby="tab6-tab">
-        <div class="card shadow mb-4">
-            <div class="card-body">
-                <div class="tab-loading text-center" style="padding: 3rem;">
-                    <div class="spinner-border text-primary mb-3" role="status" style="width: 3rem; height: 3rem;">
-                        <span class="sr-only">Loading...</span>
+            <!-- Tab 5: Orders & Disposition (LAZY LOAD) -->
+            <div class="tab-pane fade" id="tab5" role="tabpanel" aria-labelledby="tab5-tab">
+                <div class="card shadow mb-4">
+                    <div class="card-body">
+                        <div class="tab-loading text-center" style="padding: 3rem;">
+                            <div class="spinner-border text-primary mb-3" role="status" style="width: 3rem; height: 3rem;">
+                                <span class="sr-only">Loading...</span>
+                            </div>
+                            <p class="text-muted">Loading orders & disposition data...</p>
+                            <small class="text-muted">This may take a moment for the first load</small>
+                        </div>
                     </div>
-                    <p class="text-muted">Loading compliance & awards data...</p>
-                    <small class="text-muted">This may take a moment for the first load</small>
                 </div>
             </div>
-        </div>
-    </div>
 
-    <!-- Tab 7: Appeals & Resolution (LAZY LOAD) -->
-    <div class="tab-pane fade" id="tab7" role="tabpanel" aria-labelledby="tab7-tab">
-        <div class="card shadow mb-4">
-            <div class="card-body">
-                <div class="tab-loading text-center" style="padding: 3rem;">
-                    <div class="spinner-border text-primary mb-3" role="status" style="width: 3rem; height: 3rem;">
-                        <span class="sr-only">Loading...</span>
+            <!-- Tab 6: Compliance & Awards (LAZY LOAD) -->
+            <div class="tab-pane fade" id="tab6" role="tabpanel" aria-labelledby="tab6-tab">
+                <div class="card shadow mb-4">
+                    <div class="card-body">
+                        <div class="tab-loading text-center" style="padding: 3rem;">
+                            <div class="spinner-border text-primary mb-3" role="status" style="width: 3rem; height: 3rem;">
+                                <span class="sr-only">Loading...</span>
+                            </div>
+                            <p class="text-muted">Loading compliance & awards data...</p>
+                            <small class="text-muted">This may take a moment for the first load</small>
+                        </div>
                     </div>
-                    <p class="text-muted">Loading appeals & resolution data...</p>
-                    <small class="text-muted">This may take a moment for the first load</small>
                 </div>
             </div>
-        </div>
-    </div>
 
+            <!-- Tab 7: Appeals & Resolution (LAZY LOAD) -->
+            <div class="tab-pane fade" id="tab7" role="tabpanel" aria-labelledby="tab7-tab">
+                <div class="card shadow mb-4">
+                    <div class="card-body">
+                        <div class="tab-loading text-center" style="padding: 3rem;">
+                            <div class="spinner-border text-primary mb-3" role="status" style="width: 3rem; height: 3rem;">
+                                <span class="sr-only">Loading...</span>
+                            </div>
+                            <p class="text-muted">Loading appeals & resolution data...</p>
+                            <small class="text-muted">This may take a moment for the first load</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+                </div>
+                <!-- End Tabs Content -->
+            </div>
+            <!-- /.container-fluid -->
         </div>
-        <!-- End Tabs Content -->
-    </div>
-    <!-- /.container-fluid -->
-</div>
 <!-- End of Main Content -->
+
+
+<div class="modal fade" id="uploadCsvModal" tabindex="-1" role="dialog" aria-labelledby="uploadCsvModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title" id="uploadCsvModalLabel">
+                    <i class="fas fa-file-csv"></i> Upload Cases from CSV
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <!-- Alert container for upload feedback -->
+                <div id="uploadAlert" class="alert alert-dismissible fade" role="alert" style="display: none;">
+                    <span id="uploadAlertMessage"></span>
+                    <button type="button" class="close" onclick="$('#uploadAlert').hide()">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+
+                <form id="csvUploadForm" enctype="multipart/form-data">
+                    @csrf
+                    
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i> 
+                        <strong>CSV Format Requirements:</strong>
+                        <ul class="mb-0 mt-2">
+                            <li>Required columns: <code>inspection_id</code>, <code>establishment_name</code></li>
+                            <li>Optional column: <code>case_no</code></li>
+                            <li>First row should contain column headers</li>
+                            <li>Maximum file size: 5MB</li>
+                        </ul>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="csvFile">Select CSV File</label>
+                        <div class="custom-file">
+                            <input type="file" class="custom-file-input" id="csvFile" name="csv_file" accept=".csv" required>
+                            <label class="custom-file-label" for="csvFile">Choose file...</label>
+                        </div>
+                        <small class="form-text text-muted">
+                            Only .csv files are accepted
+                        </small>
+                    </div>
+
+                    <div class="form-group">
+                        <div class="custom-control custom-checkbox">
+                            <input type="checkbox" class="custom-control-input" id="skipDuplicates" name="skip_duplicates" checked>
+                            <label class="custom-control-label" for="skipDuplicates">
+                                Skip duplicate inspection IDs (recommended)
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Progress bar -->
+                    <div id="uploadProgress" style="display: none;">
+                        <div class="progress mb-3">
+                            <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                                 role="progressbar" 
+                                 style="width: 0%" 
+                                 id="uploadProgressBar">
+                                0%
+                            </div>
+                        </div>
+                        <p class="text-center text-muted" id="uploadStatus">Preparing upload...</p>
+                    </div>
+
+                    <!-- Download sample CSV template -->
+                    <div class="alert alert-secondary">
+                        <i class="fas fa-download"></i> 
+                        <a href="{{ route('case.download-template') }}" class="alert-link">
+                            Download sample CSV template
+                        </a>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-success" id="uploadCsvBtn">
+                    <i class="fas fa-upload"></i> Upload & Import
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 
 <!-- Modal for Adding/Editing Case Records -->
 <div class="modal fade" id="addCaseModal" tabindex="-1" role="dialog" aria-labelledby="addCaseModalLabel" aria-hidden="true">
@@ -582,6 +727,8 @@
 
 <script>
 
+
+
 $(document).ready(function() {
     console.log('jQuery version:', $.fn.jquery);
     console.log('DataTables available:', typeof $.fn.DataTable !== 'undefined');
@@ -624,6 +771,148 @@ $(document).ready(function() {
             });
         }
     };
+
+        // CSV Upload Handler
+$(document).ready(function() {
+    // Update file input label with selected filename
+    $('#csvFile').on('change', function() {
+        const fileName = $(this).val().split('\\').pop();
+        $(this).next('.custom-file-label').html(fileName || 'Choose file...');
+    });
+
+    // Handle CSV upload
+    $('#uploadCsvBtn').on('click', function() {
+        const fileInput = $('#csvFile')[0];
+        const file = fileInput.files[0];
+
+        if (!file) {
+            showUploadAlert('Please select a CSV file', 'danger');
+            return;
+        }
+
+        // Validate file type
+        if (!file.name.endsWith('.csv')) {
+            showUploadAlert('Please select a valid CSV file', 'danger');
+            return;
+        }
+
+        // Validate file size (5MB)
+        if (file.size > 5 * 1024 * 1024) {
+            showUploadAlert('File size must be less than 5MB', 'danger');
+            return;
+        }
+
+        // Prepare form data
+        const formData = new FormData();
+        formData.append('csv_file', file);
+        formData.append('skip_duplicates', $('#skipDuplicates').is(':checked') ? '1' : '0');
+        formData.append('_token', $('meta[name="csrf-token"]').attr('content'));
+
+        // Show progress
+        $('#uploadProgress').show();
+        $('#uploadProgressBar').css('width', '0%').text('0%');
+        $('#uploadStatus').text('Uploading file...');
+        $('#uploadCsvBtn').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Uploading...');
+
+        // Upload file
+        $.ajax({
+            url: '/case/upload-csv',
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            xhr: function() {
+                const xhr = new window.XMLHttpRequest();
+                xhr.upload.addEventListener('progress', function(e) {
+                    if (e.lengthComputable) {
+                        const percentComplete = Math.round((e.loaded / e.total) * 100);
+                        $('#uploadProgressBar').css('width', percentComplete + '%').text(percentComplete + '%');
+                    }
+                });
+                return xhr;
+            },
+            success: function(response) {
+                $('#uploadProgressBar').css('width', '100%').text('100%');
+                $('#uploadStatus').text('Processing data...');
+
+                if (response.success) {
+                    showUploadAlert(response.message, 'success');
+                    
+                    // Show statistics if available
+                    if (response.stats) {
+                        const statsHtml = `
+                            <div class="mt-3">
+                                <strong>Import Summary:</strong>
+                                <ul class="mb-0">
+                                    <li>Total rows: ${response.stats.total_rows}</li>
+                                    <li>Successfully imported: ${response.stats.imported}</li>
+                                    <li>Skipped (duplicates): ${response.stats.skipped}</li>
+                                    <li>Failed: ${response.stats.failed}</li>
+                                </ul>
+                            </div>
+                        `;
+                        showUploadAlert(response.message + statsHtml, 'success');
+                    }
+
+                    // Reset form
+                    $('#csvUploadForm')[0].reset();
+                    $('.custom-file-label').html('Choose file...');
+                    
+                    // Reload page after 3 seconds
+                    setTimeout(function() {
+                        location.reload();
+                    }, 3000);
+                } else {
+                    showUploadAlert(response.message || 'Upload failed', 'danger');
+                }
+            },
+            error: function(xhr) {
+                let errorMessage = 'Upload failed. Please try again.';
+                
+                if (xhr.responseJSON) {
+                    if (xhr.responseJSON.message) {
+                        errorMessage = xhr.responseJSON.message;
+                    }
+                    if (xhr.responseJSON.errors) {
+                        const errors = Object.values(xhr.responseJSON.errors).flat();
+                        errorMessage += '<ul class="mb-0 mt-2">' + 
+                            errors.map(e => '<li>' + e + '</li>').join('') + 
+                            '</ul>';
+                    }
+                }
+
+                showUploadAlert(errorMessage, 'danger');
+            },
+            complete: function() {
+                $('#uploadProgress').hide();
+                $('#uploadCsvBtn').prop('disabled', false).html('<i class="fas fa-upload"></i> Upload & Import');
+            }
+        });
+    });
+
+    // Function to show upload alerts
+    function showUploadAlert(message, type) {
+        const $alert = $('#uploadAlert');
+        $alert.removeClass('alert-success alert-danger alert-warning')
+              .addClass('alert-' + type + ' show')
+              .show();
+        $('#uploadAlertMessage').html(message);
+
+        if (type === 'success') {
+            setTimeout(function() {
+                $alert.fadeOut();
+            }, 5000);
+        }
+    }
+
+    // Reset modal on close
+    $('#uploadCsvModal').on('hidden.bs.modal', function() {
+        $('#csvUploadForm')[0].reset();
+        $('.custom-file-label').html('Choose file...');
+        $('#uploadProgress').hide();
+        $('#uploadAlert').hide();
+    });
+});
 
     // Function to safely initialize a DataTable
     function initDataTable(tableId) {
