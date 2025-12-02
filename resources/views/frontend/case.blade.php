@@ -196,7 +196,7 @@
         <!-- Tabs Content -->
 <div class="tab-content mt-3" id="dataTableTabsContent">
     
-    <!-- Tab 0: All Active Cases (KEEP EXISTING - Loads on page load) -->
+    <!-- Tab 0: All Active Cases (Enhanced with more columns) -->
     <div class="tab-pane fade show active" id="tab0" role="tabpanel" aria-labelledby="tab0-tab">
         <div class="card shadow mb-4">
             <div class="card-body">
@@ -233,11 +233,115 @@
                     <table class="table table-bordered compact-table sticky-table" id="dataTable0" width="100%" cellspacing="0">
                         <thead>
                             <tr>
+                                <!-- Core Information -->
+                                <th>No.</th>
                                 <th>Inspection ID</th>
                                 <th>Case No.</th>
                                 <th>Establishment Name</th>
+                                <th>PO Office</th>
                                 <th>Current Stage</th>
                                 <th>Overall Status</th>
+                                
+                                <!-- Inspection Stage -->
+                                <th>Date of Inspection</th>
+                                <th>Inspector Name</th>
+                                <th>Inspector Authority No.</th>
+                                <th>Date of NR</th>
+                                <th>Lapse 20 Day Period</th>
+                                
+                                <!-- Docketing Stage -->
+                                <th>PCT for Docketing</th>
+                                <th>Date Scheduled Docketed</th>
+                                <th>Aging Docket</th>
+                                <th>Status Docket</th>
+                                <th>Hearing Officer (MIS)</th>
+                                
+                                <!-- Hearing Process Stage -->
+                                <th>Date 1st MC (Actual)</th>
+                                <th>First MC PCT</th>
+                                <th>Status 1st MC</th>
+                                <th>Date 2nd/Last MC</th>
+                                <th>Second/Last MC PCT</th>
+                                <th>Status 2nd MC</th>
+                                <th>Case Folder Forwarded to RO</th>
+                                <th>Draft Order from PO Type</th>
+                                <th>Applicable Draft Order</th>
+                                <th>Complete Case Folder</th>
+                                <th>TWG ALI</th>
+                                
+                                <!-- Review & Drafting Stage -->
+                                <th>PO PCT</th>
+                                <th>Aging PO PCT</th>
+                                <th>Status PO PCT</th>
+                                <th>Date Received from PO</th>
+                                <th>Reviewer/Drafter</th>
+                                <th>Date Received by Reviewer</th>
+                                <th>Date Returned from Drafter</th>
+                                <th>Aging 10 Days TSSD</th>
+                                <th>Status Reviewer/Drafter</th>
+                                <th>Draft Order TSSD Reviewer</th>
+                                <th>Final Review Date Received</th>
+                                <th>Date Received Drafter Finalization</th>
+                                <th>Date Returned Case Mgmt Signature</th>
+                                <th>Aging 2 Days Finalization</th>
+                                <th>Status Finalization</th>
+                                
+                                <!-- Orders & Disposition Stage -->
+                                <th>PCT 96 Days</th>
+                                <th>Date Signed (MIS)</th>
+                                <th>Status PCT</th>
+                                <th>Reference Date PCT</th>
+                                <th>Aging PCT</th>
+                                <th>Disposition (MIS)</th>
+                                <th>Disposition (Actual)</th>
+                                <th>Findings to Comply</th>
+                                <th>Compliance Order Monetary Award</th>
+                                <th>OSH Penalty</th>
+                                <th>Affected Male</th>
+                                <th>Affected Female</th>
+                                <th>Date of Order (Actual)</th>
+                                <th>Released Date (Actual)</th>
+                                
+                                <!-- Compliance & Awards Stage -->
+                                <th>First Order Dismissal CNPC</th>
+                                <th>Tavable Less Than 10 Workers</th>
+                                <th>Scanned Order First</th>
+                                <th>With Deposited Monetary Claims</th>
+                                <th>Amount Deposited</th>
+                                <th>With Order Payment Notice</th>
+                                <th>Status All Employees Received</th>
+                                <th>Status Case After First Order</th>
+                                <th>Date Notice Finality Dismissed</th>
+                                <th>Released Date Notice Finality</th>
+                                <th>Scanned Notice Finality</th>
+                                <th>Updated Ticked in MIS</th>
+                                
+                                <!-- Appeals & Resolution Stage (2nd Order) -->
+                                <th>Second Order Drafter</th>
+                                <th>Date Received by Drafter CT CNPC</th>
+                                <th>Date Returned Case Mgmt CT CNPC</th>
+                                <th>Review CT CNPC</th>
+                                <th>Date Received Drafter Finalization 2nd</th>
+                                <th>Date Returned Case Mgmt Signature 2nd</th>
+                                <th>Date Order 2nd CNPC</th>
+                                <th>Released Date 2nd CNPC</th>
+                                <th>Scanned Order 2nd CNPC</th>
+                                
+                                <!-- Appeals & Resolution Stage (MALSU) -->
+                                <th>Date Forwarded MALSU</th>
+                                <th>Scanned Indorsement MALSU</th>
+                                <th>Motion Reconsideration Date</th>
+                                <th>Date Received MALSU</th>
+                                <th>Date Resolution MR</th>
+                                <th>Released Date Resolution MR</th>
+                                <th>Scanned Resolution MR</th>
+                                <th>Date Appeal Received Records</th>
+                                <th>Date Indorsed Office Secretary</th>
+                                
+                                <!-- Additional Information -->
+                                <th>Logbook Page Number</th>
+                                <th>Remarks/Notes</th>
+                                
                                 <th>Created At</th>
                                 <th>Actions</th>
                             </tr>
@@ -246,17 +350,193 @@
                             @if(isset($cases) && $cases->count() > 0)
                                 @foreach($cases as $case)
                                     <tr data-id="{{ $case->id }}">
+                                        <!-- Core Information -->
+                                        <td class="editable-cell" data-field="no">{{ $case->no ?? '-' }}</td>
                                         <td class="editable-cell" data-field="inspection_id">{{ $case->inspection_id ?? '-' }}</td>
                                         <td class="editable-cell" data-field="case_no">{{ $case->case_no ?? '-' }}</td>
                                         <td class="editable-cell" data-field="establishment_name" title="{{ $case->establishment_name ?? '' }}">
                                             {{ $case->establishment_name ? Str::limit($case->establishment_name, 25) : '-' }}
                                         </td>
+                                        <td class="editable-cell" data-field="po_office">{{ $case->po_office ?? '-' }}</td>
                                         <td class="editable-cell" data-field="current_stage" data-type="select">
                                             {{ explode(': ', $case->current_stage)[1] ?? $case->current_stage ?? '-' }}
                                         </td>
                                         <td class="editable-cell" data-field="overall_status" data-type="select">
                                             {{ $case->overall_status ?? '-' }}
                                         </td>
+                                        
+                                        <!-- Inspection Stage -->
+                                        <td class="editable-cell" data-field="date_of_inspection" data-type="date">
+                                            {{ $case->date_of_inspection ? \Carbon\Carbon::parse($case->date_of_inspection)->format('Y-m-d') : '-' }}
+                                        </td>
+                                        <td class="editable-cell" data-field="inspector_name" title="{{ $case->inspector_name ?? '' }}">
+                                            {{ $case->inspector_name ? Str::limit($case->inspector_name, 20) : '-' }}
+                                        </td>
+                                        <td class="editable-cell" data-field="inspector_authority_no">{{ $case->inspector_authority_no ?? '-' }}</td>
+                                        <td class="editable-cell" data-field="date_of_nr" data-type="date">
+                                            {{ $case->date_of_nr ? \Carbon\Carbon::parse($case->date_of_nr)->format('Y-m-d') : '-' }}
+                                        </td>
+                                        <td class="editable-cell" data-field="lapse_20_day_period">{{ $case->lapse_20_day_period ?? '-' }}</td>
+                                        
+                                        <!-- Docketing Stage -->
+                                        <td class="editable-cell" data-field="pct_for_docketing">{{ $case->pct_for_docketing ?? '-' }}</td>
+                                        <td class="editable-cell" data-field="date_scheduled_docketed" data-type="date">
+                                            {{ $case->date_scheduled_docketed ? \Carbon\Carbon::parse($case->date_scheduled_docketed)->format('Y-m-d') : '-' }}
+                                        </td>
+                                        <td class="editable-cell" data-field="aging_docket">{{ $case->aging_docket ?? '-' }}</td>
+                                        <td class="editable-cell" data-field="status_docket">{{ $case->status_docket ?? '-' }}</td>
+                                        <td class="editable-cell" data-field="hearing_officer_mis" title="{{ $case->hearing_officer_mis ?? '' }}">
+                                            {{ $case->hearing_officer_mis ? Str::limit($case->hearing_officer_mis, 20) : '-' }}
+                                        </td>
+                                        
+                                        <!-- Hearing Process Stage -->
+                                        <td class="editable-cell" data-field="date_1st_mc_actual" data-type="date">
+                                            {{ $case->date_1st_mc_actual ? \Carbon\Carbon::parse($case->date_1st_mc_actual)->format('Y-m-d') : '-' }}
+                                        </td>
+                                        <td class="editable-cell" data-field="first_mc_pct">{{ $case->first_mc_pct ?? '-' }}</td>
+                                        <td class="editable-cell" data-field="status_1st_mc">{{ $case->status_1st_mc ?? '-' }}</td>
+                                        <td class="editable-cell" data-field="date_2nd_last_mc" data-type="date">
+                                            {{ $case->date_2nd_last_mc ? \Carbon\Carbon::parse($case->date_2nd_last_mc)->format('Y-m-d') : '-' }}
+                                        </td>
+                                        <td class="editable-cell" data-field="second_last_mc_pct">{{ $case->second_last_mc_pct ?? '-' }}</td>
+                                        <td class="editable-cell" data-field="status_2nd_mc">{{ $case->status_2nd_mc ?? '-' }}</td>
+                                        <td class="editable-cell" data-field="case_folder_forwarded_to_ro">{{ $case->case_folder_forwarded_to_ro ?? '-' }}</td>
+                                        <td class="editable-cell" data-field="draft_order_from_po_type">{{ $case->draft_order_from_po_type ?? '-' }}</td>
+                                        <td class="editable-cell" data-field="applicable_draft_order">{{ $case->applicable_draft_order ?? '-' }}</td>
+                                        <td class="editable-cell" data-field="complete_case_folder">{{ $case->complete_case_folder ?? '-' }}</td>
+                                        <td class="editable-cell" data-field="twg_ali">{{ $case->twg_ali ?? '-' }}</td>
+                                        
+                                        <!-- Review & Drafting Stage -->
+                                        <td class="editable-cell" data-field="po_pct">{{ $case->po_pct ?? '-' }}</td>
+                                        <td class="editable-cell" data-field="aging_po_pct">{{ $case->aging_po_pct ?? '-' }}</td>
+                                        <td class="editable-cell" data-field="status_po_pct">{{ $case->status_po_pct ?? '-' }}</td>
+                                        <td class="editable-cell" data-field="date_received_from_po" data-type="date">
+                                            {{ $case->date_received_from_po ? \Carbon\Carbon::parse($case->date_received_from_po)->format('Y-m-d') : '-' }}
+                                        </td>
+                                        <td class="editable-cell" data-field="reviewer_drafter" title="{{ $case->reviewer_drafter ?? '' }}">
+                                            {{ $case->reviewer_drafter ? Str::limit($case->reviewer_drafter, 20) : '-' }}
+                                        </td>
+                                        <td class="editable-cell" data-field="date_received_by_reviewer" data-type="date">
+                                            {{ $case->date_received_by_reviewer ? \Carbon\Carbon::parse($case->date_received_by_reviewer)->format('Y-m-d') : '-' }}
+                                        </td>
+                                        <td class="editable-cell" data-field="date_returned_from_drafter" data-type="date">
+                                            {{ $case->date_returned_from_drafter ? \Carbon\Carbon::parse($case->date_returned_from_drafter)->format('Y-m-d') : '-' }}
+                                        </td>
+                                        <td class="editable-cell" data-field="aging_10_days_tssd">{{ $case->aging_10_days_tssd ?? '-' }}</td>
+                                        <td class="editable-cell" data-field="status_reviewer_drafter">{{ $case->status_reviewer_drafter ?? '-' }}</td>
+                                        <td class="editable-cell" data-field="draft_order_tssd_reviewer">{{ $case->draft_order_tssd_reviewer ?? '-' }}</td>
+                                        <td class="editable-cell" data-field="final_review_date_received" data-type="date">
+                                            {{ $case->final_review_date_received ? \Carbon\Carbon::parse($case->final_review_date_received)->format('Y-m-d') : '-' }}
+                                        </td>
+                                        <td class="editable-cell" data-field="date_received_drafter_finalization" data-type="date">
+                                            {{ $case->date_received_drafter_finalization ? \Carbon\Carbon::parse($case->date_received_drafter_finalization)->format('Y-m-d') : '-' }}
+                                        </td>
+                                        <td class="editable-cell" data-field="date_returned_case_mgmt_signature" data-type="date">
+                                            {{ $case->date_returned_case_mgmt_signature ? \Carbon\Carbon::parse($case->date_returned_case_mgmt_signature)->format('Y-m-d') : '-' }}
+                                        </td>
+                                        <td class="editable-cell" data-field="aging_2_days_finalization">{{ $case->aging_2_days_finalization ?? '-' }}</td>
+                                        <td class="editable-cell" data-field="status_finalization">{{ $case->status_finalization ?? '-' }}</td>
+                                        
+                                        <!-- Orders & Disposition Stage -->
+                                        <td class="editable-cell" data-field="pct_96_days">{{ $case->pct_96_days ?? '-' }}</td>
+                                        <td class="editable-cell" data-field="date_signed_mis" data-type="date">
+                                            {{ $case->date_signed_mis ? \Carbon\Carbon::parse($case->date_signed_mis)->format('Y-m-d') : '-' }}
+                                        </td>
+                                        <td class="editable-cell" data-field="status_pct">{{ $case->status_pct ?? '-' }}</td>
+                                        <td class="editable-cell" data-field="reference_date_pct" data-type="date">
+                                            {{ $case->reference_date_pct ? \Carbon\Carbon::parse($case->reference_date_pct)->format('Y-m-d') : '-' }}
+                                        </td>
+                                        <td class="editable-cell" data-field="aging_pct">{{ $case->aging_pct ?? '-' }}</td>
+                                        <td class="editable-cell" data-field="disposition_mis">{{ $case->disposition_mis ?? '-' }}</td>
+                                        <td class="editable-cell" data-field="disposition_actual">{{ $case->disposition_actual ?? '-' }}</td>
+                                        <td class="editable-cell" data-field="findings_to_comply" title="{{ $case->findings_to_comply ?? '' }}">
+                                            {{ $case->findings_to_comply ? Str::limit($case->findings_to_comply, 20) : '-' }}
+                                        </td>
+                                        <td class="editable-cell" data-field="compliance_order_monetary_award">{{ $case->compliance_order_monetary_award ?? '-' }}</td>
+                                        <td class="editable-cell" data-field="osh_penalty">{{ $case->osh_penalty ?? '-' }}</td>
+                                        <td class="editable-cell" data-field="affected_male">{{ $case->affected_male ?? '-' }}</td>
+                                        <td class="editable-cell" data-field="affected_female">{{ $case->affected_female ?? '-' }}</td>
+                                        <td class="editable-cell" data-field="date_of_order_actual" data-type="date">
+                                            {{ $case->date_of_order_actual ? \Carbon\Carbon::parse($case->date_of_order_actual)->format('Y-m-d') : '-' }}
+                                        </td>
+                                        <td class="editable-cell" data-field="released_date_actual" data-type="date">
+                                            {{ $case->released_date_actual ? \Carbon\Carbon::parse($case->released_date_actual)->format('Y-m-d') : '-' }}
+                                        </td>
+                                        
+                                        <!-- Compliance & Awards Stage -->
+                                        <td class="editable-cell" data-field="first_order_dismissal_cnpc">{{ $case->first_order_dismissal_cnpc ?? '-' }}</td>
+                                        <td class="editable-cell" data-field="tavable_less_than_10_workers">{{ $case->tavable_less_than_10_workers ?? '-' }}</td>
+                                        <td class="editable-cell" data-field="scanned_order_first">{{ $case->scanned_order_first ?? '-' }}</td>
+                                        <td class="editable-cell" data-field="with_deposited_monetary_claims">{{ $case->with_deposited_monetary_claims ?? '-' }}</td>
+                                        <td class="editable-cell" data-field="amount_deposited">{{ $case->amount_deposited ?? '-' }}</td>
+                                        <td class="editable-cell" data-field="with_order_payment_notice">{{ $case->with_order_payment_notice ?? '-' }}</td>
+                                        <td class="editable-cell" data-field="status_all_employees_received">{{ $case->status_all_employees_received ?? '-' }}</td>
+                                        <td class="editable-cell" data-field="status_case_after_first_order">{{ $case->status_case_after_first_order ?? '-' }}</td>
+                                        <td class="editable-cell" data-field="date_notice_finality_dismissed" data-type="date">
+                                            {{ $case->date_notice_finality_dismissed ? \Carbon\Carbon::parse($case->date_notice_finality_dismissed)->format('Y-m-d') : '-' }}
+                                        </td>
+                                        <td class="editable-cell" data-field="released_date_notice_finality" data-type="date">
+                                            {{ $case->released_date_notice_finality ? \Carbon\Carbon::parse($case->released_date_notice_finality)->format('Y-m-d') : '-' }}
+                                        </td>
+                                        <td class="editable-cell" data-field="scanned_notice_finality">{{ $case->scanned_notice_finality ?? '-' }}</td>
+                                        <td class="editable-cell" data-field="updated_ticked_in_mis">{{ $case->updated_ticked_in_mis ?? '-' }}</td>
+                                        
+                                        <!-- Appeals & Resolution Stage (2nd Order) -->
+                                        <td class="editable-cell" data-field="second_order_drafter" title="{{ $case->second_order_drafter ?? '' }}">
+                                            {{ $case->second_order_drafter ? Str::limit($case->second_order_drafter, 20) : '-' }}
+                                        </td>
+                                        <td class="editable-cell" data-field="date_received_by_drafter_ct_cnpc" data-type="date">
+                                            {{ $case->date_received_by_drafter_ct_cnpc ? \Carbon\Carbon::parse($case->date_received_by_drafter_ct_cnpc)->format('Y-m-d') : '-' }}
+                                        </td>
+                                        <td class="editable-cell" data-field="date_returned_case_mgmt_ct_cnpc" data-type="date">
+                                            {{ $case->date_returned_case_mgmt_ct_cnpc ? \Carbon\Carbon::parse($case->date_returned_case_mgmt_ct_cnpc)->format('Y-m-d') : '-' }}
+                                        </td>
+                                        <td class="editable-cell" data-field="review_ct_cnpc">{{ $case->review_ct_cnpc ?? '-' }}</td>
+                                        <td class="editable-cell" data-field="date_received_drafter_finalization_2nd" data-type="date">
+                                            {{ $case->date_received_drafter_finalization_2nd ? \Carbon\Carbon::parse($case->date_received_drafter_finalization_2nd)->format('Y-m-d') : '-' }}
+                                        </td>
+                                        <td class="editable-cell" data-field="date_returned_case_mgmt_signature_2nd" data-type="date">
+                                            {{ $case->date_returned_case_mgmt_signature_2nd ? \Carbon\Carbon::parse($case->date_returned_case_mgmt_signature_2nd)->format('Y-m-d') : '-' }}
+                                        </td>
+                                        <td class="editable-cell" data-field="date_order_2nd_cnpc" data-type="date">
+                                            {{ $case->date_order_2nd_cnpc ? \Carbon\Carbon::parse($case->date_order_2nd_cnpc)->format('Y-m-d') : '-' }}
+                                        </td>
+                                        <td class="editable-cell" data-field="released_date_2nd_cnpc" data-type="date">
+                                            {{ $case->released_date_2nd_cnpc ? \Carbon\Carbon::parse($case->released_date_2nd_cnpc)->format('Y-m-d') : '-' }}
+                                        </td>
+                                        <td class="editable-cell" data-field="scanned_order_2nd_cnpc">{{ $case->scanned_order_2nd_cnpc ?? '-' }}</td>
+                                        
+                                        <!-- Appeals & Resolution Stage (MALSU) -->
+                                        <td class="editable-cell" data-field="date_forwarded_malsu" data-type="date">
+                                            {{ $case->date_forwarded_malsu ? \Carbon\Carbon::parse($case->date_forwarded_malsu)->format('Y-m-d') : '-' }}
+                                        </td>
+                                        <td class="editable-cell" data-field="scanned_indorsement_malsu">{{ $case->scanned_indorsement_malsu ?? '-' }}</td>
+                                        <td class="editable-cell" data-field="motion_reconsideration_date" data-type="date">
+                                            {{ $case->motion_reconsideration_date ? \Carbon\Carbon::parse($case->motion_reconsideration_date)->format('Y-m-d') : '-' }}
+                                        </td>
+                                        <td class="editable-cell" data-field="date_received_malsu" data-type="date">
+                                            {{ $case->date_received_malsu ? \Carbon\Carbon::parse($case->date_received_malsu)->format('Y-m-d') : '-' }}
+                                        </td>
+                                        <td class="editable-cell" data-field="date_resolution_mr" data-type="date">
+                                            {{ $case->date_resolution_mr ? \Carbon\Carbon::parse($case->date_resolution_mr)->format('Y-m-d') : '-' }}
+                                        </td>
+                                        <td class="editable-cell" data-field="released_date_resolution_mr" data-type="date">
+                                            {{ $case->released_date_resolution_mr ? \Carbon\Carbon::parse($case->released_date_resolution_mr)->format('Y-m-d') : '-' }}
+                                        </td>
+                                        <td class="editable-cell" data-field="scanned_resolution_mr">{{ $case->scanned_resolution_mr ?? '-' }}</td>
+                                        <td class="editable-cell" data-field="date_appeal_received_records" data-type="date">
+                                            {{ $case->date_appeal_received_records ? \Carbon\Carbon::parse($case->date_appeal_received_records)->format('Y-m-d') : '-' }}
+                                        </td>
+                                        <td class="editable-cell" data-field="date_indorsed_office_secretary" data-type="date">
+                                            {{ $case->date_indorsed_office_secretary ? \Carbon\Carbon::parse($case->date_indorsed_office_secretary)->format('Y-m-d') : '-' }}
+                                        </td>
+                                        
+                                        <!-- Additional Information -->
+                                        <td class="editable-cell" data-field="logbook_page_number">{{ $case->logbook_page_number ?? '-' }}</td>
+                                        <td class="editable-cell" data-field="remarks_notes" title="{{ $case->remarks_notes ?? '' }}">
+                                            {{ $case->remarks_notes ? Str::limit($case->remarks_notes, 30) : '-' }}
+                                        </td>
+                                        
                                         <td class="non-editable">
                                             {{ $case->created_at ? \Carbon\Carbon::parse($case->created_at)->format('Y-m-d') : '-' }}
                                         </td>
@@ -288,7 +568,7 @@
                                 @endforeach
                             @else
                                 <tr>
-                                    <td colspan="7" class="text-center">No cases found. Click "Add Case" to create your first case.</td>
+                                    <td colspan="100" class="text-center">No cases found. Click "Add Case" to create your first case.</td>
                                 </tr>
                             @endif
                         </tbody>
@@ -1122,41 +1402,264 @@ $(document).ready(function() {
 
     // Tab configuration
     const tabConfigs = {
-        'tab0': {
-            name: 'case',
-            endpoint: '/case/',
-            editBtnClass: '.edit-row-btn-case',
-            saveBtnClass: '.save-btn-case', 
-            cancelBtnClass: '.cancel-btn-case',
-            alertPrefix: 'tab0',
-            fields: {
-                'inspection_id': { type: 'text' },
-                'case_no': { type: 'text' },
-                'establishment_name': { type: 'text' },
-                'current_stage': { 
-                    type: 'select',
-                    options: [
-                        { value: '', text: 'Select Stage' },
-                        { value: '1: Inspections', text: 'Inspections' },
-                        { value: '2: Docketing', text: 'Docketing' },
-                        { value: '3: Hearing', text: 'Hearing' },
-                        { value: '4: Review & Drafting', text: 'Review & Drafting' },
-                        { value: '5: Orders & Disposition', text: 'Orders & Disposition' },
-                        { value: '6: Compliance & Awards', text: 'Compliance & Awards' },
-                        { value: '7: Appeals & Resolution', text: 'Appeals & Resolution' }
-                    ]
-                },
-                'overall_status': {
-                    type: 'select',
-                    options: [
-                        { value: '', text: 'Select Status' },
-                        { value: 'Active', text: 'Active' },
-                        { value: 'Completed', text: 'Completed' },
-                        { value: 'Dismissed', text: 'Dismissed' }
-                    ]
-                }
-            }
+'tab0': {
+    name: 'case',
+    endpoint: '/case/',
+    editBtnClass: '.edit-row-btn-case',
+    saveBtnClass: '.save-btn-case', 
+    cancelBtnClass: '.cancel-btn-case',
+    alertPrefix: 'tab0',
+    fields: {
+        // Core Information
+        'no': { type: 'text' },
+        'inspection_id': { type: 'text' },
+        'case_no': { type: 'text' },
+        'establishment_name': { type: 'text' },
+        'po_office': { type: 'text' },
+        'current_stage': { 
+            type: 'select',
+            options: [
+                { value: '', text: 'Select Stage' },
+                { value: '1: Inspections', text: 'Inspections' },
+                { value: '2: Docketing', text: 'Docketing' },
+                { value: '3: Hearing', text: 'Hearing' },
+                { value: '4: Review & Drafting', text: 'Review & Drafting' },
+                { value: '5: Orders & Disposition', text: 'Orders & Disposition' },
+                { value: '6: Compliance & Awards', text: 'Compliance & Awards' },
+                { value: '7: Appeals & Resolution', text: 'Appeals & Resolution' }
+            ]
         },
+        'overall_status': {
+            type: 'select',
+            options: [
+                { value: '', text: 'Select Status' },
+                { value: 'Active', text: 'Active' },
+                { value: 'Completed', text: 'Completed' },
+                { value: 'Dismissed', text: 'Dismissed' }
+            ]
+        },
+        
+        // Inspection Stage
+        'date_of_inspection': { type: 'date' },
+        'inspector_name': { type: 'text' },
+        'inspector_authority_no': { type: 'text' },
+        'date_of_nr': { type: 'date' },
+        'lapse_20_day_period': { type: 'text' },
+        
+        // Docketing Stage
+        'pct_for_docketing': { type: 'text' },
+        'date_scheduled_docketed': { type: 'date' },
+        'aging_docket': { type: 'number' },
+        'status_docket': {
+            type: 'select',
+            options: [
+                { value: '', text: 'Select Status' },
+                { value: 'Pending', text: 'Pending' },
+                { value: 'Completed', text: 'Completed' },
+                { value: 'In Progress', text: 'In Progress' },
+                { value: 'Cancelled', text: 'Cancelled' }
+            ]
+        },
+        'hearing_officer_mis': { type: 'text' },
+        
+        // Hearing Process Stage
+        'date_1st_mc_actual': { type: 'date' },
+        'first_mc_pct': { type: 'text' },
+        'status_1st_mc': {
+            type: 'select',
+            options: [
+                { value: '', text: 'Select Status' },
+                { value: 'Pending', text: 'Pending' },
+                { value: 'Ongoing', text: 'Ongoing' },
+                { value: 'Completed', text: 'Completed' }
+            ]
+        },
+        'date_2nd_last_mc': { type: 'date' },
+        'second_last_mc_pct': { type: 'text' },
+        'status_2nd_mc': {
+            type: 'select',
+            options: [
+                { value: '', text: 'Select Status' },
+                { value: 'Pending', text: 'Pending' },
+                { value: 'In Progress', text: 'In Progress' },
+                { value: 'Completed', text: 'Completed' }
+            ]
+        },
+        'case_folder_forwarded_to_ro': { type: 'text' },
+        'draft_order_from_po_type': { type: 'text' },
+        'applicable_draft_order': {
+            type: 'select',
+            options: [
+                { value: '', text: 'Select' },
+                { value: 'Y', text: 'Yes' },
+                { value: 'N', text: 'No' }
+            ]
+        },
+        'complete_case_folder': {
+            type: 'select',
+            options: [
+                { value: '', text: 'Select' },
+                { value: 'Y', text: 'Yes' },
+                { value: 'N', text: 'No' }
+            ]
+        },
+        'twg_ali': { type: 'text' },
+        
+        // Review & Drafting Stage
+        'po_pct': { type: 'text' },
+        'aging_po_pct': { type: 'number' },
+        'status_po_pct': {
+            type: 'select',
+            options: [
+                { value: '', text: 'Select Status' },
+                { value: 'Pending', text: 'Pending' },
+                { value: 'Ongoing', text: 'Ongoing' },
+                { value: 'Overdue', text: 'Overdue' },
+                { value: 'Completed', text: 'Completed' }
+            ]
+        },
+        'date_received_from_po': { type: 'date' },
+        'reviewer_drafter': { type: 'text' },
+        'date_received_by_reviewer': { type: 'date' },
+        'date_returned_from_drafter': { type: 'date' },
+        'aging_10_days_tssd': { type: 'number' },
+        'status_reviewer_drafter': {
+            type: 'select',
+            options: [
+                { value: '', text: 'Select Status' },
+                { value: 'Pending', text: 'Pending' },
+                { value: 'Ongoing', text: 'Ongoing' },
+                { value: 'Returned', text: 'Returned' },
+                { value: 'Approved', text: 'Approved' },
+                { value: 'Overdue', text: 'Overdue' }
+            ]
+        },
+        'draft_order_tssd_reviewer': { type: 'text' },
+        'final_review_date_received': { type: 'date' },
+        'date_received_drafter_finalization': { type: 'date' },
+        'date_returned_case_mgmt_signature': { type: 'date' },
+        'aging_2_days_finalization': { type: 'number' },
+        'status_finalization': {
+            type: 'select',
+            options: [
+                { value: '', text: 'Select Status' },
+                { value: 'Pending', text: 'Pending' },
+                { value: 'In Progress', text: 'In Progress' },
+                { value: 'Completed', text: 'Completed' },
+                { value: 'Overdue', text: 'Overdue' }
+            ]
+        },
+        
+        // Orders & Disposition Stage
+        'pct_96_days': { type: 'text' },
+        'date_signed_mis': { type: 'date' },
+        'status_pct': {
+            type: 'select',
+            options: [
+                { value: '', text: 'Select Status' },
+                { value: 'Pending', text: 'Pending' },
+                { value: 'Ongoing', text: 'Ongoing' },
+                { value: 'Completed', text: 'Completed' },
+                { value: 'Overdue', text: 'Overdue' }
+            ]
+        },
+        'reference_date_pct': { type: 'date' },
+        'aging_pct': { type: 'number' },
+        'disposition_mis': { type: 'text' },
+        'disposition_actual': { type: 'text' },
+        'findings_to_comply': { type: 'text' },
+        'compliance_order_monetary_award': { type: 'number', step: '0.01' },
+        'osh_penalty': { type: 'number', step: '0.01' },
+        'affected_male': { type: 'number' },
+        'affected_female': { type: 'number' },
+        'date_of_order_actual': { type: 'date' },
+        'released_date_actual': { type: 'date' },
+        
+        // Compliance & Awards Stage
+        'first_order_dismissal_cnpc': {
+            type: 'select',
+            options: [
+                { value: '', text: 'Select' },
+                { value: '0', text: 'No' },
+                { value: '1', text: 'Yes' }
+            ]
+        },
+        'tavable_less_than_10_workers': {
+            type: 'select',
+            options: [
+                { value: '', text: 'Select' },
+                { value: '0', text: 'No' },
+                { value: '1', text: 'Yes' }
+            ]
+        },
+        'scanned_order_first': { type: 'text' },
+        'with_deposited_monetary_claims': {
+            type: 'select',
+            options: [
+                { value: '', text: 'Select' },
+                { value: '0', text: 'No' },
+                { value: '1', text: 'Yes' }
+            ]
+        },
+        'amount_deposited': { type: 'number', step: '0.01' },
+        'with_order_payment_notice': {
+            type: 'select',
+            options: [
+                { value: '', text: 'Select' },
+                { value: '0', text: 'No' },
+                { value: '1', text: 'Yes' }
+            ]
+        },
+        'status_all_employees_received': {
+            type: 'select',
+            options: [
+                { value: '', text: 'Select Status' },
+                { value: 'Pending', text: 'Pending' },
+                { value: 'Yes', text: 'Yes' },
+                { value: 'No', text: 'No' },
+                { value: 'Partial', text: 'Partial' }
+            ]
+        },
+        'status_case_after_first_order': { type: 'text' },
+        'date_notice_finality_dismissed': { type: 'date' },
+        'released_date_notice_finality': { type: 'date' },
+        'scanned_notice_finality': { type: 'text' },
+        'updated_ticked_in_mis': {
+            type: 'select',
+            options: [
+                { value: '', text: 'Select' },
+                { value: '0', text: 'No' },
+                { value: '1', text: 'Yes' }
+            ]
+        },
+        
+        // Appeals & Resolution Stage (2nd Order)
+        'second_order_drafter': { type: 'text' },
+        'date_received_by_drafter_ct_cnpc': { type: 'date' },
+        'date_returned_case_mgmt_ct_cnpc': { type: 'date' },
+        'review_ct_cnpc': { type: 'text' },
+        'date_received_drafter_finalization_2nd': { type: 'date' },
+        'date_returned_case_mgmt_signature_2nd': { type: 'date' },
+        'date_order_2nd_cnpc': { type: 'date' },
+        'released_date_2nd_cnpc': { type: 'date' },
+        'scanned_order_2nd_cnpc': { type: 'text' },
+        
+        // Appeals & Resolution Stage (MALSU)
+        'date_forwarded_malsu': { type: 'date' },
+        'scanned_indorsement_malsu': { type: 'text' },
+        'motion_reconsideration_date': { type: 'date' },
+        'date_received_malsu': { type: 'date' },
+        'date_resolution_mr': { type: 'date' },
+        'released_date_resolution_mr': { type: 'date' },
+        'scanned_resolution_mr': { type: 'text' },
+        'date_appeal_received_records': { type: 'date' },
+        'date_indorsed_office_secretary': { type: 'date' },
+        
+        // Additional Information
+        'logbook_page_number': { type: 'text' },
+        'remarks_notes': { type: 'text' }
+    }
+},
         'tab1': {
             name: 'inspection',
             endpoint: '/inspection/',

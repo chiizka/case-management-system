@@ -5,43 +5,6 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-/**
- * @property int $id
- * @property string $inspection_id
- * @property string|null $case_no
- * @property string $establishment_name
- * @property string $current_stage
- * @property string $overall_status
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\AppealsAndResolution> $appealsAndResolutions
- * @property-read int|null $appeals_and_resolutions_count
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\ComplianceAndAward> $complianceAndAwards
- * @property-read int|null $compliance_and_awards_count
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\docketing> $docketing
- * @property-read int|null $docketing_count
- * @property-read \App\Models\DocumentTracking|null $documentTracking
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\HearingProcess> $hearingProcesses
- * @property-read int|null $hearing_processes_count
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Inspection> $inspections
- * @property-read int|null $inspections_count
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\OrderAndDisposition> $ordersAndDisposition
- * @property-read int|null $orders_and_disposition_count
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\ReviewAndDrafting> $reviewAndDrafting
- * @property-read int|null $review_and_drafting_count
- * @method static \Illuminate\Database\Eloquent\Builder<static>|CaseFile newModelQuery()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|CaseFile newQuery()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|CaseFile query()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|CaseFile whereCaseNo($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|CaseFile whereCreatedAt($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|CaseFile whereCurrentStage($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|CaseFile whereEstablishmentName($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|CaseFile whereId($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|CaseFile whereInspectionId($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|CaseFile whereOverallStatus($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|CaseFile whereUpdatedAt($value)
- * @mixin \Eloquent
- */
 class CaseFile extends Model
 {
     use HasFactory;
@@ -49,53 +12,125 @@ class CaseFile extends Model
     protected $table = 'cases';
     
     protected $fillable = [
+        // Core Information
+        'no',
         'inspection_id',
         'case_no', 
         'establishment_name',
         'current_stage',
-        'overall_status'
+        'overall_status',
+        'po_office',
+        
+        // Inspection Stage
+        'date_of_inspection',
+        'inspector_name',
+        'inspector_authority_no',
+        'date_of_nr',
+        'lapse_20_day_period',
+        
+        // Docketing Stage
+        'pct_for_docketing',
+        'date_scheduled_docketed',
+        'aging_docket',
+        'status_docket',
+        'hearing_officer_mis',
+        
+        // Hearing Process Stage
+        'date_1st_mc_actual',
+        'first_mc_pct',
+        'status_1st_mc',
+        'date_2nd_last_mc',
+        'second_last_mc_pct',
+        'status_2nd_mc',
+        'case_folder_forwarded_to_ro',
+        'draft_order_from_po_type',
+        'applicable_draft_order',
+        'complete_case_folder',
+        'twg_ali',
+        
+        // Review & Drafting Stage
+        'po_pct',
+        'aging_po_pct',
+        'status_po_pct',
+        'date_received_from_po',
+        'reviewer_drafter',
+        'date_received_by_reviewer',
+        'date_returned_from_drafter',
+        'aging_10_days_tssd',
+        'status_reviewer_drafter',
+        'draft_order_tssd_reviewer',
+        'final_review_date_received',
+        'date_received_drafter_finalization',
+        'date_returned_case_mgmt_signature',
+        'aging_2_days_finalization',
+        'status_finalization',
+        
+        // Orders & Disposition Stage
+        'pct_96_days',
+        'date_signed_mis',
+        'status_pct',
+        'reference_date_pct',
+        'aging_pct',
+        'disposition_mis',
+        'disposition_actual',
+        'findings_to_comply',
+        'compliance_order_monetary_award',
+        'osh_penalty',
+        'affected_male',
+        'affected_female',
+        'date_of_order_actual',
+        'released_date_actual',
+        
+        // Compliance & Awards Stage
+        'first_order_dismissal_cnpc',
+        'tavable_less_than_10_workers',
+        'scanned_order_first',
+        'with_deposited_monetary_claims',
+        'amount_deposited',
+        'with_order_payment_notice',
+        'status_all_employees_received',
+        'status_case_after_first_order',
+        'date_notice_finality_dismissed',
+        'released_date_notice_finality',
+        'scanned_notice_finality',
+        'updated_ticked_in_mis',
+        
+        // Appeals & Resolution Stage (2nd Order)
+        'second_order_drafter',
+        'date_received_by_drafter_ct_cnpc',
+        'date_returned_case_mgmt_ct_cnpc',
+        'review_ct_cnpc',
+        'date_received_drafter_finalization_2nd',
+        'date_returned_case_mgmt_signature_2nd',
+        'date_order_2nd_cnpc',
+        'released_date_2nd_cnpc',
+        'scanned_order_2nd_cnpc',
+        
+        // Appeals & Resolution Stage (MALSU)
+        'date_forwarded_malsu',
+        'scanned_indorsement_malsu',
+        'motion_reconsideration_date',
+        'date_received_malsu',
+        'date_resolution_mr',
+        'released_date_resolution_mr',
+        'scanned_resolution_mr',
+        'date_appeal_received_records',
+        'date_indorsed_office_secretary',
+        
+        // Additional Information
+        'logbook_page_number',
+        'remarks_notes',
     ];
 
-    // MISSING RELATIONSHIP - This is what was causing the error
-    public function inspections()
-    {
-        return $this->hasMany(Inspection::class, 'case_id');
-    }
-
-    // Existing relationships
-    public function docketing()
-    {
-        return $this->hasMany(Docketing::class, 'case_id');
-    }
-
-    public function hearingProcesses()
-    {
-        return $this->hasMany(HearingProcess::class, 'case_id');
-    }
-
-    public function reviewAndDrafting()
-    {
-        return $this->hasMany(ReviewAndDrafting::class, 'case_id');
-    }
-
-    public function ordersAndDisposition()
-    {
-        return $this->hasMany(OrderAndDisposition::class, 'case_id');
-    }
-
-    public function complianceAndAwards()
-    {
-        return $this->hasMany(ComplianceAndAward::class, 'case_id');
-    }
-
-    public function appealsAndResolutions()
-    {
-        return $this->hasMany(AppealsAndResolution::class, 'case_id');
-    }
-
-    // ✅ ADD THIS NEW RELATIONSHIP
+    // Keep the document tracking relationship
     public function documentTracking()
     {
         return $this->hasOne(DocumentTracking::class, 'case_id');
     }
+
+        public function inspections()
+    {
+        return $this->hasMany(Inspection::class, 'case_id');
+    }
+    
 }

@@ -454,9 +454,6 @@ public function moveToNextStage(Request $request, $id)
     }
 }
 
-/**
- * Inline update via AJAX
- */
 public function inlineUpdate(Request $request, $id)
 {
     DB::beginTransaction();
@@ -464,8 +461,61 @@ public function inlineUpdate(Request $request, $id)
         $case = CaseFile::lockForUpdate()->findOrFail($id);
         $oldData = $case->toArray();
         
-        // Only allow specific fields to be updated inline
-        $allowedFields = ['inspection_id', 'case_no', 'establishment_name', 'current_stage', 'overall_status'];
+        // Allow ALL fields from the model to be updated inline
+        $allowedFields = [
+            // Core Information
+            'no', 'inspection_id', 'case_no', 'establishment_name', 'current_stage', 
+            'overall_status', 'po_office',
+            
+            // Inspection Stage
+            'date_of_inspection', 'inspector_name', 'inspector_authority_no', 
+            'date_of_nr', 'lapse_20_day_period',
+            
+            // Docketing Stage
+            'pct_for_docketing', 'date_scheduled_docketed', 'aging_docket', 
+            'status_docket', 'hearing_officer_mis',
+            
+            // Hearing Process Stage
+            'date_1st_mc_actual', 'first_mc_pct', 'status_1st_mc', 
+            'date_2nd_last_mc', 'second_last_mc_pct', 'status_2nd_mc',
+            'case_folder_forwarded_to_ro', 'draft_order_from_po_type', 
+            'applicable_draft_order', 'complete_case_folder', 'twg_ali',
+            
+            // Review & Drafting Stage
+            'po_pct', 'aging_po_pct', 'status_po_pct', 'date_received_from_po',
+            'reviewer_drafter', 'date_received_by_reviewer', 'date_returned_from_drafter',
+            'aging_10_days_tssd', 'status_reviewer_drafter', 'draft_order_tssd_reviewer',
+            'final_review_date_received', 'date_received_drafter_finalization',
+            'date_returned_case_mgmt_signature', 'aging_2_days_finalization', 'status_finalization',
+            
+            // Orders & Disposition Stage
+            'pct_96_days', 'date_signed_mis', 'status_pct', 'reference_date_pct',
+            'aging_pct', 'disposition_mis', 'disposition_actual', 'findings_to_comply',
+            'compliance_order_monetary_award', 'osh_penalty', 'affected_male', 'affected_female',
+            'date_of_order_actual', 'released_date_actual',
+            
+            // Compliance & Awards Stage
+            'first_order_dismissal_cnpc', 'tavable_less_than_10_workers', 'scanned_order_first',
+            'with_deposited_monetary_claims', 'amount_deposited', 'with_order_payment_notice',
+            'status_all_employees_received', 'status_case_after_first_order',
+            'date_notice_finality_dismissed', 'released_date_notice_finality',
+            'scanned_notice_finality', 'updated_ticked_in_mis',
+            
+            // Appeals & Resolution Stage (2nd Order)
+            'second_order_drafter', 'date_received_by_drafter_ct_cnpc',
+            'date_returned_case_mgmt_ct_cnpc', 'review_ct_cnpc',
+            'date_received_drafter_finalization_2nd', 'date_returned_case_mgmt_signature_2nd',
+            'date_order_2nd_cnpc', 'released_date_2nd_cnpc', 'scanned_order_2nd_cnpc',
+            
+            // Appeals & Resolution Stage (MALSU)
+            'date_forwarded_malsu', 'scanned_indorsement_malsu', 'motion_reconsideration_date',
+            'date_received_malsu', 'date_resolution_mr', 'released_date_resolution_mr',
+            'scanned_resolution_mr', 'date_appeal_received_records', 'date_indorsed_office_secretary',
+            
+            // Additional Information
+            'logbook_page_number', 'remarks_notes'
+        ];
+        
         $updateData = $request->only($allowedFields);
         
         if (empty($updateData)) {
