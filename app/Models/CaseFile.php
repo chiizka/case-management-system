@@ -10,7 +10,7 @@ class CaseFile extends Model
     use HasFactory;
 
     protected $table = 'cases';
-    
+    protected $guarded = [];
     protected $fillable = [
         // Core Information
         'no',

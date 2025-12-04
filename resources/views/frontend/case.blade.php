@@ -2057,6 +2057,14 @@ $(document).ready(function() {
     }
 
     function saveData(recordId, data, row, config) {
+
+            console.log('=== SAVE DATA DEBUG ===');
+    console.log('Record ID:', recordId);
+    console.log('Data being sent:', data);
+    console.log('Endpoint:', `${config.endpoint}${recordId}/inline-update`);
+    console.log('=======================');
+
+    
         const saveBtn = row.find(`${config.saveBtnClass}`);
         const cancelBtn = row.find(`${config.cancelBtnClass}`);
         const originalSaveContent = saveBtn.html();
