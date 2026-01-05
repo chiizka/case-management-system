@@ -18,8 +18,6 @@ class CaseFile extends Model
         'inspection_id',
         'case_no', 
         'establishment_name',
-        'establishment_address',  // NEW
-        'mode', 
         'current_stage',
         'overall_status',
         'po_office',

@@ -215,7 +215,6 @@
                     </button>
                 </div>
 
-                <!-- Find this section in your blade file (around line 214) -->
                 <!-- Search + Buttons Row -->
                 <div class="d-flex justify-content-between align-items-center mb-3 custom-search-container">
                     <div class="d-flex align-items-center">
