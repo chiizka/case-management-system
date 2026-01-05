@@ -196,7 +196,7 @@
         <!-- Tabs Content -->
 <div class="tab-content mt-3" id="dataTableTabsContent">
     
-    <!-- Tab 0: All Active Cases (Enhanced with more columns) -->
+    <!-- Tab 0: All Active Cases (Enhanced with corrected columns) -->
     <div class="tab-pane fade show active" id="tab0" role="tabpanel" aria-labelledby="tab0-tab">
         <div class="card shadow mb-4">
             <div class="card-body">
@@ -215,6 +215,7 @@
                     </button>
                 </div>
 
+                <!-- Find this section in your blade file (around line 214) -->
                 <!-- Search + Buttons Row -->
                 <div class="d-flex justify-content-between align-items-center mb-3 custom-search-container">
                     <div class="d-flex align-items-center">
@@ -222,6 +223,11 @@
                         <input type="search" class="form-control form-control-sm" id="customSearch0" placeholder="Search all active cases..." style="width: 200px;">
                     </div>
                     <div>
+                        <!-- NEW: Add this Upload CSV button -->
+                        <button class="btn btn-success btn-sm mr-2" data-toggle="modal" data-target="#uploadCsvModal">
+                            <i class="fas fa-upload"></i> Upload CSV
+                        </button>
+                        
                         <button class="btn btn-primary btn-sm" data-toggle="modal" data-target="#addCaseModal" data-mode="add">
                             + Add Case
                         </button>
@@ -452,8 +458,12 @@
                                         <td class="editable-cell" data-field="findings_to_comply" title="{{ $case->findings_to_comply ?? '' }}">
                                             {{ $case->findings_to_comply ? Str::limit($case->findings_to_comply, 20) : '-' }}
                                         </td>
-                                        <td class="editable-cell" data-field="compliance_order_monetary_award">{{ $case->compliance_order_monetary_award ?? '-' }}</td>
-                                        <td class="editable-cell" data-field="osh_penalty">{{ $case->osh_penalty ?? '-' }}</td>
+                                        <td class="editable-cell" data-field="compliance_order_monetary_award">
+                                            {{ $case->compliance_order_monetary_award ? number_format($case->compliance_order_monetary_award, 2) : '-' }}
+                                        </td>
+                                        <td class="editable-cell" data-field="osh_penalty">
+                                            {{ $case->osh_penalty ? number_format($case->osh_penalty, 2) : '-' }}
+                                        </td>
                                         <td class="editable-cell" data-field="affected_male">{{ $case->affected_male ?? '-' }}</td>
                                         <td class="editable-cell" data-field="affected_female">{{ $case->affected_female ?? '-' }}</td>
                                         <td class="editable-cell" data-field="date_of_order_actual" data-type="date">
@@ -463,13 +473,23 @@
                                             {{ $case->released_date_actual ? \Carbon\Carbon::parse($case->released_date_actual)->format('Y-m-d') : '-' }}
                                         </td>
                                         
-                                        <!-- Compliance & Awards Stage -->
-                                        <td class="editable-cell" data-field="first_order_dismissal_cnpc">{{ $case->first_order_dismissal_cnpc ?? '-' }}</td>
-                                        <td class="editable-cell" data-field="tavable_less_than_10_workers">{{ $case->tavable_less_than_10_workers ?? '-' }}</td>
+                                        <!-- Compliance & Awards Stage (Boolean fields now show Yes/No) -->
+                                        <td class="editable-cell" data-field="first_order_dismissal_cnpc" data-type="boolean">
+                                            {{ $case->first_order_dismissal_cnpc ? 'Yes' : 'No' }}
+                                        </td>
+                                        <td class="editable-cell" data-field="tavable_less_than_10_workers" data-type="boolean">
+                                            {{ $case->tavable_less_than_10_workers ? 'Yes' : 'No' }}
+                                        </td>
                                         <td class="editable-cell" data-field="scanned_order_first">{{ $case->scanned_order_first ?? '-' }}</td>
-                                        <td class="editable-cell" data-field="with_deposited_monetary_claims">{{ $case->with_deposited_monetary_claims ?? '-' }}</td>
-                                        <td class="editable-cell" data-field="amount_deposited">{{ $case->amount_deposited ?? '-' }}</td>
-                                        <td class="editable-cell" data-field="with_order_payment_notice">{{ $case->with_order_payment_notice ?? '-' }}</td>
+                                        <td class="editable-cell" data-field="with_deposited_monetary_claims" data-type="boolean">
+                                            {{ $case->with_deposited_monetary_claims ? 'Yes' : 'No' }}
+                                        </td>
+                                        <td class="editable-cell" data-field="amount_deposited">
+                                            {{ $case->amount_deposited ? number_format($case->amount_deposited, 2) : '-' }}
+                                        </td>
+                                        <td class="editable-cell" data-field="with_order_payment_notice" data-type="boolean">
+                                            {{ $case->with_order_payment_notice ? 'Yes' : 'No' }}
+                                        </td>
                                         <td class="editable-cell" data-field="status_all_employees_received">{{ $case->status_all_employees_received ?? '-' }}</td>
                                         <td class="editable-cell" data-field="status_case_after_first_order">{{ $case->status_case_after_first_order ?? '-' }}</td>
                                         <td class="editable-cell" data-field="date_notice_finality_dismissed" data-type="date">
@@ -479,7 +499,9 @@
                                             {{ $case->released_date_notice_finality ? \Carbon\Carbon::parse($case->released_date_notice_finality)->format('Y-m-d') : '-' }}
                                         </td>
                                         <td class="editable-cell" data-field="scanned_notice_finality">{{ $case->scanned_notice_finality ?? '-' }}</td>
-                                        <td class="editable-cell" data-field="updated_ticked_in_mis">{{ $case->updated_ticked_in_mis ?? '-' }}</td>
+                                        <td class="editable-cell" data-field="updated_ticked_in_mis" data-type="boolean">
+                                            {{ $case->updated_ticked_in_mis ? 'Yes' : 'No' }}
+                                        </td>
                                         
                                         <!-- Appeals & Resolution Stage (2nd Order) -->
                                         <td class="editable-cell" data-field="second_order_drafter" title="{{ $case->second_order_drafter ?? '' }}">
@@ -789,6 +811,70 @@
     </div>
 </div>
 
+<!-- CSV Upload Modal -->
+<div class="modal fade" id="uploadCsvModal" tabindex="-1" role="dialog" aria-labelledby="uploadCsvModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title" id="uploadCsvModalLabel">
+                    <i class="fas fa-upload"></i> Upload CSV File
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form id="csvUploadForm" enctype="multipart/form-data">
+                <div class="modal-body">
+                    @csrf
+                    
+                    <!-- File Input -->
+                    <div class="form-group">
+                        <label for="csv_file">Select CSV File <span class="text-danger">*</span></label>
+                        <div class="custom-file">
+                            <input type="file" class="custom-file-input" id="csv_file" name="csv_file" accept=".csv" required>
+                            <label class="custom-file-label" for="csv_file">Choose file...</label>
+                        </div>
+                        <small class="form-text text-muted">Maximum file size: 5MB</small>
+                    </div>
+
+                    <!-- Progress Bar (hidden initially) -->
+                    <div id="uploadProgress" style="display: none;">
+                        <div class="progress mb-2">
+                            <div class="progress-bar progress-bar-striped progress-bar-animated bg-success" 
+                                 role="progressbar" 
+                                 style="width: 0%"
+                                 id="uploadProgressBar">
+                            </div>
+                        </div>
+                        <small class="text-muted" id="uploadStatus">Preparing upload...</small>
+                    </div>
+
+                    <!-- Results (hidden initially) -->
+                    <div id="uploadResults" style="display: none;">
+                        <div class="alert alert-success">
+                            <h6><i class="fas fa-check-circle"></i> Upload Complete!</h6>
+                            <p class="mb-0">
+                                <strong>Records imported:</strong> <span id="successCount">0</span>
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Error Message -->
+                    <div id="uploadError" class="alert alert-danger" style="display: none;">
+                        <strong>Error:</strong> <span id="errorMessage"></span>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-success" id="uploadBtn">
+                        <i class="fas fa-upload"></i> Upload
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>  
+
 <!-- Stage Progression Modal -->
 <div class="modal fade" id="stageProgressionModal" tabindex="-1" role="dialog" aria-labelledby="stageProgressionModalLabel" aria-hidden="true">
     <div class="modal-dialog" role="document">
@@ -1014,6 +1100,121 @@ $(document).ready(function() {
             }
         });
     }
+
+        // Update file input label with selected filename
+    $('#csv_file').on('change', function() {
+        const fileName = $(this).val().split('\\').pop();
+        $(this).next('.custom-file-label').html(fileName);
+    });
+
+    // Handle CSV Upload Form Submission
+    $('#csvUploadForm').on('submit', function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(this);
+        const uploadBtn = $('#uploadBtn');
+        const originalBtnText = uploadBtn.html();
+        
+        // Validate file
+        const fileInput = $('#csv_file')[0];
+        if (!fileInput.files.length) {
+            $('#uploadError').show();
+            $('#errorMessage').text('Please select a CSV file');
+            return;
+        }
+        
+        const file = fileInput.files[0];
+        if (!file.name.endsWith('.csv')) {
+            $('#uploadError').show();
+            $('#errorMessage').text('Please select a valid CSV file');
+            return;
+        }
+        
+        // Hide error, reset and show progress
+        $('#uploadError').hide();
+        $('#uploadResults').hide();
+        $('#uploadProgress').show();
+        $('#uploadProgressBar').css('width', '0%');
+        $('#uploadStatus').text('Uploading file...');
+        
+        // Disable upload button
+        uploadBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Uploading...');
+        
+        $.ajax({
+            url: '/case/import-csv',
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            },
+            xhr: function() {
+                const xhr = new window.XMLHttpRequest();
+                xhr.upload.addEventListener("progress", function(evt) {
+                    if (evt.lengthComputable) {
+                        const percentComplete = (evt.loaded / evt.total) * 100;
+                        $('#uploadProgressBar').css('width', percentComplete + '%');
+                        $('#uploadStatus').text('Uploading: ' + Math.round(percentComplete) + '%');
+                    }
+                }, false);
+                return xhr;
+            },
+            success: function(response) {
+                console.log('Upload response:', response);
+                
+                $('#uploadProgressBar').css('width', '100%');
+                $('#uploadStatus').text('Processing complete!');
+                
+                // Show results
+                setTimeout(function() {
+                    $('#uploadProgress').hide();
+                    $('#uploadResults').show();
+                    
+                    $('#successCount').text(response.success_count || 0);
+                    
+                    // Reset form and button
+                    uploadBtn.prop('disabled', false).html(originalBtnText);
+                    
+                    // Show success alert
+                    showAlert('success', response.message || 'CSV uploaded successfully!');
+                    
+                    // Reload page after 2 seconds
+                    setTimeout(function() {
+                        location.reload();
+                    }, 2000);
+                }, 500);
+            },
+            error: function(xhr) {
+                console.error('Upload error:', xhr);
+                
+                $('#uploadProgress').hide();
+                uploadBtn.prop('disabled', false).html(originalBtnText);
+                
+                let errorMessage = 'Failed to upload CSV file.';
+                if (xhr.responseJSON && xhr.responseJSON.message) {
+                    errorMessage = xhr.responseJSON.message;
+                } else if (xhr.status === 413) {
+                    errorMessage = 'File too large. Maximum size is 5MB.';
+                } else if (xhr.status === 422) {
+                    errorMessage = 'Validation error. Please check your CSV format.';
+                }
+                
+                $('#uploadError').show();
+                $('#errorMessage').text(errorMessage);
+            }
+        });
+    });
+    
+    // Reset modal when closed
+    $('#uploadCsvModal').on('hidden.bs.modal', function() {
+        $('#csvUploadForm')[0].reset();
+        $('#csv_file').next('.custom-file-label').html('Choose file...');
+        $('#uploadProgress').hide();
+        $('#uploadResults').hide();
+        $('#uploadError').hide();
+        $('#uploadBtn').prop('disabled', false).html('<i class="fas fa-upload"></i> Upload');
+    });
 
     // Auto-minimize sidebar on page load
     $('body').addClass('sidebar-toggled');
@@ -1402,264 +1603,264 @@ $(document).ready(function() {
 
     // Tab configuration
     const tabConfigs = {
-'tab0': {
-    name: 'case',
-    endpoint: '/case/',
-    editBtnClass: '.edit-row-btn-case',
-    saveBtnClass: '.save-btn-case', 
-    cancelBtnClass: '.cancel-btn-case',
-    alertPrefix: 'tab0',
-    fields: {
-        // Core Information
-        'no': { type: 'text' },
-        'inspection_id': { type: 'text' },
-        'case_no': { type: 'text' },
-        'establishment_name': { type: 'text' },
-        'po_office': { type: 'text' },
-        'current_stage': { 
-            type: 'select',
-            options: [
-                { value: '', text: 'Select Stage' },
-                { value: '1: Inspections', text: 'Inspections' },
-                { value: '2: Docketing', text: 'Docketing' },
-                { value: '3: Hearing', text: 'Hearing' },
-                { value: '4: Review & Drafting', text: 'Review & Drafting' },
-                { value: '5: Orders & Disposition', text: 'Orders & Disposition' },
-                { value: '6: Compliance & Awards', text: 'Compliance & Awards' },
-                { value: '7: Appeals & Resolution', text: 'Appeals & Resolution' }
-            ]
+        'tab0': {
+            name: 'case',
+            endpoint: '/case/',
+            editBtnClass: '.edit-row-btn-case',
+            saveBtnClass: '.save-btn-case', 
+            cancelBtnClass: '.cancel-btn-case',
+            alertPrefix: 'tab0',
+            fields: {
+                // Core Information
+                'no': { type: 'text' },
+                'inspection_id': { type: 'text' },
+                'case_no': { type: 'text' },
+                'establishment_name': { type: 'text' },
+                'po_office': { type: 'text' },
+                'current_stage': { 
+                    type: 'select',
+                    options: [
+                        { value: '', text: 'Select Stage' },
+                        { value: '1: Inspections', text: 'Inspections' },
+                        { value: '2: Docketing', text: 'Docketing' },
+                        { value: '3: Hearing', text: 'Hearing' },
+                        { value: '4: Review & Drafting', text: 'Review & Drafting' },
+                        { value: '5: Orders & Disposition', text: 'Orders & Disposition' },
+                        { value: '6: Compliance & Awards', text: 'Compliance & Awards' },
+                        { value: '7: Appeals & Resolution', text: 'Appeals & Resolution' }
+                    ]
+                },
+                'overall_status': {
+                    type: 'select',
+                    options: [
+                        { value: '', text: 'Select Status' },
+                        { value: 'Active', text: 'Active' },
+                        { value: 'Completed', text: 'Completed' },
+                        { value: 'Dismissed', text: 'Dismissed' }
+                    ]
+                },
+                
+                // Inspection Stage
+                'date_of_inspection': { type: 'date' },
+                'inspector_name': { type: 'text' },
+                'inspector_authority_no': { type: 'text' },
+                'date_of_nr': { type: 'date' },
+                'lapse_20_day_period': { type: 'text' },
+                
+                // Docketing Stage
+                'pct_for_docketing': { type: 'text' },
+                'date_scheduled_docketed': { type: 'date' },
+                'aging_docket': { type: 'number' },
+                'status_docket': {
+                    type: 'select',
+                    options: [
+                        { value: '', text: 'Select Status' },
+                        { value: 'Pending', text: 'Pending' },
+                        { value: 'Completed', text: 'Completed' },
+                        { value: 'In Progress', text: 'In Progress' },
+                        { value: 'Cancelled', text: 'Cancelled' }
+                    ]
+                },
+                'hearing_officer_mis': { type: 'text' },
+                
+                // Hearing Process Stage
+                'date_1st_mc_actual': { type: 'date' },
+                'first_mc_pct': { type: 'text' },
+                'status_1st_mc': {
+                    type: 'select',
+                    options: [
+                        { value: '', text: 'Select Status' },
+                        { value: 'Pending', text: 'Pending' },
+                        { value: 'Ongoing', text: 'Ongoing' },
+                        { value: 'Completed', text: 'Completed' }
+                    ]
+                },
+                'date_2nd_last_mc': { type: 'date' },
+                'second_last_mc_pct': { type: 'text' },
+                'status_2nd_mc': {
+                    type: 'select',
+                    options: [
+                        { value: '', text: 'Select Status' },
+                        { value: 'Pending', text: 'Pending' },
+                        { value: 'In Progress', text: 'In Progress' },
+                        { value: 'Completed', text: 'Completed' }
+                    ]
+                },
+                'case_folder_forwarded_to_ro': { type: 'text' },
+                'draft_order_from_po_type': { type: 'text' },
+                'applicable_draft_order': {
+                    type: 'select',
+                    options: [
+                        { value: '', text: 'Select' },
+                        { value: 'Y', text: 'Yes' },
+                        { value: 'N', text: 'No' }
+                    ]
+                },
+                'complete_case_folder': {
+                    type: 'select',
+                    options: [
+                        { value: '', text: 'Select' },
+                        { value: 'Y', text: 'Yes' },
+                        { value: 'N', text: 'No' }
+                    ]
+                },
+                'twg_ali': { type: 'text' },
+                
+                // Review & Drafting Stage
+                'po_pct': { type: 'text' },
+                'aging_po_pct': { type: 'number' },
+                'status_po_pct': {
+                    type: 'select',
+                    options: [
+                        { value: '', text: 'Select Status' },
+                        { value: 'Pending', text: 'Pending' },
+                        { value: 'Ongoing', text: 'Ongoing' },
+                        { value: 'Overdue', text: 'Overdue' },
+                        { value: 'Completed', text: 'Completed' }
+                    ]
+                },
+                'date_received_from_po': { type: 'date' },
+                'reviewer_drafter': { type: 'text' },
+                'date_received_by_reviewer': { type: 'date' },
+                'date_returned_from_drafter': { type: 'date' },
+                'aging_10_days_tssd': { type: 'number' },
+                'status_reviewer_drafter': {
+                    type: 'select',
+                    options: [
+                        { value: '', text: 'Select Status' },
+                        { value: 'Pending', text: 'Pending' },
+                        { value: 'Ongoing', text: 'Ongoing' },
+                        { value: 'Returned', text: 'Returned' },
+                        { value: 'Approved', text: 'Approved' },
+                        { value: 'Overdue', text: 'Overdue' }
+                    ]
+                },
+                'draft_order_tssd_reviewer': { type: 'text' },
+                'final_review_date_received': { type: 'date' },
+                'date_received_drafter_finalization': { type: 'date' },
+                'date_returned_case_mgmt_signature': { type: 'date' },
+                'aging_2_days_finalization': { type: 'number' },
+                'status_finalization': {
+                    type: 'select',
+                    options: [
+                        { value: '', text: 'Select Status' },
+                        { value: 'Pending', text: 'Pending' },
+                        { value: 'In Progress', text: 'In Progress' },
+                        { value: 'Completed', text: 'Completed' },
+                        { value: 'Overdue', text: 'Overdue' }
+                    ]
+                },
+                
+                // Orders & Disposition Stage
+                'pct_96_days': { type: 'text' },
+                'date_signed_mis': { type: 'date' },
+                'status_pct': {
+                    type: 'select',
+                    options: [
+                        { value: '', text: 'Select Status' },
+                        { value: 'Pending', text: 'Pending' },
+                        { value: 'Ongoing', text: 'Ongoing' },
+                        { value: 'Completed', text: 'Completed' },
+                        { value: 'Overdue', text: 'Overdue' }
+                    ]
+                },
+                'reference_date_pct': { type: 'date' },
+                'aging_pct': { type: 'number' },
+                'disposition_mis': { type: 'text' },
+                'disposition_actual': { type: 'text' },
+                'findings_to_comply': { type: 'text' },
+                'compliance_order_monetary_award': { type: 'number', step: '0.01' },
+                'osh_penalty': { type: 'number', step: '0.01' },
+                'affected_male': { type: 'number' },
+                'affected_female': { type: 'number' },
+                'date_of_order_actual': { type: 'date' },
+                'released_date_actual': { type: 'date' },
+                
+                // Compliance & Awards Stage
+                'first_order_dismissal_cnpc': {
+                    type: 'select',
+                    options: [
+                        { value: '', text: 'Select' },
+                        { value: '0', text: 'No' },
+                        { value: '1', text: 'Yes' }
+                    ]
+                },
+                'tavable_less_than_10_workers': {
+                    type: 'select',
+                    options: [
+                        { value: '', text: 'Select' },
+                        { value: '0', text: 'No' },
+                        { value: '1', text: 'Yes' }
+                    ]
+                },
+                'scanned_order_first': { type: 'text' },
+                'with_deposited_monetary_claims': {
+                    type: 'select',
+                    options: [
+                        { value: '', text: 'Select' },
+                        { value: '0', text: 'No' },
+                        { value: '1', text: 'Yes' }
+                    ]
+                },
+                'amount_deposited': { type: 'number', step: '0.01' },
+                'with_order_payment_notice': {
+                    type: 'select',
+                    options: [
+                        { value: '', text: 'Select' },
+                        { value: '0', text: 'No' },
+                        { value: '1', text: 'Yes' }
+                    ]
+                },
+                'status_all_employees_received': {
+                    type: 'select',
+                    options: [
+                        { value: '', text: 'Select Status' },
+                        { value: 'Pending', text: 'Pending' },
+                        { value: 'Yes', text: 'Yes' },
+                        { value: 'No', text: 'No' },
+                        { value: 'Partial', text: 'Partial' }
+                    ]
+                },
+                'status_case_after_first_order': { type: 'text' },
+                'date_notice_finality_dismissed': { type: 'date' },
+                'released_date_notice_finality': { type: 'date' },
+                'scanned_notice_finality': { type: 'text' },
+                'updated_ticked_in_mis': {
+                    type: 'select',
+                    options: [
+                        { value: '', text: 'Select' },
+                        { value: '0', text: 'No' },
+                        { value: '1', text: 'Yes' }
+                    ]
+                },
+                
+                // Appeals & Resolution Stage (2nd Order)
+                'second_order_drafter': { type: 'text' },
+                'date_received_by_drafter_ct_cnpc': { type: 'date' },
+                'date_returned_case_mgmt_ct_cnpc': { type: 'date' },
+                'review_ct_cnpc': { type: 'text' },
+                'date_received_drafter_finalization_2nd': { type: 'date' },
+                'date_returned_case_mgmt_signature_2nd': { type: 'date' },
+                'date_order_2nd_cnpc': { type: 'date' },
+                'released_date_2nd_cnpc': { type: 'date' },
+                'scanned_order_2nd_cnpc': { type: 'text' },
+                
+                // Appeals & Resolution Stage (MALSU)
+                'date_forwarded_malsu': { type: 'date' },
+                'scanned_indorsement_malsu': { type: 'text' },
+                'motion_reconsideration_date': { type: 'date' },
+                'date_received_malsu': { type: 'date' },
+                'date_resolution_mr': { type: 'date' },
+                'released_date_resolution_mr': { type: 'date' },
+                'scanned_resolution_mr': { type: 'text' },
+                'date_appeal_received_records': { type: 'date' },
+                'date_indorsed_office_secretary': { type: 'date' },
+                
+                // Additional Information
+                'logbook_page_number': { type: 'text' },
+                'remarks_notes': { type: 'text' }
+            }
         },
-        'overall_status': {
-            type: 'select',
-            options: [
-                { value: '', text: 'Select Status' },
-                { value: 'Active', text: 'Active' },
-                { value: 'Completed', text: 'Completed' },
-                { value: 'Dismissed', text: 'Dismissed' }
-            ]
-        },
-        
-        // Inspection Stage
-        'date_of_inspection': { type: 'date' },
-        'inspector_name': { type: 'text' },
-        'inspector_authority_no': { type: 'text' },
-        'date_of_nr': { type: 'date' },
-        'lapse_20_day_period': { type: 'text' },
-        
-        // Docketing Stage
-        'pct_for_docketing': { type: 'text' },
-        'date_scheduled_docketed': { type: 'date' },
-        'aging_docket': { type: 'number' },
-        'status_docket': {
-            type: 'select',
-            options: [
-                { value: '', text: 'Select Status' },
-                { value: 'Pending', text: 'Pending' },
-                { value: 'Completed', text: 'Completed' },
-                { value: 'In Progress', text: 'In Progress' },
-                { value: 'Cancelled', text: 'Cancelled' }
-            ]
-        },
-        'hearing_officer_mis': { type: 'text' },
-        
-        // Hearing Process Stage
-        'date_1st_mc_actual': { type: 'date' },
-        'first_mc_pct': { type: 'text' },
-        'status_1st_mc': {
-            type: 'select',
-            options: [
-                { value: '', text: 'Select Status' },
-                { value: 'Pending', text: 'Pending' },
-                { value: 'Ongoing', text: 'Ongoing' },
-                { value: 'Completed', text: 'Completed' }
-            ]
-        },
-        'date_2nd_last_mc': { type: 'date' },
-        'second_last_mc_pct': { type: 'text' },
-        'status_2nd_mc': {
-            type: 'select',
-            options: [
-                { value: '', text: 'Select Status' },
-                { value: 'Pending', text: 'Pending' },
-                { value: 'In Progress', text: 'In Progress' },
-                { value: 'Completed', text: 'Completed' }
-            ]
-        },
-        'case_folder_forwarded_to_ro': { type: 'text' },
-        'draft_order_from_po_type': { type: 'text' },
-        'applicable_draft_order': {
-            type: 'select',
-            options: [
-                { value: '', text: 'Select' },
-                { value: 'Y', text: 'Yes' },
-                { value: 'N', text: 'No' }
-            ]
-        },
-        'complete_case_folder': {
-            type: 'select',
-            options: [
-                { value: '', text: 'Select' },
-                { value: 'Y', text: 'Yes' },
-                { value: 'N', text: 'No' }
-            ]
-        },
-        'twg_ali': { type: 'text' },
-        
-        // Review & Drafting Stage
-        'po_pct': { type: 'text' },
-        'aging_po_pct': { type: 'number' },
-        'status_po_pct': {
-            type: 'select',
-            options: [
-                { value: '', text: 'Select Status' },
-                { value: 'Pending', text: 'Pending' },
-                { value: 'Ongoing', text: 'Ongoing' },
-                { value: 'Overdue', text: 'Overdue' },
-                { value: 'Completed', text: 'Completed' }
-            ]
-        },
-        'date_received_from_po': { type: 'date' },
-        'reviewer_drafter': { type: 'text' },
-        'date_received_by_reviewer': { type: 'date' },
-        'date_returned_from_drafter': { type: 'date' },
-        'aging_10_days_tssd': { type: 'number' },
-        'status_reviewer_drafter': {
-            type: 'select',
-            options: [
-                { value: '', text: 'Select Status' },
-                { value: 'Pending', text: 'Pending' },
-                { value: 'Ongoing', text: 'Ongoing' },
-                { value: 'Returned', text: 'Returned' },
-                { value: 'Approved', text: 'Approved' },
-                { value: 'Overdue', text: 'Overdue' }
-            ]
-        },
-        'draft_order_tssd_reviewer': { type: 'text' },
-        'final_review_date_received': { type: 'date' },
-        'date_received_drafter_finalization': { type: 'date' },
-        'date_returned_case_mgmt_signature': { type: 'date' },
-        'aging_2_days_finalization': { type: 'number' },
-        'status_finalization': {
-            type: 'select',
-            options: [
-                { value: '', text: 'Select Status' },
-                { value: 'Pending', text: 'Pending' },
-                { value: 'In Progress', text: 'In Progress' },
-                { value: 'Completed', text: 'Completed' },
-                { value: 'Overdue', text: 'Overdue' }
-            ]
-        },
-        
-        // Orders & Disposition Stage
-        'pct_96_days': { type: 'text' },
-        'date_signed_mis': { type: 'date' },
-        'status_pct': {
-            type: 'select',
-            options: [
-                { value: '', text: 'Select Status' },
-                { value: 'Pending', text: 'Pending' },
-                { value: 'Ongoing', text: 'Ongoing' },
-                { value: 'Completed', text: 'Completed' },
-                { value: 'Overdue', text: 'Overdue' }
-            ]
-        },
-        'reference_date_pct': { type: 'date' },
-        'aging_pct': { type: 'number' },
-        'disposition_mis': { type: 'text' },
-        'disposition_actual': { type: 'text' },
-        'findings_to_comply': { type: 'text' },
-        'compliance_order_monetary_award': { type: 'number', step: '0.01' },
-        'osh_penalty': { type: 'number', step: '0.01' },
-        'affected_male': { type: 'number' },
-        'affected_female': { type: 'number' },
-        'date_of_order_actual': { type: 'date' },
-        'released_date_actual': { type: 'date' },
-        
-        // Compliance & Awards Stage
-        'first_order_dismissal_cnpc': {
-            type: 'select',
-            options: [
-                { value: '', text: 'Select' },
-                { value: '0', text: 'No' },
-                { value: '1', text: 'Yes' }
-            ]
-        },
-        'tavable_less_than_10_workers': {
-            type: 'select',
-            options: [
-                { value: '', text: 'Select' },
-                { value: '0', text: 'No' },
-                { value: '1', text: 'Yes' }
-            ]
-        },
-        'scanned_order_first': { type: 'text' },
-        'with_deposited_monetary_claims': {
-            type: 'select',
-            options: [
-                { value: '', text: 'Select' },
-                { value: '0', text: 'No' },
-                { value: '1', text: 'Yes' }
-            ]
-        },
-        'amount_deposited': { type: 'number', step: '0.01' },
-        'with_order_payment_notice': {
-            type: 'select',
-            options: [
-                { value: '', text: 'Select' },
-                { value: '0', text: 'No' },
-                { value: '1', text: 'Yes' }
-            ]
-        },
-        'status_all_employees_received': {
-            type: 'select',
-            options: [
-                { value: '', text: 'Select Status' },
-                { value: 'Pending', text: 'Pending' },
-                { value: 'Yes', text: 'Yes' },
-                { value: 'No', text: 'No' },
-                { value: 'Partial', text: 'Partial' }
-            ]
-        },
-        'status_case_after_first_order': { type: 'text' },
-        'date_notice_finality_dismissed': { type: 'date' },
-        'released_date_notice_finality': { type: 'date' },
-        'scanned_notice_finality': { type: 'text' },
-        'updated_ticked_in_mis': {
-            type: 'select',
-            options: [
-                { value: '', text: 'Select' },
-                { value: '0', text: 'No' },
-                { value: '1', text: 'Yes' }
-            ]
-        },
-        
-        // Appeals & Resolution Stage (2nd Order)
-        'second_order_drafter': { type: 'text' },
-        'date_received_by_drafter_ct_cnpc': { type: 'date' },
-        'date_returned_case_mgmt_ct_cnpc': { type: 'date' },
-        'review_ct_cnpc': { type: 'text' },
-        'date_received_drafter_finalization_2nd': { type: 'date' },
-        'date_returned_case_mgmt_signature_2nd': { type: 'date' },
-        'date_order_2nd_cnpc': { type: 'date' },
-        'released_date_2nd_cnpc': { type: 'date' },
-        'scanned_order_2nd_cnpc': { type: 'text' },
-        
-        // Appeals & Resolution Stage (MALSU)
-        'date_forwarded_malsu': { type: 'date' },
-        'scanned_indorsement_malsu': { type: 'text' },
-        'motion_reconsideration_date': { type: 'date' },
-        'date_received_malsu': { type: 'date' },
-        'date_resolution_mr': { type: 'date' },
-        'released_date_resolution_mr': { type: 'date' },
-        'scanned_resolution_mr': { type: 'text' },
-        'date_appeal_received_records': { type: 'date' },
-        'date_indorsed_office_secretary': { type: 'date' },
-        
-        // Additional Information
-        'logbook_page_number': { type: 'text' },
-        'remarks_notes': { type: 'text' }
-    }
-},
         'tab1': {
             name: 'inspection',
             endpoint: '/inspection/',

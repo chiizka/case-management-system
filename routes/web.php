@@ -122,4 +122,6 @@ Route::middleware('auth')->group(function () {
         Route::post('/documents/{id}/receive', [DocumentTrackingController::class, 'receive'])->name('documents.receive');
         Route::get('/documents/{id}/history', [DocumentTrackingController::class, 'history'])->name('documents.history');
     });
+
+    Route::post('/case/import-csv', [App\Http\Controllers\CasesController::class, 'importCsv'])->name('case.import-csv');
 });

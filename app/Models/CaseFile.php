@@ -11,12 +11,15 @@ class CaseFile extends Model
 
     protected $table = 'cases';
     protected $guarded = [];
+    
     protected $fillable = [
         // Core Information
         'no',
         'inspection_id',
         'case_no', 
         'establishment_name',
+        'establishment_address',  // NEW
+        'mode', 
         'current_stage',
         'overall_status',
         'po_office',
@@ -122,15 +125,79 @@ class CaseFile extends Model
         'remarks_notes',
     ];
 
-    // Keep the document tracking relationship
+    /**
+     * The attributes that should be cast.
+     */
+    protected $casts = [
+        // Dates
+        'date_of_inspection' => 'date',
+        'date_of_nr' => 'date',
+        'date_scheduled_docketed' => 'date',
+        'date_1st_mc_actual' => 'date',
+        'date_2nd_last_mc' => 'date',
+        'date_received_from_po' => 'date',
+        'date_received_by_reviewer' => 'date',
+        'date_returned_from_drafter' => 'date',
+        'final_review_date_received' => 'date',
+        'date_received_drafter_finalization' => 'date',
+        'date_returned_case_mgmt_signature' => 'date',
+        'date_signed_mis' => 'date',
+        'reference_date_pct' => 'date',
+        'date_of_order_actual' => 'date',
+        'released_date_actual' => 'date',
+        'date_notice_finality_dismissed' => 'date',
+        'released_date_notice_finality' => 'date',
+        'date_received_by_drafter_ct_cnpc' => 'date',
+        'date_returned_case_mgmt_ct_cnpc' => 'date',
+        'date_received_drafter_finalization_2nd' => 'date',
+        'date_returned_case_mgmt_signature_2nd' => 'date',
+        'date_order_2nd_cnpc' => 'date',
+        'released_date_2nd_cnpc' => 'date',
+        'date_forwarded_malsu' => 'date',
+        'motion_reconsideration_date' => 'date',
+        'date_received_malsu' => 'date',
+        'date_resolution_mr' => 'date',
+        'released_date_resolution_mr' => 'date',
+        'date_appeal_received_records' => 'date',
+        'date_indorsed_office_secretary' => 'date',
+        
+        // Integers
+        'no' => 'integer',
+        'aging_docket' => 'integer',
+        'aging_po_pct' => 'integer',
+        'aging_10_days_tssd' => 'integer',
+        'aging_2_days_finalization' => 'integer',
+        'aging_pct' => 'integer',
+        'affected_male' => 'integer',
+        'affected_female' => 'integer',
+        
+        // Decimals (Monetary)
+        'compliance_order_monetary_award' => 'decimal:2',
+        'osh_penalty' => 'decimal:2',
+        'amount_deposited' => 'decimal:2',
+        
+        // Booleans (0/1)
+        'first_order_dismissal_cnpc' => 'boolean',
+        'tavable_less_than_10_workers' => 'boolean',
+        'with_deposited_monetary_claims' => 'boolean',
+        'with_order_payment_notice' => 'boolean',
+        'updated_ticked_in_mis' => 'boolean',
+        
+        'date_of_inspection' => 'date',
+        'date_of_nr' => 'date',
+        'date_scheduled_docketed' => 'date',
+        'date_signed_mis' => 'date',
+        // Text fields are automatically cast as strings, no need to specify
+    ];
+
+    // Relationships
     public function documentTracking()
     {
         return $this->hasOne(DocumentTracking::class, 'case_id');
     }
 
-        public function inspections()
+    public function inspections()
     {
         return $this->hasMany(Inspection::class, 'case_id');
     }
-    
 }
