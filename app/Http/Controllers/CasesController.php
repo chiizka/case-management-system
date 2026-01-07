@@ -17,6 +17,8 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB; 
 use App\Models\DocumentTracking;
 use Illuminate\Support\Facades\Validator;
+use PhpOffice\PhpSpreadsheet\IOFactory;
+use PhpOffice\PhpSpreadsheet\Writer\Csv as CsvWriter;
 
 class CasesController extends Controller
 {
@@ -767,38 +769,48 @@ public function moveToNextStage(Request $request, $id)
     
 public function importCsv(Request $request)
 {
-    // Validate the uploaded file
+    // Validate the uploaded file - now accepts both CSV and Excel
     $validator = Validator::make($request->all(), [
-        'csv_file' => 'required|file|mimes:csv,txt|max:5120', // 5MB max
+        'csv_file' => 'required|file|mimes:csv,txt,xlsx,xls|max:10240', // 10MB max
     ]);
 
     if ($validator->fails()) {
         return response()->json([
             'success' => false,
-            'message' => 'Invalid file. Please upload a CSV file (max 5MB).',
+            'message' => 'Invalid file. Please upload a CSV or Excel file (max 10MB).',
         ], 422);
     }
 
     try {
         $file = $request->file('csv_file');
+        $extension = $file->getClientOriginalExtension();
         $path = $file->getRealPath();
+        
+        // If Excel file, convert to CSV
+        if (in_array($extension, ['xlsx', 'xls'])) {
+            Log::info('Excel file detected, converting to CSV...');
+            $path = $this->convertExcelToCsv($file);
+        }
         
         // Open and read the CSV file
         $csvData = array_map('str_getcsv', file($path));
         
+        // Clean up temporary CSV file if it was converted from Excel
+        if (in_array($extension, ['xlsx', 'xls']) && file_exists($path)) {
+            unlink($path);
+        }
+        
         // Get the header row (first row)
         $header = array_map('trim', $csvData[0]);
-        $headerCount = count($header);
         
-        Log::info('CSV Header Count: ' . $headerCount);
-        Log::info('CSV Headers: ' . json_encode($header));
+        Log::info('CSV Headers found: ' . count($header) . ' columns');
         
-        // Remove the header (row 1) and the format row (row 2) from data
-        unset($csvData[0]); // Remove header
-        unset($csvData[1]); // Remove the format/example row (1234, dd/mm/yyyy, etc.)
+        // Remove ONLY the header row (MIS CSV doesn't have a format row)
+        unset($csvData[0]);
         
         $successCount = 0;
         $errors = [];
+        $skippedCount = 0;
         
         DB::beginTransaction();
         
@@ -808,52 +820,69 @@ public function importCsv(Request $request)
                 
                 // Skip empty rows
                 if (empty(array_filter($row))) {
+                    $skippedCount++;
                     continue;
                 }
                 
-                // Check if row has same number of columns as header
+                // Ensure row has same number of columns as header
+                $headerCount = count($header);
                 $rowCount = count($row);
-                if ($rowCount !== $headerCount) {
-                    Log::warning("Row {$rowNumber} has {$rowCount} columns, expected {$headerCount}");
-                    
-                    // Pad row with empty values if it has fewer columns
-                    if ($rowCount < $headerCount) {
-                        $row = array_pad($row, $headerCount, '');
-                    } 
-                    // Trim row if it has more columns
-                    else {
-                        $row = array_slice($row, 0, $headerCount);
-                    }
+                
+                if ($rowCount < $headerCount) {
+                    $row = array_pad($row, $headerCount, '');
+                } else if ($rowCount > $headerCount) {
+                    $row = array_slice($row, 0, $headerCount);
                 }
                 
-                // Map CSV columns to database columns
+                // Map CSV columns to array
                 $data = array_combine($header, $row);
                 
+                // Extract fields from MIS CSV format
+                $inspectionId = trim($data['Inspection ID'] ?? '');
+                $fieldOffice = trim($data['Field Office'] ?? '');
+                $establishmentName = trim($data['Establishment/Ship Name'] ?? '');
+                $dateOfInspection = trim($data['Date of Inspection'] ?? '');
+                $dateOfNR = trim($data['Date of NR'] ?? '');
+                $authorityNo = trim($data['Authority No.'] ?? '');
+                $inspector = trim($data['Inspector'] ?? '');
+                $caseNo = trim($data['Case No,'] ?? ''); // Note: CSV has comma in header
+                $dateScheduled = trim($data['Date Scheduled/Docketed'] ?? '');
+                $hearingOfficer = trim($data['Hearing Officer'] ?? '');
+                $dispositionStatus = trim($data['Disposition Status'] ?? '');
+                $dateSigned = trim($data['Date Signed'] ?? '');
+                
                 // Check for required fields
-                if (empty($data['Inspection ID']) || empty($data['Name of Establihsment'])) {
-                    $errors[] = "Row {$rowNumber}: Missing required fields (Inspection ID or Establishment name)";
+                if (empty($inspectionId)) {
+                    $errors[] = "Row {$rowNumber}: Missing Inspection ID";
+                    continue;
+                }
+                
+                if (empty($establishmentName)) {
+                    $errors[] = "Row {$rowNumber}: Missing Establishment/Ship Name";
+                    continue;
+                }
+                
+                // Check if inspection_id already exists
+                if (CaseFile::where('inspection_id', $inspectionId)->exists()) {
+                    $errors[] = "Row {$rowNumber}: Inspection ID '{$inspectionId}' already exists";
                     continue;
                 }
                 
                 // Create case record
                 try {
                     CaseFile::create([
-                        // Map CSV headers to database columns
-                        'no' => $data['NO.'] ?? null,
-                        'po_office' => $data['PO'] ?? null,
-                        'inspection_id' => $data['Inspection ID'] ?? null,
-                        'establishment_name' => $data['Name of Establihsment'] ?? null,
-                        'date_of_inspection' => !empty($data['Date of Inspection ']) ? $this->parseDate($data['Date of Inspection ']) : null,
-                        'inspector_name' => $data['Name of Inspector'] ?? null,
-                        'inspector_authority_no' => $data['Authority No.'] ?? null,
-                        'date_of_nr' => !empty($data['Date of NR ']) ? $this->parseDate($data['Date of NR ']) : null,
-                        'lapse_20_day_period' => $data['Lapse of 20 day Correction Period '] ?? null,
-                        'pct_for_docketing' => $data['PCT for Docketing (within 5 days from the lapse of the Correction Period) '] ?? null,
-                        'date_scheduled_docketed' => !empty($data['Date Scheduled/ Docketed']) ? $this->parseDate($data['Date Scheduled/ Docketed']) : null,
-                        'aging_docket' => $data['Aging (Docket)'] ?? null,
-                        'status_docket' => $data['Status (Docket)'] ?? null,
-                        'case_no' => $data['Case No. '] ?? null,
-                        'hearing_officer_mis' => $data['Hearing Officer (MIS)'] ?? null,
+                        'inspection_id' => $inspectionId,
+                        'po_office' => $fieldOffice,
+                        'establishment_name' => $establishmentName,
+                        'date_of_inspection' => $this->parseDate($dateOfInspection),
+                        'date_of_nr' => $this->parseDate($dateOfNR),
+                        'inspector_authority_no' => $authorityNo,
+                        'inspector_name' => $inspector,
+                        'case_no' => $caseNo,
+                        'date_scheduled_docketed' => $this->parseDate($dateScheduled),
+                        'hearing_officer_mis' => $hearingOfficer,
+                        'disposition_actual' => $dispositionStatus,
+                        'date_signed_mis' => $this->parseDate($dateSigned),
                         
                         // Set defaults for required fields
                         'current_stage' => '1: Inspections',
@@ -868,10 +897,15 @@ public function importCsv(Request $request)
             
             DB::commit();
             
-            $message = "Successfully imported {$successCount} records";
-            if (count($errors) > 0) {
-                $message .= " with " . count($errors) . " errors";
+            $message = "Successfully imported {$successCount} record(s)";
+            if ($skippedCount > 0) {
+                $message .= ", skipped {$skippedCount} empty row(s)";
             }
+            if (count($errors) > 0) {
+                $message .= ", with " . count($errors) . " error(s)";
+            }
+            
+            Log::info("CSV Import completed: {$message}");
             
             return response()->json([
                 'success' => true,
@@ -891,30 +925,87 @@ public function importCsv(Request $request)
         
         return response()->json([
             'success' => false,
-            'message' => 'Error processing CSV: ' . $e->getMessage()
+            'message' => 'Error processing file: ' . $e->getMessage()
         ], 500);
     }
 }
 
 /**
- * Helper function to parse dates from CSV (handles dd/mm/yyyy format)
+ * Convert Excel file to CSV
+ */
+private function convertExcelToCsv($file)
+{
+    try {
+        // Load the Excel file
+        $spreadsheet = IOFactory::load($file->getRealPath());
+        
+        // Get the first worksheet
+        $worksheet = $spreadsheet->getActiveSheet();
+        
+        // Create a temporary CSV file
+        $tempCsvPath = storage_path('app/temp_' . time() . '.csv');
+        
+        // Write to CSV
+        $writer = new CsvWriter($spreadsheet);
+        $writer->save($tempCsvPath);
+        
+        Log::info('Excel converted to CSV successfully: ' . $tempCsvPath);
+        
+        return $tempCsvPath;
+        
+    } catch (\Exception $e) {
+        Log::error('Excel to CSV conversion failed: ' . $e->getMessage());
+        throw new \Exception('Failed to convert Excel file: ' . $e->getMessage());
+    }
+}
+
+/**
+ * Helper function to parse dates from CSV
  */
 private function parseDate($dateString)
 {
-    if (empty($dateString) || $dateString === '1234') {
+    if (empty($dateString)) {
         return null;
     }
     
+    // Clean the date string
+    $dateString = trim($dateString);
+    
     try {
-        // Try to parse dd/mm/yyyy format
-        $date = \DateTime::createFromFormat('d/m/Y', trim($dateString));
-        if ($date) {
+        // Handle Excel date serial numbers
+        if (is_numeric($dateString) && $dateString > 0) {
+            // Excel stores dates as days since 1900-01-01
+            $unixTimestamp = ($dateString - 25569) * 86400;
+            return date('Y-m-d', $unixTimestamp);
+        }
+        
+        // Try m/d/Y format (12/3/2003)
+        $date = \DateTime::createFromFormat('m/d/Y', $dateString);
+        if ($date && $date->format('m/d/Y') === $dateString) {
+            return $date->format('Y-m-d');
+        }
+        
+        // Try d/m/Y format
+        $date = \DateTime::createFromFormat('d/m/Y', $dateString);
+        if ($date && $date->format('d/m/Y') === $dateString) {
+            return $date->format('Y-m-d');
+        }
+        
+        // Try Y-m-d format
+        $date = \DateTime::createFromFormat('Y-m-d', $dateString);
+        if ($date && $date->format('Y-m-d') === $dateString) {
             return $date->format('Y-m-d');
         }
         
         // Fallback to strtotime
-        return date('Y-m-d', strtotime($dateString));
+        $timestamp = strtotime($dateString);
+        if ($timestamp !== false) {
+            return date('Y-m-d', $timestamp);
+        }
+        
+        return null;
     } catch (\Exception $e) {
+        Log::warning('Date parse error for: ' . $dateString . ' - ' . $e->getMessage());
         return null;
     }
 }

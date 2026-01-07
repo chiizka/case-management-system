@@ -810,13 +810,13 @@
     </div>
 </div>
 
-<!-- CSV Upload Modal -->
+<!-- CSV/Excel Upload Modal -->
 <div class="modal fade" id="uploadCsvModal" tabindex="-1" role="dialog" aria-labelledby="uploadCsvModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg" role="document">
         <div class="modal-content">
             <div class="modal-header bg-success text-white">
                 <h5 class="modal-title" id="uploadCsvModalLabel">
-                    <i class="fas fa-upload"></i> Upload CSV File
+                    <i class="fas fa-upload"></i> Upload CSV/Excel File
                 </h5>
                 <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
@@ -828,12 +828,30 @@
                     
                     <!-- File Input -->
                     <div class="form-group">
-                        <label for="csv_file">Select CSV File <span class="text-danger">*</span></label>
+                        <label for="csv_file">Select CSV or Excel File <span class="text-danger">*</span></label>
                         <div class="custom-file">
-                            <input type="file" class="custom-file-input" id="csv_file" name="csv_file" accept=".csv" required>
+                            <input type="file" 
+                                   class="custom-file-input" 
+                                   id="csv_file" 
+                                   name="csv_file" 
+                                   accept=".csv,.xlsx,.xls" 
+                                   required>
                             <label class="custom-file-label" for="csv_file">Choose file...</label>
                         </div>
-                        <small class="form-text text-muted">Maximum file size: 5MB</small>
+                        <small class="form-text text-muted">
+                            <i class="fas fa-info-circle"></i> Accepts CSV (.csv) or Excel (.xlsx, .xls) files. Maximum file size: 10MB
+                        </small>
+                    </div>
+
+                    <!-- Info Alert -->
+                    <div class="alert alert-info">
+                        <h6 class="alert-heading"><i class="fas fa-lightbulb"></i> File Format Tips:</h6>
+                        <ul class="mb-0 pl-3">
+                            <li>Excel files (.xlsx, .xls) will be automatically converted to CSV</li>
+                            <li>First row should contain column headers</li>
+                            <li>Required fields: <strong>Inspection ID</strong> and <strong>Establishment Name</strong></li>
+                            <li>Date format should be: dd/mm/yyyy</li>
+                        </ul>
                     </div>
 
                     <!-- Progress Bar (hidden initially) -->
@@ -843,6 +861,7 @@
                                  role="progressbar" 
                                  style="width: 0%"
                                  id="uploadProgressBar">
+                                0%
                             </div>
                         </div>
                         <small class="text-muted" id="uploadStatus">Preparing upload...</small>
@@ -852,15 +871,22 @@
                     <div id="uploadResults" style="display: none;">
                         <div class="alert alert-success">
                             <h6><i class="fas fa-check-circle"></i> Upload Complete!</h6>
-                            <p class="mb-0">
+                            <p class="mb-1">
                                 <strong>Records imported:</strong> <span id="successCount">0</span>
                             </p>
+                            <div id="errorsList" style="display: none;">
+                                <hr>
+                                <p class="mb-1"><strong>Errors:</strong></p>
+                                <ul id="errorsListContent" class="mb-0 pl-3" style="max-height: 200px; overflow-y: auto;">
+                                </ul>
+                            </div>
                         </div>
                     </div>
 
                     <!-- Error Message -->
                     <div id="uploadError" class="alert alert-danger" style="display: none;">
-                        <strong>Error:</strong> <span id="errorMessage"></span>
+                        <h6><i class="fas fa-exclamation-triangle"></i> Upload Failed</h6>
+                        <p class="mb-0"><strong>Error:</strong> <span id="errorMessage"></span></p>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -872,7 +898,7 @@
             </form>
         </div>
     </div>
-</div>  
+</div>
 
 <!-- Stage Progression Modal -->
 <div class="modal fade" id="stageProgressionModal" tabindex="-1" role="dialog" aria-labelledby="stageProgressionModalLabel" aria-hidden="true">
@@ -1100,13 +1126,13 @@ $(document).ready(function() {
         });
     }
 
-        // Update file input label with selected filename
+    // Update file input label with selected filename
     $('#csv_file').on('change', function() {
         const fileName = $(this).val().split('\\').pop();
         $(this).next('.custom-file-label').html(fileName);
     });
 
-    // Handle CSV Upload Form Submission
+    // Handle CSV/Excel Upload Form Submission
     $('#csvUploadForm').on('submit', function(e) {
         e.preventDefault();
         
@@ -1118,22 +1144,35 @@ $(document).ready(function() {
         const fileInput = $('#csv_file')[0];
         if (!fileInput.files.length) {
             $('#uploadError').show();
-            $('#errorMessage').text('Please select a CSV file');
+            $('#errorMessage').text('Please select a file');
             return;
         }
         
         const file = fileInput.files[0];
-        if (!file.name.endsWith('.csv')) {
+        const fileName = file.name.toLowerCase();
+        const validExtensions = ['.csv', '.xlsx', '.xls'];
+        const isValidFile = validExtensions.some(ext => fileName.endsWith(ext));
+        
+        if (!isValidFile) {
             $('#uploadError').show();
-            $('#errorMessage').text('Please select a valid CSV file');
+            $('#errorMessage').text('Please select a valid CSV or Excel file (.csv, .xlsx, .xls)');
+            return;
+        }
+        
+        // Check file size (10MB max)
+        const maxSize = 10 * 1024 * 1024; // 10MB in bytes
+        if (file.size > maxSize) {
+            $('#uploadError').show();
+            $('#errorMessage').text('File too large. Maximum size is 10MB.');
             return;
         }
         
         // Hide error, reset and show progress
         $('#uploadError').hide();
         $('#uploadResults').hide();
+        $('#errorsList').hide();
         $('#uploadProgress').show();
-        $('#uploadProgressBar').css('width', '0%');
+        $('#uploadProgressBar').css('width', '0%').text('0%');
         $('#uploadStatus').text('Uploading file...');
         
         // Disable upload button
@@ -1152,9 +1191,15 @@ $(document).ready(function() {
                 const xhr = new window.XMLHttpRequest();
                 xhr.upload.addEventListener("progress", function(evt) {
                     if (evt.lengthComputable) {
-                        const percentComplete = (evt.loaded / evt.total) * 100;
-                        $('#uploadProgressBar').css('width', percentComplete + '%');
-                        $('#uploadStatus').text('Uploading: ' + Math.round(percentComplete) + '%');
+                        const percentComplete = Math.round((evt.loaded / evt.total) * 100);
+                        $('#uploadProgressBar').css('width', percentComplete + '%').text(percentComplete + '%');
+                        
+                        // Update status based on progress
+                        if (percentComplete < 100) {
+                            $('#uploadStatus').text('Uploading: ' + percentComplete + '%');
+                        } else {
+                            $('#uploadStatus').text('Processing file...');
+                        }
                     }
                 }, false);
                 return xhr;
@@ -1162,7 +1207,7 @@ $(document).ready(function() {
             success: function(response) {
                 console.log('Upload response:', response);
                 
-                $('#uploadProgressBar').css('width', '100%');
+                $('#uploadProgressBar').css('width', '100%').text('100%');
                 $('#uploadStatus').text('Processing complete!');
                 
                 // Show results
@@ -1172,16 +1217,26 @@ $(document).ready(function() {
                     
                     $('#successCount').text(response.success_count || 0);
                     
-                    // Reset form and button
+                    // Show errors if any
+                    if (response.errors && response.errors.length > 0) {
+                        $('#errorsList').show();
+                        let errorHtml = '';
+                        response.errors.forEach(function(error) {
+                            errorHtml += '<li class="text-danger">' + error + '</li>';
+                        });
+                        $('#errorsListContent').html(errorHtml);
+                    }
+                    
+                    // Reset button
                     uploadBtn.prop('disabled', false).html(originalBtnText);
                     
                     // Show success alert
-                    showAlert('success', response.message || 'CSV uploaded successfully!');
+                    showAlert('success', response.message || 'File uploaded successfully!');
                     
-                    // Reload page after 2 seconds
+                    // Reload page after 3 seconds
                     setTimeout(function() {
                         location.reload();
-                    }, 2000);
+                    }, 3000);
                 }, 500);
             },
             error: function(xhr) {
@@ -1190,21 +1245,25 @@ $(document).ready(function() {
                 $('#uploadProgress').hide();
                 uploadBtn.prop('disabled', false).html(originalBtnText);
                 
-                let errorMessage = 'Failed to upload CSV file.';
+                let errorMessage = 'Failed to upload file.';
                 if (xhr.responseJSON && xhr.responseJSON.message) {
                     errorMessage = xhr.responseJSON.message;
                 } else if (xhr.status === 413) {
-                    errorMessage = 'File too large. Maximum size is 5MB.';
+                    errorMessage = 'File too large. Maximum size is 10MB.';
                 } else if (xhr.status === 422) {
-                    errorMessage = 'Validation error. Please check your CSV format.';
+                    errorMessage = 'Validation error. Please check your file format.';
+                } else if (xhr.status === 500) {
+                    errorMessage = 'Server error. Please check the file format and try again.';
                 }
                 
                 $('#uploadError').show();
                 $('#errorMessage').text(errorMessage);
+                
+                showAlert('error', errorMessage);
             }
         });
     });
-    
+
     // Reset modal when closed
     $('#uploadCsvModal').on('hidden.bs.modal', function() {
         $('#csvUploadForm')[0].reset();
@@ -1212,6 +1271,7 @@ $(document).ready(function() {
         $('#uploadProgress').hide();
         $('#uploadResults').hide();
         $('#uploadError').hide();
+        $('#errorsList').hide();
         $('#uploadBtn').prop('disabled', false).html('<i class="fas fa-upload"></i> Upload');
     });
 
