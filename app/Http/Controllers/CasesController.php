@@ -390,71 +390,107 @@ public function destroy($id)
 /**
  * Move case to next stage with modal confirmation
  */
-public function moveToNextStage(Request $request, $id)
-{
-    DB::beginTransaction();
-    try {
-        $case = CaseFile::findOrFail($id);
-        
-        // Define stage progression
-        $stageMap = [
-            '1: Inspections' => '2: Docketing',
-            '2: Docketing' => '3: Hearing',
-            '3: Hearing' => '4: Review & Drafting',
-            '4: Review & Drafting' => '5: Orders & Disposition',
-            '5: Orders & Disposition' => '6: Compliance & Awards',
-            '6: Compliance & Awards' => '7: Appeals & Resolution',
-            '7: Appeals & Resolution' => 'Completed'
-        ];
-        
-        $currentStage = $case->current_stage;
-        $nextStage = $stageMap[$currentStage] ?? null;
-        
-        if (!$nextStage) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Invalid stage progression'
-            ], 400);
-        }
-        
-        // If completing the final stage (Appeals & Resolution)
-        if ($currentStage === '7: Appeals & Resolution' && $nextStage === 'Completed') {
-            // Update case status to Completed
-            $case->update([
-                'overall_status' => 'Completed',
-                // Keep current_stage as is, or you can set it to a final stage
+    public function moveToNextStage(Request $request, $id)
+    {
+        DB::beginTransaction();
+        try {
+            $case = CaseFile::findOrFail($id);
+            
+            // Log the initial state
+            Log::info("moveToNextStage called", [
+                'case_id' => $id,
+                'current_status' => $case->overall_status,
+                'current_stage' => $case->current_stage,
+                'force_complete' => $request->input('force_complete', false)
             ]);
             
-            // No need to update document_tracking - it will automatically be filtered out
-            // because the scope checks case.overall_status = 'Active'
+            // Check if request explicitly wants to complete the case (from Complete button)
+            $forceComplete = $request->input('force_complete', false);
+
+            
+            
+            if ($forceComplete) {
+                Log::info("Force completing case {$id}");
+                
+                // Complete case from any stage
+                $case->update([
+                    'overall_status' => 'Completed',
+                ]);
+                
+                // Verify the update
+                $case->refresh();
+                Log::info("Case updated", [
+                    'case_id' => $case->id,
+                    'new_status' => $case->overall_status,
+                    'inspection_id' => $case->inspection_id
+                ]);
+                
+                DB::commit();
+                
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Case marked as complete and moved to archived cases!',
+                    'case_id' => $case->id,
+                    'new_status' => $case->overall_status
+                ]);
+            }
+            
+            // Define stage progression (for normal progression)
+            $stageMap = [
+                '1: Inspections' => '2: Docketing',
+                '2: Docketing' => '3: Hearing',
+                '3: Hearing' => '4: Review & Drafting',
+                '4: Review & Drafting' => '5: Orders & Disposition',
+                '5: Orders & Disposition' => '6: Compliance & Awards',
+                '6: Compliance & Awards' => '7: Appeals & Resolution',
+                '7: Appeals & Resolution' => 'Completed'
+            ];
+            
+            $currentStage = $case->current_stage;
+            $nextStage = $stageMap[$currentStage] ?? null;
+            
+            if (!$nextStage) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid stage progression'
+                ], 400);
+            }
+            
+            // If completing the final stage (Appeals & Resolution)
+            if ($currentStage === '7: Appeals & Resolution' && $nextStage === 'Completed') {
+                $case->update([
+                    'overall_status' => 'Completed',
+                ]);
+                
+                DB::commit();
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Case completed and moved to archived cases! Document removed from tracking.'
+                ]);
+            }
+            
+            // Normal stage progression
+            $case->update([
+                'current_stage' => $nextStage
+            ]);
             
             DB::commit();
             return response()->json([
                 'success' => true,
-                'message' => 'Case completed and moved to archived cases! Document removed from tracking.'
+                'message' => "Case moved to {$nextStage} successfully!"
             ]);
+            
+        } catch (\Exception $e) {
+            DB::rollback();
+            Log::error('Failed to move case to next stage: ' . $e->getMessage());
+            Log::error('Stack trace: ' . $e->getTraceAsString());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to move case: ' . $e->getMessage()
+            ], 500);
         }
-        
-        // Normal stage progression
-        $case->update([
-            'current_stage' => $nextStage
-        ]);
-        
-        DB::commit();
-        return response()->json([
-            'success' => true,
-            'message' => "Case moved to {$nextStage} successfully!"
-        ]);
-        
-    } catch (\Exception $e) {
-        DB::rollback();
-        Log::error('Failed to move case to next stage: ' . $e->getMessage());
-        return response()->json([
-            'success' => false,
-            'message' => 'Failed to move case: ' . $e->getMessage()
-        ], 500);
     }
-}
+
 
     private function getValidationRules()
         {

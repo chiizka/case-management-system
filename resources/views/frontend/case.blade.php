@@ -590,6 +590,15 @@
                                                     title="View Document History">
                                                 <i class="fas fa-history"></i>
                                             </button>
+                                             <button type="button" 
+                                                    class="btn btn-success btn-sm complete-case-btn" 
+                                                    data-case-id="{{ $case->id }}"
+                                                    data-case-no="{{ $case->case_no ?? 'N/A' }}"
+                                                    data-establishment="{{ $case->establishment_name ?? 'N/A' }}"
+                                                    data-stage="{{ explode(': ', $case->current_stage)[1] ?? $case->current_stage ?? 'Unknown' }}"
+                                                    title="Mark as Complete">
+                                                <i class="fas fa-check-circle"></i> Complete
+                                            </button>
                                         </td>
                                     </tr>
                                 @endforeach
@@ -1545,60 +1554,112 @@ $(document).on('click', '.move-to-next-stage-btn', function(e) {
     $('#stageProgressionModal').modal('show');
 });
 
-// Confirm stage progression
-$(document).off('click', '#confirmStageBtn').on('click', '#confirmStageBtn', function() {
-    if (!caseToProgress) {
-        console.error('caseToProgress is null');
+// Complete case handler (archives case from any stage)
+$(document).on('click', '.complete-case-btn', function(e) {
+    e.preventDefault();
+    const button = $(this);
+    const caseId = button.data('case-id');
+    
+    console.log('Complete button clicked - caseId:', caseId);
+    
+    if (!caseId) {
+        console.error('No case ID found on button');
+        showAlert('error', 'Error: Could not identify case');
         return;
     }
     
-    const csrfToken = $('meta[name="csrf-token"]').attr('content');
-    const url = `/case/${caseToProgress.id}/next-stage`;
+    const caseNo = button.data('case-no') || 'N/A';
+    const establishment = button.data('establishment') || 'N/A';
+    const currentStage = button.data('stage') || 'Unknown';
     
-    console.log('Moving case to next stage at URL:', url);
+    caseToProgress = {
+        id: caseId,
+        button: button
+    };
     
-    const button = caseToProgress.button;
-    button.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i>');
+    console.log('caseToProgress object:', caseToProgress);
+    
+    const message = `<strong>Mark this case as complete and move to archived?</strong><br>
+                     <small class="text-warning">⚠️ This will complete the case from <strong>${currentStage}</strong> stage.</small>`;
+    
+    $('#stageProgressionMessage').html(message);
+    $('#stageCaseInfo').text(`${caseNo} - ${establishment}`);
+    $('#stageCurrentStage').text(currentStage);
+    $('#stageNextStage').text('Complete (Archive)');
+    
+    console.log('Showing stage progression modal');
+    $('#stageProgressionModal').modal('show');
+});
+
+$('#confirmStageBtn').off('click').on('click', function() {
+    console.log('=== CONFIRM STAGE PROGRESSION ===');
+    console.log('caseToProgress:', caseToProgress);
+    
+    if (!caseToProgress || !caseToProgress.id) {
+        console.error('No case selected for progression');
+        showAlert('error', 'No case selected');
+        return;
+    }
+    
+    const button = $(this);
+    const isForceComplete = caseToProgress.button && caseToProgress.button.hasClass('complete-case-btn');
+    
+    console.log('Is Force Complete:', isForceComplete);
+    console.log('Button classes:', caseToProgress.button.attr('class'));
+    
+    button.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Processing...');
+    
+    const ajaxData = {
+        _token: '{{ csrf_token() }}',
+        force_complete: isForceComplete
+    };
+    
+    console.log('Sending AJAX with data:', ajaxData);
+    console.log('URL:', `/case/${caseToProgress.id}/next-stage`);
     
     $.ajax({
-        url: url,
-        type: 'POST',
-        headers: {
-            'X-CSRF-TOKEN': csrfToken,
-            'Accept': 'application/json'
-        },
+        url: `/case/${caseToProgress.id}/next-stage`,
+        method: 'POST',
+        data: ajaxData,
         success: function(response) {
-            console.log('Stage progression successful:', response);
+            console.log('=== SUCCESS RESPONSE ===');
+            console.log('Full response:', response);
+            
             $('#stageProgressionModal').modal('hide');
             
-            showAlert('success', response.message || 'Case moved to next stage successfully!');
-            
-            // Reload page after 1.5 seconds to refresh the data
-            setTimeout(() => {
-                location.reload();
-            }, 1500);
-            
-            caseToProgress = null;
-        },
-        error: function(xhr, status, error) {
-            console.error('Stage progression error:', error, xhr);
-            button.prop('disabled', false).html('<i class="fas fa-arrow-right"></i> Next');
-            
-            let errorMessage = 'Failed to move case to next stage.';
-            if (xhr.responseJSON?.message) {
-                errorMessage = xhr.responseJSON.message;
-            } else if (xhr.status === 404) {
-                errorMessage = 'Case not found.';
-            } else if (xhr.status === 500) {
-                errorMessage = 'Server error occurred.';
+            if (response.success) {
+                showAlert('success', response.message);
+                
+                // Log the case ID and new status if available
+                if (response.case_id) {
+                    console.log('Case ID:', response.case_id);
+                    console.log('New Status:', response.new_status);
+                }
+                
+                // Force a hard reload after 1.5 seconds
+                setTimeout(() => {
+                    console.log('Reloading page...');
+                    location.href = location.href;
+                }, 1500);
+            } else {
+                showAlert('error', response.message || 'Failed to progress case');
             }
+        },
+        error: function(xhr) {
+            console.error('=== ERROR RESPONSE ===');
+            console.error('Status:', xhr.status);
+            console.error('Response:', xhr.responseJSON);
+            console.error('Full XHR:', xhr);
             
-            showAlert('error', errorMessage);
-            $('#stageProgressionModal').modal('hide');
-            caseToProgress = null;
+            const message = xhr.responseJSON?.message || 'Failed to progress case';
+            showAlert('error', message);
+        },
+        complete: function() {
+            button.prop('disabled', false).html('<i class="fas fa-arrow-right mr-2"></i>Proceed');
         }
     });
 });
+
 
 // Fix aria-hidden warnings on modals by managing focus properly
 $(document).on('hide.bs.modal', '#deleteCaseModal, #stageProgressionModal', function() {
