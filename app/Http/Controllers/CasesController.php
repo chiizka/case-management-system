@@ -881,7 +881,7 @@ public function importCsv(Request $request)
                         'case_no' => $caseNo,
                         'date_scheduled_docketed' => $this->parseDate($dateScheduled),
                         'hearing_officer_mis' => $hearingOfficer,
-                        'disposition_actual' => $dispositionStatus,
+                        'disposition_mis' => $dispositionStatus,
                         'date_signed_mis' => $this->parseDate($dateSigned),
                         
                         // Set defaults for required fields

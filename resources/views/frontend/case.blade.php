@@ -243,7 +243,7 @@
                                 <th>Inspection ID</th>
                                 <th>Case No.</th>
                                 <th>Establishment Name</th>
-                                <th>PO Office</th>
+                                <th>PO </th>
                                 <th>Current Stage</th>
                                 <th>Overall Status</th>
                                 
@@ -712,258 +712,258 @@
 </div>
 <!-- End of Main Content -->
 
-<!-- Modal for Adding/Editing Case Records -->
-<div class="modal fade" id="addCaseModal" tabindex="-1" role="dialog" aria-labelledby="addCaseModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="addCaseModalLabel">Add New Case</h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
+    <!-- Modal for Adding/Editing Case Records -->
+    <div class="modal fade" id="addCaseModal" tabindex="-1" role="dialog" aria-labelledby="addCaseModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addCaseModalLabel">Add New Case</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form id="caseForm" method="POST" action="{{ route('case.store') }}">
+                        @csrf
+                        <input type="hidden" name="_method" id="formMethod" value="POST">
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="inspection_id">Inspection ID</label>
+                                    <input type="text" class="form-control" id="inspection_id" name="inspection_id" placeholder="Enter inspection ID" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="case_no">Case No.</label>
+                                    <input type="text" class="form-control" id="case_no" name="case_no" placeholder="Enter case number (optional)">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="establishment_name">Establishment Name</label>
+                            <input type="text" class="form-control" id="establishment_name" name="establishment_name" placeholder="Enter establishment name" required>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="current_stage">Current Stage</label>
+                                    <select class="form-control" id="current_stage" name="current_stage" required disabled>
+                                        <option value="1: Inspections" selected>1: Inspections</option>
+                                    </select>
+                                    <!-- Hidden input to ensure the value is submitted -->
+                                    <input type="hidden" name="current_stage" value="1: Inspections">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="overall_status">Overall Status</label>
+                                    <select class="form-control" id="overall_status" name="overall_status" required disabled>
+                                        <option value="Active" selected>Active</option>
+                                        <option value="Completed">Completed</option>
+                                        <option value="Dismissed">Dismissed</option>
+                                    </select>
+                                    <!-- Hidden input to ensure the value is submitted -->
+                                    <input type="hidden" name="overall_status" value="Active">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                            <button type="submit" class="btn btn-primary">Save Case</button>
+                        </div>
+                    </form>
+                </div>
             </div>
-            <div class="modal-body">
-                <form id="caseForm" method="POST" action="{{ route('case.store') }}">
-                    @csrf
-                    <input type="hidden" name="_method" id="formMethod" value="POST">
+        </div>
+    </div>
 
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="inspection_id">Inspection ID</label>
-                                <input type="text" class="form-control" id="inspection_id" name="inspection_id" placeholder="Enter inspection ID" required>
+    <!-- Delete Confirmation Modal -->
+    <div class="modal fade" id="deleteCaseModal" tabindex="-1" role="dialog" aria-labelledby="deleteCaseModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title" id="deleteCaseModalLabel">Delete Record</h5>
+                    <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-warning" role="alert">
+                        <i class="fas fa-exclamation-triangle mr-2"></i>
+                        <strong>Warning!</strong> This action cannot be undone.
+                    </div>
+                    <p>Are you sure you want to delete this record?</p>
+                    <p id="deleteCaseInfo" class="text-muted small mb-0"></p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-danger" id="confirmDeleteBtn">
+                        <i class="fas fa-trash mr-2"></i>Delete
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CSV/Excel Upload Modal -->
+    <div class="modal fade" id="uploadCsvModal" tabindex="-1" role="dialog" aria-labelledby="uploadCsvModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title" id="uploadCsvModalLabel">
+                        <i class="fas fa-upload"></i> Upload CSV/Excel File
+                    </h5>
+                    <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <form id="csvUploadForm" enctype="multipart/form-data">
+                    <div class="modal-body">
+                        @csrf
+                        
+                        <!-- File Input -->
+                        <div class="form-group">
+                            <label for="csv_file">Select CSV or Excel File <span class="text-danger">*</span></label>
+                            <div class="custom-file">
+                                <input type="file" 
+                                    class="custom-file-input" 
+                                    id="csv_file" 
+                                    name="csv_file" 
+                                    accept=".csv,.xlsx,.xls" 
+                                    required>
+                                <label class="custom-file-label" for="csv_file">Choose file...</label>
+                            </div>
+                            <small class="form-text text-muted">
+                                <i class="fas fa-info-circle"></i> Accepts CSV (.csv) or Excel (.xlsx, .xls) files. Maximum file size: 10MB
+                            </small>
+                        </div>
+
+                        <!-- Info Alert -->
+                        <div class="alert alert-info">
+                            <h6 class="alert-heading"><i class="fas fa-lightbulb"></i> File Format Tips:</h6>
+                            <ul class="mb-0 pl-3">
+                                <li>Excel files (.xlsx, .xls) will be automatically converted to CSV</li>
+                                <li>First row should contain column headers</li>
+                                <li>Required fields: <strong>Inspection ID</strong> and <strong>Establishment Name</strong></li>
+                                <li>Date format should be: dd/mm/yyyy</li>
+                            </ul>
+                        </div>
+
+                        <!-- Progress Bar (hidden initially) -->
+                        <div id="uploadProgress" style="display: none;">
+                            <div class="progress mb-2">
+                                <div class="progress-bar progress-bar-striped progress-bar-animated bg-success" 
+                                    role="progressbar" 
+                                    style="width: 0%"
+                                    id="uploadProgressBar">
+                                    0%
+                                </div>
+                            </div>
+                            <small class="text-muted" id="uploadStatus">Preparing upload...</small>
+                        </div>
+
+                        <!-- Results (hidden initially) -->
+                        <div id="uploadResults" style="display: none;">
+                            <div class="alert alert-success">
+                                <h6><i class="fas fa-check-circle"></i> Upload Complete!</h6>
+                                <p class="mb-1">
+                                    <strong>Records imported:</strong> <span id="successCount">0</span>
+                                </p>
+                                <div id="errorsList" style="display: none;">
+                                    <hr>
+                                    <p class="mb-1"><strong>Errors:</strong></p>
+                                    <ul id="errorsListContent" class="mb-0 pl-3" style="max-height: 200px; overflow-y: auto;">
+                                    </ul>
+                                </div>
                             </div>
                         </div>
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="case_no">Case No.</label>
-                                <input type="text" class="form-control" id="case_no" name="case_no" placeholder="Enter case number (optional)">
-                            </div>
+
+                        <!-- Error Message -->
+                        <div id="uploadError" class="alert alert-danger" style="display: none;">
+                            <h6><i class="fas fa-exclamation-triangle"></i> Upload Failed</h6>
+                            <p class="mb-0"><strong>Error:</strong> <span id="errorMessage"></span></p>
                         </div>
                     </div>
-
-                    <div class="form-group">
-                        <label for="establishment_name">Establishment Name</label>
-                        <input type="text" class="form-control" id="establishment_name" name="establishment_name" placeholder="Enter establishment name" required>
-                    </div>
-
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="current_stage">Current Stage</label>
-                                <select class="form-control" id="current_stage" name="current_stage" required disabled>
-                                    <option value="1: Inspections" selected>1: Inspections</option>
-                                </select>
-                                <!-- Hidden input to ensure the value is submitted -->
-                                <input type="hidden" name="current_stage" value="1: Inspections">
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="overall_status">Overall Status</label>
-                                <select class="form-control" id="overall_status" name="overall_status" required disabled>
-                                    <option value="Active" selected>Active</option>
-                                    <option value="Completed">Completed</option>
-                                    <option value="Dismissed">Dismissed</option>
-                                </select>
-                                <!-- Hidden input to ensure the value is submitted -->
-                                <input type="hidden" name="overall_status" value="Active">
-                            </div>
-                        </div>
-                    </div>
-
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-                        <button type="submit" class="btn btn-primary">Save Case</button>
+                        <button type="submit" class="btn btn-success" id="uploadBtn">
+                            <i class="fas fa-upload"></i> Upload
+                        </button>
                     </div>
                 </form>
             </div>
         </div>
     </div>
-</div>
 
-<!-- Delete Confirmation Modal -->
-<div class="modal fade" id="deleteCaseModal" tabindex="-1" role="dialog" aria-labelledby="deleteCaseModalLabel" aria-hidden="true">
-    <div class="modal-dialog" role="document">
-        <div class="modal-content">
-            <div class="modal-header bg-danger text-white">
-                <h5 class="modal-title" id="deleteCaseModalLabel">Delete Record</h5>
-                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-            </div>
-            <div class="modal-body">
-                <div class="alert alert-warning" role="alert">
-                    <i class="fas fa-exclamation-triangle mr-2"></i>
-                    <strong>Warning!</strong> This action cannot be undone.
+    <!-- Stage Progression Modal -->
+    <div class="modal fade" id="stageProgressionModal" tabindex="-1" role="dialog" aria-labelledby="stageProgressionModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header bg-info text-white">
+                    <h5 class="modal-title" id="stageProgressionModalLabel">Move to Next Stage</h5>
+                    <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
                 </div>
-                <p>Are you sure you want to delete this record?</p>
-                <p id="deleteCaseInfo" class="text-muted small mb-0"></p>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-danger" id="confirmDeleteBtn">
-                    <i class="fas fa-trash mr-2"></i>Delete
-                </button>
+                <div class="modal-body">
+                    <p id="stageProgressionMessage"></p>
+                    <div class="card bg-light">
+                        <div class="card-body">
+                            <small class="text-muted">
+                                <strong>Case:</strong> <span id="stageCaseInfo"></span><br>
+                                <strong>Current Stage:</strong> <span id="stageCurrentStage"></span><br>
+                                <strong>Next Stage:</strong> <span id="stageNextStage"></span>
+                            </small>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="confirmStageBtn">
+                        <i class="fas fa-arrow-right mr-2"></i>Proceed
+                    </button>
+                </div>
             </div>
         </div>
     </div>
-</div>
 
-<!-- CSV/Excel Upload Modal -->
-<div class="modal fade" id="uploadCsvModal" tabindex="-1" role="dialog" aria-labelledby="uploadCsvModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg" role="document">
-        <div class="modal-content">
-            <div class="modal-header bg-success text-white">
-                <h5 class="modal-title" id="uploadCsvModalLabel">
-                    <i class="fas fa-upload"></i> Upload CSV/Excel File
-                </h5>
-                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-            </div>
-            <form id="csvUploadForm" enctype="multipart/form-data">
+    <!-- Document History Modal -->
+    <div class="modal fade" id="caseHistoryModal" tabindex="-1" role="dialog">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                    <h5 class="modal-title">
+                        <i class="fas fa-history"></i> Document Transfer History
+                    </h5>
+                    <button type="button" class="close" data-dismiss="modal" style="color: white;">
+                        <span>&times;</span>
+                    </button>
+                </div>
                 <div class="modal-body">
-                    @csrf
-                    
-                    <!-- File Input -->
-                    <div class="form-group">
-                        <label for="csv_file">Select CSV or Excel File <span class="text-danger">*</span></label>
-                        <div class="custom-file">
-                            <input type="file" 
-                                   class="custom-file-input" 
-                                   id="csv_file" 
-                                   name="csv_file" 
-                                   accept=".csv,.xlsx,.xls" 
-                                   required>
-                            <label class="custom-file-label" for="csv_file">Choose file...</label>
-                        </div>
-                        <small class="form-text text-muted">
-                            <i class="fas fa-info-circle"></i> Accepts CSV (.csv) or Excel (.xlsx, .xls) files. Maximum file size: 10MB
-                        </small>
+                    <div class="mb-3">
+                        <strong>Case:</strong> <span id="historyCaseNo"></span><br>
+                        <strong>Establishment:</strong> <span id="historyEstablishment"></span>
                     </div>
-
-                    <!-- Info Alert -->
-                    <div class="alert alert-info">
-                        <h6 class="alert-heading"><i class="fas fa-lightbulb"></i> File Format Tips:</h6>
-                        <ul class="mb-0 pl-3">
-                            <li>Excel files (.xlsx, .xls) will be automatically converted to CSV</li>
-                            <li>First row should contain column headers</li>
-                            <li>Required fields: <strong>Inspection ID</strong> and <strong>Establishment Name</strong></li>
-                            <li>Date format should be: dd/mm/yyyy</li>
-                        </ul>
-                    </div>
-
-                    <!-- Progress Bar (hidden initially) -->
-                    <div id="uploadProgress" style="display: none;">
-                        <div class="progress mb-2">
-                            <div class="progress-bar progress-bar-striped progress-bar-animated bg-success" 
-                                 role="progressbar" 
-                                 style="width: 0%"
-                                 id="uploadProgressBar">
-                                0%
+                    <hr>
+                    <div id="historyContent">
+                        <div class="text-center py-4">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="sr-only">Loading...</span>
                             </div>
                         </div>
-                        <small class="text-muted" id="uploadStatus">Preparing upload...</small>
-                    </div>
-
-                    <!-- Results (hidden initially) -->
-                    <div id="uploadResults" style="display: none;">
-                        <div class="alert alert-success">
-                            <h6><i class="fas fa-check-circle"></i> Upload Complete!</h6>
-                            <p class="mb-1">
-                                <strong>Records imported:</strong> <span id="successCount">0</span>
-                            </p>
-                            <div id="errorsList" style="display: none;">
-                                <hr>
-                                <p class="mb-1"><strong>Errors:</strong></p>
-                                <ul id="errorsListContent" class="mb-0 pl-3" style="max-height: 200px; overflow-y: auto;">
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Error Message -->
-                    <div id="uploadError" class="alert alert-danger" style="display: none;">
-                        <h6><i class="fas fa-exclamation-triangle"></i> Upload Failed</h6>
-                        <p class="mb-0"><strong>Error:</strong> <span id="errorMessage"></span></p>
                     </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-                    <button type="submit" class="btn btn-success" id="uploadBtn">
-                        <i class="fas fa-upload"></i> Upload
-                    </button>
                 </div>
-            </form>
-        </div>
-    </div>
-</div>
-
-<!-- Stage Progression Modal -->
-<div class="modal fade" id="stageProgressionModal" tabindex="-1" role="dialog" aria-labelledby="stageProgressionModalLabel" aria-hidden="true">
-    <div class="modal-dialog" role="document">
-        <div class="modal-content">
-            <div class="modal-header bg-info text-white">
-                <h5 class="modal-title" id="stageProgressionModalLabel">Move to Next Stage</h5>
-                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-            </div>
-            <div class="modal-body">
-                <p id="stageProgressionMessage"></p>
-                <div class="card bg-light">
-                    <div class="card-body">
-                        <small class="text-muted">
-                            <strong>Case:</strong> <span id="stageCaseInfo"></span><br>
-                            <strong>Current Stage:</strong> <span id="stageCurrentStage"></span><br>
-                            <strong>Next Stage:</strong> <span id="stageNextStage"></span>
-                        </small>
-                    </div>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary" id="confirmStageBtn">
-                    <i class="fas fa-arrow-right mr-2"></i>Proceed
-                </button>
             </div>
         </div>
     </div>
-</div>
-
-<!-- Document History Modal -->
-<div class="modal fade" id="caseHistoryModal" tabindex="-1" role="dialog">
-    <div class="modal-dialog modal-lg" role="document">
-        <div class="modal-content">
-            <div class="modal-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
-                <h5 class="modal-title">
-                    <i class="fas fa-history"></i> Document Transfer History
-                </h5>
-                <button type="button" class="close" data-dismiss="modal" style="color: white;">
-                    <span>&times;</span>
-                </button>
-            </div>
-            <div class="modal-body">
-                <div class="mb-3">
-                    <strong>Case:</strong> <span id="historyCaseNo"></span><br>
-                    <strong>Establishment:</strong> <span id="historyEstablishment"></span>
-                </div>
-                <hr>
-                <div id="historyContent">
-                    <div class="text-center py-4">
-                        <div class="spinner-border text-primary" role="status">
-                            <span class="sr-only">Loading...</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-            </div>
-        </div>
-    </div>
-</div>
 
 @endsection
 @push('scripts')
