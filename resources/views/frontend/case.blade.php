@@ -243,6 +243,8 @@
                                 <th>Inspection ID</th>
                                 <th>Case No.</th>
                                 <th>Establishment Name</th>
+                                <th>Establishment Address</th>
+                                <th>Mode</th>
                                 <th>PO </th>
                                 <th>Current Stage</th>
                                 <th>Overall Status</th>
@@ -362,6 +364,10 @@
                                         <td class="editable-cell" data-field="establishment_name" title="{{ $case->establishment_name ?? '' }}">
                                             {{ $case->establishment_name ? Str::limit($case->establishment_name, 25) : '-' }}
                                         </td>
+                                        <td class="editable-cell" data-field="establishment_address" title="{{ $case->establishment_address ?? '' }}">
+                                            {{ $case->establishment_address ? Str::limit($case->establishment_address, 30) : '-' }}
+                                        </td>
+                                        <td class="editable-cell" data-field="mode">{{ $case->mode ?? '-' }}</td>
                                         <td class="editable-cell" data-field="po_office">{{ $case->po_office ?? '-' }}</td>
                                         <td class="editable-cell" data-field="current_stage" data-type="select">
                                             {{ explode(': ', $case->current_stage)[1] ?? $case->current_stage ?? '-' }}
@@ -1675,6 +1681,8 @@ $(document).ready(function() {
                 'inspection_id': { type: 'text' },
                 'case_no': { type: 'text' },
                 'establishment_name': { type: 'text' },
+                'establishment_address': { type: 'text' }, 
+                'mode': { type: 'text' },                  
                 'po_office': { type: 'text' },
                 'current_stage': { 
                     type: 'select',

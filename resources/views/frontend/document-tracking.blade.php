@@ -304,16 +304,16 @@
         <!-- Tabs -->
         <ul class="nav nav-tabs mb-3" id="documentTabs" role="tablist">
             <li class="nav-item">
+                <a class="nav-link" id="my-docs-tab" data-toggle="tab" href="#myDocs" role="tab">
+                    <i class="fas fa-folder"></i> My Documents
+                </a>
+            </li>
+            <li class="nav-item">
                 <a class="nav-link active" id="pending-tab" data-toggle="tab" href="#pending" role="tab">
                     <i class="fas fa-clock"></i> Pending Receipts
                     @if($pendingDocuments->count() > 0)
                         <span class="badge badge-warning ml-2">{{ $pendingDocuments->count() }}</span>
                     @endif
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" id="my-docs-tab" data-toggle="tab" href="#myDocs" role="tab">
-                    <i class="fas fa-folder"></i> My Documents
                 </a>
             </li>
             @if(Auth::user()->isAdmin())

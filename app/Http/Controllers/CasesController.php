@@ -464,6 +464,8 @@ public function moveToNextStage(Request $request, $id)
                 'inspection_id' => 'nullable|string|max:255',
                 'case_no' => 'nullable|string|max:255',
                 'establishment_name' => 'nullable|string|max:255',
+                'establishment_address' => 'nullable|string',  // ADD THIS
+                'mode' => 'nullable|string|max:255',           // ADD THIS
                 'po_office' => 'nullable|string|max:255',
                 'current_stage' => 'nullable|in:1: Inspections,2: Docketing,3: Hearing,4: Review & Drafting,5: Orders & Disposition,6: Compliance & Awards,7: Appeals & Resolution',
                 'overall_status' => 'nullable|in:Active,Completed,Dismissed',
@@ -841,6 +843,8 @@ public function importCsv(Request $request)
                 $inspectionId = trim($data['Inspection ID'] ?? '');
                 $fieldOffice = trim($data['Field Office'] ?? '');
                 $establishmentName = trim($data['Establishment/Ship Name'] ?? '');
+                $establishmentAddress = trim($data['Establishment/Ship Address'] ?? '');
+                $mode = trim($data['Mode'] ?? '');
                 $dateOfInspection = trim($data['Date of Inspection'] ?? '');
                 $dateOfNR = trim($data['Date of NR'] ?? '');
                 $authorityNo = trim($data['Authority No.'] ?? '');
@@ -874,6 +878,8 @@ public function importCsv(Request $request)
                         'inspection_id' => $inspectionId,
                         'po_office' => $fieldOffice,
                         'establishment_name' => $establishmentName,
+                        'establishment_address' => $establishmentAddress,
+                        'mode' => $mode,
                         'date_of_inspection' => $this->parseDate($dateOfInspection),
                         'date_of_nr' => $this->parseDate($dateOfNR),
                         'inspector_authority_no' => $authorityNo,
