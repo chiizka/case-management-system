@@ -1662,6 +1662,275 @@ function showAlert(type, message) {
 
 // Unified inline editing system (keep all your existing inline editing code)
 $(document).ready(function() {
+        let currentEditingCell = null;
+    let originalValue = null;
+
+    // Double-click to edit cell
+    $(document).on('dblclick', '.editable-cell', function(e) {
+        e.preventDefault();
+        
+        // If already editing another cell, save it first
+        if (currentEditingCell && currentEditingCell !== this) {
+            saveCell($(currentEditingCell));
+        }
+        
+        startEditing($(this));
+    });
+
+    // Function to start editing a cell
+    function startEditing($cell) {
+        // Don't edit if already in edit mode
+        if ($cell.find('input, select, textarea').length > 0) {
+            return;
+        }
+
+        currentEditingCell = $cell[0];
+        const field = $cell.data('field');
+        const fieldType = $cell.data('type') || 'text';
+        const currentValue = $cell.text().trim();
+        
+        // Store original value
+        originalValue = currentValue === '-' ? '' : currentValue;
+        
+        // Get the tab configuration
+        const $row = $cell.closest('tr');
+        const $table = $cell.closest('table');
+        const tableId = $table.attr('id');
+        
+        // Determine which tab config to use
+        let tabKey = 'tab0'; // default
+        if (tableId === 'dataTable1') tabKey = 'tab1';
+        else if (tableId === 'dataTable2') tabKey = 'tab2';
+        else if (tableId === 'dataTable3') tabKey = 'tab3';
+        else if (tableId === 'dataTable4') tabKey = 'tab4';
+        else if (tableId === 'dataTable5') tabKey = 'tab5';
+        else if (tableId === 'dataTable6') tabKey = 'tab6';
+        else if (tableId === 'dataTable7') tabKey = 'tab7';
+        
+        const fieldConfig = tabConfigs[tabKey]?.fields[field];
+        
+        // Create input element based on field type
+        let $input;
+        
+        if (fieldType === 'select' || fieldConfig?.type === 'select') {
+            // Create select dropdown
+            $input = $('<select class="form-control form-control-sm inline-edit-input"></select>');
+            
+            if (fieldConfig && fieldConfig.options) {
+                fieldConfig.options.forEach(opt => {
+                    const selected = opt.value == originalValue || opt.text == originalValue;
+                    $input.append(`<option value="${opt.value}" ${selected ? 'selected' : ''}>${opt.text}</option>`);
+                });
+            }
+        } else if (fieldType === 'date' || fieldConfig?.type === 'date') {
+            // Create date input
+            $input = $('<input type="date" class="form-control form-control-sm inline-edit-input">');
+            $input.val(originalValue);
+        } else if (fieldType === 'boolean') {
+            // Create select for boolean (Yes/No)
+            $input = $('<select class="form-control form-control-sm inline-edit-input"></select>');
+            $input.append('<option value="">Select</option>');
+            $input.append(`<option value="1" ${originalValue === 'Yes' || originalValue === '1' ? 'selected' : ''}>Yes</option>`);
+            $input.append(`<option value="0" ${originalValue === 'No' || originalValue === '0' ? 'selected' : ''}>No</option>`);
+        } else if (fieldConfig?.type === 'number') {
+            // Create number input
+            $input = $('<input type="number" class="form-control form-control-sm inline-edit-input">');
+            if (fieldConfig.step) {
+                $input.attr('step', fieldConfig.step);
+            }
+            // Remove commas from formatted numbers
+            const numValue = originalValue.replace(/,/g, '');
+            $input.val(numValue);
+        } else {
+            // Default text input
+            $input = $('<input type="text" class="form-control form-control-sm inline-edit-input">');
+            $input.val(originalValue);
+        }
+        
+        // Style the input to fit the cell
+        $input.css({
+            'width': '100%',
+            'padding': '4px 8px',
+            'border': '2px solid #4CAF50',
+            'box-shadow': '0 0 5px rgba(76, 175, 80, 0.5)'
+        });
+        
+        // Replace cell content with input
+        $cell.html($input);
+        $input.focus();
+        
+        // Select text in text inputs
+        if ($input.is('input[type="text"], input[type="number"]')) {
+            $input.select();
+        }
+        
+        // Handle keyboard events
+        $input.on('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                saveCell($cell);
+            } else if (e.key === 'Escape') {
+                e.preventDefault();
+                cancelEdit($cell);
+            }
+        });
+        
+        // Handle blur (clicking outside)
+        $input.on('blur', function() {
+            // Small delay to allow other events to fire first
+            setTimeout(() => {
+                if (currentEditingCell === $cell[0]) {
+                    saveCell($cell);
+                }
+            }, 200);
+        });
+    }
+
+    // Function to save cell
+    function saveCell($cell) {
+        const $input = $cell.find('.inline-edit-input');
+        if ($input.length === 0) return;
+        
+        const newValue = $input.val();
+        const field = $cell.data('field');
+        const fieldType = $cell.data('type');
+        const $row = $cell.closest('tr');
+        const recordId = $row.data('id');
+        
+        // Get the endpoint based on table
+        const $table = $cell.closest('table');
+        const tableId = $table.attr('id');
+        let endpoint = '/case/';
+        
+        if (tableId === 'dataTable1') endpoint = '/inspection/';
+        else if (tableId === 'dataTable2') endpoint = '/docketing/';
+        else if (tableId === 'dataTable3') endpoint = '/hearing-process/';
+        else if (tableId === 'dataTable4') endpoint = '/review-and-drafting/';
+        else if (tableId === 'dataTable5') endpoint = '/orders-and-disposition/';
+        else if (tableId === 'dataTable6') endpoint = '/compliance-and-awards/';
+        else if (tableId === 'dataTable7') endpoint = '/appeals-and-resolution/';
+        
+        // If value hasn't changed, just restore original display
+        if (newValue === originalValue) {
+            restoreCellDisplay($cell, originalValue, fieldType);
+            currentEditingCell = null;
+            return;
+        }
+        
+        // Show loading state
+        $cell.html('<i class="fas fa-spinner fa-spin text-primary"></i>');
+        
+        // Prepare data
+        const updateData = {};
+        updateData[field] = newValue;
+        
+        // Send AJAX request
+        $.ajax({
+            url: endpoint + recordId + '/inline-update',
+            method: 'PUT',
+            data: updateData,
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            },
+            success: function(response) {
+                if (response.success) {
+                    // Update cell with new value
+                    restoreCellDisplay($cell, newValue, fieldType);
+                    
+                    // Show success feedback
+                    $cell.addClass('bg-success text-white');
+                    setTimeout(() => {
+                        $cell.removeClass('bg-success text-white');
+                    }, 1000);
+                    
+                    // Show toast notification
+                    showToast('Success', 'Cell updated successfully', 'success');
+                } else {
+                    // Restore original value on error
+                    restoreCellDisplay($cell, originalValue, fieldType);
+                    showToast('Error', response.message || 'Update failed', 'error');
+                }
+                currentEditingCell = null;
+            },
+            error: function(xhr) {
+                // Restore original value on error
+                restoreCellDisplay($cell, originalValue, fieldType);
+                const errorMsg = xhr.responseJSON?.message || 'Failed to update cell';
+                showToast('Error', errorMsg, 'error');
+                currentEditingCell = null;
+            }
+        });
+    }
+
+    // Function to cancel edit
+    function cancelEdit($cell) {
+        restoreCellDisplay($cell, originalValue, $cell.data('type'));
+        currentEditingCell = null;
+    }
+
+    // Function to restore cell display
+    function restoreCellDisplay($cell, value, fieldType) {
+        let displayValue = value || '-';
+        
+        // Format based on type
+        if (fieldType === 'boolean') {
+            displayValue = value === '1' || value === 1 || value === true || value === 'Yes' ? 'Yes' : 'No';
+        } else if (fieldType === 'date' && value) {
+            // Keep date format as is (YYYY-MM-DD)
+            displayValue = value;
+        } else if ($cell.data('field')?.includes('amount') || $cell.data('field')?.includes('monetary') || $cell.data('field')?.includes('penalty')) {
+            // Format monetary values
+            if (value && value !== '-') {
+                const num = parseFloat(value);
+                if (!isNaN(num)) {
+                    displayValue = num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                }
+            }
+        }
+        
+        // Handle long text with title attribute
+        const originalTitle = $cell.attr('title');
+        if (value && value.length > 30) {
+            $cell.attr('title', value);
+            displayValue = value.substring(0, 30) + '...';
+        } else if (originalTitle) {
+            $cell.attr('title', value);
+        }
+        
+        $cell.html(displayValue);
+    }
+
+    // Toast notification function
+    function showToast(title, message, type) {
+        const bgColor = type === 'success' ? 'bg-success' : 'bg-danger';
+        const icon = type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle';
+        
+        const toast = $(`
+            <div class="toast-notification ${bgColor}" style="position: fixed; top: 80px; right: 20px; z-index: 9999; 
+                min-width: 300px; padding: 15px; border-radius: 5px; color: white; box-shadow: 0 4px 6px rgba(0,0,0,0.3);">
+                <div style="display: flex; align-items: center;">
+                    <i class="fas ${icon}" style="font-size: 20px; margin-right: 10px;"></i>
+                    <div>
+                        <strong style="display: block; margin-bottom: 5px;">${title}</strong>
+                        <span>${message}</span>
+                    </div>
+                </div>
+            </div>
+        `);
+        
+        $('body').append(toast);
+        
+        // Fade in
+        toast.fadeIn(300);
+        
+        // Auto remove after 3 seconds
+        setTimeout(() => {
+            toast.fadeOut(300, function() {
+                $(this).remove();
+            });
+        }, 3000);
+    }
+
     let currentEditingRow = null;
     let originalData = {};
     let currentTab = null;
