@@ -72,30 +72,33 @@ class DocumentTrackingController extends Controller
             $document = DocumentTracking::where('case_id', $request->case_id)->first();
 
             if ($document) {
-                // Save current state to history
-                DocumentTrackingHistory::create([
-                    'document_tracking_id' => $document->id,
-                    'from_role' => $document->current_role,
-                    'to_role' => $request->target_role,
-                    'transferred_by_user_id' => $user->id,
-                    'transferred_at' => now(),
-                    'received_by_user_id' => $document->received_by_user_id,
-                    'received_at' => $document->received_at,
-                    'notes' => $request->transfer_notes
-                ]);
+                // ONLY save to history if the document was previously received
+                // This preserves the complete chain of custody
+                if ($document->status === 'Received' && $document->received_by_user_id) {
+                    DocumentTrackingHistory::create([
+                        'document_tracking_id' => $document->id,
+                        'from_role' => $document->current_role,
+                        'to_role' => $document->current_role, // Same role (completed cycle)
+                        'transferred_by_user_id' => $document->transferred_by_user_id,
+                        'transferred_at' => $document->transferred_at,
+                        'received_by_user_id' => $document->received_by_user_id,
+                        'received_at' => $document->received_at,
+                        'notes' => $document->transfer_notes
+                    ]);
+                }
 
-                // Update document
+                // Update document with NEW transfer (no receiver yet)
                 $document->update([
                     'current_role' => $request->target_role,
                     'status' => 'Pending Receipt',
                     'transferred_by_user_id' => $user->id,
                     'transferred_at' => now(),
-                    'received_by_user_id' => null,
-                    'received_at' => null,
+                    'received_by_user_id' => null, // Clear receiver
+                    'received_at' => null, // Clear received time
                     'transfer_notes' => $request->transfer_notes
                 ]);
             } else {
-                // Create new document tracking
+                // Create new document tracking (first transfer)
                 $document = DocumentTracking::create([
                     'case_id' => $request->case_id,
                     'current_role' => $request->target_role,
