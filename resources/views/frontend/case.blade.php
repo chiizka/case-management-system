@@ -125,7 +125,7 @@
 <div id="content">
     <!-- Begin Page Content -->
     <div class="container-fluid">
-        <!-- Tabs Navigation -->
+        {{-- <!-- Tabs Navigation -->
         <ul class="nav nav-tabs" id="dataTableTabs" role="tablist">
             <li class="nav-item">
                 <a class="nav-link active" id="tab0-tab" data-toggle="tab" href="#tab0" role="tab" aria-controls="tab0" aria-selected="true">
@@ -188,7 +188,7 @@
                 </a>
             </li>
             @endif
-        </ul>
+        </ul> --}}
 
         <!-- Tabs Content -->
         <div class="tab-content mt-3" id="dataTableTabsContent">

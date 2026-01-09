@@ -111,11 +111,16 @@
         padding: 0.5rem 1rem;
         border-bottom: 2px solid transparent;
         font-size: 0.875rem;
+        transition: all 0.2s ease;
+    }
+    .tab:hover {
+        background-color: #f3f4f6;
     }
     .tab.active {
         border-bottom: 2px solid #1e40af;
         color: #1e40af;
         font-weight: bold;
+        background-color: #eff6ff;
     }
     .tab-content {
         display: none;
@@ -128,8 +133,21 @@
         border-bottom: 1px solid #e5e7eb;
     }
     .detail-row {
-        padding: 0.5rem 0;
+        padding: 0.75rem 0;
         border-bottom: 1px solid #f3f4f6;
+        display: grid;
+        grid-template-columns: 250px 1fr;
+        gap: 1rem;
+    }
+    .detail-row:last-child {
+        border-bottom: none;
+    }
+    .detail-label {
+        font-weight: 600;
+        color: #374151;
+    }
+    .detail-value {
+        color: #6b7280;
     }
 
     /* Document tracking timeline styles */
@@ -247,166 +265,451 @@
                         </div>
                     </div>
                     <div class="accordion-content p-4 bg-gray-50">
-                        <!-- Tab Navigation -->
+                        <!-- Main Tab Navigation -->
                         <div class="flex border-b mb-4" style="flex-wrap: wrap;">
-                            <div class="tab active" data-tab="stage1-{{ $case->id }}">1: Inspection</div>
-                            <div class="tab" data-tab="stage2-{{ $case->id }}">2: Docketing</div>
-                            <div class="tab" data-tab="stage3-{{ $case->id }}">3: Hearing</div>
-                            <div class="tab" data-tab="stage4-{{ $case->id }}">4: Review & Drafting</div>
-                            <div class="tab" data-tab="stage5-{{ $case->id }}">5: Orders & Disposition</div>
-                            <div class="tab" data-tab="stage6-{{ $case->id }}">6: Compliance & Awards</div>
-                            <div class="tab" data-tab="stage7-{{ $case->id }}">7: Appeals & Resolution</div>
-                            <div class="tab" data-tab="stage8-{{ $case->id }}">📍 Document History</div>
+                            <div class="tab active" data-tab="overview-{{ $case->id }}">📋 Overview</div>
+                            <div class="tab" data-tab="inspection-{{ $case->id }}">🔍 Inspection</div>
+                            <div class="tab" data-tab="docketing-{{ $case->id }}">📝 Docketing</div>
+                            <div class="tab" data-tab="hearing-{{ $case->id }}">⚖️ Hearing</div>
+                            <div class="tab" data-tab="review-{{ $case->id }}">✍️ Review & Drafting</div>
+                            <div class="tab" data-tab="orders-{{ $case->id }}">📑 Orders</div>
+                            <div class="tab" data-tab="compliance-{{ $case->id }}">💰 Compliance</div>
+                            <div class="tab" data-tab="appeals-{{ $case->id }}">📢 Appeals</div>
+                            <div class="tab" data-tab="additional-{{ $case->id }}">📌 Additional</div>
+                            <div class="tab" data-tab="doc-history-{{ $case->id }}">📍 Document History</div>
                         </div>
                         
-                        <!-- Tab Content -->
-                        @php
-                            $inspection = App\Models\Inspection::where('case_id', $case->id)->first();
-                            $docketing = App\Models\Docketing::where('case_id', $case->id)->first();
-                            $hearing = App\Models\HearingProcess::where('case_id', $case->id)->first();
-                            $reviewAndDrafting = App\Models\ReviewAndDrafting::where('case_id', $case->id)->first();
-                            $ordersAndDisposition = App\Models\OrderAndDisposition::where('case_id', $case->id)->first();
-                            $complianceAndAwards = App\Models\ComplianceAndAward::where('case_id', $case->id)->first();
-                            $appealsAndResolution = App\Models\AppealsAndResolution::where('case_id', $case->id)->first();
-                        @endphp
-                        
-                        <!-- Stage 1: Inspection -->
-                        <div id="stage1-{{ $case->id }}" class="tab-content active">
-                            <h3 class="font-bold mb-3">Stage 1: Inspection Details</h3>
-                            @if($inspection)
-                                <div class="detail-row"><strong>PO Office:</strong> {{ $inspection->po_office ?? '-' }}</div>
-                                <div class="detail-row"><strong>Inspector Name:</strong> {{ $inspection->inspector_name ?? '-' }}</div>
-                                <div class="detail-row"><strong>Inspector Authority No:</strong> {{ $inspection->inspector_authority_no ?? '-' }}</div>
-                                <div class="detail-row"><strong>Date of Inspection:</strong> {{ $inspection->date_of_inspection ? \Carbon\Carbon::parse($inspection->date_of_inspection)->format('Y-m-d') : '-' }}</div>
-                                <div class="detail-row"><strong>Date of NR:</strong> {{ $inspection->date_of_nr ? \Carbon\Carbon::parse($inspection->date_of_nr)->format('Y-m-d') : '-' }}</div>
-                                <div class="detail-row"><strong>Lapse 20 Day Period:</strong> {{ $inspection->lapse_20_day_period ? \Carbon\Carbon::parse($inspection->lapse_20_day_period)->format('Y-m-d') : '-' }}</div>
-                                <div class="detail-row"><strong>TWG ALI:</strong> {{ $inspection->twg_ali ?? '-' }}</div>
-                            @else
-                                <p>No inspection data available.</p>
-                            @endif
-                        </div>
-                        
-                        <!-- Stage 2: Docketing -->
-                        <div id="stage2-{{ $case->id }}" class="tab-content">
-                            <h3 class="font-bold mb-3">Stage 2: Docketing Details</h3>
-                            @if($docketing)
-                                <div class="detail-row"><strong>PCT for Docketing:</strong> {{ $docketing->pct_for_docketing ?? '-' }}</div>
-                                <div class="detail-row"><strong>Date Scheduled/Docketed:</strong> {{ $docketing->date_scheduled_docketed ? \Carbon\Carbon::parse($docketing->date_scheduled_docketed)->format('Y-m-d') : '-' }}</div>
-                                <div class="detail-row"><strong>Aging Docket:</strong> {{ $docketing->aging_docket ?? '-' }}</div>
-                                <div class="detail-row"><strong>Status Docket:</strong> {{ $docketing->status_docket ?? '-' }}</div>
-                                <div class="detail-row"><strong>Hearing Officer MIS:</strong> {{ $docketing->hearing_officer_mis ?? '-' }}</div>
-                            @else
-                                <p>No docketing data available.</p>
-                            @endif
-                        </div>
-                        
-                        <!-- Stage 3: Hearing Process -->
-                        <div id="stage3-{{ $case->id }}" class="tab-content">
-                            <h3 class="font-bold mb-3">Stage 3: Hearing Process Details</h3>
-                            @if($hearing)
-                                <div class="detail-row"><strong>Date 1st MC Actual:</strong> {{ $hearing->date_1st_mc_actual ? \Carbon\Carbon::parse($hearing->date_1st_mc_actual)->format('Y-m-d') : '-' }}</div>
-                                <div class="detail-row"><strong>First MC PCT:</strong> {{ $hearing->first_mc_pct ?? '-' }}</div>
-                                <div class="detail-row"><strong>Status 1st MC:</strong> {{ $hearing->status_1st_mc ?? '-' }}</div>
-                                <div class="detail-row"><strong>Date 2nd/Last MC:</strong> {{ $hearing->date_2nd_last_mc ? \Carbon\Carbon::parse($hearing->date_2nd_last_mc)->format('Y-m-d') : '-' }}</div>
-                                <div class="detail-row"><strong>Second/Last MC PCT:</strong> {{ $hearing->second_last_mc_pct ?? '-' }}</div>
-                                <div class="detail-row"><strong>Status 2nd MC:</strong> {{ $hearing->status_2nd_mc ?? '-' }}</div>
-                                <div class="detail-row"><strong>Case Folder Forwarded to RO:</strong> {{ $hearing->case_folder_forwarded_to_ro ?? '-' }}</div>
-                                <div class="detail-row"><strong>Complete Case Folder:</strong> {{ $hearing->complete_case_folder ?? '-' }}</div>
-                            @else
-                                <p>No hearing process data available.</p>
-                            @endif
-                        </div>
-                        
-                        <!-- Stage 4: Review & Drafting -->
-                        <div id="stage4-{{ $case->id }}" class="tab-content">
-                            <h3 class="font-bold mb-3">Stage 4: Review & Drafting Details</h3>
-                            @if($reviewAndDrafting)
-                                <div class="detail-row"><strong>Draft Order Type:</strong> {{ $reviewAndDrafting->draft_order_type ?? '-' }}</div>
-                                <div class="detail-row"><strong>Applicable Draft Order:</strong> {{ $reviewAndDrafting->applicable_draft_order ?? '-' }}</div>
-                                <div class="detail-row"><strong>PO PCT:</strong> {{ $reviewAndDrafting->po_pct ?? '-' }}</div>
-                                <div class="detail-row"><strong>Aging PO PCT:</strong> {{ $reviewAndDrafting->aging_po_pct ?? '-' }}</div>
-                                <div class="detail-row"><strong>Status PO PCT:</strong> {{ $reviewAndDrafting->status_po_pct ?? '-' }}</div>
-                                <div class="detail-row"><strong>Date Received from PO:</strong> {{ $reviewAndDrafting->date_received_from_po ? \Carbon\Carbon::parse($reviewAndDrafting->date_received_from_po)->format('Y-m-d') : '-' }}</div>
-                                <div class="detail-row"><strong>Reviewer/Drafter:</strong> {{ $reviewAndDrafting->reviewer_drafter ?? '-' }}</div>
-                                <div class="detail-row"><strong>Date Received by Reviewer:</strong> {{ $reviewAndDrafting->date_received_by_reviewer ? \Carbon\Carbon::parse($reviewAndDrafting->date_received_by_reviewer)->format('Y-m-d') : '-' }}</div>
-                                <div class="detail-row"><strong>Date Returned from Drafter:</strong> {{ $reviewAndDrafting->date_returned_from_drafter ? \Carbon\Carbon::parse($reviewAndDrafting->date_returned_from_drafter)->format('Y-m-d') : '-' }}</div>
-                                <div class="detail-row"><strong>Aging 10 Days TSSD:</strong> {{ $reviewAndDrafting->aging_10_days_tssd ?? '-' }}</div>
-                                <div class="detail-row"><strong>Status Reviewer/Drafter:</strong> {{ $reviewAndDrafting->status_reviewer_drafter ?? '-' }}</div>
-                                <div class="detail-row"><strong>Draft Order TSSD Reviewer:</strong> {{ $reviewAndDrafting->draft_order_tssd_reviewer ?? '-' }}</div>
-                            @else
-                                <p>No review & drafting data available.</p>
-                            @endif
-                        </div>
-                        
-                        <!-- Stage 5: Orders & Disposition -->
-                        <div id="stage5-{{ $case->id }}" class="tab-content">
-                            <h3 class="font-bold mb-3">Stage 5: Orders & Disposition Details</h3>
-                            @if($ordersAndDisposition)
-                                <div class="detail-row"><strong>Aging 2 Days Finalization:</strong> {{ $ordersAndDisposition->aging_2_days_finalization ?? '-' }}</div>
-                                <div class="detail-row"><strong>Status Finalization:</strong> {{ $ordersAndDisposition->status_finalization ?? '-' }}</div>
-                                <div class="detail-row"><strong>PCT 96 Days:</strong> {{ $ordersAndDisposition->pct_96_days ?? '-' }}</div>
-                                <div class="detail-row"><strong>Date Signed MIS:</strong> {{ $ordersAndDisposition->date_signed_mis ? \Carbon\Carbon::parse($ordersAndDisposition->date_signed_mis)->format('Y-m-d') : '-' }}</div>
-                                <div class="detail-row"><strong>Status PCT:</strong> {{ $ordersAndDisposition->status_pct ?? '-' }}</div>
-                                <div class="detail-row"><strong>Reference Date PCT:</strong> {{ $ordersAndDisposition->reference_date_pct ? \Carbon\Carbon::parse($ordersAndDisposition->reference_date_pct)->format('Y-m-d') : '-' }}</div>
-                                <div class="detail-row"><strong>Aging PCT:</strong> {{ $ordersAndDisposition->aging_pct ?? '-' }}</div>
-                                <div class="detail-row"><strong>Disposition MIS:</strong> {{ $ordersAndDisposition->disposition_mis ?? '-' }}</div>
-                                <div class="detail-row"><strong>Disposition Actual:</strong> {{ $ordersAndDisposition->disposition_actual ?? '-' }}</div>
-                                <div class="detail-row"><strong>Findings to Comply:</strong> {{ $ordersAndDisposition->findings_to_comply ?? '-' }}</div>
-                                <div class="detail-row"><strong>Date of Order Actual:</strong> {{ $ordersAndDisposition->date_of_order_actual ? \Carbon\Carbon::parse($ordersAndDisposition->date_of_order_actual)->format('Y-m-d') : '-' }}</div>
-                                <div class="detail-row"><strong>Released Date Actual:</strong> {{ $ordersAndDisposition->released_date_actual ? \Carbon\Carbon::parse($ordersAndDisposition->released_date_actual)->format('Y-m-d') : '-' }}</div>
-                            @else
-                                <p>No orders & disposition data available.</p>
-                            @endif
-                        </div>
-                        
-                        <!-- Stage 6: Compliance & Awards -->
-                        <div id="stage6-{{ $case->id }}" class="tab-content">
-                            <h3 class="font-bold mb-3">Stage 6: Compliance & Awards Details</h3>
-                            @if($complianceAndAwards)
-                                <div class="detail-row"><strong>Compliance Order Monetary Award:</strong> {{ $complianceAndAwards->compliance_order_monetary_award ? number_format($complianceAndAwards->compliance_order_monetary_award, 2) : '-' }}</div>
-                                <div class="detail-row"><strong>OSH Penalty:</strong> {{ $complianceAndAwards->osh_penalty ? number_format($complianceAndAwards->osh_penalty, 2) : '-' }}</div>
-                                <div class="detail-row"><strong>Affected Workers (Male):</strong> {{ $complianceAndAwards->affected_male ?? '-' }}</div>
-                                <div class="detail-row"><strong>Affected Workers (Female):</strong> {{ $complianceAndAwards->affected_female ?? '-' }}</div>
-                                <div class="detail-row"><strong>First Order Dismissal CNPC:</strong> {{ $complianceAndAwards->first_order_dismissal_cnpc ? 'Yes' : 'No' }}</div>
-                                <div class="detail-row"><strong>Tavable Less Than 10 Workers:</strong> {{ $complianceAndAwards->tavable_less_than_10_workers ? 'Yes' : 'No' }}</div>
-                                <div class="detail-row"><strong>With Deposited Monetary Claims:</strong> {{ $complianceAndAwards->with_deposited_monetary_claims ? 'Yes' : 'No' }}</div>
-                                <div class="detail-row"><strong>Amount Deposited:</strong> {{ $complianceAndAwards->amount_deposited ? number_format($complianceAndAwards->amount_deposited, 2) : '-' }}</div>
-                                <div class="detail-row"><strong>With Order Payment Notice:</strong> {{ $complianceAndAwards->with_order_payment_notice ? 'Yes' : 'No' }}</div>
-                                <div class="detail-row"><strong>Status All Employees Received:</strong> {{ $complianceAndAwards->status_all_employees_received ?? '-' }}</div>
-                                <div class="detail-row"><strong>Status Case After First Order:</strong> {{ $complianceAndAwards->status_case_after_first_order ?? '-' }}</div>
-                                <div class="detail-row"><strong>Date Notice Finality Dismissed:</strong> {{ $complianceAndAwards->date_notice_finality_dismissed ? \Carbon\Carbon::parse($complianceAndAwards->date_notice_finality_dismissed)->format('Y-m-d') : '-' }}</div>
-                                <div class="detail-row"><strong>Released Date Notice Finality:</strong> {{ $complianceAndAwards->released_date_notice_finality ? \Carbon\Carbon::parse($complianceAndAwards->released_date_notice_finality)->format('Y-m-d') : '-' }}</div>
-                                <div class="detail-row"><strong>Updated/Ticked in MIS:</strong> {{ $complianceAndAwards->updated_ticked_in_mis ? 'Yes' : 'No' }}</div>
-                                <div class="detail-row"><strong>Second Order Drafter:</strong> {{ $complianceAndAwards->second_order_drafter ?? '-' }}</div>
-                                <div class="detail-row"><strong>Date Received by Drafter CT CNPC:</strong> {{ $complianceAndAwards->date_received_by_drafter_ct_cnpc ? \Carbon\Carbon::parse($complianceAndAwards->date_received_by_drafter_ct_cnpc)->format('Y-m-d') : '-' }}</div>
-                            @else
-                                <p>No compliance & awards data available.</p>
-                            @endif
-                        </div>
-                        
-                        <!-- Stage 7: Appeals & Resolution -->
-                        <div id="stage7-{{ $case->id }}" class="tab-content">
-                            <h3 class="font-bold mb-3">Stage 7: Appeals & Resolution Details</h3>
-                            @if($appealsAndResolution)
-                                <div class="detail-row"><strong>Date Returned Case Mgmt:</strong> {{ $appealsAndResolution->date_returned_case_mgmt ? \Carbon\Carbon::parse($appealsAndResolution->date_returned_case_mgmt)->format('Y-m-d') : '-' }}</div>
-                                <div class="detail-row"><strong>Review CT CNPC:</strong> {{ $appealsAndResolution->review_ct_cnpc ?? '-' }}</div>
-                                <div class="detail-row"><strong>Date Received Drafter Finalization (2nd):</strong> {{ $appealsAndResolution->date_received_drafter_finalization_2nd ? \Carbon\Carbon::parse($appealsAndResolution->date_received_drafter_finalization_2nd)->format('Y-m-d') : '-' }}</div>
-                                <div class="detail-row"><strong>Date Returned Case Mgmt Signature (2nd):</strong> {{ $appealsAndResolution->date_returned_case_mgmt_signature_2nd ? \Carbon\Carbon::parse($appealsAndResolution->date_returned_case_mgmt_signature_2nd)->format('Y-m-d') : '-' }}</div>
-                                <div class="detail-row"><strong>Date Order (2nd CNPC):</strong> {{ $appealsAndResolution->date_order_2nd_cnpc ? \Carbon\Carbon::parse($appealsAndResolution->date_order_2nd_cnpc)->format('Y-m-d') : '-' }}</div>
-                                <div class="detail-row"><strong>Released Date (2nd CNPC):</strong> {{ $appealsAndResolution->released_date_2nd_cnpc ? \Carbon\Carbon::parse($appealsAndResolution->released_date_2nd_cnpc)->format('Y-m-d') : '-' }}</div>
-                                <div class="detail-row"><strong>Date Forwarded MALSU:</strong> {{ $appealsAndResolution->date_forwarded_malsu ? \Carbon\Carbon::parse($appealsAndResolution->date_forwarded_malsu)->format('Y-m-d') : '-' }}</div>
-                                <div class="detail-row"><strong>Motion Reconsideration Date:</strong> {{ $appealsAndResolution->motion_reconsideration_date ? \Carbon\Carbon::parse($appealsAndResolution->motion_reconsideration_date)->format('Y-m-d') : '-' }}</div>
-                                <div class="detail-row"><strong>Date Received MALSU:</strong> {{ $appealsAndResolution->date_received_malsu ? \Carbon\Carbon::parse($appealsAndResolution->date_received_malsu)->format('Y-m-d') : '-' }}</div>
-                                <div class="detail-row"><strong>Date Resolution MR:</strong> {{ $appealsAndResolution->date_resolution_mr ? \Carbon\Carbon::parse($appealsAndResolution->date_resolution_mr)->format('Y-m-d') : '-' }}</div>
-                                <div class="detail-row"><strong>Released Date Resolution MR:</strong> {{ $appealsAndResolution->released_date_resolution_mr ? \Carbon\Carbon::parse($appealsAndResolution->released_date_resolution_mr)->format('Y-m-d') : '-' }}</div>
-                                <div class="detail-row"><strong>Date Appeal Received Records:</strong> {{ $appealsAndResolution->date_appeal_received_records ? \Carbon\Carbon::parse($appealsAndResolution->date_appeal_received_records)->format('Y-m-d') : '-' }}</div>
-                            @else
-                                <p>No appeals & resolution data available.</p>
-                            @endif
+                        <!-- Overview Tab -->
+                        <div id="overview-{{ $case->id }}" class="tab-content active">
+                            <h3 class="font-bold mb-3" style="font-size: 1.25rem; color: #1f2937;">Core Information</h3>
+                            
+                            <div class="detail-row">
+                                <span class="detail-label">No.:</span>
+                                <span class="detail-value">{{ $case->no ?? '-' }}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Inspection ID:</span>
+                                <span class="detail-value">{{ $case->inspection_id ?? '-' }}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Case No.:</span>
+                                <span class="detail-value">{{ $case->case_no ?? '-' }}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Establishment Name:</span>
+                                <span class="detail-value">{{ $case->establishment_name ?? '-' }}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Establishment Address:</span>
+                                <span class="detail-value">{{ $case->establishment_address ?? '-' }}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Mode:</span>
+                                <span class="detail-value">{{ $case->mode ?? '-' }}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">PO Office:</span>
+                                <span class="detail-value">{{ $case->po_office ?? '-' }}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Current Stage:</span>
+                                <span class="detail-value">{{ $case->current_stage ?? '-' }}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Overall Status:</span>
+                                <span class="detail-value text-green-600" style="font-weight: 600;">{{ $case->overall_status ?? '-' }}</span>
+                            </div>
                         </div>
 
-                        <!-- NEW: Stage 8: Document Tracking History -->
-                        <div id="stage8-{{ $case->id }}" class="tab-content">
+                        <!-- Inspection Tab -->
+                        <div id="inspection-{{ $case->id }}" class="tab-content">
+                            <h3 class="font-bold mb-3" style="font-size: 1.25rem; color: #1f2937;">Inspection Information</h3>
+                            
+                            <div class="detail-row">
+                                <span class="detail-label">Date of Inspection:</span>
+                                <span class="detail-value">{{ $case->date_of_inspection ? \Carbon\Carbon::parse($case->date_of_inspection)->format('Y-m-d') : '-' }}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Inspector Name:</span>
+                                <span class="detail-value">{{ $case->inspector_name ?? '-' }}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Inspector Authority No.:</span>
+                                <span class="detail-value">{{ $case->inspector_authority_no ?? '-' }}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Date of NR:</span>
+                                <span class="detail-value">{{ $case->date_of_nr ? \Carbon\Carbon::parse($case->date_of_nr)->format('Y-m-d') : '-' }}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Lapse 20 Day Period:</span>
+                                <span class="detail-value">{{ $case->lapse_20_day_period ?? '-' }}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">TWG ALI:</span>
+                                <span class="detail-value">{{ $case->twg_ali ?? '-' }}</span>
+                            </div>
+                        </div>
+
+                        <!-- Docketing Tab -->
+                        <div id="docketing-{{ $case->id }}" class="tab-content">
+                            <h3 class="font-bold mb-3" style="font-size: 1.25rem; color: #1f2937;">Docketing Information</h3>
+                            
+                            <div class="detail-row">
+                                <span class="detail-label">PCT for Docketing:</span>
+                                <span class="detail-value">{{ $case->pct_for_docketing ?? '-' }}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Date Scheduled/Docketed:</span>
+                                <span class="detail-value">{{ $case->date_scheduled_docketed ? \Carbon\Carbon::parse($case->date_scheduled_docketed)->format('Y-m-d') : '-' }}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Aging Docket:</span>
+                                <span class="detail-value">{{ $case->aging_docket ?? '-' }}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Status Docket:</span>
+                                <span class="detail-value">{{ $case->status_docket ?? '-' }}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Hearing Officer (MIS):</span>
+                                <span class="detail-value">{{ $case->hearing_officer_mis ?? '-' }}</span>
+                            </div>
+                        </div>
+
+                        <!-- Hearing Tab -->
+                        <div id="hearing-{{ $case->id }}" class="tab-content">
+                            <h3 class="font-bold mb-3" style="font-size: 1.25rem; color: #1f2937;">Hearing Process Information</h3>
+                            
+                            <div class="detail-row">
+                                <span class="detail-label">Date 1st MC (Actual):</span>
+                                <span class="detail-value">{{ $case->date_1st_mc_actual ? \Carbon\Carbon::parse($case->date_1st_mc_actual)->format('Y-m-d') : '-' }}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">First MC PCT:</span>
+                                <span class="detail-value">{{ $case->first_mc_pct ?? '-' }}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Status 1st MC:</span>
+                                <span class="detail-value">{{ $case->status_1st_mc ?? '-' }}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Date 2nd/Last MC:</span>
+                                <span class="detail-value">{{ $case->date_2nd_last_mc ? \Carbon\Carbon::parse($case->date_2nd_last_mc)->format('Y-m-d') : '-' }}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Second/Last MC PCT:</span>
+                                <span class="detail-value">{{ $case->second_last_mc_pct ?? '-' }}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Status 2nd MC:</span>
+                                <span class="detail-value">{{ $case->status_2nd_mc ?? '-' }}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Case Folder Forwarded to RO:</span>
+                                <span class="detail-value">{{ $case->case_folder_forwarded_to_ro ?? '-' }}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Draft Order from PO Type:</span>
+                                <span class="detail-value">{{ $case->draft_order_from_po_type ?? '-' }}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Applicable Draft Order:</span>
+                                <span class="detail-value">{{ $case->applicable_draft_order ?? '-' }}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Complete Case Folder:</span>
+                                <span class="detail-value">{{ $case->complete_case_folder ?? '-' }}</span>
+                            </div>
+                        </div>
+
+                        <!-- Review & Drafting Tab -->
+                        <div id="review-{{ $case->id }}" class="tab-content">
+                            <h3 class="font-bold mb-3" style="font-size: 1.25rem; color: #1f2937;">Review & Drafting Information</h3>
+                            
+                            <div class="detail-row">
+                                <span class="detail-label">PO PCT:</span>
+                                <span class="detail-value">{{ $case->po_pct ?? '-' }}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Aging PO PCT:</span>
+                                <span class="detail-value">{{ $case->aging_po_pct ?? '-' }}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Status PO PCT:</span>
+                                <span class="detail-value">{{ $case->status_po_pct ?? '-' }}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Date Received from PO:</span>
+                                <span class="detail-value">{{ $case->date_received_from_po ? \Carbon\Carbon::parse($case->date_received_from_po)->format('Y-m-d') : '-' }}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Reviewer/Drafter:</span>
+                                <span class="detail-value">{{ $case->reviewer_drafter ?? '-' }}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Date Received by Reviewer:</span>
+                                <span class="detail-value">{{ $case->date_received_by_reviewer ? \Carbon\Carbon::parse($case->date_received_by_reviewer)->format('Y-m-d') : '-' }}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Date Returned from Drafter:</span>
+                                <span class="detail-value">{{ $case->date_returned_from_drafter ? \Carbon\Carbon::parse($case->date_returned_from_drafter)->format('Y-m-d') : '-' }}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Aging 10 Days TSSD:</span>
+                                <span class="detail-value">{{ $case->aging_10_days_tssd ?? '-' }}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Status Reviewer/Drafter:</span>
+                                <span class="detail-value">{{ $case->status_reviewer_drafter ?? '-' }}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Draft Order TSSD Reviewer:</span>
+                                <span class="detail-value">{{ $case->draft_order_tssd_reviewer ?? '-' }}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Final Review Date Received:</span>
+                                <span class="detail-value">{{ $case->final_review_date_received ? \Carbon\Carbon::parse($case->final_review_date_received)->format('Y-m-d') : '-' }}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Date Received Drafter Finalization:</span>
+                                <span class="detail-value">{{ $case->date_received_drafter_finalization ? \Carbon\Carbon::parse($case->date_received_drafter_finalization)->format('Y-m-d') : '-' }}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Date Returned Case Mgmt Signature:</span>
+                                <span class="detail-value">{{ $case->date_returned_case_mgmt_signature ? \Carbon\Carbon::parse($case->date_returned_case_mgmt_signature)->format('Y-m-d') : '-' }}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Aging 2 Days Finalization:</span>
+                                <span class="detail-value">{{ $case->aging_2_days_finalization ?? '-' }}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Status Finalization:</span>
+                                <span class="detail-value">{{ $case->status_finalization ?? '-' }}</span>
+                            </div>
+                        </div>
+
+                        <!-- Orders Tab -->
+                        <div id="orders-{{ $case->id }}" class="tab-content">
+                            <h3 class="font-bold mb-3" style="font-size: 1.25rem; color: #1f2937;">Orders & Disposition Information</h3>
+                            
+                            <div class="detail-row">
+                                <span class="detail-label">PCT 96 Days:</span>
+                                <span class="detail-value">{{ $case->pct_96_days ?? '-' }}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Date Signed (MIS):</span>
+                                <span class="detail-value">{{ $case->date_signed_mis ? \Carbon\Carbon::parse($case->date_signed_mis)->format('Y-m-d') : '-' }}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Status PCT:</span>
+                                <span class="detail-value">{{ $case->status_pct ?? '-' }}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Reference Date PCT:</span>
+                                <span class="detail-value">{{ $case->reference_date_pct ? \Carbon\Carbon::parse($case->reference_date_pct)->format('Y-m-d') : '-' }}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Aging PCT:</span>
+                                <span class="detail-value">{{ $case->aging_pct ?? '-' }}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Disposition (MIS):</span>
+                                <span class="detail-value">{{ $case->disposition_mis ?? '-' }}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Disposition (Actual):</span>
+                                <span class="detail-value">{{ $case->disposition_actual ?? '-' }}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Findings to Comply:</span>
+                                <span class="detail-value">{{ $case->findings_to_comply ?? '-' }}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Date of Order (Actual):</span>
+                                <span class="detail-value">{{ $case->date_of_order_actual ? \Carbon\Carbon::parse($case->date_of_order_actual)->format('Y-m-d') : '-' }}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Released Date (Actual):</span>
+                                <span class="detail-value">{{ $case->released_date_actual ? \Carbon\Carbon::parse($case->released_date_actual)->format('Y-m-d') : '-' }}</span>
+                            </div>
+                        </div>
+
+                        <!-- Compliance Tab -->
+                        <div id="compliance-{{ $case->id }}" class="tab-content">
+                            <h3 class="font-bold mb-3" style="font-size: 1.25rem; color: #1f2937;">Compliance & Awards Information</h3>
+                            
+                            <div class="detail-row">
+                                <span class="detail-label">Compliance Order Monetary Award:</span>
+                                <span class="detail-value">{{ $case->compliance_order_monetary_award ? '₱' . number_format($case->compliance_order_monetary_award, 2) : '-' }}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">OSH Penalty:</span>
+                                <span class="detail-value">{{ $case->osh_penalty ? '₱' . number_format($case->osh_penalty, 2) : '-' }}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Affected Workers (Male):</span>
+                                <span class="detail-value">{{ $case->affected_male ?? '-' }}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Affected Workers (Female):</span>
+                                <span class="detail-value">{{ $case->affected_female ?? '-' }}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">First Order Dismissal CNPC:</span>
+                                <span class="detail-value">{{ $case->first_order_dismissal_cnpc ? 'Yes' : 'No' }}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Tavable Less Than 10 Workers:</span>
+                                <span class="detail-value">{{ $case->tavable_less_than_10_workers ? 'Yes' : 'No' }}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Scanned Order First:</span>
+                                <span class="detail-value">{{ $case->scanned_order_first ?? '-' }}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">With Deposited Monetary Claims:</span>
+                                <span class="detail-value">{{ $case->with_deposited_monetary_claims ? 'Yes' : 'No' }}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Amount Deposited:</span>
+                                <span class="detail-value">{{ $case->amount_deposited ? '₱' . number_format($case->amount_deposited, 2) : '-' }}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">With Order Payment Notice:</span>
+                                <span class="detail-value">{{ $case->with_order_payment_notice ? 'Yes' : 'No' }}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Status All Employees Received:</span>
+                                <span class="detail-value">{{ $case->status_all_employees_received ?? '-' }}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Status Case After First Order:</span>
+                                <span class="detail-value">{{ $case->status_case_after_first_order ?? '-' }}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Date Notice Finality Dismissed:</span>
+                                <span class="detail-value">{{ $case->date_notice_finality_dismissed ? \Carbon\Carbon::parse($case->date_notice_finality_dismissed)->format('Y-m-d') : '-' }}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Released Date Notice Finality:</span>
+                                <span class="detail-value">{{ $case->released_date_notice_finality ? \Carbon\Carbon::parse($case->released_date_notice_finality)->format('Y-m-d') : '-' }}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Scanned Notice Finality:</span>
+                                <span class="detail-value">{{ $case->scanned_notice_finality ?? '-' }}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Updated/Ticked in MIS:</span>
+                                <span class="detail-value">{{ $case->updated_ticked_in_mis ? 'Yes' : 'No' }}</span>
+                            </div>
+                        </div>
+
+                        <!-- Appeals Tab -->
+                        <div id="appeals-{{ $case->id }}" class="tab-content">
+                            <h3 class="font-bold mb-3" style="font-size: 1.25rem; color: #1f2937;">Appeals & Resolution Information</h3>
+                            
+                            <h4 class="font-bold mb-2" style="font-size: 1.1rem; color: #374151; margin-top: 1.5rem;">2nd Order (CNPC)</h4>
+                            <div class="detail-row">
+                                <span class="detail-label">Second Order Drafter:</span>
+                                <span class="detail-value">{{ $case->second_order_drafter ?? '-' }}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Date Received by Drafter CT CNPC:</span>
+                                <span class="detail-value">{{ $case->date_received_by_drafter_ct_cnpc ? \Carbon\Carbon::parse($case->date_received_by_drafter_ct_cnpc)->format('Y-m-d') : '-' }}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Date Returned Case Mgmt CT CNPC:</span>
+                                <span class="detail-value">{{ $case->date_returned_case_mgmt_ct_cnpc ? \Carbon\Carbon::parse($case->date_returned_case_mgmt_ct_cnpc)->format('Y-m-d') : '-' }}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Review CT CNPC:</span>
+                                <span class="detail-value">{{ $case->review_ct_cnpc ?? '-' }}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Date Received Drafter Finalization (2nd):</span>
+                                <span class="detail-value">{{ $case->date_received_drafter_finalization_2nd ? \Carbon\Carbon::parse($case->date_received_drafter_finalization_2nd)->format('Y-m-d') : '-' }}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Date Returned Case Mgmt Signature (2nd):</span>
+                                <span class="detail-value">{{ $case->date_returned_case_mgmt_signature_2nd ? \Carbon\Carbon::parse($case->date_returned_case_mgmt_signature_2nd)->format('Y-m-d') : '-' }}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Date Order (2nd CNPC):</span>
+                                <span class="detail-value">{{ $case->date_order_2nd_cnpc ? \Carbon\Carbon::parse($case->date_order_2nd_cnpc)->format('Y-m-d') : '-' }}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Released Date (2nd CNPC):</span>
+                                <span class="detail-value">{{ $case->released_date_2nd_cnpc ? \Carbon\Carbon::parse($case->released_date_2nd_cnpc)->format('Y-m-d') : '-' }}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Scanned Order (2nd CNPC):</span>
+                                <span class="detail-value">{{ $case->scanned_order_2nd_cnpc ?? '-' }}</span>
+                            </div>
+
+                            <h4 class="font-bold mb-2" style="font-size: 1.1rem; color: #374151; margin-top: 1.5rem;">MALSU Process</h4>
+                            <div class="detail-row">
+                                <span class="detail-label">Date Forwarded MALSU:</span>
+                                <span class="detail-value">{{ $case->date_forwarded_malsu ? \Carbon\Carbon::parse($case->date_forwarded_malsu)->format('Y-m-d') : '-' }}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Scanned Indorsement MALSU:</span>
+                                <span class="detail-value">{{ $case->scanned_indorsement_malsu ?? '-' }}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Motion Reconsideration Date:</span>
+                                <span class="detail-value">{{ $case->motion_reconsideration_date ? \Carbon\Carbon::parse($case->motion_reconsideration_date)->format('Y-m-d') : '-' }}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Date Received MALSU:</span>
+                                <span class="detail-value">{{ $case->date_received_malsu ? \Carbon\Carbon::parse($case->date_received_malsu)->format('Y-m-d') : '-' }}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Date Resolution MR:</span>
+                                <span class="detail-value">{{ $case->date_resolution_mr ? \Carbon\Carbon::parse($case->date_resolution_mr)->format('Y-m-d') : '-' }}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Released Date Resolution MR:</span>
+                                <span class="detail-value">{{ $case->released_date_resolution_mr ? \Carbon\Carbon::parse($case->released_date_resolution_mr)->format('Y-m-d') : '-' }}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Scanned Resolution MR:</span>
+                                <span class="detail-value">{{ $case->scanned_resolution_mr ?? '-' }}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Date Appeal Received Records:</span>
+                                <span class="detail-value">{{ $case->date_appeal_received_records ? \Carbon\Carbon::parse($case->date_appeal_received_records)->format('Y-m-d') : '-' }}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Date Indorsed Office Secretary:</span>
+                                <span class="detail-value">{{ $case->date_indorsed_office_secretary ? \Carbon\Carbon::parse($case->date_indorsed_office_secretary)->format('Y-m-d') : '-' }}</span>
+                            </div>
+                        </div>
+
+                        <!-- Additional Tab -->
+                        <div id="additional-{{ $case->id }}" class="tab-content">
+                            <h3 class="font-bold mb-3" style="font-size: 1.25rem; color: #1f2937;">Additional Information</h3>
+                            
+                            <div class="detail-row">
+                                <span class="detail-label">Logbook Page Number:</span>
+                                <span class="detail-value">{{ $case->logbook_page_number ?? '-' }}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Remarks/Notes:</span>
+                                <span class="detail-value">{{ $case->remarks_notes ?? '-' }}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Created At:</span>
+                                <span class="detail-value">{{ $case->created_at ? \Carbon\Carbon::parse($case->created_at)->format('Y-m-d H:i:s') : '-' }}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Last Updated:</span>
+                                <span class="detail-value">{{ $case->updated_at ? \Carbon\Carbon::parse($case->updated_at)->format('Y-m-d H:i:s') : '-' }}</span>
+                            </div>
+                        </div>
+
+                        <!-- Document History Tab -->
+                        <div id="doc-history-{{ $case->id }}" class="tab-content">
                             <h3 class="font-bold mb-3">📍 Document Tracking History</h3>
                             <p class="text-muted mb-3">Complete journey of this case's physical documents through departments</p>
                             
@@ -452,8 +755,8 @@
             tabContent.classList.add('active');
 
             // If Document History tab is clicked, load the history
-            if (tabContentId.startsWith('stage8-')) {
-                const caseId = tabContentId.replace('stage8-', '');
+            if (tabContentId.startsWith('doc-history-')) {
+                const caseId = tabContentId.replace('doc-history-', '');
                 const historyContainer = tabContent.querySelector('.doc-history-container');
                 
                 // Only load if not already loaded
