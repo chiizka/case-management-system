@@ -931,7 +931,6 @@
                         <div class="card-body">
                             <small class="text-muted">
                                 <strong>Case:</strong> <span id="stageCaseInfo"></span><br>
-                                <strong>Current Stage:</strong> <span id="stageCurrentStage"></span><br>
                                 <strong>Next Stage:</strong> <span id="stageNextStage"></span>
                             </small>
                         </div>
@@ -1547,7 +1546,6 @@ $(document).on('click', '.move-to-next-stage-btn', function(e) {
     
     $('#stageProgressionMessage').html(message);
     $('#stageCaseInfo').text(`${caseNo} - ${establishment}`);
-    $('#stageCurrentStage').text(currentStage);
     $('#stageNextStage').text(nextStage);
     
     console.log('Showing stage progression modal');
@@ -1579,13 +1577,14 @@ $(document).on('click', '.complete-case-btn', function(e) {
     
     console.log('caseToProgress object:', caseToProgress);
     
-    const message = `<strong>Mark this case as complete and move to archived?</strong><br>
-                     <small class="text-warning">⚠️ This will complete the case from <strong>${currentStage}</strong> stage.</small>`;
+    const message = `<strong>Archive this case?</strong><br>
+                     <small class="text-muted">This case will be moved to archived cases.</small><br>
+                     <small class="text-warning">⚠️ Currently at Active Stages.</small>`;
     
     $('#stageProgressionMessage').html(message);
     $('#stageCaseInfo').text(`${caseNo} - ${establishment}`);
     $('#stageCurrentStage').text(currentStage);
-    $('#stageNextStage').text('Complete (Archive)');
+    $('#stageNextStage').html('<span class="badge badge-secondary"><i class="fas fa-archive mr-1"></i>Archived Cases</span>');
     
     console.log('Showing stage progression modal');
     $('#stageProgressionModal').modal('show');
@@ -1607,7 +1606,7 @@ $('#confirmStageBtn').off('click').on('click', function() {
     console.log('Is Force Complete:', isForceComplete);
     console.log('Button classes:', caseToProgress.button.attr('class'));
     
-    button.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Processing...');
+    button.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Archiving...');
     
     const ajaxData = {
         _token: '{{ csrf_token() }}',
@@ -1642,7 +1641,7 @@ $('#confirmStageBtn').off('click').on('click', function() {
                     location.href = location.href;
                 }, 1500);
             } else {
-                showAlert('error', response.message || 'Failed to progress case');
+                showAlert('error', response.message || 'Failed to archive case');
             }
         },
         error: function(xhr) {
@@ -1651,11 +1650,11 @@ $('#confirmStageBtn').off('click').on('click', function() {
             console.error('Response:', xhr.responseJSON);
             console.error('Full XHR:', xhr);
             
-            const message = xhr.responseJSON?.message || 'Failed to progress case';
+            const message = xhr.responseJSON?.message || 'Failed to archive case';
             showAlert('error', message);
         },
         complete: function() {
-            button.prop('disabled', false).html('<i class="fas fa-arrow-right mr-2"></i>Proceed');
+            button.prop('disabled', false).html('<i class="fas fa-check mr-2"></i>Confirm');
         }
     });
 });
@@ -2655,8 +2654,7 @@ $(document).ready(function() {
     }
 
     function saveData(recordId, data, row, config) {
-
-            console.log('=== SAVE DATA DEBUG ===');
+    console.log('=== SAVE DATA DEBUG ===');
     console.log('Record ID:', recordId);
     console.log('Data being sent:', data);
     console.log('Endpoint:', `${config.endpoint}${recordId}/inline-update`);
@@ -2709,79 +2707,79 @@ $(document).ready(function() {
         });
     }
 
-function updateRowDisplay(row, responseData, config) {
-    row.find('.editable-cell').each(function() {
-        const cell = $(this);
-        const field = cell.data('field');
-        let displayValue = null;
+    function updateRowDisplay(row, responseData, config) {
+        row.find('.editable-cell').each(function() {
+            const cell = $(this);
+            const field = cell.data('field');
+            let displayValue = null;
 
-        // Special handling for docketing table - check both responseData and case relationship
-        if (config.name === 'docketing' && responseData.case) {
-            // If the field is from the case, get it from there
-            if (['inspection_id', 'case_no', 'establishment_name', 'current_stage', 'overall_status'].includes(field)) {
-                if (field === 'current_stage') {
-                    displayValue = responseData.case[field];
-                    if (displayValue && displayValue.includes(': ')) {
-                        displayValue = displayValue.split(': ')[1];
-                    }
-                } else if (field === 'establishment_name') {
-                    displayValue = responseData.case[field];
-                    cell.attr('title', displayValue);
-                    if (displayValue && displayValue.length > 25) {
-                        displayValue = displayValue.substring(0, 25) + '...';
+            // Special handling for docketing table - check both responseData and case relationship
+            if (config.name === 'docketing' && responseData.case) {
+                // If the field is from the case, get it from there
+                if (['inspection_id', 'case_no', 'establishment_name', 'current_stage', 'overall_status'].includes(field)) {
+                    if (field === 'current_stage') {
+                        displayValue = responseData.case[field];
+                        if (displayValue && displayValue.includes(': ')) {
+                            displayValue = displayValue.split(': ')[1];
+                        }
+                    } else if (field === 'establishment_name') {
+                        displayValue = responseData.case[field];
+                        cell.attr('title', displayValue);
+                        if (displayValue && displayValue.length > 25) {
+                            displayValue = displayValue.substring(0, 25) + '...';
+                        }
+                    } else {
+                        displayValue = responseData.case[field];
                     }
                 } else {
-                    displayValue = responseData.case[field];
+                    // Otherwise get it from the docketing record
+                    displayValue = responseData[field];
                 }
             } else {
-                // Otherwise get it from the docketing record
+                // For other tables, just use responseData directly
                 displayValue = responseData[field];
             }
-        } else {
-            // For other tables, just use responseData directly
-            displayValue = responseData[field];
-        }
 
-        if (displayValue === null || displayValue === undefined || displayValue === '') {
-            displayValue = '-';
-        }
-        
-        if (field === 'current_stage' && displayValue.includes(': ')) {
-            displayValue = displayValue.split(': ')[1];
-        }
-        
-        const statusFields = ['status_docket', 'status_1st_mc', 'status_2nd_mc', 'status_po_pct', 'status_reviewer_drafter', 'status_finalization', 'status_pct', 'status_all_employees_received'];
-        if (statusFields.includes(field) && displayValue !== '-') {
-            let badgeClass = 'secondary';
-            if (displayValue === 'Completed' || displayValue === 'Approved' || displayValue === 'Yes') {
-                badgeClass = 'success';
-            } else if (displayValue === 'Ongoing' || displayValue === 'In Progress' || displayValue === 'Pending') {
-                badgeClass = 'warning';
-            } else if (displayValue === 'Overdue') {
-                badgeClass = 'danger';
-            } else if (displayValue === 'Returned') {
-                badgeClass = 'info';
+            if (displayValue === null || displayValue === undefined || displayValue === '') {
+                displayValue = '-';
             }
-            displayValue = `<span class="badge badge-${badgeClass}">${displayValue}</span>`;
-        }
-        
-        const ynFields = ['complete_case_folder', 'applicable_draft_order', 'first_order_dismissal_cnpc', 'tavable_less_than_10_workers', 'with_deposited_monetary_claims', 'with_order_payment_notice', 'updated_ticked_in_mis'];
-        if (ynFields.includes(field) && displayValue !== '-') {
-            const badgeClass = (displayValue === 'Y' || displayValue === '1') ? 'success' : 'warning';
-            const displayText = (displayValue === 'Y' || displayValue === '1') ? 'Yes' : 'No';
-            displayValue = `<span class="badge badge-${badgeClass}">${displayText}</span>`;
-        }
-        
-        if (field === 'establishment_name' && displayValue !== '-') {
-            if (displayValue.length > 25) {
-                displayValue = displayValue.substring(0, 25) + '...';
+            
+            if (field === 'current_stage' && displayValue.includes(': ')) {
+                displayValue = displayValue.split(': ')[1];
             }
-        }
-        
-        cell.html(displayValue);
-        cell.removeClass('edit-mode');
-    });
-}
+            
+            const statusFields = ['status_docket', 'status_1st_mc', 'status_2nd_mc', 'status_po_pct', 'status_reviewer_drafter', 'status_finalization', 'status_pct', 'status_all_employees_received'];
+            if (statusFields.includes(field) && displayValue !== '-') {
+                let badgeClass = 'secondary';
+                if (displayValue === 'Completed' || displayValue === 'Approved' || displayValue === 'Yes') {
+                    badgeClass = 'success';
+                } else if (displayValue === 'Ongoing' || displayValue === 'In Progress' || displayValue === 'Pending') {
+                    badgeClass = 'warning';
+                } else if (displayValue === 'Overdue') {
+                    badgeClass = 'danger';
+                } else if (displayValue === 'Returned') {
+                    badgeClass = 'info';
+                }
+                displayValue = `<span class="badge badge-${badgeClass}">${displayValue}</span>`;
+            }
+            
+            const ynFields = ['complete_case_folder', 'applicable_draft_order', 'first_order_dismissal_cnpc', 'tavable_less_than_10_workers', 'with_deposited_monetary_claims', 'with_order_payment_notice', 'updated_ticked_in_mis'];
+            if (ynFields.includes(field) && displayValue !== '-') {
+                const badgeClass = (displayValue === 'Y' || displayValue === '1') ? 'success' : 'warning';
+                const displayText = (displayValue === 'Y' || displayValue === '1') ? 'Yes' : 'No';
+                displayValue = `<span class="badge badge-${badgeClass}">${displayText}</span>`;
+            }
+            
+            if (field === 'establishment_name' && displayValue !== '-') {
+                if (displayValue.length > 25) {
+                    displayValue = displayValue.substring(0, 25) + '...';
+                }
+            }
+            
+            cell.html(displayValue);
+            cell.removeClass('edit-mode');
+        });
+    }
 
     function restoreButtons(saveBtn, cancelBtn, originalContent) {
         saveBtn.html(originalContent).prop('disabled', false);

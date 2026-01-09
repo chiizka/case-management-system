@@ -387,9 +387,6 @@ public function destroy($id)
         }
     }
 
-/**
- * Move case to next stage with modal confirmation
- */
     public function moveToNextStage(Request $request, $id)
     {
         DB::beginTransaction();
@@ -406,11 +403,12 @@ public function destroy($id)
             
             // Check if request explicitly wants to complete the case (from Complete button)
             $forceComplete = $request->input('force_complete', false);
-
-            
             
             if ($forceComplete) {
                 Log::info("Force completing case {$id}");
+                
+                // Store old stage for logging
+                $oldStage = $case->current_stage;
                 
                 // Complete case from any stage
                 $case->update([
@@ -424,6 +422,20 @@ public function destroy($id)
                     'new_status' => $case->overall_status,
                     'inspection_id' => $case->inspection_id
                 ]);
+                
+                // **ADD THIS: Log the archive action**
+                ActivityLogger::logAction(
+                    'ARCHIVE',
+                    'Case',
+                    $case->inspection_id,
+                    "Case id: {$case->inspection_id} - {$case->establishment_name} moved to Archived cases",
+                    [
+                        'establishment' => $case->establishment_name,
+                        'previous_stage' => $oldStage,
+                        'new_status' => 'Completed',
+                        'action_type' => 'Force Complete'
+                    ]
+                );
                 
                 DB::commit();
                 
@@ -462,6 +474,20 @@ public function destroy($id)
                     'overall_status' => 'Completed',
                 ]);
                 
+                // **ADD THIS: Log completion from final stage**
+                ActivityLogger::logAction(
+                    'ARCHIVE',
+                    'Case',
+                    $case->inspection_id,
+                    "{$case->inspection_id} - {$case->establishment_name} archived from {$currentStage}",
+                    [
+                        'establishment' => $case->establishment_name,
+                        'previous_stage' => $currentStage,
+                        'new_status' => 'Completed',
+                        'action_type' => 'Normal Progression'
+                    ]
+                );
+                
                 DB::commit();
                 return response()->json([
                     'success' => true,
@@ -474,6 +500,20 @@ public function destroy($id)
                 'current_stage' => $nextStage
             ]);
             
+            // **ADD THIS: Log normal stage progression**
+            ActivityLogger::logAction(
+                'UPDATE',
+                'Case',
+                $case->inspection_id,
+                "Stage progression: {$currentStage} → {$nextStage}",
+                [
+                    'establishment' => $case->establishment_name,
+                    'previous_stage' => $currentStage,
+                    'new_stage' => $nextStage,
+                    'action_type' => 'Stage Progression'
+                ]
+            );
+            
             DB::commit();
             return response()->json([
                 'success' => true,
@@ -484,13 +524,32 @@ public function destroy($id)
             DB::rollback();
             Log::error('Failed to move case to next stage: ' . $e->getMessage());
             Log::error('Stack trace: ' . $e->getTraceAsString());
+            
+            // **ADD THIS: Log the error**
+            try {
+                $case = CaseFile::find($id);
+                if ($case) {
+                    ActivityLogger::logAction(
+                        'ERROR',
+                        'Case',
+                        $case->inspection_id,
+                        "Failed to progress/archive case: " . $e->getMessage(),
+                        [
+                            'establishment' => $case->establishment_name,
+                            'error' => $e->getMessage()
+                        ]
+                    );
+                }
+            } catch (\Exception $logError) {
+                Log::error('Failed to log error: ' . $logError->getMessage());
+            }
+            
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to move case: ' . $e->getMessage()
             ], 500);
         }
     }
-
 
     private function getValidationRules()
         {
