@@ -119,6 +119,75 @@
     text-align: center;
     padding: 3rem;
 }
+.actions-cell {
+    position: relative;
+    padding: 0.25rem 0.5rem !important;
+    white-space: nowrap;
+    transition: width 0.3s ease;
+    vertical-align: middle;
+}
+
+.actions-cell.collapsed {
+    width: 50px !important;
+    min-width: 50px !important;
+}
+
+.actions-cell.expanded {
+    width: auto !important;
+    min-width: 250px !important;
+}
+
+/* Container for all buttons in one line */
+.action-buttons-container {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    flex-wrap: nowrap;
+}
+
+/* Toggle button - always visible */
+.action-toggle-btn {
+    background: #007bff;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 0.3rem 0.5rem;
+    cursor: pointer;
+    font-size: 0.75rem;
+    transition: background 0.2s;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 32px;
+    height: 28px;
+    flex-shrink: 0;
+}
+
+.action-toggle-btn:hover {
+    background: #0056b3;
+}
+
+.action-toggle-btn i {
+    font-size: 0.7rem;
+    margin: 0;
+}
+
+/* Action buttons wrapper - hidden when collapsed */
+.action-buttons {
+    display: none;
+    gap: 0.25rem;
+    align-items: center;
+    flex-wrap: nowrap;
+}
+
+.actions-cell.expanded .action-buttons {
+    display: flex;
+}
+
+.actions-cell.collapsed .action-buttons {
+    display: none;
+}
+
 </style>
 
 <!-- Main Content -->
@@ -238,6 +307,7 @@
                     <table class="table table-bordered compact-table sticky-table" id="dataTable0" width="100%" cellspacing="0">
                         <thead>
                             <tr>
+                                <th>Actions</th>
                                 <!-- Core Information -->
                                 <th>No.</th>
                                 <th>Inspection ID</th>
@@ -350,13 +420,53 @@
                                 <th>Remarks/Notes</th>
                                 
                                 <th>Created At</th>
-                                <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
                             @if(isset($cases) && $cases->count() > 0)
                                 @foreach($cases as $case)
                                     <tr data-id="{{ $case->id }}">
+                                        <td class="actions-cell collapsed">
+                                            <div class="action-buttons-container">
+                                                <button class="action-toggle-btn" type="button">
+                                                    <i class="fas fa-chevron-right"></i>
+                                                </button>
+                                                <div class="action-buttons">
+                                                    <button class="btn btn-warning btn-sm edit-row-btn-case" 
+                                                            data-case-id="{{ $case->id }}"
+                                                            title="Edit Row">
+                                                        <i class="fas fa-edit"></i>
+                                                    </button>
+                                                    
+                                                    <button type="button" 
+                                                            class="btn btn-danger btn-sm delete-btn" 
+                                                            data-case-id="{{ $case->id }}"
+                                                            data-case-no="{{ $case->case_no ?? 'N/A' }}"
+                                                            data-establishment="{{ $case->establishment_name ?? 'N/A' }}"
+                                                            title="Delete">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                    
+                                                    <button class="btn btn-info btn-sm view-history-btn" 
+                                                            data-case-id="{{ $case->id }}"
+                                                            data-case-no="{{ $case->case_no ?? 'N/A' }}"
+                                                            data-establishment="{{ $case->establishment_name ?? 'N/A' }}"
+                                                            title="View Document History">
+                                                        <i class="fas fa-history"></i>
+                                                    </button>
+                                                    
+                                                    <button type="button" 
+                                                            class="btn btn-success btn-sm complete-case-btn" 
+                                                            data-case-id="{{ $case->id }}"
+                                                            data-case-no="{{ $case->case_no ?? 'N/A' }}"
+                                                            data-establishment="{{ $case->establishment_name ?? 'N/A' }}"
+                                                            data-stage="{{ explode(': ', $case->current_stage)[1] ?? $case->current_stage ?? 'Unknown' }}"
+                                                            title="Mark as Complete">
+                                                        <i class="fas fa-check-circle"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </td>
                                         <!-- Core Information -->
                                         <td class="editable-cell" data-field="no">{{ $case->no ?? '-' }}</td>
                                         <td class="editable-cell" data-field="inspection_id">{{ $case->inspection_id ?? '-' }}</td>
@@ -566,39 +676,6 @@
                                         
                                         <td class="non-editable">
                                             {{ $case->created_at ? \Carbon\Carbon::parse($case->created_at)->format('Y-m-d') : '-' }}
-                                        </td>
-                                        <td>
-                                            <button class="btn btn-warning btn-sm edit-row-btn-case" 
-                                                    data-case-id="{{ $case->id }}"
-                                                    title="Edit Row">
-                                                <i class="fas fa-edit"></i>
-                                            </button>
-                                            
-                                            <button type="button" 
-                                                    class="btn btn-danger btn-sm delete-btn" 
-                                                    data-case-id="{{ $case->id }}"
-                                                    data-case-no="{{ $case->case_no ?? 'N/A' }}"
-                                                    data-establishment="{{ $case->establishment_name ?? 'N/A' }}"
-                                                    title="Delete">
-                                                <i class="fas fa-trash"></i>
-                                            </button>
-                                            
-                                            <button class="btn btn-info btn-sm view-history-btn" 
-                                                    data-case-id="{{ $case->id }}"
-                                                    data-case-no="{{ $case->case_no ?? 'N/A' }}"
-                                                    data-establishment="{{ $case->establishment_name ?? 'N/A' }}"
-                                                    title="View Document History">
-                                                <i class="fas fa-history"></i>
-                                            </button>
-                                             <button type="button" 
-                                                    class="btn btn-success btn-sm complete-case-btn" 
-                                                    data-case-id="{{ $case->id }}"
-                                                    data-case-no="{{ $case->case_no ?? 'N/A' }}"
-                                                    data-establishment="{{ $case->establishment_name ?? 'N/A' }}"
-                                                    data-stage="{{ explode(': ', $case->current_stage)[1] ?? $case->current_stage ?? 'Unknown' }}"
-                                                    title="Mark as Complete">
-                                                <i class="fas fa-check-circle"></i> Complete
-                                            </button>
                                         </td>
                                     </tr>
                                 @endforeach
@@ -990,7 +1067,97 @@
 $(document).ready(function() {
     console.log('jQuery version:', $.fn.jquery);
     console.log('DataTables available:', typeof $.fn.DataTable !== 'undefined');
+    
+    // Initialize DataTable with Actions column excluded from sorting
+    $('#dataTable0').DataTable({
+        columnDefs: [
+            { 
+                orderable: false, 
+                targets: 0  // First column (Actions)
+            }
+        ]
+    });
+        
+// 1. Toggle button (arrow)
+$(document).on('click', '.action-toggle-btn', function(e) {
+    e.preventDefault();
+    e.stopPropagation();
 
+    const $cell = $(this).closest('.actions-cell');
+    const $table = $cell.closest('table');
+    const dt = $table.DataTable();
+
+    const willExpand = $cell.hasClass('collapsed');
+
+    // Toggle classes
+    $cell.toggleClass('collapsed expanded');
+    const icon = $(this).find('i');
+    icon.toggleClass('fa-chevron-right fa-chevron-left');
+
+    // Force layout recalc — this sequence works best in practice
+    setTimeout(() => {
+        dt.columns.adjust();           // recalculate column widths
+        $table.css('table-layout', 'fixed'); // helps lock layout
+        dt.draw(false);                // apply without full page redraw
+
+        // Extra stabilization for header (very important!)
+        const containerWidth = $table.closest('.table-container').width();
+        $table.find('thead').css('width', containerWidth + 'px');
+    }, 30);
+});
+
+// 2. Force expand when clicking Edit
+$(document).on('click', '.edit-row-btn-case', function(e) {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const $row = $(this).closest('tr');
+    const $cell = $row.find('.actions-cell');
+    const $table = $row.closest('table');
+    const dt = $table.DataTable();
+
+    if ($cell.hasClass('collapsed')) {
+        $cell.removeClass('collapsed').addClass('expanded');
+        $cell.find('.action-toggle-btn i')
+            .removeClass('fa-chevron-right')
+            .addClass('fa-chevron-left');
+
+        setTimeout(() => {
+            dt.columns.adjust();
+            dt.draw(false);
+            const containerWidth = $table.closest('.table-container').width();
+            $table.find('thead').css('width', containerWidth + 'px');
+        }, 40);
+    }
+});
+
+// 3. Collapse when clicking outside — IMPROVED VERSION
+$(document).on('click', function(e) {
+    // Don't collapse if click is inside any actions cell or edit/save/cancel buttons
+    if (
+        $(e.target).closest('.actions-cell').length ||
+        $(e.target).closest('.save-btn-case, .cancel-btn-case, .edit-row-btn-case').length
+    ) {
+        return;
+    }
+
+    $('.actions-cell.expanded').each(function() {
+        const $cell = $(this);
+        const $table = $cell.closest('table');
+        const dt = $table.DataTable();
+
+        $cell.removeClass('expanded').addClass('collapsed');
+        $cell.find('i').removeClass('fa-chevron-left').addClass('fa-chevron-right');
+
+        // Same reliable recalc sequence
+        setTimeout(() => {
+            dt.columns.adjust();
+            dt.draw(false);
+            const containerWidth = $table.closest('.table-container').width();
+            $table.find('thead').css('width', containerWidth + 'px');
+        }, 30);
+    });
+});
     // Store all table instances
     var tables = {};
     
@@ -2257,262 +2424,6 @@ $(document).ready(function() {
                 'remarks_notes': { type: 'text' }
             }
         },
-        'tab1': {
-            name: 'inspection',
-            endpoint: '/inspection/',
-            editBtnClass: '.edit-row-btn',
-            saveBtnClass: '.save-btn',
-            cancelBtnClass: '.cancel-btn',
-            alertPrefix: 'tab1',
-            fields: {
-                'inspection_id': { type: 'text' },
-                'establishment_name': { type: 'text' },
-                'po_office': { type: 'text' },
-                'inspector_name': { type: 'text' },
-                'inspector_authority_no': { type: 'text' },
-                'date_of_inspection': { type: 'date' },
-                'date_of_nr': { type: 'date' },
-                'twg_ali': { type: 'text' }
-            }
-        },
-        'tab2': {
-            name: 'docketing',
-            endpoint: '/docketing/',
-            editBtnClass: '.edit-row-btn-docketing',
-            saveBtnClass: '.save-btn-docketing',
-            cancelBtnClass: '.cancel-btn-docketing',
-            alertPrefix: 'tab2',
-            fields: {
-                'pct_for_docketing': { type: 'text' },
-                'date_scheduled_docketed': { type: 'date' },
-                'aging_docket': { type: 'text' },
-                'status_docket': {
-                    type: 'select',
-                    options: [
-                        { value: '', text: 'Select Status' },
-                        { value: 'Pending', text: 'Pending' },
-                        { value: 'Completed', text: 'Completed' },
-                        { value: 'In Progress', text: 'In Progress' },
-                        { value: 'Cancelled', text: 'Cancelled' }
-                    ]
-                },
-                'hearing_officer_mis': { type: 'text' }
-            }
-        },
-        'tab3': {
-            name: 'hearing',
-            endpoint: '/hearing-process/',
-            editBtnClass: '.edit-row-btn-hearing',
-            saveBtnClass: '.save-btn-hearing',
-            cancelBtnClass: '.cancel-btn-hearing',
-            alertPrefix: 'tab3',
-            fields: {
-                'date_1st_mc_actual': { type: 'date' },
-                'first_mc_pct': { type: 'text' },
-                'status_1st_mc': {
-                    type: 'select',
-                    options: [
-                        { value: '', text: 'Select Status' },
-                        { value: 'Pending', text: 'Pending' },
-                        { value: 'Ongoing', text: 'Ongoing' },
-                        { value: 'Completed', text: 'Completed' }
-                    ]
-                },
-                'date_2nd_last_mc': { type: 'date' },
-                'second_last_mc_pct': { type: 'text' },
-                'status_2nd_mc': {
-                    type: 'select',
-                    options: [
-                        { value: '', text: 'Select Status' },
-                        { value: 'Pending', text: 'Pending' },
-                        { value: 'In Progress', text: 'In Progress' },
-                        { value: 'Completed', text: 'Completed' }
-                    ]
-                },
-                'case_folder_forwarded_to_ro': { type: 'text' },
-                'complete_case_folder': {
-                    type: 'select',
-                    options: [
-                        { value: 'N', text: 'No' },
-                        { value: 'Y', text: 'Yes' }
-                    ]
-                }
-            }
-        },
-        'tab4': {
-            name: 'review-and-drafting',
-            endpoint: '/review-and-drafting/',
-            editBtnClass: '.edit-row-btn-review',
-            saveBtnClass: '.save-btn-review',
-            cancelBtnClass: '.cancel-btn-review',
-            alertPrefix: 'tab4',
-            fields: {
-                'draft_order_type': { type: 'text' },
-                'applicable_draft_order': {
-                    type: 'select',
-                    options: [
-                        { value: 'Y', text: 'Yes' },
-                        { value: 'N', text: 'No' }
-                    ]
-                },
-                'po_pct': { type: 'number' },
-                'aging_po_pct': { type: 'number' },
-                'status_po_pct': {
-                    type: 'select',
-                    options: [
-                        { value: '', text: 'Select Status' },
-                        { value: 'Pending', text: 'Pending' },
-                        { value: 'Ongoing', text: 'Ongoing' },
-                        { value: 'Overdue', text: 'Overdue' },
-                        { value: 'Completed', text: 'Completed' }
-                    ]
-                },
-                'date_received_from_po': { type: 'date' },
-                'reviewer_drafter': { type: 'text' },
-                'date_received_by_reviewer': { type: 'date' },
-                'date_returned_from_drafter': { type: 'date' },
-                'aging_10_days_tssd': { type: 'number' },
-                'status_reviewer_drafter': {
-                    type: 'select',
-                    options: [
-                        { value: '', text: 'Select Status' },
-                        { value: 'Pending', text: 'Pending' },
-                        { value: 'Ongoing', text: 'Ongoing' },
-                        { value: 'Returned', text: 'Returned' },
-                        { value: 'Approved', text: 'Approved' },
-                        { value: 'Overdue', text: 'Overdue' }
-                    ]
-                },
-                'draft_order_tssd_reviewer': { type: 'text' }
-            }
-        },
-        'tab5': {
-            name: 'orders-and-disposition',
-            endpoint: '/orders-and-disposition/',
-            editBtnClass: '.edit-row-btn-orders',
-            saveBtnClass: '.save-btn-orders',
-            cancelBtnClass: '.cancel-btn-orders',
-            alertPrefix: 'tab5',
-            fields: {
-                'aging_2_days_finalization': { type: 'number' },
-                'status_finalization': {
-                    type: 'select',
-                    options: [
-                        { value: '', text: 'Select Status' },
-                        { value: 'Pending', text: 'Pending' },
-                        { value: 'In Progress', text: 'In Progress' },
-                        { value: 'Completed', text: 'Completed' },
-                        { value: 'Overdue', text: 'Overdue' }
-                    ]
-                },
-                'pct_96_days': { type: 'number' },
-                'date_signed_mis': { type: 'date' },
-                'status_pct': {
-                    type: 'select',
-                    options: [
-                        { value: '', text: 'Select Status' },
-                        { value: 'Pending', text: 'Pending' },
-                        { value: 'Ongoing', text: 'Ongoing' },
-                        { value: 'Completed', text: 'Completed' },
-                        { value: 'Overdue', text: 'Overdue' }
-                    ]
-                },
-                'reference_date_pct': { type: 'date' },
-                'aging_pct': { type: 'number' },
-                'disposition_mis': { type: 'text' },
-                'disposition_actual': { type: 'text' },
-                'findings_to_comply': { type: 'text' },
-                'date_of_order_actual': { type: 'date' },
-                'released_date_actual': { type: 'date' }
-            }
-        },
-        'tab6': {
-            name: 'compliance-and-awards',
-            endpoint: '/compliance-and-awards/',
-            editBtnClass: '.edit-row-btn-compliance',
-            saveBtnClass: '.save-btn-compliance',
-            cancelBtnClass: '.cancel-btn-compliance',
-            alertPrefix: 'tab6',
-            fields: {
-                'compliance_order_monetary_award': { type: 'number', step: '0.01' },
-                'osh_penalty': { type: 'number', step: '0.01' },
-                'affected_male': { type: 'number' },
-                'affected_female': { type: 'number' },
-                'first_order_dismissal_cnpc': {
-                    type: 'select',
-                    options: [
-                        { value: '0', text: 'No' },
-                        { value: '1', text: 'Yes' }
-                    ]
-                },
-                'tavable_less_than_10_workers': {
-                    type: 'select',
-                    options: [
-                        { value: '0', text: 'No' },
-                        { value: '1', text: 'Yes' }
-                    ]
-                },
-                'with_deposited_monetary_claims': {
-                    type: 'select',
-                    options: [
-                        { value: '0', text: 'No' },
-                        { value: '1', text: 'Yes' }
-                    ]
-                },
-                'amount_deposited': { type: 'number', step: '0.01' },
-                'with_order_payment_notice': {
-                    type: 'select',
-                    options: [
-                        { value: '0', text: 'No' },
-                        { value: '1', text: 'Yes' }
-                    ]
-                },
-                'status_all_employees_received': {
-                    type: 'select',
-                    options: [
-                        { value: '', text: 'Select Status' },
-                        { value: 'Pending', text: 'Pending' },
-                        { value: 'Yes', text: 'Yes' },
-                        { value: 'No', text: 'No' },
-                        { value: 'Partial', text: 'Partial' }
-                    ]
-                },
-                'status_case_after_first_order': { type: 'text' },
-                'date_notice_finality_dismissed': { type: 'date' },
-                'released_date_notice_finality': { type: 'date' },
-                'updated_ticked_in_mis': {
-                    type: 'select',
-                    options: [
-                        { value: '0', text: 'No' },
-                        { value: '1', text: 'Yes' }
-                    ]
-                },
-                'second_order_drafter': { type: 'text' },
-                'date_received_by_drafter_ct_cnpc': { type: 'date' }
-            }
-        }, 
-        'tab7': {
-            name: 'appeals-and-resolution',
-            endpoint: '/appeals-and-resolution/',
-            editBtnClass: '.edit-row-btn-appeals',
-            saveBtnClass: '.save-btn-appeals',
-            cancelBtnClass: '.cancel-btn-appeals',
-            alertPrefix: 'tab7',
-            fields: {
-                'date_returned_case_mgmt': { type: 'date' },
-                'review_ct_cnpc': { type: 'text' },
-                'date_received_drafter_finalization_2nd': { type: 'date' },
-                'date_returned_case_mgmt_signature_2nd': { type: 'date' },
-                'date_order_2nd_cnpc': { type: 'date' },
-                'released_date_2nd_cnpc': { type: 'date' },
-                'date_forwarded_malsu': { type: 'date' },
-                'motion_reconsideration_date': { type: 'date' },
-                'date_received_malsu': { type: 'date' },
-                'date_resolution_mr': { type: 'date' },
-                'released_date_resolution_mr': { type: 'date' },
-                'date_appeal_received_records': { type: 'date' }
-            }
-        }
     };
 
     // Get current active tab
