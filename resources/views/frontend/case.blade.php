@@ -1150,116 +1150,162 @@ $(document).ready(function() {
         ]
     });
 
-    // Document Checklist functionality
-    let currentCaseId = null;
-    let documents = {};
+let currentCaseId = null;
+let documents = [];
 
-    // Open document checklist modal
-    $(document).on('click', '.document-checklist-btn', function() {
-        currentCaseId = $(this).data('case-id');
-        const caseNo = $(this).data('case-no');
-        const establishment = $(this).data('establishment');
-        
-        $('#checklist-case-no').text(caseNo);
-        $('#checklist-establishment').text(establishment);
-        $('#newDocumentTitle').val('');
-        
-        loadDocuments();
-        $('#documentChecklistModal').modal('show');
-    });
+$(document).on('click', '.document-checklist-btn', function() {
+    currentCaseId = $(this).data('case-id');
+    const caseNo = $(this).data('case-no');
+    const establishment = $(this).data('establishment');
+    
+    $('#checklist-case-no').text(caseNo);
+    $('#checklist-establishment').text(establishment);
+    $('#newDocumentTitle').val('');
+    
+    documents = [];
+    loadDocuments();
+    $('#documentChecklistModal').modal('show');
+});
 
-    // Add document to checklist
-    $('#addDocumentBtn').on('click', function() {
-        const title = $('#newDocumentTitle').val().trim();
-        
-        if (title === '') {
-            alert('Please enter a document title');
-            return;
-        }
-        
-        if (!documents[currentCaseId]) {
-            documents[currentCaseId] = [];
-        }
-        
-        const doc = {
-            id: Date.now(),
-            title: title,
-            checked: false
-        };
-        
-        documents[currentCaseId].push(doc);
-        $('#newDocumentTitle').val('');
-        renderDocuments();
-    });
-
-    // Toggle document checkbox
-    $(document).on('change', '.document-checkbox', function() {
-        const docId = $(this).data('doc-id');
-        const doc = documents[currentCaseId].find(d => d.id === docId);
-        if (doc) {
-            doc.checked = $(this).is(':checked');
-        }
-    });
-
-    // Remove document
-    $(document).on('click', '.remove-document-btn', function() {
-        const docId = $(this).data('doc-id');
-        documents[currentCaseId] = documents[currentCaseId].filter(d => d.id !== docId);
-        renderDocuments();
-    });
-
-    // Allow Enter key to add document
-    $('#newDocumentTitle').on('keypress', function(e) {
-        if (e.which === 13) { // Enter key
-            $('#addDocumentBtn').click();
-        }
-    });
-
-    function loadDocuments() {
-        if (!documents[currentCaseId]) {
-            documents[currentCaseId] = [];
-        }
-        renderDocuments();
+$('#addDocumentBtn').on('click', function() {
+    const title = $('#newDocumentTitle').val().trim();
+    
+    if (title === '') {
+        alert('Please enter a document title');
+        return;
     }
+    
+    documents.push({
+        id: Date.now(),
+        title: title,
+        checked: false  // Boolean, not string
+    });
+    
+    $('#newDocumentTitle').val('');
+    saveDocuments();
+    renderDocuments();
+});
 
-    function renderDocuments() {
-        const docsList = $('#documentsList');
-        const noDocsMessage = $('#noDocumentsMessage');
-        
-        docsList.empty();
-        
-        if (!documents[currentCaseId] || documents[currentCaseId].length === 0) {
-            noDocsMessage.show();
-            return;
-        }
-        
-        noDocsMessage.hide();
-        
-        documents[currentCaseId].forEach(doc => {
-            const item = `
-                <li class="list-group-item d-flex justify-content-between align-items-center">
-                    <div class="custom-control custom-checkbox">
-                        <input type="checkbox" 
-                               class="custom-control-input document-checkbox" 
-                               id="doc-${doc.id}" 
-                               data-doc-id="${doc.id}"
-                               ${doc.checked ? 'checked' : ''}>
-                        <label class="custom-control-label ${doc.checked ? 'text-muted' : ''}" 
-                               for="doc-${doc.id}" 
-                               style="${doc.checked ? 'text-decoration: line-through;' : ''}">
-                            ${doc.title}
-                        </label>
-                    </div>
-                    <button class="btn btn-sm btn-danger remove-document-btn" 
-                            data-doc-id="${doc.id}">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </li>
-            `;
-            docsList.append(item);
-        });
+$(document).on('change', '.document-checkbox', function() {
+    const docId = parseInt($(this).data('doc-id')); // Parse as integer
+    const isChecked = $(this).is(':checked');
+    
+    console.log('Checkbox changed:', docId, 'checked:', isChecked, typeof isChecked);
+    
+    const doc = documents.find(d => d.id == docId); // Use == for loose comparison
+    if (doc) {
+        doc.checked = isChecked; // This is already a boolean
+        console.log('Updated document:', doc);
+        saveDocuments();
     }
+});
+
+$(document).on('click', '.remove-document-btn', function() {
+    const docId = parseInt($(this).data('doc-id')); // Parse as integer
+    
+    if (!confirm('Remove this document from checklist?')) {
+        return;
+    }
+    
+    console.log('Removing document:', docId);
+    documents = documents.filter(d => d.id != docId); // Use != for loose comparison
+    console.log('Documents after removal:', documents);
+    
+    saveDocuments();
+    renderDocuments();
+});
+
+$('#newDocumentTitle').on('keypress', function(e) {
+    if (e.which === 13) {
+        $('#addDocumentBtn').click();
+    }
+});
+
+function loadDocuments() {
+    $.ajax({
+        url: `/case/${currentCaseId}/documents`,
+        method: 'GET',
+        success: function(response) {
+            console.log('Loaded documents from DB:', response.documents);
+            if (response.success) {
+                // Ensure checked values are booleans
+                documents = (response.documents || []).map(doc => ({
+                    ...doc,
+                    checked: doc.checked === true || doc.checked === 'true' || doc.checked === 1
+                }));
+                console.log('Processed documents:', documents);
+                renderDocuments();
+            }
+        },
+        error: function(xhr) {
+            console.error('Load error:', xhr);
+        }
+    });
+}
+
+function saveDocuments() {
+    console.log('Saving documents to DB:', documents);
+    
+    $.ajax({
+        url: `/case/${currentCaseId}/documents`,
+        method: 'POST',
+        data: {
+            documents: documents,
+            _token: $('meta[name="csrf-token"]').attr('content')
+        },
+        success: function(response) {
+            console.log('Save response:', response);
+        },
+        error: function(xhr) {
+            console.error('Save error:', xhr);
+            alert('Failed to save. Please try again.');
+        }
+    });
+}
+
+function renderDocuments() {
+    console.log('Rendering documents:', documents);
+    
+    const docsList = $('#documentsList');
+    const noDocsMessage = $('#noDocumentsMessage');
+    
+    docsList.empty();
+    
+    if (!documents || documents.length === 0) {
+        noDocsMessage.show();
+        return;
+    }
+    
+    noDocsMessage.hide();
+    
+    documents.forEach(doc => {
+        const isChecked = doc.checked === true;
+        console.log(`Rendering doc ${doc.id}: checked=${doc.checked}, isChecked=${isChecked}`);
         
+        const item = `
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                <div class="custom-control custom-checkbox">
+                    <input type="checkbox" 
+                           class="custom-control-input document-checkbox" 
+                           id="doc-${doc.id}" 
+                           data-doc-id="${doc.id}"
+                           ${isChecked ? 'checked' : ''}>
+                    <label class="custom-control-label ${isChecked ? 'text-muted' : ''}" 
+                           for="doc-${doc.id}" 
+                           style="${isChecked ? 'text-decoration: line-through;' : ''}">
+                        ${doc.title}
+                    </label>
+                </div>
+                <button class="btn btn-sm btn-danger remove-document-btn" 
+                        data-doc-id="${doc.id}"
+                        type="button">
+                    <i class="fas fa-times"></i>
+                </button>
+            </li>
+        `;
+        docsList.append(item);
+    });
+}
     $(document).on('click', '.action-toggle-btn', function(e) {
         e.preventDefault();
         e.stopPropagation();

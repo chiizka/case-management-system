@@ -1110,4 +1110,71 @@ private function parseDate($dateString)
         return null;
     }
 }
+/**
+ * Get document checklist for a case
+ */
+public function getDocuments($id)
+{
+    try {
+        $case = CaseFile::findOrFail($id);
+        
+        return response()->json([
+            'success' => true,
+            'documents' => $case->document_checklist ?? []
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Failed to load documents'
+        ], 500);
+    }
+}
+
+/**
+ * Save document checklist for a case
+ */
+public function saveDocuments(Request $request, $id)
+{
+    DB::beginTransaction();
+    try {
+        $case = CaseFile::findOrFail($id);
+        
+        // Get documents and ensure checked is boolean
+        $documents = $request->input('documents', []);
+        
+        // Convert 'checked' from string to boolean
+        $documents = array_map(function($doc) {
+            if (isset($doc['checked'])) {
+                $doc['checked'] = filter_var($doc['checked'], FILTER_VALIDATE_BOOLEAN);
+            }
+            return $doc;
+        }, $documents);
+        
+        $case->update([
+            'document_checklist' => $documents
+        ]);
+
+        ActivityLogger::logAction(
+            'UPDATE',
+            'Case',
+            $case->inspection_id,
+            "Updated document checklist",
+            ['establishment' => $case->establishment_name]
+        );
+
+        DB::commit();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Documents saved successfully'
+        ]);
+    } catch (\Exception $e) {
+        DB::rollBack();
+        Log::error('Error saving documents: ' . $e->getMessage());
+        return response()->json([
+            'success' => false,
+            'message' => 'Failed to save documents'
+        ], 500);
+    }
+}
 }

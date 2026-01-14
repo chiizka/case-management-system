@@ -23,6 +23,7 @@ class CaseFile extends Model
         'current_stage',
         'overall_status',
         'po_office',
+        'document_checklist',
         
         // Inspection Stage
         'date_of_inspection',
@@ -188,6 +189,8 @@ class CaseFile extends Model
         'date_scheduled_docketed' => 'date',
         'date_signed_mis' => 'date',
         // Text fields are automatically cast as strings, no need to specify
+
+        'document_checklist' => 'array',
     ];
 
     // Relationships
