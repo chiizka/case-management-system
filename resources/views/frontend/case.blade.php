@@ -120,21 +120,33 @@
     padding: 3rem;
 }
 .actions-cell {
-    position: relative;
     padding: 0.25rem 0.5rem !important;
     white-space: nowrap;
-    transition: width 0.3s ease;
     vertical-align: middle;
+    overflow: hidden;
 }
 
 .actions-cell.collapsed {
-    width: 50px !important;
-    min-width: 50px !important;
+    width: 60px !important;
+    min-width: 60px !important;
+    max-width: 60px !important;
 }
 
 .actions-cell.expanded {
     width: auto !important;
-    min-width: 250px !important;
+    min-width: 200px !important;   /* ← make this wider than your longest button row */
+    max-width: 320px !important;
+}
+
+.dataTable td.actions-cell,
+.dataTable th:last-child {
+    box-sizing: border-box !important;
+}
+
+/* Help prevent header/body desync */
+.table-container {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
 }
 
 /* Container for all buttons in one line */
@@ -1078,86 +1090,95 @@ $(document).ready(function() {
         ]
     });
         
-// 1. Toggle button (arrow)
-$(document).on('click', '.action-toggle-btn', function(e) {
-    e.preventDefault();
-    e.stopPropagation();
+    $(document).on('click', '.action-toggle-btn', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
 
-    const $cell = $(this).closest('.actions-cell');
-    const $table = $cell.closest('table');
-    const dt = $table.DataTable();
-
-    const willExpand = $cell.hasClass('collapsed');
-
-    // Toggle classes
-    $cell.toggleClass('collapsed expanded');
-    const icon = $(this).find('i');
-    icon.toggleClass('fa-chevron-right fa-chevron-left');
-
-    // Force layout recalc — this sequence works best in practice
-    setTimeout(() => {
-        dt.columns.adjust();           // recalculate column widths
-        $table.css('table-layout', 'fixed'); // helps lock layout
-        dt.draw(false);                // apply without full page redraw
-
-        // Extra stabilization for header (very important!)
-        const containerWidth = $table.closest('.table-container').width();
-        $table.find('thead').css('width', containerWidth + 'px');
-    }, 30);
-});
-
-// 2. Force expand when clicking Edit
-$(document).on('click', '.edit-row-btn-case', function(e) {
-    e.preventDefault();
-    e.stopPropagation();
-
-    const $row = $(this).closest('tr');
-    const $cell = $row.find('.actions-cell');
-    const $table = $row.closest('table');
-    const dt = $table.DataTable();
-
-    if ($cell.hasClass('collapsed')) {
-        $cell.removeClass('collapsed').addClass('expanded');
-        $cell.find('.action-toggle-btn i')
-            .removeClass('fa-chevron-right')
-            .addClass('fa-chevron-left');
-
-        setTimeout(() => {
-            dt.columns.adjust();
-            dt.draw(false);
-            const containerWidth = $table.closest('.table-container').width();
-            $table.find('thead').css('width', containerWidth + 'px');
-        }, 40);
-    }
-});
-
-// 3. Collapse when clicking outside — IMPROVED VERSION
-$(document).on('click', function(e) {
-    // Don't collapse if click is inside any actions cell or edit/save/cancel buttons
-    if (
-        $(e.target).closest('.actions-cell').length ||
-        $(e.target).closest('.save-btn-case, .cancel-btn-case, .edit-row-btn-case').length
-    ) {
-        return;
-    }
-
-    $('.actions-cell.expanded').each(function() {
-        const $cell = $(this);
-        const $table = $cell.closest('table');
+        const $btn = $(this);
+        const $cell = $btn.closest('.actions-cell');
+        const $row = $cell.closest('tr');
+        const $table = $row.closest('table');
         const dt = $table.DataTable();
 
-        $cell.removeClass('expanded').addClass('collapsed');
-        $cell.find('i').removeClass('fa-chevron-left').addClass('fa-chevron-right');
+        const isExpanding = $cell.hasClass('collapsed');
 
-        // Same reliable recalc sequence
+        // 1. Toggle classes
+        $cell.toggleClass('collapsed expanded');
+        $btn.find('i')
+            .toggleClass('fa-chevron-right fa-chevron-left');
+
+        // 2. Force both header and body to recalculate properly
         setTimeout(() => {
-            dt.columns.adjust();
-            dt.draw(false);
-            const containerWidth = $table.closest('.table-container').width();
-            $table.find('thead').css('width', containerWidth + 'px');
-        }, 30);
+            // Most important sequence - order matters!
+            dt.columns.adjust().draw(false);           // First try normal adjust
+            $table.css('table-layout', 'auto');        // Temporarily release fixed layout
+            dt.columns.adjust().draw(false);           // Adjust again
+            $table.css('table-layout', 'fixed');       // Lock it back
+
+            // Extra safety: force container to reflow
+            const $container = $table.closest('.table-container');
+            $container.scrollLeft($container.scrollLeft() + 1);
+            $container.scrollLeft($container.scrollLeft() - 1);
+
+        }, 20);
     });
-});
+
+    $(document).on('click', '.edit-row-btn-case', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+
+        const $row = $(this).closest('tr');
+        const $cell = $row.find('.actions-cell');
+
+        if ($cell.hasClass('collapsed')) {
+            $cell.removeClass('collapsed').addClass('expanded');
+            $cell.find('.action-toggle-btn i')
+                .removeClass('fa-chevron-right')
+                .addClass('fa-chevron-left');
+
+            // Same strong recalc sequence
+            setTimeout(() => {
+                const dt = $row.closest('table').DataTable();
+                dt.columns.adjust().draw(false);
+                const $table = $row.closest('table');
+                $table.css('table-layout', 'auto');
+                dt.columns.adjust().draw(false);
+                $table.css('table-layout', 'fixed');
+
+                const $container = $table.closest('.table-container');
+                $container.scrollLeft($container.scrollLeft() + 1);
+                $container.scrollLeft($container.scrollLeft() - 1);
+            }, 30);
+        }
+    });
+
+    // 3. Collapse when clicking outside — IMPROVED VERSION
+    $(document).on('click', function(e) {
+        // Don't collapse if click is inside any actions cell or edit/save/cancel buttons
+        if (
+            $(e.target).closest('.actions-cell').length ||
+            $(e.target).closest('.save-btn-case, .cancel-btn-case, .edit-row-btn-case').length
+        ) {
+            return;
+        }
+
+        $('.actions-cell.expanded').each(function() {
+            const $cell = $(this);
+            const $table = $cell.closest('table');
+            const dt = $table.DataTable();
+
+            $cell.removeClass('expanded').addClass('collapsed');
+            $cell.find('i').removeClass('fa-chevron-left').addClass('fa-chevron-right');
+
+            // Same reliable recalc sequence
+            setTimeout(() => {
+                dt.columns.adjust();
+                dt.draw(false);
+                const containerWidth = $table.closest('.table-container').width();
+                $table.find('thead').css('width', containerWidth + 'px');
+            }, 30);
+        });
+    });
     // Store all table instances
     var tables = {};
     
