@@ -468,6 +468,15 @@
                                                     </button>
                                                     
                                                     <button type="button" 
+                                                            class="btn btn-primary btn-sm document-checklist-btn" 
+                                                            data-case-id="{{ $case->id }}"
+                                                            data-case-no="{{ $case->case_no ?? 'N/A' }}"
+                                                            data-establishment="{{ $case->establishment_name ?? 'N/A' }}"
+                                                            title="Document Checklist">
+                                                        <i class="fas fa-file-alt"></i>
+                                                    </button>
+                                                    
+                                                    <button type="button" 
                                                             class="btn btn-success btn-sm complete-case-btn" 
                                                             data-case-id="{{ $case->id }}"
                                                             data-case-no="{{ $case->case_no ?? 'N/A' }}"
@@ -1068,6 +1077,57 @@
         </div>
     </div>
 
+    <!-- Document Checklist Modal -->
+    <div class="modal fade" id="documentChecklistModal" tabindex="-1" role="dialog" aria-labelledby="documentChecklistModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="documentChecklistModalLabel">
+                        <i class="fas fa-file-alt"></i> Document Checklist
+                    </h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="case-info mb-3">
+                        <p class="mb-1"><strong>Case No:</strong> <span id="checklist-case-no"></span></p>
+                        <p class="mb-0"><strong>Establishment:</strong> <span id="checklist-establishment"></span></p>
+                    </div>
+                    
+                    <hr>
+                    
+                    <div class="add-document-section mb-3">
+                        <div class="input-group">
+                            <input type="text" 
+                                class="form-control" 
+                                id="newDocumentTitle" 
+                                placeholder="Enter document title">
+                            <div class="input-group-append">
+                                <button class="btn btn-primary" type="button" id="addDocumentBtn">
+                                    <i class="fas fa-plus"></i> Add Document
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="documents-list">
+                        <h6 class="mb-3">Documents:</h6>
+                        <ul class="list-group" id="documentsList">
+                            <!-- Documents will be added here dynamically -->
+                        </ul>
+                        <p class="text-muted text-center mt-3" id="noDocumentsMessage">
+                            No documents added yet.
+                        </p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
 @endsection
 @push('scripts')
 <!-- DataTables plugins -->
@@ -1089,6 +1149,116 @@ $(document).ready(function() {
             }
         ]
     });
+
+    // Document Checklist functionality
+    let currentCaseId = null;
+    let documents = {};
+
+    // Open document checklist modal
+    $(document).on('click', '.document-checklist-btn', function() {
+        currentCaseId = $(this).data('case-id');
+        const caseNo = $(this).data('case-no');
+        const establishment = $(this).data('establishment');
+        
+        $('#checklist-case-no').text(caseNo);
+        $('#checklist-establishment').text(establishment);
+        $('#newDocumentTitle').val('');
+        
+        loadDocuments();
+        $('#documentChecklistModal').modal('show');
+    });
+
+    // Add document to checklist
+    $('#addDocumentBtn').on('click', function() {
+        const title = $('#newDocumentTitle').val().trim();
+        
+        if (title === '') {
+            alert('Please enter a document title');
+            return;
+        }
+        
+        if (!documents[currentCaseId]) {
+            documents[currentCaseId] = [];
+        }
+        
+        const doc = {
+            id: Date.now(),
+            title: title,
+            checked: false
+        };
+        
+        documents[currentCaseId].push(doc);
+        $('#newDocumentTitle').val('');
+        renderDocuments();
+    });
+
+    // Toggle document checkbox
+    $(document).on('change', '.document-checkbox', function() {
+        const docId = $(this).data('doc-id');
+        const doc = documents[currentCaseId].find(d => d.id === docId);
+        if (doc) {
+            doc.checked = $(this).is(':checked');
+        }
+    });
+
+    // Remove document
+    $(document).on('click', '.remove-document-btn', function() {
+        const docId = $(this).data('doc-id');
+        documents[currentCaseId] = documents[currentCaseId].filter(d => d.id !== docId);
+        renderDocuments();
+    });
+
+    // Allow Enter key to add document
+    $('#newDocumentTitle').on('keypress', function(e) {
+        if (e.which === 13) { // Enter key
+            $('#addDocumentBtn').click();
+        }
+    });
+
+    function loadDocuments() {
+        if (!documents[currentCaseId]) {
+            documents[currentCaseId] = [];
+        }
+        renderDocuments();
+    }
+
+    function renderDocuments() {
+        const docsList = $('#documentsList');
+        const noDocsMessage = $('#noDocumentsMessage');
+        
+        docsList.empty();
+        
+        if (!documents[currentCaseId] || documents[currentCaseId].length === 0) {
+            noDocsMessage.show();
+            return;
+        }
+        
+        noDocsMessage.hide();
+        
+        documents[currentCaseId].forEach(doc => {
+            const item = `
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    <div class="custom-control custom-checkbox">
+                        <input type="checkbox" 
+                               class="custom-control-input document-checkbox" 
+                               id="doc-${doc.id}" 
+                               data-doc-id="${doc.id}"
+                               ${doc.checked ? 'checked' : ''}>
+                        <label class="custom-control-label ${doc.checked ? 'text-muted' : ''}" 
+                               for="doc-${doc.id}" 
+                               style="${doc.checked ? 'text-decoration: line-through;' : ''}">
+                            ${doc.title}
+                        </label>
+                    </div>
+                    <button class="btn btn-sm btn-danger remove-document-btn" 
+                            data-doc-id="${doc.id}">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </li>
+            `;
+            docsList.append(item);
+        });
+    }
         
     $(document).on('click', '.action-toggle-btn', function(e) {
         e.preventDefault();
