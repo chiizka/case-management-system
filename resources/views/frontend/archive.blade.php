@@ -794,199 +794,200 @@
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
     // Accordion Toggle
-    document.querySelectorAll('.accordion-header').forEach(header => {
-        header.addEventListener('click', (e) => {
-            if (e.target.closest('button')) {
-                const content = header.nextElementSibling;
-                content.classList.toggle('active');
-            }
-        });
+document.querySelectorAll('.accordion-header').forEach(header => {
+    header.addEventListener('click', (e) => {
+        if (e.target.closest('button')) {
+            const content = header.nextElementSibling;
+            content.classList.toggle('active');
+        }
     });
+});
 
-    // Tab Switching with lazy loading for Document History
-    document.querySelectorAll('.tab').forEach(tab => {
-        tab.addEventListener('click', () => {
-            const accordion = tab.closest('.accordion-content');
-            accordion.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-            accordion.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+// Tab Switching with lazy loading for Document History
+document.querySelectorAll('.tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+        const accordion = tab.closest('.accordion-content');
+        accordion.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        accordion.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
 
-            tab.classList.add('active');
-            const tabContentId = tab.getAttribute('data-tab');
-            const tabContent = accordion.querySelector(`#${tabContentId}`);
-            tabContent.classList.add('active');
+        tab.classList.add('active');
+        const tabContentId = tab.getAttribute('data-tab');
+        const tabContent = accordion.querySelector(`#${tabContentId}`);
+        tabContent.classList.add('active');
 
-            // If Document History tab is clicked, load the history
-            if (tabContentId.startsWith('doc-history-')) {
-                const caseId = tabContentId.replace('doc-history-', '');
-                const historyContainer = tabContent.querySelector('.doc-history-container');
-                
-                // Only load if not already loaded
-                if (historyContainer && historyContainer.querySelector('.loading-spinner')) {
-                    loadDocumentHistory(caseId, historyContainer);
-                }
+        // If Document History tab is clicked, load the history
+        if (tabContentId.startsWith('doc-history-')) {
+            const caseId = tabContentId.replace('doc-history-', '');
+            const historyContainer = tabContent.querySelector('.doc-history-container');
+            
+            // Only load if not already loaded
+            if (historyContainer && historyContainer.querySelector('.loading-spinner')) {
+                loadDocumentHistory(caseId, historyContainer);
             }
-        });
+        }
     });
+});
 
-    // Function to load document history via AJAX
-    function loadDocumentHistory(caseId, container) {
-        fetch(`/case/${caseId}/document-history`, {
-            method: 'GET',
-            headers: {
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-                'Accept': 'application/json'
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                if (data.has_tracking && data.history && data.history.length > 0) {
-                    displayDocumentHistory(data.history, container);
-                } else {
-                    container.innerHTML = `
-                        <div class="no-history-msg">
-                            <svg style="width: 48px; height: 48px; color: #cbd5e0; margin: 0 auto 1rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                            </svg>
-                            <p style="color: #718096; margin-bottom: 0.5rem;"><strong>No Document Tracking History</strong></p>
-                            <p style="color: #a0aec0; font-size: 0.875rem;">This case was completed before document tracking was implemented.</p>
-                        </div>
-                    `;
-                }
+// Function to load document history via AJAX
+function loadDocumentHistory(caseId, container) {
+    fetch(`/case/${caseId}/document-history`, {
+        method: 'GET',
+        headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+            'Accept': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            if (data.has_tracking && data.history && data.history.length > 0) {
+                displayDocumentHistory(data.history, container);
             } else {
                 container.innerHTML = `
                     <div class="no-history-msg">
-                        <p style="color: #e53e3e;">Failed to load document history.</p>
-                        <button onclick="location.reload()" style="margin-top: 1rem; padding: 0.5rem 1rem; background: #4299e1; color: white; border: none; border-radius: 0.25rem; cursor: pointer;">
-                            Retry
-                        </button>
+                        <svg style="width: 48px; height: 48px; color: #cbd5e0; margin: 0 auto 1rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                        <p style="color: #718096; margin-bottom: 0.5rem;"><strong>No Document Tracking History</strong></p>
+                        <p style="color: #a0aec0; font-size: 0.875rem;">This case was completed before document tracking was implemented.</p>
                     </div>
                 `;
             }
-        })
-        .catch(error => {
-            console.error('Error loading document history:', error);
+        } else {
             container.innerHTML = `
                 <div class="no-history-msg">
-                    <p style="color: #e53e3e;">Error loading document history.</p>
-                    <p style="color: #a0aec0; font-size: 0.875rem;">${error.message}</p>
+                    <p style="color: #e53e3e;">Failed to load document history.</p>
+                    <button onclick="location.reload()" style="margin-top: 1rem; padding: 0.5rem 1rem; background: #4299e1; color: white; border: none; border-radius: 0.25rem; cursor: pointer;">
+                        Retry
+                    </button>
                 </div>
             `;
-        });
+        }
+    })
+    .catch(error => {
+        console.error('Error loading document history:', error);
+        container.innerHTML = `
+            <div class="no-history-msg">
+                <p style="color: #e53e3e;">Error loading document history.</p>
+                <p style="color: #a0aec0; font-size: 0.875rem;">${error.message}</p>
+            </div>
+        `;
+    });
+}
+
+// Function to display document history timeline
+function displayDocumentHistory(history, container) {
+    if (!history || history.length === 0) {
+        container.innerHTML = '<div class="no-history-msg">No transfer history available.</div>';
+        return;
     }
 
-    // Function to display document history timeline
-    function displayDocumentHistory(history, container) {
-        if (!history || history.length === 0) {
-            container.innerHTML = '<div class="no-history-msg">No transfer history available.</div>';
-            return;
-        }
+    const roleClassMap = {
+        'Admin': 'admin',
+        'MALSU': 'malsu',
+        'Case Management': 'case_management',
+        'Province': 'province',
+        'Records': 'records'
+    };
 
-        const roleClassMap = {
-            'Admin': 'admin',
-            'MALSU': 'malsu',
-            'Case Management': 'case_management',
-            'Province': 'province',
-            'Records': 'records'
-        };
-
-        let timelineHtml = '<div class="doc-timeline">';
+    let timelineHtml = '<div class="doc-timeline">';
+    
+    history.forEach((item, index) => {
+        const roleClass = roleClassMap[item.role] || 'admin';
+        const isReceived = item.received_by !== 'Pending' && item.received_by !== 'Not Received';
+        const statusClass = isReceived ? 'text-success' : 'text-warning';
         
-        history.forEach((item, index) => {
-            const roleClass = roleClassMap[item.role] || 'admin';
-            const isReceived = item.received_by !== 'Pending' && item.received_by !== 'Not Received';
-            const statusClass = isReceived ? 'text-success' : 'text-warning';
-            
-            timelineHtml += `
-                <div class="doc-timeline-item">
-                    <div class="doc-card">
-                        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.75rem;">
-                            <div>
-                                <span class="doc-badge doc-badge-${roleClass}">${item.role}</span>
-                                ${item.from_role ? `<span class="text-muted" style="font-size: 0.75rem;">from ${item.from_role}</span>` : ''}
-                            </div>
-                            <div style="text-align: right;">
-                                <span class="text-muted" style="font-size: 0.75rem;">
-                                    <svg style="width: 14px; height: 14px; display: inline-block; vertical-align: middle;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                    </svg>
-                                    ${item.time_ago}
-                                </span>
-                            </div>
+        timelineHtml += `
+            <div class="doc-timeline-item">
+                <div class="doc-card">
+                    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.75rem;">
+                        <div>
+                            <span class="doc-badge doc-badge-${roleClass}">${item.role}</span>
+                            ${item.from_role ? `<span class="text-muted" style="font-size: 0.75rem;">from ${item.from_role}</span>` : ''}
                         </div>
-                        
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 0.5rem;">
-                            <div>
-                                <small class="text-muted" style="display: block; margin-bottom: 0.25rem;">Transferred By:</small>
-                                <strong style="font-size: 0.875rem;">${item.transferred_by}</strong>
-                                <br>
-                                <small class="text-muted">${item.transferred_at}</small>
-                            </div>
-                            <div>
-                                <small class="text-muted" style="display: block; margin-bottom: 0.25rem;">Received By:</small>
-                                <strong class="${statusClass}" style="font-size: 0.875rem;">${item.received_by}</strong>
-                                <br>
-                                <small class="text-muted">${item.received_at}</small>
-                            </div>
+                        <div style="text-align: right;">
+                            <span class="text-muted" style="font-size: 0.75rem;">
+                                <svg style="width: 14px; height: 14px; display: inline-block; vertical-align: middle;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                                ${item.time_ago}
+                            </span>
                         </div>
-                        
-                        ${item.notes ? `
-                            <div style="margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid #e5e7eb;">
-                                <small class="text-muted">
-                                    <svg style="width: 14px; height: 14px; display: inline-block; vertical-align: middle;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"></path>
-                                    </svg>
-                                    <strong>Notes:</strong> ${item.notes}
-                                </small>
-                            </div>
-                        ` : ''}
                     </div>
-                </div>
-            `;
-        });
-        
-        timelineHtml += '</div>';
-        
-        // Add summary at the top
-        const totalTransfers = history.length;
-        const completedTransfers = history.filter(h => h.received_by !== 'Pending' && h.received_by !== 'Not Received').length;
-        
-        const summaryHtml = `
-            <div style="background: #f7fafc; border: 1px solid #e2e8f0; border-radius: 0.25rem; padding: 1rem; margin-bottom: 1.5rem;">
-                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; text-align: center;">
-                    <div>
-                        <div style="font-size: 1.5rem; font-weight: bold; color: #2b6cb0;">${totalTransfers}</div>
-                        <div style="font-size: 0.75rem; color: #718096; text-transform: uppercase;">Total Transfers</div>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 0.5rem;">
+                        <div>
+                            <small class="text-muted" style="display: block; margin-bottom: 0.25rem;">Transferred By:</small>
+                            <strong style="font-size: 0.875rem;">${item.transferred_by}</strong>
+                            <br>
+                            <small class="text-muted">${item.transferred_at}</small>
+                        </div>
+                        <div>
+                            <small class="text-muted" style="display: block; margin-bottom: 0.25rem;">Received By:</small>
+                            <strong class="${statusClass}" style="font-size: 0.875rem;">${item.received_by}</strong>
+                            <br>
+                            <small class="text-muted">${item.received_at}</small>
+                        </div>
                     </div>
-                    <div>
-                        <div style="font-size: 1.5rem; font-weight: bold; color: #2f855a;">${completedTransfers}</div>
-                        <div style="font-size: 0.75rem; color: #718096; text-transform: uppercase;">Completed</div>
-                    </div>
-                    <div>
-                        <div style="font-size: 1.5rem; font-weight: bold; color: #c05621;">${totalTransfers - completedTransfers}</div>
-                        <div style="font-size: 0.75rem; color: #718096; text-transform: uppercase;">Pending</div>
-                    </div>
+                    
+                    ${item.notes ? `
+                        <div style="margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid #e5e7eb;">
+                            <small class="text-muted">
+                                <svg style="width: 14px; height: 14px; display: inline-block; vertical-align: middle;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"></path>
+                                </svg>
+                                <strong>Notes:</strong> ${item.notes}
+                            </small>
+                        </div>
+                    ` : ''}
                 </div>
             </div>
         `;
-        
-        container.innerHTML = summaryHtml + timelineHtml;
-    }
-
-    // Basic Search Functionality
-    document.getElementById('searchInput').addEventListener('input', (e) => {
-        const searchTerm = e.target.value.toLowerCase();
-        const cases = document.querySelectorAll('#caseList > div');
-        cases.forEach(caseItem => {
-            const text = caseItem.textContent.toLowerCase();
-            caseItem.style.display = text.includes(searchTerm) ? '' : 'none';
-        });
     });
+    
+    timelineHtml += '</div>';
+    
+    // Add summary at the top
+    const totalTransfers = history.length;
+    const completedTransfers = history.filter(h => h.received_by !== 'Pending' && h.received_by !== 'Not Received').length;
+    
+    const summaryHtml = `
+        <div style="background: #f7fafc; border: 1px solid #e2e8f0; border-radius: 0.25rem; padding: 1rem; margin-bottom: 1.5rem;">
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; text-align: center;">
+                <div>
+                    <div style="font-size: 1.5rem; font-weight: bold; color: #2b6cb0;">${totalTransfers}</div>
+                    <div style="font-size: 0.75rem; color: #718096; text-transform: uppercase;">Total Transfers</div>
+                </div>
+                <div>
+                    <div style="font-size: 1.5rem; font-weight: bold; color: #2f855a;">${completedTransfers}</div>
+                    <div style="font-size: 0.75rem; color: #718096; text-transform: uppercase;">Completed</div>
+                </div>
+                <div>
+                    <div style="font-size: 1.5rem; font-weight: bold; color: #c05621;">${totalTransfers - completedTransfers}</div>
+                    <div style="font-size: 0.75rem; color: #718096; text-transform: uppercase;">Pending</div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    container.innerHTML = summaryHtml + timelineHtml;
+}
 
+// Basic Search Functionality
+document.getElementById('searchInput').addEventListener('input', (e) => {
+    const searchTerm = e.target.value.toLowerCase();
+    const cases = document.querySelectorAll('#caseList > div');
+    cases.forEach(caseItem => {
+        const text = caseItem.textContent.toLowerCase();
+        caseItem.style.display = text.includes(searchTerm) ? '' : 'none';
+    });
+});
+
+// Export Selected Function
 function exportSelected() {
     // Count visible and total items
-    const visibleItems = document.querySelectorAll('#caseList > div[style=""]:not([style*="display: none"])');
-    const totalItems = document.querySelectorAll('#caseList > div');
+    const visibleItems = document.querySelectorAll('#caseList > div[data-case-id]:not([style*="display: none"])');
+    const totalItems = document.querySelectorAll('#caseList > div[data-case-id]');
 
     document.getElementById('visibleCountArchived').textContent = visibleItems.length;
     document.getElementById('totalCountArchived').textContent = totalItems.length;
@@ -1040,25 +1041,124 @@ document.getElementById('confirmExportArchived').addEventListener('click', funct
         return;
     }
 
-    // Prepare headers (customize as needed – these match your displayed fields)
+    // Comprehensive headers from ALL tabs
     const headers = [
+        // Overview
+        'No.',
         'Inspection ID',
         'Case No.',
         'Establishment Name',
-        'Date Archived',
-        'Status',
+        'Establishment Address',
+        'Mode',
+        'PO Office',
         'Current Stage',
         'Overall Status',
-        'PO Office',
-        'Mode',
-        // Add more columns if you want deeper data (from inner tabs)
-        // But for simplicity we're taking visible header info + overview
+        'Date Archived',
+        
+        // Inspection
+        'Date of Inspection',
+        'Inspector Name',
+        'Inspector Authority No.',
+        'Date of NR',
+        'Lapse 20 Day Period',
+        'TWG ALI',
+        
+        // Docketing
+        'PCT for Docketing',
+        'Date Scheduled/Docketed',
+        'Aging Docket',
+        'Status Docket',
+        'Hearing Officer (MIS)',
+        
+        // Hearing
+        'Date 1st MC (Actual)',
+        'First MC PCT',
+        'Status 1st MC',
+        'Date 2nd/Last MC',
+        'Second/Last MC PCT',
+        'Status 2nd MC',
+        'Case Folder Forwarded to RO',
+        'Draft Order from PO Type',
+        'Applicable Draft Order',
+        'Complete Case Folder',
+        
+        // Review & Drafting
+        'PO PCT',
+        'Aging PO PCT',
+        'Status PO PCT',
+        'Date Received from PO',
+        'Reviewer/Drafter',
+        'Date Received by Reviewer',
+        'Date Returned from Drafter',
+        'Aging 10 Days TSSD',
+        'Status Reviewer/Drafter',
+        'Draft Order TSSD Reviewer',
+        'Final Review Date Received',
+        'Date Received Drafter Finalization',
+        'Date Returned Case Mgmt Signature',
+        'Aging 2 Days Finalization',
+        'Status Finalization',
+        
+        // Orders
+        'PCT 96 Days',
+        'Date Signed (MIS)',
+        'Status PCT',
+        'Reference Date PCT',
+        'Aging PCT',
+        'Disposition (MIS)',
+        'Disposition (Actual)',
+        'Findings to Comply',
+        'Date of Order (Actual)',
+        'Released Date (Actual)',
+        
+        // Compliance
+        'Compliance Order Monetary Award',
+        'OSH Penalty',
+        'Affected Workers (Male)',
+        'Affected Workers (Female)',
+        'First Order Dismissal CNPC',
+        'Tavable Less Than 10 Workers',
+        'Scanned Order First',
+        'With Deposited Monetary Claims',
+        'Amount Deposited',
+        'With Order Payment Notice',
+        'Status All Employees Received',
+        'Status Case After First Order',
+        'Date Notice Finality Dismissed',
+        'Released Date Notice Finality',
+        'Scanned Notice Finality',
+        'Updated/Ticked in MIS',
+        
+        // Appeals
+        'Second Order Drafter',
+        'Date Received by Drafter CT CNPC',
+        'Date Returned Case Mgmt CT CNPC',
+        'Review CT CNPC',
+        'Date Received Drafter Finalization (2nd)',
+        'Date Returned Case Mgmt Signature (2nd)',
+        'Date Order (2nd CNPC)',
+        'Released Date (2nd CNPC)',
+        'Scanned Order (2nd CNPC)',
+        'Date Forwarded MALSU',
+        'Scanned Indorsement MALSU',
+        'Motion Reconsideration Date',
+        'Date Received MALSU',
+        'Date Resolution MR',
+        'Released Date Resolution MR',
+        'Scanned Resolution MR',
+        'Date Appeal Received Records',
+        'Date Indorsed Office Secretary',
+        
+        // Additional
+        'Logbook Page Number',
+        'Remarks/Notes',
+        'Created At',
+        'Last Updated'
     ];
 
     const exportData = [headers];
 
-    
-casesToExport.forEach(caseEl => {
+    casesToExport.forEach(caseEl => {
         const caseId = caseEl.dataset.caseId;
         const header = caseEl.querySelector('.accordion-header');
         
@@ -1209,14 +1309,29 @@ casesToExport.forEach(caseEl => {
     // SheetJS export
     const ws = XLSX.utils.aoa_to_sheet(exportData);
 
-    // Auto column width
-    const colWidths = headers.map((h, i) => {
-        let max = h.length;
-        exportData.forEach(r => {
-            if (r[i] && r[i].toString().length > max) max = r[i].toString().length;
-        });
-        return { wch: Math.min(60, max + 3) };
-    });
+    // Auto column width - ensure all columns are visible
+    const colWidths = [];
+    const numCols = exportData[0].length;
+    
+    for (let colIdx = 0; colIdx < numCols; colIdx++) {
+        let maxLen = 10;
+        
+        if (exportData[0][colIdx]) {
+            maxLen = Math.max(maxLen, exportData[0][colIdx].toString().length);
+        }
+        
+        for (let rowIdx = 1; rowIdx < exportData.length; rowIdx++) {
+            if (exportData[rowIdx][colIdx]) {
+                const cellLen = exportData[rowIdx][colIdx].toString().length;
+                if (cellLen > maxLen) {
+                    maxLen = cellLen;
+                }
+            }
+        }
+        
+        colWidths.push({ wch: Math.min(80, maxLen + 4) });
+    }
+    
     ws['!cols'] = colWidths;
 
     const wb = XLSX.utils.book_new();
