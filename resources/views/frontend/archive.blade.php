@@ -731,6 +731,67 @@
     </div>
 </div>
 
+<!-- Export Modal for Archived Cases -->
+<div class="modal fade" id="exportArchivedModal" tabindex="-1" role="dialog" aria-labelledby="exportModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="exportModalLabel">
+                    <i class="fas fa-file-excel mr-2"></i> Export Archived Cases
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-4">
+                    <label class="font-weight-bold d-block mb-2">Export scope:</label>
+                    <div class="form-check mb-2">
+                        <input class="form-check-input" type="radio" name="exportScopeArchived" id="scopeVisibleArchived" value="visible" checked>
+                        <label class="form-check-label" for="scopeVisibleArchived">
+                            Current view (<span id="visibleCountArchived">0</span> cases)
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="exportScopeArchived" id="scopeAllArchived" value="all">
+                        <label class="form-check-label" for="scopeAllArchived">
+                            All archived cases on this page (<span id="totalCountArchived">0</span>)
+                        </label>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="exportYearArchived" class="font-weight-bold d-block mb-2">Filter by year (optional):</label>
+                    <select class="form-control" id="exportYearArchived">
+                        <option value="">All years</option>
+                        <option value="2026">2026</option>
+                        <option value="2025">2025</option>
+                        <option value="2024">2024</option>
+                        <option value="2023">2023</option>
+                        <option value="2022">2022</option>
+                    </select>
+                    <small class="form-text text-muted mt-1">
+                        Based on <strong>Date Archived</strong> (updated_at)
+                    </small>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-success" id="confirmExportArchived">
+                    <i class="fas fa-download mr-2"></i> Export to XLSX
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- SheetJS -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<!-- FileSaver (for download trigger) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+<!-- SweetAlert2 (nice feedback) – optional but recommended -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
     // Accordion Toggle
     document.querySelectorAll('.accordion-header').forEach(header => {
@@ -922,9 +983,260 @@
         });
     });
 
-    function exportSelected() {
-        alert('Export functionality to be implemented');
+function exportSelected() {
+    // Count visible and total items
+    const visibleItems = document.querySelectorAll('#caseList > div[style=""]:not([style*="display: none"])');
+    const totalItems = document.querySelectorAll('#caseList > div');
+
+    document.getElementById('visibleCountArchived').textContent = visibleItems.length;
+    document.getElementById('totalCountArchived').textContent = totalItems.length;
+
+    // Show modal
+    $('#exportArchivedModal').modal('show');
+}
+
+// Confirm export from modal
+document.getElementById('confirmExportArchived').addEventListener('click', function () {
+    const scope = document.querySelector('input[name="exportScopeArchived"]:checked').value;
+    const yearFilter = document.getElementById('exportYearArchived').value;
+
+    $('#exportArchivedModal').modal('hide');
+
+    // Get all case cards
+    let casesToExport = [];
+    const allCases = document.querySelectorAll('#caseList > div[data-case-id]');
+
+    if (scope === 'visible') {
+        // Only visible (after search filter)
+        allCases.forEach(caseEl => {
+            if (caseEl.style.display !== 'none') {
+                casesToExport.push(caseEl);
+            }
+        });
+    } else {
+        // All on page
+        casesToExport = Array.from(allCases);
     }
+
+    // Apply year filter (on Date Archived = updated_at shown in header)
+    if (yearFilter) {
+        casesToExport = casesToExport.filter(caseEl => {
+            const dateArchivedText = caseEl.querySelector('.accordion-header').textContent;
+            const dateMatch = dateArchivedText.match(/Date Archived:\s*(\d{4}-\d{2}-\d{2})/);
+            if (dateMatch && dateMatch[1]) {
+                return dateMatch[1].startsWith(yearFilter);
+            }
+            return false;
+        });
+    }
+
+    if (casesToExport.length === 0) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Nothing to export',
+            text: yearFilter ? `No archived cases found for year ${yearFilter}` : 'No cases match your selection.',
+            confirmButtonText: 'OK'
+        });
+        return;
+    }
+
+    // Prepare headers (customize as needed – these match your displayed fields)
+    const headers = [
+        'Inspection ID',
+        'Case No.',
+        'Establishment Name',
+        'Date Archived',
+        'Status',
+        'Current Stage',
+        'Overall Status',
+        'PO Office',
+        'Mode',
+        // Add more columns if you want deeper data (from inner tabs)
+        // But for simplicity we're taking visible header info + overview
+    ];
+
+    const exportData = [headers];
+
+    
+casesToExport.forEach(caseEl => {
+        const caseId = caseEl.dataset.caseId;
+        const header = caseEl.querySelector('.accordion-header');
+        
+        // Get all tab content divs
+        const overview = caseEl.querySelector('#overview-' + caseId);
+        const inspection = caseEl.querySelector('#inspection-' + caseId);
+        const docketing = caseEl.querySelector('#docketing-' + caseId);
+        const hearing = caseEl.querySelector('#hearing-' + caseId);
+        const review = caseEl.querySelector('#review-' + caseId);
+        const orders = caseEl.querySelector('#orders-' + caseId);
+        const compliance = caseEl.querySelector('#compliance-' + caseId);
+        const appeals = caseEl.querySelector('#appeals-' + caseId);
+        const additional = caseEl.querySelector('#additional-' + caseId);
+
+        // Helper function to get detail value from any tab
+        function getDetailValue(tabElement, labelText) {
+            if (!tabElement) return '';
+            const detailRows = tabElement.querySelectorAll('.detail-row');
+            for (let row of detailRows) {
+                const label = row.querySelector('.detail-label');
+                if (label && label.textContent.includes(labelText)) {
+                    const value = row.querySelector('.detail-value');
+                    return value ? value.textContent.trim() : '';
+                }
+            }
+            return '';
+        }
+
+        const dateArchived = header.textContent.match(/Date Archived:\s*(\d{4}-\d{2}-\d{2})/)?.[1] || '';
+
+        const row = [
+            // Overview
+            getDetailValue(overview, 'No.:'),
+            getDetailValue(overview, 'Inspection ID:'),
+            getDetailValue(overview, 'Case No.:'),
+            getDetailValue(overview, 'Establishment Name:'),
+            getDetailValue(overview, 'Establishment Address:'),
+            getDetailValue(overview, 'Mode:'),
+            getDetailValue(overview, 'PO Office:'),
+            getDetailValue(overview, 'Current Stage:'),
+            getDetailValue(overview, 'Overall Status:'),
+            dateArchived,
+            
+            // Inspection
+            getDetailValue(inspection, 'Date of Inspection:'),
+            getDetailValue(inspection, 'Inspector Name:'),
+            getDetailValue(inspection, 'Inspector Authority No.:'),
+            getDetailValue(inspection, 'Date of NR:'),
+            getDetailValue(inspection, 'Lapse 20 Day Period:'),
+            getDetailValue(inspection, 'TWG ALI:'),
+            
+            // Docketing
+            getDetailValue(docketing, 'PCT for Docketing:'),
+            getDetailValue(docketing, 'Date Scheduled/Docketed:'),
+            getDetailValue(docketing, 'Aging Docket:'),
+            getDetailValue(docketing, 'Status Docket:'),
+            getDetailValue(docketing, 'Hearing Officer (MIS):'),
+            
+            // Hearing
+            getDetailValue(hearing, 'Date 1st MC (Actual):'),
+            getDetailValue(hearing, 'First MC PCT:'),
+            getDetailValue(hearing, 'Status 1st MC:'),
+            getDetailValue(hearing, 'Date 2nd/Last MC:'),
+            getDetailValue(hearing, 'Second/Last MC PCT:'),
+            getDetailValue(hearing, 'Status 2nd MC:'),
+            getDetailValue(hearing, 'Case Folder Forwarded to RO:'),
+            getDetailValue(hearing, 'Draft Order from PO Type:'),
+            getDetailValue(hearing, 'Applicable Draft Order:'),
+            getDetailValue(hearing, 'Complete Case Folder:'),
+            
+            // Review & Drafting
+            getDetailValue(review, 'PO PCT:'),
+            getDetailValue(review, 'Aging PO PCT:'),
+            getDetailValue(review, 'Status PO PCT:'),
+            getDetailValue(review, 'Date Received from PO:'),
+            getDetailValue(review, 'Reviewer/Drafter:'),
+            getDetailValue(review, 'Date Received by Reviewer:'),
+            getDetailValue(review, 'Date Returned from Drafter:'),
+            getDetailValue(review, 'Aging 10 Days TSSD:'),
+            getDetailValue(review, 'Status Reviewer/Drafter:'),
+            getDetailValue(review, 'Draft Order TSSD Reviewer:'),
+            getDetailValue(review, 'Final Review Date Received:'),
+            getDetailValue(review, 'Date Received Drafter Finalization:'),
+            getDetailValue(review, 'Date Returned Case Mgmt Signature:'),
+            getDetailValue(review, 'Aging 2 Days Finalization:'),
+            getDetailValue(review, 'Status Finalization:'),
+            
+            // Orders
+            getDetailValue(orders, 'PCT 96 Days:'),
+            getDetailValue(orders, 'Date Signed (MIS):'),
+            getDetailValue(orders, 'Status PCT:'),
+            getDetailValue(orders, 'Reference Date PCT:'),
+            getDetailValue(orders, 'Aging PCT:'),
+            getDetailValue(orders, 'Disposition (MIS):'),
+            getDetailValue(orders, 'Disposition (Actual):'),
+            getDetailValue(orders, 'Findings to Comply:'),
+            getDetailValue(orders, 'Date of Order (Actual):'),
+            getDetailValue(orders, 'Released Date (Actual):'),
+            
+            // Compliance
+            getDetailValue(compliance, 'Compliance Order Monetary Award:'),
+            getDetailValue(compliance, 'OSH Penalty:'),
+            getDetailValue(compliance, 'Affected Workers (Male):'),
+            getDetailValue(compliance, 'Affected Workers (Female):'),
+            getDetailValue(compliance, 'First Order Dismissal CNPC:'),
+            getDetailValue(compliance, 'Tavable Less Than 10 Workers:'),
+            getDetailValue(compliance, 'Scanned Order First:'),
+            getDetailValue(compliance, 'With Deposited Monetary Claims:'),
+            getDetailValue(compliance, 'Amount Deposited:'),
+            getDetailValue(compliance, 'With Order Payment Notice:'),
+            getDetailValue(compliance, 'Status All Employees Received:'),
+            getDetailValue(compliance, 'Status Case After First Order:'),
+            getDetailValue(compliance, 'Date Notice Finality Dismissed:'),
+            getDetailValue(compliance, 'Released Date Notice Finality:'),
+            getDetailValue(compliance, 'Scanned Notice Finality:'),
+            getDetailValue(compliance, 'Updated/Ticked in MIS:'),
+            
+            // Appeals
+            getDetailValue(appeals, 'Second Order Drafter:'),
+            getDetailValue(appeals, 'Date Received by Drafter CT CNPC:'),
+            getDetailValue(appeals, 'Date Returned Case Mgmt CT CNPC:'),
+            getDetailValue(appeals, 'Review CT CNPC:'),
+            getDetailValue(appeals, 'Date Received Drafter Finalization (2nd):'),
+            getDetailValue(appeals, 'Date Returned Case Mgmt Signature (2nd):'),
+            getDetailValue(appeals, 'Date Order (2nd CNPC):'),
+            getDetailValue(appeals, 'Released Date (2nd CNPC):'),
+            getDetailValue(appeals, 'Scanned Order (2nd CNPC):'),
+            getDetailValue(appeals, 'Date Forwarded MALSU:'),
+            getDetailValue(appeals, 'Scanned Indorsement MALSU:'),
+            getDetailValue(appeals, 'Motion Reconsideration Date:'),
+            getDetailValue(appeals, 'Date Received MALSU:'),
+            getDetailValue(appeals, 'Date Resolution MR:'),
+            getDetailValue(appeals, 'Released Date Resolution MR:'),
+            getDetailValue(appeals, 'Scanned Resolution MR:'),
+            getDetailValue(appeals, 'Date Appeal Received Records:'),
+            getDetailValue(appeals, 'Date Indorsed Office Secretary:'),
+            
+            // Additional
+            getDetailValue(additional, 'Logbook Page Number:'),
+            getDetailValue(additional, 'Remarks/Notes:'),
+            getDetailValue(additional, 'Created At:'),
+            getDetailValue(additional, 'Last Updated:')
+        ];
+
+        exportData.push(row);
+    });
+
+    // SheetJS export
+    const ws = XLSX.utils.aoa_to_sheet(exportData);
+
+    // Auto column width
+    const colWidths = headers.map((h, i) => {
+        let max = h.length;
+        exportData.forEach(r => {
+            if (r[i] && r[i].toString().length > max) max = r[i].toString().length;
+        });
+        return { wch: Math.min(60, max + 3) };
+    });
+    ws['!cols'] = colWidths;
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Archived Cases");
+
+    const today = new Date().toISOString().slice(0, 10);
+    const yearPart = yearFilter ? `_${yearFilter}` : '';
+    const scopePart = scope === 'visible' ? '_filtered' : '_all';
+    const fileName = `Archived_Cases${scopePart}${yearPart}_${today}.xlsx`;
+
+    XLSX.writeFile(wb, fileName);
+
+    Swal.fire({
+        icon: 'success',
+        title: 'Export complete!',
+        text: `${exportData.length - 1} archived cases exported`,
+        timer: 2200,
+        showConfirmButton: false
+    });
+});
 </script>
 
 @stop
