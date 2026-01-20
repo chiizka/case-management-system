@@ -1132,6 +1132,75 @@
         </div>
     </div>
 
+    <!-- Export Options Modal (Pure Client-Side) -->
+<div class="modal fade" id="exportOptionsModal" tabindex="-1" role="dialog" aria-labelledby="exportModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title" id="exportModalLabel">
+                    <i class="fas fa-file-excel mr-2"></i> Export Active Cases to XLSX
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label><strong>Scope:</strong></label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="exportScope" id="scopeFiltered" value="filtered" checked>
+                                <label class="form-check-label" for="scopeFiltered">
+                                    Current view (<span id="filteredCount">0</span> rows)
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="exportScope" id="scopeAll" value="all">
+                                <label class="form-check-label" for="scopeAll">
+                                    All active cases (<span id="allCount">0</span> rows)
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label><strong>Filter by Created Year:</strong></label>
+                            <select class="form-control" id="exportYear">
+                                <option value="">All years</option>
+                                <option value="2026">2026</option>
+                                <option value="2025">2025</option>
+                                <option value="2024">2024</option>
+                                <option value="2023">2023</option>
+                                <option value="2022">2022</option>
+                            </select>
+                            <small class="form-text text-muted">Based on "Created At" date</small>
+                        </div>
+                    </div>
+                </div>
+                <hr>
+                <div class="row text-center">
+                    <div class="col">
+                        <div class="card bg-light">
+                            <div class="card-body py-2">
+                                <small class="text-muted">✅ Skips Actions column</small><br>
+                                <small class="text-muted">✅ Preserves numbers & dates</small><br>
+                                <small class="text-success font-weight-bold">📄 Real .XLSX format</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-success btn-lg" id="confirmExportBtn">
+                    <i class="fas fa-download mr-2"></i> Download XLSX
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 @endsection
 @push('scripts')
 <!-- DataTables plugins -->
@@ -3174,93 +3243,111 @@ function displayHistory(historyData) {
     $('#historyContent').html(timelineHtml);
 }
 
-// Export "All Active Cases" table to real XLSX (skipping Actions column)
+// UPDATED: Export button → Show modal first
 document.getElementById('exportActiveCasesXlsx').addEventListener('click', function () {
     const table = $('#dataTable0').DataTable();
     
-    // Get only the currently visible/filtered rows
-    const visibleRows = table.rows({ search: 'applied' }).data().toArray();
+    // Count rows for display
+    const filteredCount = table.rows({ search: 'applied' }).count();
+    const allCount = table.rows().count();
     
-    if (visibleRows.length === 0) {
-        alert('No data to export (table is empty or no rows match the current filter).');
+    document.getElementById('filteredCount').textContent = filteredCount;
+    document.getElementById('allCount').textContent = allCount;
+    
+    // Show modal
+    $('#exportOptionsModal').modal('show');
+});
+
+// NEW: Confirm export from modal (pure client-side with year filter on created_at)
+document.getElementById('confirmExportBtn').addEventListener('click', function () {
+    const table = $('#dataTable0').DataTable();
+    const scope = document.querySelector('input[name="exportScope"]:checked').value;
+    const yearFilter = document.getElementById('exportYear').value;
+    
+    // Close modal
+    $('#exportOptionsModal').modal('hide');
+    
+    // Get data based on scope
+    let rowsData = scope === 'filtered' 
+        ? table.rows({ search: 'applied' }).data().toArray()
+        : table.rows().data().toArray();
+    
+    // YEAR FILTER on "Created At" (last column index = row.length - 1)
+    if (yearFilter) {
+        rowsData = rowsData.filter(row => {
+            const createdAt = row[row.length - 1]; // Last column = Created At
+            if (!createdAt || createdAt === '-') return false;
+            return createdAt.toString().startsWith(yearFilter); // YYYY-MM-DD → check year
+        });
+    }
+    
+    if (rowsData.length === 0) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'No data to export',
+            text: yearFilter ? `No cases found for ${yearFilter}` : 'Table is empty or no rows match filters.',
+            confirmButtonText: 'OK'
+        });
         return;
     }
-
-    // Get headers from thead (skip first column = Actions)
+    
+    // Get headers (skip Actions column)
     const headers = [];
     $('#dataTable0 thead th').slice(1).each(function() {
         headers.push($(this).text().trim());
     });
-
-    // Build the data array (array of arrays)
-    const exportData = [headers]; // first row = column titles
-
-    visibleRows.forEach(row => {
+    
+    // Build export data
+    const exportData = [headers];
+    rowsData.forEach(row => {
         const rowData = [];
-        
-        // Skip column 0 (Actions) → start from index 1
-        for (let i = 1; i < row.length; i++) {
+        for (let i = 1; i < row.length; i++) { // Skip Actions (i=0)
             let cellValue = row[i];
-            
-            // Remove any HTML tags (badges, links, buttons, etc.)
             if (typeof cellValue === 'string') {
-                cellValue = cellValue
-                    .replace(/<[^>]*>/g, '')     // strip HTML
-                    .replace(/\s+/g, ' ')         // normalize spaces
-                    .trim();
+                cellValue = cellValue.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
             }
-            
-            // Handle special cases
             if (cellValue === '-' || cellValue === '' || cellValue == null) {
                 cellValue = '';
-            }
-            // Try to convert numeric-looking strings to real numbers
-            else if (!isNaN(cellValue) && cellValue !== '') {
+            } else if (!isNaN(cellValue) && cellValue !== '') {
                 cellValue = Number(cellValue);
             }
-            // Dates (SheetJS will recognize ISO YYYY-MM-DD format automatically)
-            
             rowData.push(cellValue);
         }
-        
         exportData.push(rowData);
     });
-
-    // Create worksheet
+    
+    // SheetJS magic (same as before)
     const ws = XLSX.utils.aoa_to_sheet(exportData);
-
-    // Auto-size columns (rough but useful for ~80 columns)
+    
+    // Auto-size columns
     const colWidths = headers.map((header, idx) => {
         let maxLen = header.length;
         exportData.forEach(row => {
-            const val = row[idx + 1]; // +1 because headers are row 0
-            if (val && val.toString) {
-                maxLen = Math.max(maxLen, val.toString().length);
-            }
+            const val = row[idx + 1];
+            if (val && val.toString().length > maxLen) maxLen = val.toString().length;
         });
-        return { wch: Math.min(80, maxLen + 4) }; // cap at 80 chars width
+        return { wch: Math.min(80, maxLen + 4) };
     });
     ws['!cols'] = colWidths;
-
-    // Create workbook and add sheet
+    
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Active Cases");
-
-    // Generate filename with current date
-    const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
-    const filename = `Active_Cases_${today}.xlsx`;
-
-    // Trigger download
+    
+    const today = new Date().toISOString().slice(0, 10);
+    const yearStr = yearFilter ? `_${yearFilter}` : '';
+    const scopeStr = scope === 'filtered' ? '_filtered' : '_all';
+    const filename = `Active_Cases${scopeStr}${yearStr}_${today}.xlsx`;
+    
     XLSX.writeFile(wb, filename);
-
-    // Optional: visual feedback
-    const originalText = this.innerHTML;
-    this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Exporting...';
-    this.disabled = true;
-    setTimeout(() => {
-        this.innerHTML = originalText;
-        this.disabled = false;
-    }, 1800);
+    
+    // Success feedback
+    Swal.fire({
+        icon: 'success',
+        title: 'Exported!',
+        text: `${exportData.length - 1} rows saved to ${filename}`,
+        timer: 2500,
+        showConfirmButton: false
+    });
 });
 </script>
 @endpush
