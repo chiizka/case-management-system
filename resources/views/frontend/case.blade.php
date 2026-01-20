@@ -307,6 +307,10 @@
                         <button class="btn btn-success btn-sm mr-2" data-toggle="modal" data-target="#uploadCsvModal">
                             <i class="fas fa-upload"></i> Upload CSV
                         </button>
+
+                        <button class="btn btn-info btn-sm mr-2" id="exportActiveCasesXlsx">
+                            <i class="fas fa-file-excel"></i> Export Active Cases (XLSX)
+                        </button>
                         
                         <button class="btn btn-primary btn-sm" data-toggle="modal" data-target="#addCaseModal" data-mode="add">
                             + Add Case
@@ -1133,6 +1137,11 @@
 <!-- DataTables plugins -->
 <script src="{{ asset('vendor/datatables/jquery.dataTables.min.js') }}"></script>
 <script src="{{ asset('vendor/datatables/dataTables.bootstrap4.min.js') }}"></script>
+<!-- SheetJS (xlsx full version) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+<!-- FileSaver.js - for triggering the browser download -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
 
 <script>
 
@@ -3164,5 +3173,94 @@ function displayHistory(historyData) {
     timelineHtml += '</div>';
     $('#historyContent').html(timelineHtml);
 }
+
+// Export "All Active Cases" table to real XLSX (skipping Actions column)
+document.getElementById('exportActiveCasesXlsx').addEventListener('click', function () {
+    const table = $('#dataTable0').DataTable();
+    
+    // Get only the currently visible/filtered rows
+    const visibleRows = table.rows({ search: 'applied' }).data().toArray();
+    
+    if (visibleRows.length === 0) {
+        alert('No data to export (table is empty or no rows match the current filter).');
+        return;
+    }
+
+    // Get headers from thead (skip first column = Actions)
+    const headers = [];
+    $('#dataTable0 thead th').slice(1).each(function() {
+        headers.push($(this).text().trim());
+    });
+
+    // Build the data array (array of arrays)
+    const exportData = [headers]; // first row = column titles
+
+    visibleRows.forEach(row => {
+        const rowData = [];
+        
+        // Skip column 0 (Actions) → start from index 1
+        for (let i = 1; i < row.length; i++) {
+            let cellValue = row[i];
+            
+            // Remove any HTML tags (badges, links, buttons, etc.)
+            if (typeof cellValue === 'string') {
+                cellValue = cellValue
+                    .replace(/<[^>]*>/g, '')     // strip HTML
+                    .replace(/\s+/g, ' ')         // normalize spaces
+                    .trim();
+            }
+            
+            // Handle special cases
+            if (cellValue === '-' || cellValue === '' || cellValue == null) {
+                cellValue = '';
+            }
+            // Try to convert numeric-looking strings to real numbers
+            else if (!isNaN(cellValue) && cellValue !== '') {
+                cellValue = Number(cellValue);
+            }
+            // Dates (SheetJS will recognize ISO YYYY-MM-DD format automatically)
+            
+            rowData.push(cellValue);
+        }
+        
+        exportData.push(rowData);
+    });
+
+    // Create worksheet
+    const ws = XLSX.utils.aoa_to_sheet(exportData);
+
+    // Auto-size columns (rough but useful for ~80 columns)
+    const colWidths = headers.map((header, idx) => {
+        let maxLen = header.length;
+        exportData.forEach(row => {
+            const val = row[idx + 1]; // +1 because headers are row 0
+            if (val && val.toString) {
+                maxLen = Math.max(maxLen, val.toString().length);
+            }
+        });
+        return { wch: Math.min(80, maxLen + 4) }; // cap at 80 chars width
+    });
+    ws['!cols'] = colWidths;
+
+    // Create workbook and add sheet
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Active Cases");
+
+    // Generate filename with current date
+    const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+    const filename = `Active_Cases_${today}.xlsx`;
+
+    // Trigger download
+    XLSX.writeFile(wb, filename);
+
+    // Optional: visual feedback
+    const originalText = this.innerHTML;
+    this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Exporting...';
+    this.disabled = true;
+    setTimeout(() => {
+        this.innerHTML = originalText;
+        this.disabled = false;
+    }, 1800);
+});
 </script>
 @endpush
