@@ -200,6 +200,39 @@
     display: none;
 }
 
+
+.document-item-actions {
+    display: flex;
+    gap: 5px;
+    align-items: center;
+}
+
+.file-info {
+    font-size: 0.75rem;
+    color: #6c757d;
+    margin-top: 0.25rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.file-info i {
+    color: #28a745;
+}
+
+.upload-btn {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+}
+
+.list-group-item {
+    padding: 0.75rem 1rem;
+}
+
+.document-content {
+    flex: 1;
+    min-width: 0;
+}
 </style>
 
 <!-- Main Content -->
@@ -1131,75 +1164,78 @@
             </div>
         </div>
     </div>
+ 
+    <input type="file" id="documentFileInput" style="display: none;" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.xlsx,.xls">
+
 
     <!-- Export Options Modal (Pure Client-Side) -->
-<div class="modal fade" id="exportOptionsModal" tabindex="-1" role="dialog" aria-labelledby="exportModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg" role="document">
-        <div class="modal-content">
-            <div class="modal-header bg-info text-white">
-                <h5 class="modal-title" id="exportModalLabel">
-                    <i class="fas fa-file-excel mr-2"></i> Export Active Cases to XLSX
-                </h5>
-                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-            </div>
-            <div class="modal-body">
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label><strong>Scope:</strong></label>
-                            <div class="form-check">
-                                <input class="form-check-input" type="radio" name="exportScope" id="scopeFiltered" value="filtered" checked>
-                                <label class="form-check-label" for="scopeFiltered">
-                                    Current view (<span id="filteredCount">0</span> rows)
-                                </label>
+    <div class="modal fade" id="exportOptionsModal" tabindex="-1" role="dialog" aria-labelledby="exportModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header bg-info text-white">
+                    <h5 class="modal-title" id="exportModalLabel">
+                        <i class="fas fa-file-excel mr-2"></i> Export Active Cases to XLSX
+                    </h5>
+                    <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label><strong>Scope:</strong></label>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="exportScope" id="scopeFiltered" value="filtered" checked>
+                                    <label class="form-check-label" for="scopeFiltered">
+                                        Current view (<span id="filteredCount">0</span> rows)
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="exportScope" id="scopeAll" value="all">
+                                    <label class="form-check-label" for="scopeAll">
+                                        All active cases (<span id="allCount">0</span> rows)
+                                    </label>
+                                </div>
                             </div>
-                            <div class="form-check">
-                                <input class="form-check-input" type="radio" name="exportScope" id="scopeAll" value="all">
-                                <label class="form-check-label" for="scopeAll">
-                                    All active cases (<span id="allCount">0</span> rows)
-                                </label>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label><strong>Filter by Created Year:</strong></label>
+                                <select class="form-control" id="exportYear">
+                                    <option value="">All years</option>
+                                    <option value="2026">2026</option>
+                                    <option value="2025">2025</option>
+                                    <option value="2024">2024</option>
+                                    <option value="2023">2023</option>
+                                    <option value="2022">2022</option>
+                                </select>
+                                <small class="form-text text-muted">Based on "Created At" date</small>
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label><strong>Filter by Created Year:</strong></label>
-                            <select class="form-control" id="exportYear">
-                                <option value="">All years</option>
-                                <option value="2026">2026</option>
-                                <option value="2025">2025</option>
-                                <option value="2024">2024</option>
-                                <option value="2023">2023</option>
-                                <option value="2022">2022</option>
-                            </select>
-                            <small class="form-text text-muted">Based on "Created At" date</small>
+                    <hr>
+                    <div class="row text-center">
+                        <div class="col">
+                            <div class="card bg-light">
+                                <div class="card-body py-2">
+                                    <small class="text-muted">✅ Skips Actions column</small><br>
+                                    <small class="text-muted">✅ Preserves numbers & dates</small><br>
+                                    <small class="text-success font-weight-bold">📄 Real .XLSX format</small>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
-                <hr>
-                <div class="row text-center">
-                    <div class="col">
-                        <div class="card bg-light">
-                            <div class="card-body py-2">
-                                <small class="text-muted">✅ Skips Actions column</small><br>
-                                <small class="text-muted">✅ Preserves numbers & dates</small><br>
-                                <small class="text-success font-weight-bold">📄 Real .XLSX format</small>
-                            </div>
-                        </div>
-                    </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-success btn-lg" id="confirmExportBtn">
+                        <i class="fas fa-download mr-2"></i> Download XLSX
+                    </button>
                 </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-success btn-lg" id="confirmExportBtn">
-                    <i class="fas fa-download mr-2"></i> Download XLSX
-                </button>
             </div>
         </div>
     </div>
-</div>
 
 @endsection
 @push('scripts')
@@ -1228,9 +1264,11 @@ $(document).ready(function() {
         ]
     });
 
-let currentCaseId = null;
 let documents = [];
+let currentCaseId = null;
+let currentUploadDocId = null;
 
+// 2. DOCUMENT CHECKLIST BUTTON CLICK HANDLER (from your first script)
 $(document).on('click', '.document-checklist-btn', function() {
     currentCaseId = $(this).data('case-id');
     const caseNo = $(this).data('case-no');
@@ -1245,6 +1283,7 @@ $(document).on('click', '.document-checklist-btn', function() {
     $('#documentChecklistModal').modal('show');
 });
 
+// 3. ADD DOCUMENT BUTTON
 $('#addDocumentBtn').on('click', function() {
     const title = $('#newDocumentTitle').val().trim();
     
@@ -1256,7 +1295,7 @@ $('#addDocumentBtn').on('click', function() {
     documents.push({
         id: Date.now(),
         title: title,
-        checked: false  // Boolean, not string
+        checked: false
     });
     
     $('#newDocumentTitle').val('');
@@ -1264,41 +1303,121 @@ $('#addDocumentBtn').on('click', function() {
     renderDocuments();
 });
 
+// 4. CHECKBOX CHANGE HANDLER
 $(document).on('change', '.document-checkbox', function() {
-    const docId = parseInt($(this).data('doc-id')); // Parse as integer
+    const docId = parseInt($(this).data('doc-id'));
     const isChecked = $(this).is(':checked');
     
     console.log('Checkbox changed:', docId, 'checked:', isChecked, typeof isChecked);
     
-    const doc = documents.find(d => d.id == docId); // Use == for loose comparison
+    const doc = documents.find(d => d.id == docId);
     if (doc) {
-        doc.checked = isChecked; // This is already a boolean
+        doc.checked = isChecked;
         console.log('Updated document:', doc);
+        
+        // Update UI immediately BEFORE saving
+        const $label = $(`label[for="doc-${doc.id}"]`);
+        const $fileInfo = $label.closest('.document-content').find('.file-info');
+        
+        if (isChecked) {
+            $label.addClass('text-muted').css('text-decoration', 'line-through');
+            $fileInfo.addClass('text-muted').css('text-decoration', 'line-through');
+        } else {
+            $label.removeClass('text-muted').css('text-decoration', 'none');
+            $fileInfo.removeClass('text-muted').css('text-decoration', 'none');
+        }
+        
+        // Save to server
         saveDocuments();
     }
 });
 
+// 5. REMOVE DOCUMENT BUTTON
 $(document).on('click', '.remove-document-btn', function() {
-    const docId = parseInt($(this).data('doc-id')); // Parse as integer
+    const docId = parseInt($(this).data('doc-id'));
     
     if (!confirm('Remove this document from checklist?')) {
         return;
     }
     
     console.log('Removing document:', docId);
-    documents = documents.filter(d => d.id != docId); // Use != for loose comparison
+    
+    // Check if document has uploaded file
+    const doc = documents.find(d => d.id == docId);
+    if (doc && doc.file_path) {
+        if (!confirm('This document has an uploaded file. Delete the file as well?')) {
+            return;
+        }
+        // Delete the file first
+        deleteDocumentFile(docId);
+    }
+    
+    documents = documents.filter(d => d.id != docId);
     console.log('Documents after removal:', documents);
     
     saveDocuments();
     renderDocuments();
 });
 
+// 6. UPLOAD FILE BUTTON
+$(document).on('click', '.upload-file-btn', function() {
+    currentUploadDocId = parseInt($(this).data('doc-id'));
+    $('#documentFileInput').click();
+});
+
+// 7. FILE INPUT CHANGE HANDLER
+$('#documentFileInput').on('change', function(e) {
+    const file = e.target.files[0];
+    
+    if (!file) {
+        return;
+    }
+    
+    // Validate file size (10MB max)
+    if (file.size > 10 * 1024 * 1024) {
+        alert('File size must be less than 10MB');
+        $(this).val('');
+        return;
+    }
+    
+    // Validate file type
+    const allowedExtensions = ['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png', 'xlsx', 'xls'];
+    const fileExtension = file.name.split('.').pop().toLowerCase();
+    
+    if (!allowedExtensions.includes(fileExtension)) {
+        alert('Invalid file type. Allowed: PDF, DOC, DOCX, JPG, PNG, XLSX, XLS');
+        $(this).val('');
+        return;
+    }
+    
+    uploadDocumentFile(currentUploadDocId, file);
+});
+
+// 8. VIEW/DOWNLOAD FILE BUTTON
+$(document).on('click', '.view-file-btn', function() {
+    const docId = parseInt($(this).data('doc-id'));
+    downloadDocumentFile(docId);
+});
+
+// 9. DELETE FILE BUTTON
+$(document).on('click', '.delete-file-btn', function() {
+    const docId = parseInt($(this).data('doc-id'));
+    
+    if (!confirm('Delete this uploaded file?')) {
+        return;
+    }
+    
+    deleteDocumentFile(docId);
+});
+
+// 10. ENTER KEY HANDLER
 $('#newDocumentTitle').on('keypress', function(e) {
     if (e.which === 13) {
         $('#addDocumentBtn').click();
     }
 });
 
+// 11. LOAD DOCUMENTS FUNCTION
 function loadDocuments() {
     $.ajax({
         url: `/case/${currentCaseId}/documents`,
@@ -1306,7 +1425,6 @@ function loadDocuments() {
         success: function(response) {
             console.log('Loaded documents from DB:', response.documents);
             if (response.success) {
-                // Ensure checked values are booleans
                 documents = (response.documents || []).map(doc => ({
                     ...doc,
                     checked: doc.checked === true || doc.checked === 'true' || doc.checked === 1
@@ -1321,6 +1439,7 @@ function loadDocuments() {
     });
 }
 
+// 12. SAVE DOCUMENTS FUNCTION
 function saveDocuments() {
     console.log('Saving documents to DB:', documents);
     
@@ -1341,6 +1460,95 @@ function saveDocuments() {
     });
 }
 
+// 13. UPLOAD FILE FUNCTION
+function uploadDocumentFile(docId, file) {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('_token', $('meta[name="csrf-token"]').attr('content'));
+    
+    // Show loading state
+    const $uploadBtn = $(`.upload-file-btn[data-doc-id="${docId}"]`);
+    const originalHtml = $uploadBtn.html();
+    $uploadBtn.html('<i class="fas fa-spinner fa-spin"></i>').prop('disabled', true);
+    
+    $.ajax({
+        url: `/case/${currentCaseId}/documents/${docId}/upload`,
+        method: 'POST',
+        data: formData,
+        processData: false,
+        contentType: false,
+        success: function(response) {
+            if (response.success) {
+                // Update document with file info
+                const doc = documents.find(d => d.id == docId);
+                if (doc) {
+                    doc.file_name = response.file_name;
+                    doc.file_size = response.file_size;
+                    doc.uploaded_at = response.uploaded_at;
+                    doc.file_path = 'uploaded'; // Flag that file exists
+                }
+                
+                // Clear file input
+                $('#documentFileInput').val('');
+                
+                // Re-render documents
+                renderDocuments();
+                
+                // Show success message
+                showToast('success', response.message);
+            } else {
+                alert(response.message || 'Upload failed');
+                $uploadBtn.html(originalHtml).prop('disabled', false);
+            }
+        },
+        error: function(xhr) {
+            console.error('Upload error:', xhr);
+            const errorMsg = xhr.responseJSON?.message || 'Failed to upload file';
+            alert(errorMsg);
+            $uploadBtn.html(originalHtml).prop('disabled', false);
+        }
+    });
+}
+
+// 14. DOWNLOAD FILE FUNCTION
+function downloadDocumentFile(docId) {
+    window.location.href = `/case/${currentCaseId}/documents/${docId}/download`;
+}
+
+// 15. DELETE FILE FUNCTION
+function deleteDocumentFile(docId) {
+    $.ajax({
+        url: `/case/${currentCaseId}/documents/${docId}/file`,
+        method: 'DELETE',
+        data: {
+            _token: $('meta[name="csrf-token"]').attr('content')
+        },
+        success: function(response) {
+            if (response.success) {
+                // Update document - remove file info
+                const doc = documents.find(d => d.id == docId);
+                if (doc) {
+                    delete doc.file_name;
+                    delete doc.file_size;
+                    delete doc.uploaded_at;
+                    delete doc.uploaded_by;
+                    delete doc.file_path;
+                }
+                
+                // Re-render documents
+                renderDocuments();
+                
+                showToast('success', response.message);
+            }
+        },
+        error: function(xhr) {
+            console.error('Delete error:', xhr);
+            alert('Failed to delete file');
+        }
+    });
+}
+
+// 16. RENDER DOCUMENTS FUNCTION
 function renderDocuments() {
     console.log('Rendering documents:', documents);
     
@@ -1358,121 +1566,190 @@ function renderDocuments() {
     
     documents.forEach(doc => {
         const isChecked = doc.checked === true;
-        console.log(`Rendering doc ${doc.id}: checked=${doc.checked}, isChecked=${isChecked}`);
+        const hasFile = doc.file_path && doc.file_name;
+        
+        console.log(`Rendering doc ${doc.id}: checked=${doc.checked}, hasFile=${hasFile}`);
+        
+        let fileInfo = '';
+        let uploadButton = '';
+        
+        if (hasFile) {
+            // Show file info and action buttons with strikethrough if checked
+            const fileInfoClass = isChecked ? 'text-muted' : '';
+            const fileInfoStyle = isChecked ? 'text-decoration: line-through;' : '';
+            
+            fileInfo = `
+                <div class="file-info ${fileInfoClass}" style="${fileInfoStyle}">
+                    <i class="fas fa-paperclip"></i>
+                    <span>${doc.file_name} (${doc.file_size || 'Unknown size'})</span>
+                    <button class="btn btn-sm btn-outline-primary view-file-btn" 
+                            data-doc-id="${doc.id}" 
+                            title="View/Download file"
+                            type="button">
+                        <i class="fas fa-download"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger delete-file-btn" 
+                            data-doc-id="${doc.id}" 
+                            title="Delete file"
+                            type="button">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            `;
+        } else {
+            // Show upload button
+            uploadButton = `
+                <button class="btn btn-sm btn-success upload-file-btn upload-btn" 
+                        data-doc-id="${doc.id}"
+                        title="Upload file"
+                        type="button">
+                    <i class="fas fa-upload"></i> Upload
+                </button>
+            `;
+        }
         
         const item = `
-            <li class="list-group-item d-flex justify-content-between align-items-center">
-                <div class="custom-control custom-checkbox">
-                    <input type="checkbox" 
-                           class="custom-control-input document-checkbox" 
-                           id="doc-${doc.id}" 
-                           data-doc-id="${doc.id}"
-                           ${isChecked ? 'checked' : ''}>
-                    <label class="custom-control-label ${isChecked ? 'text-muted' : ''}" 
-                           for="doc-${doc.id}" 
-                           style="${isChecked ? 'text-decoration: line-through;' : ''}">
-                        ${doc.title}
-                    </label>
+            <li class="list-group-item d-flex justify-content-between align-items-start">
+                <div class="document-content">
+                    <div class="custom-control custom-checkbox">
+                        <input type="checkbox" 
+                               class="custom-control-input document-checkbox" 
+                               id="doc-${doc.id}" 
+                               data-doc-id="${doc.id}"
+                               ${isChecked ? 'checked' : ''}>
+                        <label class="custom-control-label ${isChecked ? 'text-muted' : ''}" 
+                               for="doc-${doc.id}" 
+                               style="${isChecked ? 'text-decoration: line-through;' : ''}">
+                            ${doc.title}
+                        </label>
+                    </div>
+                    ${fileInfo}
                 </div>
-                <button class="btn btn-sm btn-danger remove-document-btn" 
-                        data-doc-id="${doc.id}"
-                        type="button">
-                    <i class="fas fa-times"></i>
-                </button>
+                <div class="document-item-actions">
+                    ${uploadButton}
+                    <button class="btn btn-sm btn-danger remove-document-btn" 
+                            data-doc-id="${doc.id}"
+                            title="Remove from checklist"
+                            type="button">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
             </li>
         `;
         docsList.append(item);
     });
 }
-    $(document).on('click', '.action-toggle-btn', function(e) {
-        e.preventDefault();
-        e.stopPropagation();
 
-        const $btn = $(this);
-        const $cell = $btn.closest('.actions-cell');
-        const $row = $cell.closest('tr');
-        const $table = $row.closest('table');
-        const dt = $table.DataTable();
+// 17. TOAST NOTIFICATION FUNCTION
+function showToast(type, message) {
+    const toastHtml = `
+        <div class="toast" role="alert" style="position: fixed; top: 20px; right: 20px; z-index: 9999;">
+            <div class="toast-header ${type === 'success' ? 'bg-success' : 'bg-danger'} text-white">
+                <strong class="mr-auto">${type === 'success' ? 'Success' : 'Error'}</strong>
+                <button type="button" class="ml-2 mb-1 close text-white" data-dismiss="toast">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="toast-body">
+                ${message}
+            </div>
+        </div>
+    `;
+    
+    $('body').append(toastHtml);
+    $('.toast').toast({ delay: 3000 }).toast('show');
+    
+    $('.toast').on('hidden.bs.toast', function() {
+        $(this).remove();
+    });
+}
 
-        const isExpanding = $cell.hasClass('collapsed');
+// ==========================================
+// ACTION TOGGLE BUTTONS (from your first script)
+// ==========================================
 
-        // 1. Toggle classes
-        $cell.toggleClass('collapsed expanded');
-        $btn.find('i')
-            .toggleClass('fa-chevron-right fa-chevron-left');
+$(document).on('click', '.action-toggle-btn', function(e) {
+    e.preventDefault();
+    e.stopPropagation();
 
-        // 2. Force both header and body to recalculate properly
+    const $btn = $(this);
+    const $cell = $btn.closest('.actions-cell');
+    const $row = $cell.closest('tr');
+    const $table = $row.closest('table');
+    const dt = $table.DataTable();
+
+    const isExpanding = $cell.hasClass('collapsed');
+
+    // Toggle classes
+    $cell.toggleClass('collapsed expanded');
+    $btn.find('i')
+        .toggleClass('fa-chevron-right fa-chevron-left');
+
+    setTimeout(() => {
+        dt.columns.adjust().draw(false);
+        $table.css('table-layout', 'auto');
+        dt.columns.adjust().draw(false);
+        $table.css('table-layout', 'fixed');
+
+        const $container = $table.closest('.table-container');
+        $container.scrollLeft($container.scrollLeft() + 1);
+        $container.scrollLeft($container.scrollLeft() - 1);
+    }, 20);
+});
+
+$(document).on('click', '.edit-row-btn-case', function(e) {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const $row = $(this).closest('tr');
+    const $cell = $row.find('.actions-cell');
+
+    if ($cell.hasClass('collapsed')) {
+        $cell.removeClass('collapsed').addClass('expanded');
+        $cell.find('.action-toggle-btn i')
+            .removeClass('fa-chevron-right')
+            .addClass('fa-chevron-left');
+
         setTimeout(() => {
-            // Most important sequence - order matters!
-            dt.columns.adjust().draw(false);           // First try normal adjust
-            $table.css('table-layout', 'auto');        // Temporarily release fixed layout
-            dt.columns.adjust().draw(false);           // Adjust again
-            $table.css('table-layout', 'fixed');       // Lock it back
+            const dt = $row.closest('table').DataTable();
+            dt.columns.adjust().draw(false);
+            const $table = $row.closest('table');
+            $table.css('table-layout', 'auto');
+            dt.columns.adjust().draw(false);
+            $table.css('table-layout', 'fixed');
 
-            // Extra safety: force container to reflow
             const $container = $table.closest('.table-container');
             $container.scrollLeft($container.scrollLeft() + 1);
             $container.scrollLeft($container.scrollLeft() - 1);
+        }, 30);
+    }
+});
 
-        }, 20);
+// Collapse when clicking outside
+$(document).on('click', function(e) {
+    if (
+        $(e.target).closest('.actions-cell').length ||
+        $(e.target).closest('.save-btn-case, .cancel-btn-case, .edit-row-btn-case').length
+    ) {
+        return;
+    }
+
+    $('.actions-cell.expanded').each(function() {
+        const $cell = $(this);
+        const $table = $cell.closest('table');
+        const dt = $table.DataTable();
+
+        $cell.removeClass('expanded').addClass('collapsed');
+        $cell.find('i').removeClass('fa-chevron-left').addClass('fa-chevron-right');
+
+        setTimeout(() => {
+            dt.columns.adjust();
+            dt.draw(false);
+            const containerWidth = $table.closest('.table-container').width();
+            $table.find('thead').css('width', containerWidth + 'px');
+        }, 30);
     });
-
-    $(document).on('click', '.edit-row-btn-case', function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-
-        const $row = $(this).closest('tr');
-        const $cell = $row.find('.actions-cell');
-
-        if ($cell.hasClass('collapsed')) {
-            $cell.removeClass('collapsed').addClass('expanded');
-            $cell.find('.action-toggle-btn i')
-                .removeClass('fa-chevron-right')
-                .addClass('fa-chevron-left');
-
-            // Same strong recalc sequence
-            setTimeout(() => {
-                const dt = $row.closest('table').DataTable();
-                dt.columns.adjust().draw(false);
-                const $table = $row.closest('table');
-                $table.css('table-layout', 'auto');
-                dt.columns.adjust().draw(false);
-                $table.css('table-layout', 'fixed');
-
-                const $container = $table.closest('.table-container');
-                $container.scrollLeft($container.scrollLeft() + 1);
-                $container.scrollLeft($container.scrollLeft() - 1);
-            }, 30);
-        }
-    });
-
-    // 3. Collapse when clicking outside — IMPROVED VERSION
-    $(document).on('click', function(e) {
-        // Don't collapse if click is inside any actions cell or edit/save/cancel buttons
-        if (
-            $(e.target).closest('.actions-cell').length ||
-            $(e.target).closest('.save-btn-case, .cancel-btn-case, .edit-row-btn-case').length
-        ) {
-            return;
-        }
-
-        $('.actions-cell.expanded').each(function() {
-            const $cell = $(this);
-            const $table = $cell.closest('table');
-            const dt = $table.DataTable();
-
-            $cell.removeClass('expanded').addClass('collapsed');
-            $cell.find('i').removeClass('fa-chevron-left').addClass('fa-chevron-right');
-
-            // Same reliable recalc sequence
-            setTimeout(() => {
-                dt.columns.adjust();
-                dt.draw(false);
-                const containerWidth = $table.closest('.table-container').width();
-                $table.find('thead').css('width', containerWidth + 'px');
-            }, 30);
-        });
-    });
+});
     // Store all table instances
     var tables = {};
     
@@ -3349,5 +3626,6 @@ document.getElementById('confirmExportBtn').addEventListener('click', function (
         showConfirmButton: false
     });
 });
+
 </script>
 @endpush

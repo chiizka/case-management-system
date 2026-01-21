@@ -66,6 +66,11 @@ Route::middleware('auth')->group(function () {
         Route::get('/case/{id}/document-history', [CasesController::class, 'getDocumentHistory'])->name('case.documentHistory');
         Route::get('/case/{id}/documents', [CasesController::class, 'getDocuments'])->name('case.documents');
         Route::post('/case/{id}/documents', [CasesController::class, 'saveDocuments'])->name('case.documents.save');
+
+        // NEW: Document file upload routes
+        Route::post('/case/{caseId}/documents/{documentId}/upload', [CasesController::class, 'uploadDocumentFile'])->name('case.documents.upload');
+        Route::get('/case/{caseId}/documents/{documentId}/download', [CasesController::class, 'downloadDocumentFile'])->name('case.documents.download');
+        Route::delete('/case/{caseId}/documents/{documentId}/file', [CasesController::class, 'deleteDocumentFile'])->name('case.documents.deleteFile');
     });
 
 
@@ -127,3 +132,37 @@ Route::middleware('auth')->group(function () {
 
     Route::post('/case/import-csv', [App\Http\Controllers\CasesController::class, 'importCsv'])->name('case.import-csv');
 });
+
+Route::get('/fix-document-paths', function() {
+    $cases = \App\Models\CaseFile::whereNotNull('document_checklist')->get();
+    $fixed = 0;
+    
+    foreach ($cases as $case) {
+        $documents = $case->document_checklist;
+        $needsUpdate = false;
+        
+        foreach ($documents as &$doc) {
+            if (isset($doc['file_path'])) {
+                // Remove escaped slashes
+                $originalPath = $doc['file_path'];
+                $cleanPath = str_replace('\\/', '/', $doc['file_path']);
+                
+                if ($originalPath !== $cleanPath) {
+                    $doc['file_path'] = $cleanPath;
+                    $needsUpdate = true;
+                    $fixed++;
+                }
+            }
+        }
+        
+        if ($needsUpdate) {
+            $case->update(['document_checklist' => $documents]);
+        }
+    }
+    
+    return response()->json([
+        'success' => true,
+        'message' => "Fixed {$fixed} file path(s)",
+        'fixed_count' => $fixed
+    ]);
+})->middleware('auth');

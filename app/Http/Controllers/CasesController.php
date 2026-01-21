@@ -18,6 +18,7 @@ use Illuminate\Support\Facades\DB;
 use App\Models\DocumentTracking;
 use Illuminate\Support\Facades\Validator;
 use PhpOffice\PhpSpreadsheet\IOFactory;
+use Illuminate\Support\Facades\Storage;
 use PhpOffice\PhpSpreadsheet\Writer\Csv as CsvWriter;
 
 class CasesController extends Controller
@@ -1176,5 +1177,329 @@ public function saveDocuments(Request $request, $id)
             'message' => 'Failed to save documents'
         ], 500);
     }
+}
+
+/**
+ * Upload file for a document in checklist
+ */
+public function uploadDocumentFile(Request $request, $caseId, $documentId)
+{
+    $request->validate([
+        'file' => 'required|file|mimes:pdf,doc,docx,jpg,jpeg,png,xlsx,xls|max:10240', // 10MB max
+    ]);
+
+    DB::beginTransaction();
+    try {
+        $case = CaseFile::findOrFail($caseId);
+        $documents = $case->document_checklist ?? [];
+        
+        // Convert documentId to integer for comparison
+        $documentId = (int) $documentId;
+        
+        // Find the document in the checklist
+        $documentIndex = null;
+        foreach ($documents as $index => $doc) {
+            if (isset($doc['id']) && (int)$doc['id'] == $documentId) {
+                $documentIndex = $index;
+                break;
+            }
+        }
+        
+        if ($documentIndex === null) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Document not found in checklist'
+            ], 404);
+        }
+        
+        // IMPORTANT: Create directory if it doesn't exist
+        $uploadDir = storage_path("app/case_documents/{$caseId}");
+        if (!file_exists($uploadDir)) {
+            if (!mkdir($uploadDir, 0777, true) && !is_dir($uploadDir)) {
+                throw new \Exception("Failed to create upload directory: {$uploadDir}");
+            }
+            Log::info("Created directory: {$uploadDir}");
+        }
+        
+        // Handle file upload
+        $file = $request->file('file');
+        
+        // Get file info IMMEDIATELY before it's deleted
+        $originalName = $file->getClientOriginalName();
+        $extension = $file->getClientOriginalExtension();
+        $fileSize = $file->getSize(); // Get size NOW
+        
+        // Create unique filename: {document_id}_{timestamp}.{ext}
+        $filename = $documentId . '_' . time() . '.' . $extension;
+        
+        // Use move() instead of storeAs() for better Windows compatibility
+        $destinationPath = $uploadDir . '/' . $filename;
+        
+        try {
+            // Try Laravel's storeAs first
+            $path = $file->storeAs(
+                "case_documents/{$caseId}",
+                $filename,
+                'local'
+            );
+            
+            $fullPath = storage_path('app/' . $path);
+            
+            // Verify file was actually saved
+            if (!file_exists($fullPath)) {
+                // Fallback: try manual move
+                Log::warning("storeAs didn't work, trying manual move");
+                
+                if (!$file->move($uploadDir, $filename)) {
+                    throw new \Exception("Both storeAs and move failed");
+                }
+                
+                $path = "case_documents/{$caseId}/{$filename}";
+                $fullPath = $destinationPath;
+            }
+            
+            // Final verification
+            if (!file_exists($fullPath)) {
+                throw new \Exception("File upload failed - file not found after storage: {$fullPath}");
+            }
+            
+            Log::info('File successfully uploaded', [
+                'path' => $path,
+                'full_path' => $fullPath,
+                'file_exists' => file_exists($fullPath),
+                'file_size' => filesize($fullPath)
+            ]);
+            
+        } catch (\Exception $e) {
+            Log::error('Upload error details', [
+                'error' => $e->getMessage(),
+                'upload_dir' => $uploadDir,
+                'dir_exists' => file_exists($uploadDir),
+                'dir_writable' => is_writable($uploadDir),
+                'tmp_file' => $file->getRealPath(),
+                'tmp_exists' => file_exists($file->getRealPath())
+            ]);
+            throw $e;
+        }
+        
+        // Log the storage path
+        Log::info('File uploaded', [
+            'case_id' => $caseId,
+            'document_id' => $documentId,
+            'filename' => $filename,
+            'stored_path' => $path,
+            'full_path' => storage_path('app/' . $path),
+            'file_exists' => file_exists(storage_path('app/' . $path))
+        ]);
+        
+        // Delete old file if exists
+        if (isset($documents[$documentIndex]['file_path']) && !empty($documents[$documentIndex]['file_path'])) {
+            Storage::disk('local')->delete($documents[$documentIndex]['file_path']);
+        }
+        
+        // Update document with file info
+        $documents[$documentIndex]['file_path'] = $path;  // This should be: "case_documents/{case_id}/{filename}"
+        $documents[$documentIndex]['file_name'] = $originalName;
+        $documents[$documentIndex]['file_size'] = $fileSize; // Use the size we got earlier
+        $documents[$documentIndex]['uploaded_at'] = now()->toDateTimeString();
+        $documents[$documentIndex]['uploaded_by'] = Auth::user()->fname . ' ' . Auth::user()->lname;
+        
+        // Re-index array to maintain proper structure
+        $documents = array_values($documents);
+        
+        // Save updated checklist
+        $case->update([
+            'document_checklist' => $documents
+        ]);
+        
+        ActivityLogger::logAction(
+            'UPLOAD',
+            'Case Document',
+            $case->inspection_id,
+            "Uploaded file '{$originalName}' for document '{$documents[$documentIndex]['title']}'",
+            [
+                'establishment' => $case->establishment_name,
+                'file_name' => $originalName,
+                'file_size' => $fileSize // Use stored size
+            ]
+        );
+        
+        DB::commit();
+        
+        return response()->json([
+            'success' => true,
+            'message' => 'File uploaded successfully',
+            'file_name' => $originalName,
+            'file_size' => $this->formatBytes($fileSize), // Use stored size
+            'uploaded_at' => now()->format('M d, Y h:i A')
+        ]);
+        
+    } catch (\Exception $e) {
+        DB::rollBack();
+        Log::error('Error uploading document file: ' . $e->getMessage());
+        Log::error('Stack trace: ' . $e->getTraceAsString());
+        
+        return response()->json([
+            'success' => false,
+            'message' => 'Failed to upload file: ' . $e->getMessage()
+        ], 500);
+    }
+}
+
+/**
+ * Download/view uploaded document file
+ */
+public function downloadDocumentFile($caseId, $documentId)
+{
+    try {
+        $case = CaseFile::findOrFail($caseId);
+        $documents = $case->document_checklist ?? [];
+        
+        // Convert documentId to integer for comparison
+        $documentId = (int) $documentId;
+        
+        // Find the document - use loose comparison
+        $document = null;
+        foreach ($documents as $doc) {
+            if (isset($doc['id']) && (int)$doc['id'] == $documentId) {
+                $document = $doc;
+                break;
+            }
+        }
+        
+        Log::info('Download attempt', [
+            'case_id' => $caseId,
+            'document_id' => $documentId,
+            'found_document' => $document !== null,
+            'has_file_path' => isset($document['file_path']),
+            'all_documents' => $documents
+        ]);
+        
+        if (!$document || !isset($document['file_path'])) {
+            Log::error('File not found in document array', [
+                'document' => $document,
+                'all_documents' => $documents
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'File not found in document checklist'
+            ], 404);
+        }
+        
+        $filePath = storage_path('app/' . $document['file_path']);
+        
+        Log::info('Attempting to download file', [
+            'full_path' => $filePath,
+            'exists' => file_exists($filePath)
+        ]);
+        
+        if (!file_exists($filePath)) {
+            Log::error('File not found on server', [
+                'path' => $filePath,
+                'document_file_path' => $document['file_path']
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'File not found on server: ' . basename($filePath)
+            ], 404);
+        }
+        
+        ActivityLogger::logAction(
+            'DOWNLOAD',
+            'Case Document',
+            $case->inspection_id,
+            "Downloaded file '{$document['file_name']}' for document '{$document['title']}'",
+            ['establishment' => $case->establishment_name]
+        );
+        
+        return response()->download($filePath, $document['file_name']);
+        
+    } catch (\Exception $e) {
+        Log::error('Error downloading document file: ' . $e->getMessage());
+        Log::error('Stack trace: ' . $e->getTraceAsString());
+        
+        return response()->json([
+            'success' => false,
+            'message' => 'Failed to download file: ' . $e->getMessage()
+        ], 500);
+    }
+}
+
+/**
+ * Delete uploaded document file
+ */
+public function deleteDocumentFile($caseId, $documentId)
+{
+    DB::beginTransaction();
+    try {
+        $case = CaseFile::findOrFail($caseId);
+        $documents = $case->document_checklist ?? [];
+        
+        // Find the document
+        $documentIndex = array_search($documentId, array_column($documents, 'id'));
+        
+        if ($documentIndex === false || !isset($documents[$documentIndex]['file_path'])) {
+            return response()->json([
+                'success' => false,
+                'message' => 'File not found'
+            ], 404);
+        }
+        
+        $fileName = $documents[$documentIndex]['file_name'] ?? 'Unknown';
+        
+        // Delete physical file
+        Storage::disk('local')->delete($documents[$documentIndex]['file_path']);
+        
+        // Remove file info from document
+        unset($documents[$documentIndex]['file_path']);
+        unset($documents[$documentIndex]['file_name']);
+        unset($documents[$documentIndex]['file_size']);
+        unset($documents[$documentIndex]['uploaded_at']);
+        unset($documents[$documentIndex]['uploaded_by']);
+        
+        // Save updated checklist
+        $case->update([
+            'document_checklist' => $documents
+        ]);
+        
+        ActivityLogger::logAction(
+            'DELETE',
+            'Case Document',
+            $case->inspection_id,
+            "Deleted file '{$fileName}' from document '{$documents[$documentIndex]['title']}'",
+            ['establishment' => $case->establishment_name]
+        );
+        
+        DB::commit();
+        
+        return response()->json([
+            'success' => true,
+            'message' => 'File deleted successfully'
+        ]);
+        
+    } catch (\Exception $e) {
+        DB::rollBack();
+        Log::error('Error deleting document file: ' . $e->getMessage());
+        return response()->json([
+            'success' => false,
+            'message' => 'Failed to delete file'
+        ], 500);
+    }
+}
+
+/**
+ * Helper function to format file size
+ */
+private function formatBytes($bytes, $precision = 2)
+{
+    $units = ['B', 'KB', 'MB', 'GB'];
+    $bytes = max($bytes, 0);
+    $pow = floor(($bytes ? log($bytes) : 0) / log(1024));
+    $pow = min($pow, count($units) - 1);
+    $bytes /= pow(1024, $pow);
+    
+    return round($bytes, $precision) . ' ' . $units[$pow];
 }
 }
