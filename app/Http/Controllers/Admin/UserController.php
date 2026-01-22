@@ -19,7 +19,7 @@ class UserController extends Controller
             'fname' => 'required|string|max:255',
             'lname' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
-            'role' => 'required|in:admin,user,province,malsu,case_management,records',
+            'role' => 'required|in:admin,user,malsu,case_management,records,province_albay,province_camarines_sur,province_camarines_norte,province_catanduanes,province_masbate,province_sorsogon',
         ]);
 
         if ($validator->fails()) {
@@ -116,12 +116,12 @@ class UserController extends Controller
             'role' => $user->role,
         ];
         
-        // Validate input
+        // Validate input with all province roles
         $validator = Validator::make($request->all(), [
             'fname' => 'required|string|max:255',
             'lname' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users,email,' . $user->id,
-            'role' => 'required|in:admin,user,province,malsu,case_management',
+            'role' => 'required|in:admin,user,malsu,case_management,records,province_albay,province_camarines_sur,province_camarines_norte,province_catanduanes,province_masbate,province_sorsogon',
         ]);
 
         if ($validator->fails()) {

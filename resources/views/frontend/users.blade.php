@@ -53,14 +53,24 @@
                             <td>
                                 @if($user->role === 'admin')
                                     <span class="badge badge-danger">Admin</span>
-                                @elseif($user->role === 'province')
-                                    <span class="badge badge-primary">Province</span>
                                 @elseif($user->role === 'malsu')
                                     <span class="badge badge-info">MALSU</span>
                                 @elseif($user->role === 'case_management')
                                     <span class="badge badge-warning">Case Management</span>
                                 @elseif($user->role === 'records')
-                                    <span class="badge badge-success">Records</span> {{-- ✅ Added this --}}
+                                    <span class="badge badge-success">Records</span>
+                                @elseif($user->role === 'province_albay')
+                                    <span class="badge badge-primary">Albay Province</span>
+                                @elseif($user->role === 'province_camarines_sur')
+                                    <span class="badge badge-primary">Camarines Sur Province</span>
+                                @elseif($user->role === 'province_camarines_norte')
+                                    <span class="badge badge-primary">Camarines Norte Province</span>
+                                @elseif($user->role === 'province_catanduanes')
+                                    <span class="badge badge-primary">Catanduanes Province</span>
+                                @elseif($user->role === 'province_masbate')
+                                    <span class="badge badge-primary">Masbate Province</span>
+                                @elseif($user->role === 'province_sorsogon')
+                                    <span class="badge badge-primary">Sorsogon Province</span>
                                 @else
                                     <span class="badge badge-secondary">User</span>
                                 @endif
@@ -150,29 +160,37 @@
 
             <div class="form-group">
                 <label for="fname">First Name</label>
-                <input type="text" class="form-control" id="fname" name="fname" placeholder="Your first name..." value="{{ old('fname') }}">
+                <input type="text" class="form-control" id="fname" name="fname" placeholder="Your first name..." value="{{ old('fname') }}" required>
             </div>
 
             <div class="form-group">
                 <label for="lname">Last Name</label>
-                <input type="text" class="form-control" id="lname" name="lname" placeholder="Your last name..." value="{{ old('lname') }}">
+                <input type="text" class="form-control" id="lname" name="lname" placeholder="Your last name..." value="{{ old('lname') }}" required>
             </div>
 
             <div class="form-group">
                 <label for="email">Email</label>
-                <input type="text" class="form-control" id="email" name="email" placeholder="Your email..." value="{{ old('email') }}">
+                <input type="email" class="form-control" id="email" name="email" placeholder="Your email..." value="{{ old('email') }}" required>
             </div>
 
             <div class="form-group">
                 <label for="role">Role</label>
-                    <select class="form-control" id="role{{ $user->id }}" name="role" required>
-                        <option value="user" {{ $user->role === 'user' ? 'selected' : '' }}>User</option>
-                        <option value="admin" {{ $user->role === 'admin' ? 'selected' : '' }}>Admin</option>
-                        <option value="province" {{ $user->role === 'province' ? 'selected' : '' }}>Province</option>
-                        <option value="malsu" {{ $user->role === 'malsu' ? 'selected' : '' }}>MALSU</option>
-                        <option value="case_management" {{ $user->role === 'case_management' ? 'selected' : '' }}>Case Management</option>
-                        <option value="records" {{ $user->role === 'records' ? 'selected' : '' }}>Records</option> 
-                    </select>
+                <select class="form-control" id="role" name="role" required>
+                    <option value="">-- Select Role --</option>
+                    <option value="user">User</option>
+                    <option value="admin">Admin</option>
+                    <option value="malsu">MALSU</option>
+                    <option value="case_management">Case Management</option>
+                    <option value="records">Records</option>
+                    <optgroup label="Province Roles">
+                        <option value="province_albay">Albay Province</option>
+                        <option value="province_camarines_sur">Camarines Sur Province</option>
+                        <option value="province_camarines_norte">Camarines Norte Province</option>
+                        <option value="province_catanduanes">Catanduanes Province</option>
+                        <option value="province_masbate">Masbate Province</option>
+                        <option value="province_sorsogon">Sorsogon Province</option>
+                    </optgroup>
+                </select>
             </div>
         </div>
 
@@ -224,9 +242,17 @@
                         <select class="form-control" id="role{{ $user->id }}" name="role" required>
                             <option value="user" {{ $user->role === 'user' ? 'selected' : '' }}>User</option>
                             <option value="admin" {{ $user->role === 'admin' ? 'selected' : '' }}>Admin</option>
-                            <option value="province" {{ $user->role === 'province' ? 'selected' : '' }}>Province</option>
                             <option value="malsu" {{ $user->role === 'malsu' ? 'selected' : '' }}>MALSU</option>
                             <option value="case_management" {{ $user->role === 'case_management' ? 'selected' : '' }}>Case Management</option>
+                            <option value="records" {{ $user->role === 'records' ? 'selected' : '' }}>Records</option>
+                            <optgroup label="Province Roles">
+                                <option value="province_albay" {{ $user->role === 'province_albay' ? 'selected' : '' }}>Albay Province</option>
+                                <option value="province_camarines_sur" {{ $user->role === 'province_camarines_sur' ? 'selected' : '' }}>Camarines Sur Province</option>
+                                <option value="province_camarines_norte" {{ $user->role === 'province_camarines_norte' ? 'selected' : '' }}>Camarines Norte Province</option>
+                                <option value="province_catanduanes" {{ $user->role === 'province_catanduanes' ? 'selected' : '' }}>Catanduanes Province</option>
+                                <option value="province_masbate" {{ $user->role === 'province_masbate' ? 'selected' : '' }}>Masbate Province</option>
+                                <option value="province_sorsogon" {{ $user->role === 'province_sorsogon' ? 'selected' : '' }}>Sorsogon Province</option>
+                            </optgroup>
                         </select>
                     </div>
                 </div>
