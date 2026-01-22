@@ -1407,14 +1407,41 @@ public function downloadDocumentFile($caseId, $documentId)
         }
         
         ActivityLogger::logAction(
-            'DOWNLOAD',
+            'VIEW',
             'Case Document',
             $case->inspection_id,
-            "Downloaded file '{$document['file_name']}' for document '{$document['title']}'",
+            "Viewed file '{$document['file_name']}' for document '{$document['title']}'",
             ['establishment' => $case->establishment_name]
         );
         
-        return response()->download($filePath, $document['file_name']);
+        // Get file extension to determine if viewable
+        $extension = strtolower(pathinfo($document['file_name'], PATHINFO_EXTENSION));
+        $viewableExtensions = ['pdf', 'jpg', 'jpeg', 'png', 'gif', 'bmp', 'svg', 'txt'];
+        
+        // Determine MIME type
+        $mimeTypes = [
+            'pdf' => 'application/pdf',
+            'jpg' => 'image/jpeg',
+            'jpeg' => 'image/jpeg',
+            'png' => 'image/png',
+            'gif' => 'image/gif',
+            'bmp' => 'image/bmp',
+            'svg' => 'image/svg+xml',
+            'txt' => 'text/plain',
+        ];
+        
+        $mimeType = $mimeTypes[$extension] ?? 'application/octet-stream';
+        
+        // If viewable, display inline; otherwise download
+        if (in_array($extension, $viewableExtensions)) {
+            return response()->file($filePath, [
+                'Content-Type' => $mimeType,
+                'Content-Disposition' => 'inline; filename="' . $document['file_name'] . '"'
+            ]);
+        } else {
+            // Force download for non-viewable files (doc, docx, xlsx, etc.)
+            return response()->download($filePath, $document['file_name']);
+        }
         
     } catch (\Exception $e) {
         Log::error('Error downloading document file: ' . $e->getMessage());
@@ -1428,7 +1455,7 @@ public function downloadDocumentFile($caseId, $documentId)
 }
 
 /**
- * Delete uploaded document file
+ * Delete uploaded document file - FIXED VERSION
  */
 public function deleteDocumentFile($caseId, $documentId)
 {
@@ -1437,10 +1464,19 @@ public function deleteDocumentFile($caseId, $documentId)
         $case = CaseFile::findOrFail($caseId);
         $documents = $case->document_checklist ?? [];
         
-        // Find the document
-        $documentIndex = array_search($documentId, array_column($documents, 'id'));
+        // Convert documentId to integer for comparison
+        $documentId = (int) $documentId;
         
-        if ($documentIndex === false || !isset($documents[$documentIndex]['file_path'])) {
+        // Find the document index - use loose comparison
+        $documentIndex = null;
+        foreach ($documents as $index => $doc) {
+            if (isset($doc['id']) && (int)$doc['id'] == $documentId) {
+                $documentIndex = $index;
+                break;
+            }
+        }
+        
+        if ($documentIndex === null || !isset($documents[$documentIndex]['file_path'])) {
             return response()->json([
                 'success' => false,
                 'message' => 'File not found'
@@ -1458,6 +1494,9 @@ public function deleteDocumentFile($caseId, $documentId)
         unset($documents[$documentIndex]['file_size']);
         unset($documents[$documentIndex]['uploaded_at']);
         unset($documents[$documentIndex]['uploaded_by']);
+        
+        // Re-index array to maintain proper structure
+        $documents = array_values($documents);
         
         // Save updated checklist
         $case->update([
@@ -1482,6 +1521,8 @@ public function deleteDocumentFile($caseId, $documentId)
     } catch (\Exception $e) {
         DB::rollBack();
         Log::error('Error deleting document file: ' . $e->getMessage());
+        Log::error('Stack trace: ' . $e->getTraceAsString());
+        
         return response()->json([
             'success' => false,
             'message' => 'Failed to delete file'

@@ -1214,18 +1214,8 @@
                             </div>
                         </div>
                     </div>
-                    <hr>
-                    <div class="row text-center">
-                        <div class="col">
-                            <div class="card bg-light">
-                                <div class="card-body py-2">
-                                    <small class="text-muted">✅ Skips Actions column</small><br>
-                                    <small class="text-muted">✅ Preserves numbers & dates</small><br>
-                                    <small class="text-success font-weight-bold">📄 Real .XLSX format</small>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                    
+                    
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
@@ -1336,25 +1326,44 @@ $(document).on('change', '.document-checkbox', function() {
 $(document).on('click', '.remove-document-btn', function() {
     const docId = parseInt($(this).data('doc-id'));
     
-    if (!confirm('Remove this document from checklist?')) {
+    const doc = documents.find(d => d.id == docId);
+    const hasFile = doc && doc.file_path;
+    
+    // Different confirmation messages based on whether file exists
+    let confirmMessage = hasFile 
+        ? 'This document has an uploaded file. Remove document and delete the file?' 
+        : 'Remove this document from checklist?';
+    
+    if (!confirm(confirmMessage)) {
         return;
     }
     
     console.log('Removing document:', docId);
     
-    // Check if document has uploaded file
-    const doc = documents.find(d => d.id == docId);
-    if (doc && doc.file_path) {
-        if (!confirm('This document has an uploaded file. Delete the file as well?')) {
-            return;
-        }
-        // Delete the file first
-        deleteDocumentFile(docId);
+    // If document has file, delete it first from server
+    if (hasFile) {
+        // Delete file from server without waiting for response
+        $.ajax({
+            url: `/case/${currentCaseId}/documents/${docId}/file`,
+            method: 'DELETE',
+            data: {
+                _token: $('meta[name="csrf-token"]').attr('content')
+            },
+            success: function(response) {
+                console.log('File deleted from server:', response);
+            },
+            error: function(xhr) {
+                console.log('File delete error (may already be deleted):', xhr);
+                // Don't show error to user - file might already be gone
+            }
+        });
     }
     
+    // Remove document from array
     documents = documents.filter(d => d.id != docId);
     console.log('Documents after removal:', documents);
     
+    // Save and re-render
     saveDocuments();
     renderDocuments();
 });
@@ -1396,7 +1405,7 @@ $('#documentFileInput').on('change', function(e) {
 // 8. VIEW/DOWNLOAD FILE BUTTON
 $(document).on('click', '.view-file-btn', function() {
     const docId = parseInt($(this).data('doc-id'));
-    downloadDocumentFile(docId);
+    viewDocumentFile(docId);
 });
 
 // 9. DELETE FILE BUTTON
@@ -1510,9 +1519,10 @@ function uploadDocumentFile(docId, file) {
     });
 }
 
-// 14. DOWNLOAD FILE FUNCTION
-function downloadDocumentFile(docId) {
-    window.location.href = `/case/${currentCaseId}/documents/${docId}/download`;
+// 14. VIEW FILE FUNCTION (opens in new tab)
+function viewDocumentFile(docId) {
+    const url = `/case/${currentCaseId}/documents/${docId}/download`;
+    window.open(url, '_blank');
 }
 
 // 15. DELETE FILE FUNCTION
@@ -1543,7 +1553,25 @@ function deleteDocumentFile(docId) {
         },
         error: function(xhr) {
             console.error('Delete error:', xhr);
-            alert('Failed to delete file');
+            
+            // Only show error if it's not a 404 (file already deleted)
+            if (xhr.status !== 404) {
+                alert('Failed to delete file');
+            } else {
+                console.log('File already deleted or not found - continuing anyway');
+                
+                // Clean up the document anyway
+                const doc = documents.find(d => d.id == docId);
+                if (doc) {
+                    delete doc.file_name;
+                    delete doc.file_size;
+                    delete doc.uploaded_at;
+                    delete doc.uploaded_by;
+                    delete doc.file_path;
+                }
+                
+                renderDocuments();
+            }
         }
     });
 }
@@ -1574,12 +1602,9 @@ function renderDocuments() {
         let uploadButton = '';
         
         if (hasFile) {
-            // Show file info and action buttons with strikethrough if checked
-            const fileInfoClass = isChecked ? 'text-muted' : '';
-            const fileInfoStyle = isChecked ? 'text-decoration: line-through;' : '';
-            
+            // Show file info and action buttons
             fileInfo = `
-                <div class="file-info ${fileInfoClass}" style="${fileInfoStyle}">
+                <div class="file-info">
                     <i class="fas fa-paperclip"></i>
                     <span>${doc.file_name} (${doc.file_size || 'Unknown size'})</span>
                     <button class="btn btn-sm btn-outline-primary view-file-btn" 
