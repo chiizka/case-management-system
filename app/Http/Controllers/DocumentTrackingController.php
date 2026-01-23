@@ -43,8 +43,8 @@ class DocumentTrackingController extends Controller
             'admin' => DocumentTracking::active()->where('current_role', 'admin')->count(),
             'malsu' => DocumentTracking::active()->where('current_role', 'malsu')->count(),
             'case_management' => DocumentTracking::active()->where('current_role', 'case_management')->count(),
-            'province' => DocumentTracking::active()->where('current_role', 'province')->count(),
             'records' => DocumentTracking::active()->where('current_role', 'records')->count(),
+            'provinces' => DocumentTracking::active()->whereIn('current_role', User::PROVINCE_ROLES)->count(),  // Counts all specific provinces
         ];
 
         return view('frontend.document-tracking', compact(
@@ -60,7 +60,18 @@ class DocumentTrackingController extends Controller
     {
         $request->validate([
             'case_id' => 'required|exists:cases,id',
-            'target_role' => 'required|in:admin,malsu,case_management,province,records',
+            'target_role' => ['required', 'in:' . implode(',', [
+                User::ROLE_ADMIN,
+                User::ROLE_MALSU,
+                User::ROLE_CASE_MANAGEMENT,
+                User::ROLE_RECORDS,
+                User::ROLE_PROVINCE_ALBAY,
+                User::ROLE_PROVINCE_CAMARINES_SUR,
+                User::ROLE_PROVINCE_CAMARINES_NORTE,
+                User::ROLE_PROVINCE_CATANDUANES,
+                User::ROLE_PROVINCE_MASBATE,
+                User::ROLE_PROVINCE_SORSOGON,
+            ])],
             'transfer_notes' => 'nullable|string'
         ]);
 

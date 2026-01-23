@@ -5,37 +5,6 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-/**
- * @property int $id
- * @property int $document_tracking_id
- * @property string|null $from_role
- * @property string $to_role
- * @property int|null $transferred_by_user_id
- * @property \Illuminate\Support\Carbon|null $transferred_at
- * @property int|null $received_by_user_id
- * @property \Illuminate\Support\Carbon|null $received_at
- * @property string|null $notes
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
- * @property-read \App\Models\DocumentTracking $documentTracking
- * @property-read \App\Models\User|null $receivedBy
- * @property-read \App\Models\User|null $transferredBy
- * @method static \Illuminate\Database\Eloquent\Builder<static>|DocumentTrackingHistory newModelQuery()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|DocumentTrackingHistory newQuery()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|DocumentTrackingHistory query()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|DocumentTrackingHistory whereCreatedAt($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|DocumentTrackingHistory whereDocumentTrackingId($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|DocumentTrackingHistory whereFromRole($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|DocumentTrackingHistory whereId($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|DocumentTrackingHistory whereNotes($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|DocumentTrackingHistory whereReceivedAt($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|DocumentTrackingHistory whereReceivedByUserId($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|DocumentTrackingHistory whereToRole($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|DocumentTrackingHistory whereTransferredAt($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|DocumentTrackingHistory whereTransferredByUserId($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|DocumentTrackingHistory whereUpdatedAt($value)
- * @mixin \Eloquent
- */
 class DocumentTrackingHistory extends Model
 {
     use HasFactory;
@@ -71,5 +40,100 @@ class DocumentTrackingHistory extends Model
     public function receivedBy()
     {
         return $this->belongsTo(User::class, 'received_by_user_id');
+    }
+
+    /**
+     * Get the display name for the 'from' role
+     */
+    public function getFromRoleDisplayName()
+    {
+        if (!$this->from_role) {
+            return 'Initial';
+        }
+        return DocumentTracking::ROLE_NAMES[$this->from_role] ?? ucfirst(str_replace('_', ' ', $this->from_role));
+    }
+
+    /**
+     * Get the display name for the 'to' role
+     */
+    public function getToRoleDisplayName()
+    {
+        return DocumentTracking::ROLE_NAMES[$this->to_role] ?? ucfirst(str_replace('_', ' ', $this->to_role));
+    }
+
+    /**
+     * Check if the 'from_role' is a province role
+     */
+    public function isFromProvinceRole()
+    {
+        if (!$this->from_role) {
+            return false;
+        }
+        
+        return in_array($this->from_role, [
+            'province_albay',
+            'province_camarines_sur',
+            'province_camarines_norte',
+            'province_catanduanes',
+            'province_masbate',
+            'province_sorsogon',
+        ]);
+    }
+
+    /**
+     * Check if the 'to_role' is a province role
+     */
+    public function isToProvinceRole()
+    {
+        return in_array($this->to_role, [
+            'province_albay',
+            'province_camarines_sur',
+            'province_camarines_norte',
+            'province_catanduanes',
+            'province_masbate',
+            'province_sorsogon',
+        ]);
+    }
+
+    /**
+     * Get province name from 'from_role' if it's a province
+     */
+    public function getFromProvinceName()
+    {
+        if (!$this->isFromProvinceRole()) {
+            return null;
+        }
+
+        $provinceNames = [
+            'province_albay' => 'Albay',
+            'province_camarines_sur' => 'Camarines Sur',
+            'province_camarines_norte' => 'Camarines Norte',
+            'province_catanduanes' => 'Catanduanes',
+            'province_masbate' => 'Masbate',
+            'province_sorsogon' => 'Sorsogon',
+        ];
+
+        return $provinceNames[$this->from_role] ?? null;
+    }
+
+    /**
+     * Get province name from 'to_role' if it's a province
+     */
+    public function getToProvinceName()
+    {
+        if (!$this->isToProvinceRole()) {
+            return null;
+        }
+
+        $provinceNames = [
+            'province_albay' => 'Albay',
+            'province_camarines_sur' => 'Camarines Sur',
+            'province_camarines_norte' => 'Camarines Norte',
+            'province_catanduanes' => 'Catanduanes',
+            'province_masbate' => 'Masbate',
+            'province_sorsogon' => 'Sorsogon',
+        ];
+
+        return $provinceNames[$this->to_role] ?? null;
     }
 }

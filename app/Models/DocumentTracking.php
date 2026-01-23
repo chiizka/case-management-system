@@ -5,40 +5,6 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-/**
- * @property int $id
- * @property int $case_id
- * @property string $current_role
- * @property string $status
- * @property int|null $transferred_by_user_id
- * @property \Illuminate\Support\Carbon|null $transferred_at
- * @property int|null $received_by_user_id
- * @property \Illuminate\Support\Carbon|null $received_at
- * @property string|null $transfer_notes
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
- * @property-read \App\Models\CaseFile $case
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\DocumentTrackingHistory> $history
- * @property-read int|null $history_count
- * @property-read \App\Models\User|null $receivedBy
- * @property-read \App\Models\User|null $transferredBy
- * @method static \Illuminate\Database\Eloquent\Builder<static>|DocumentTracking active()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|DocumentTracking newModelQuery()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|DocumentTracking newQuery()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|DocumentTracking query()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|DocumentTracking whereCaseId($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|DocumentTracking whereCreatedAt($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|DocumentTracking whereCurrentRole($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|DocumentTracking whereId($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|DocumentTracking whereReceivedAt($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|DocumentTracking whereReceivedByUserId($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|DocumentTracking whereStatus($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|DocumentTracking whereTransferNotes($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|DocumentTracking whereTransferredAt($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|DocumentTracking whereTransferredByUserId($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|DocumentTracking whereUpdatedAt($value)
- * @mixin \Eloquent
- */
 class DocumentTracking extends Model
 {
     use HasFactory;
@@ -65,8 +31,18 @@ class DocumentTracking extends Model
         'admin' => 'Admin',
         'malsu' => 'MALSU',
         'case_management' => 'Case Management',
-        'province' => 'Province',
         'records' => 'Records',
+        
+        // Province roles
+        'province_albay' => 'Albay Province',
+        'province_camarines_sur' => 'Camarines Sur Province',
+        'province_camarines_norte' => 'Camarines Norte Province',
+        'province_catanduanes' => 'Catanduanes Province',
+        'province_masbate' => 'Masbate Province',
+        'province_sorsogon' => 'Sorsogon Province',
+        
+        // Legacy support (if any old records still use 'province')
+        'province' => 'Province (Legacy)',
     ];
 
     public function case()
@@ -91,14 +67,52 @@ class DocumentTracking extends Model
 
     public function getRoleDisplayName()
     {
-        return self::ROLE_NAMES[$this->current_role] ?? $this->current_role;
+        return self::ROLE_NAMES[$this->current_role] ?? ucfirst(str_replace('_', ' ', $this->current_role));
     }
 
-    // Add scope to filter out completed/dismissed cases
+    /**
+     * Scope to filter out completed/dismissed cases
+     */
     public function scopeActive($query)
     {
         return $query->whereHas('case', function($q) {
             $q->where('overall_status', 'Active');
         });
+    }
+
+    /**
+     * Check if current role is a province role
+     */
+    public function isProvinceRole()
+    {
+        return in_array($this->current_role, [
+            'province_albay',
+            'province_camarines_sur',
+            'province_camarines_norte',
+            'province_catanduanes',
+            'province_masbate',
+            'province_sorsogon',
+        ]);
+    }
+
+    /**
+     * Get province name if it's a province role
+     */
+    public function getProvinceName()
+    {
+        if (!$this->isProvinceRole()) {
+            return null;
+        }
+
+        $provinceNames = [
+            'province_albay' => 'Albay',
+            'province_camarines_sur' => 'Camarines Sur',
+            'province_camarines_norte' => 'Camarines Norte',
+            'province_catanduanes' => 'Catanduanes',
+            'province_masbate' => 'Masbate',
+            'province_sorsogon' => 'Sorsogon',
+        ];
+
+        return $provinceNames[$this->current_role] ?? null;
     }
 }

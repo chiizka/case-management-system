@@ -56,8 +56,8 @@ Route::middleware('auth')->group(function () {
         Route::delete('/user/{id}', [UserController::class, 'destroy'])->name('user.destroy');
     });
     
-    // Cases - Admin, Province, MALSU, Case Management, Records
-    Route::middleware('role:admin,province,malsu,case_management,records')->group(function () {
+    // Cases - Admin, All Province Roles, MALSU, Case Management, Records
+    Route::middleware('role:admin,province_albay,province_camarines_sur,province_camarines_norte,province_catanduanes,province_masbate,province_sorsogon,malsu,case_management,records')->group(function () {
         Route::resource('case', CasesController::class);
         Route::get('/archive', [ArchivedController::class, 'index'])->name('archive.index');
         Route::post('/case/{id}/next-stage', [CasesController::class, 'moveToNextStage'])->name('case.nextStage');
@@ -67,27 +67,27 @@ Route::middleware('auth')->group(function () {
         Route::get('/case/{id}/documents', [CasesController::class, 'getDocuments'])->name('case.documents');
         Route::post('/case/{id}/documents', [CasesController::class, 'saveDocuments'])->name('case.documents.save');
 
-        // NEW: Document file upload routes
+        // Document file upload routes
         Route::post('/case/{caseId}/documents/{documentId}/upload', [CasesController::class, 'uploadDocumentFile'])->name('case.documents.upload');
         Route::get('/case/{caseId}/documents/{documentId}/download', [CasesController::class, 'downloadDocumentFile'])->name('case.documents.download');
         Route::delete('/case/{caseId}/documents/{documentId}/file', [CasesController::class, 'deleteDocumentFile'])->name('case.documents.deleteFile');
     });
 
 
-    // Inspections - Admin, MALSU, Case Management, province
-    Route::middleware('role:admin,malsu,case_management,province')->group(function () {
+    // Inspections - Admin, MALSU, Case Management, All Province Roles
+    Route::middleware('role:admin,malsu,case_management,province_albay,province_camarines_sur,province_camarines_norte,province_catanduanes,province_masbate,province_sorsogon')->group(function () {
         Route::resource('inspection', InspectionsController::class);
         Route::put('/inspection/{inspection}/inline-update', [InspectionsController::class, 'inlineUpdate'])->name('inspection.inlineUpdate');
     });
 
-    // Docketing - Admin, Case Management, province
-    Route::middleware('role:admin,case_management,province')->group(function () {
+    // Docketing - Admin, Case Management, All Province Roles
+    Route::middleware('role:admin,case_management,province_albay,province_camarines_sur,province_camarines_norte,province_catanduanes,province_masbate,province_sorsogon')->group(function () {
         Route::resource('docketing', DocketingController::class);
         Route::put('/docketing/{id}/inline-update', [DocketingController::class, 'inlineUpdate'])->name('docketing.inlineUpdate');
     });
 
-    // Hearing Process - Admin, Case Management, province
-    Route::middleware('role:admin,case_management,province')->group(function () {
+    // Hearing Process - Admin, Case Management, All Province Roles
+    Route::middleware('role:admin,case_management,province_albay,province_camarines_sur,province_camarines_norte,province_catanduanes,province_masbate,province_sorsogon')->group(function () {
         Route::resource('hearing', HearingProcessController::class);
         Route::post('hearing-process', [HearingProcessController::class, 'store'])->name('hearing-process.store');
         Route::get('hearing-process/{id}', [HearingProcessController::class, 'show'])->name('hearing-process.show');
@@ -123,6 +123,7 @@ Route::middleware('auth')->group(function () {
         Route::put('/appeals-and-resolution/{id}/inline-update', [AppealsAndResolutionController::class, 'inlineUpdate'])->name('appeals-and-resolution.inline-update');
     });
 
+    // Document Tracking - All authenticated users
     Route::middleware(['auth'])->group(function() {
         Route::get('/documents/tracking', [DocumentTrackingController::class, 'index'])->name('documents.tracking');
         Route::post('/documents/transfer', [DocumentTrackingController::class, 'transfer'])->name('documents.transfer');
@@ -132,37 +133,3 @@ Route::middleware('auth')->group(function () {
 
     Route::post('/case/import-csv', [App\Http\Controllers\CasesController::class, 'importCsv'])->name('case.import-csv');
 });
-
-Route::get('/fix-document-paths', function() {
-    $cases = \App\Models\CaseFile::whereNotNull('document_checklist')->get();
-    $fixed = 0;
-    
-    foreach ($cases as $case) {
-        $documents = $case->document_checklist;
-        $needsUpdate = false;
-        
-        foreach ($documents as &$doc) {
-            if (isset($doc['file_path'])) {
-                // Remove escaped slashes
-                $originalPath = $doc['file_path'];
-                $cleanPath = str_replace('\\/', '/', $doc['file_path']);
-                
-                if ($originalPath !== $cleanPath) {
-                    $doc['file_path'] = $cleanPath;
-                    $needsUpdate = true;
-                    $fixed++;
-                }
-            }
-        }
-        
-        if ($needsUpdate) {
-            $case->update(['document_checklist' => $documents]);
-        }
-    }
-    
-    return response()->json([
-        'success' => true,
-        'message' => "Fixed {$fixed} file path(s)",
-        'fixed_count' => $fixed
-    ]);
-})->middleware('auth');

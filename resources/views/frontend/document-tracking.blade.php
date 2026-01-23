@@ -14,7 +14,15 @@
 .role-admin { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
 .role-malsu { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; }
 .role-case_management { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; }
-.role-province { background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); color: white; }
+.role-records { background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); color: white; }
+
+/* Province role badges - different shades of blue/teal */
+.role-province_albay { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+.role-province_camarines_sur { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; }
+.role-province_camarines_norte { background: linear-gradient(135deg, #5f72bd 0%, #9b23ea 100%); color: white; }
+.role-province_catanduanes { background: linear-gradient(135deg, #89f7fe 0%, #66a6ff 100%); color: white; }
+.role-province_masbate { background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%); color: #333; }
+.role-province_sorsogon { background: linear-gradient(135deg, #30cfd0 0%, #330867 100%); color: white; }
 
 /* Status badges */
 .status-badge {
@@ -93,7 +101,8 @@
 .stat-card.admin { border-color: #667eea; }
 .stat-card.malsu { border-color: #f5576c; }
 .stat-card.case-mgmt { border-color: #00f2fe; }
-.stat-card.province { border-color: #38f9d7; }
+.stat-card.records { border-color: #38f9d7; }
+.stat-card.province { border-color: #4facfe; }
 
 /* Table styling */
 .tracking-table {
@@ -185,7 +194,7 @@
 
         @if(Auth::user()->isAdmin())
         <div class="row mb-4">
-            <div class="col-xl-3 col-md-6 mb-3">
+            <div class="col-xl-2 col-md-4 mb-3">
                 <div class="card stat-card admin">
                     <div class="card-body">
                         <div class="d-flex justify-content-between align-items-center">
@@ -201,7 +210,7 @@
                 </div>
             </div>
 
-            <div class="col-xl-3 col-md-6 mb-3">
+            <div class="col-xl-2 col-md-4 mb-3">
                 <div class="card stat-card malsu">
                     <div class="card-body">
                         <div class="d-flex justify-content-between align-items-center">
@@ -217,12 +226,12 @@
                 </div>
             </div>
 
-            <div class="col-xl-3 col-md-6 mb-3">
+            <div class="col-xl-2 col-md-4 mb-3">
                 <div class="card stat-card case-mgmt">
                     <div class="card-body">
                         <div class="d-flex justify-content-between align-items-center">
                             <div>
-                                <div class="text-xs font-weight-bold text-uppercase mb-1">Case Management</div>
+                                <div class="text-xs font-weight-bold text-uppercase mb-1">Case Mgmt</div>
                                 <div class="h5 mb-0 font-weight-bold">{{ $roleCounts['case_management'] ?? 0 }}</div>
                             </div>
                             <div class="text-muted">
@@ -233,13 +242,110 @@
                 </div>
             </div>
 
-            <div class="col-xl-3 col-md-6 mb-3">
+            <div class="col-xl-2 col-md-4 mb-3">
+                <div class="card stat-card records">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <div class="text-xs font-weight-bold text-uppercase mb-1">Records</div>
+                                <div class="h5 mb-0 font-weight-bold">{{ $roleCounts['records'] ?? 0 }}</div>
+                            </div>
+                            <div class="text-muted">
+                                <i class="fas fa-file-alt fa-2x"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Province Stats Cards -->
+            <div class="col-xl-2 col-md-4 mb-3">
                 <div class="card stat-card province">
                     <div class="card-body">
                         <div class="d-flex justify-content-between align-items-center">
                             <div>
-                                <div class="text-xs font-weight-bold text-uppercase mb-1">Province</div>
-                                <div class="h5 mb-0 font-weight-bold">{{ $roleCounts['province'] ?? 0 }}</div>
+                                <div class="text-xs font-weight-bold text-uppercase mb-1">Albay</div>
+                                <div class="h5 mb-0 font-weight-bold">{{ $roleCounts['province_albay'] ?? 0 }}</div>
+                            </div>
+                            <div class="text-muted">
+                                <i class="fas fa-building fa-2x"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-xl-2 col-md-4 mb-3">
+                <div class="card stat-card province">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <div class="text-xs font-weight-bold text-uppercase mb-1">Cam. Sur</div>
+                                <div class="h5 mb-0 font-weight-bold">{{ $roleCounts['province_camarines_sur'] ?? 0 }}</div>
+                            </div>
+                            <div class="text-muted">
+                                <i class="fas fa-building fa-2x"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-xl-2 col-md-4 mb-3">
+                <div class="card stat-card province">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <div class="text-xs font-weight-bold text-uppercase mb-1">Cam. Norte</div>
+                                <div class="h5 mb-0 font-weight-bold">{{ $roleCounts['province_camarines_norte'] ?? 0 }}</div>
+                            </div>
+                            <div class="text-muted">
+                                <i class="fas fa-building fa-2x"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-xl-2 col-md-4 mb-3">
+                <div class="card stat-card province">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <div class="text-xs font-weight-bold text-uppercase mb-1">Catanduanes</div>
+                                <div class="h5 mb-0 font-weight-bold">{{ $roleCounts['province_catanduanes'] ?? 0 }}</div>
+                            </div>
+                            <div class="text-muted">
+                                <i class="fas fa-building fa-2x"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-xl-2 col-md-4 mb-3">
+                <div class="card stat-card province">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <div class="text-xs font-weight-bold text-uppercase mb-1">Masbate</div>
+                                <div class="h5 mb-0 font-weight-bold">{{ $roleCounts['province_masbate'] ?? 0 }}</div>
+                            </div>
+                            <div class="text-muted">
+                                <i class="fas fa-building fa-2x"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-xl-2 col-md-4 mb-3">
+                <div class="card stat-card province">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <div class="text-xs font-weight-bold text-uppercase mb-1">Sorsogon</div>
+                                <div class="h5 mb-0 font-weight-bold">{{ $roleCounts['province_sorsogon'] ?? 0 }}</div>
                             </div>
                             <div class="text-muted">
                                 <i class="fas fa-building fa-2x"></i>
@@ -250,41 +356,6 @@
             </div>
         </div>
         @endif
-
-        {{-- <!-- Filter Bar -->
-        <div class="filter-bar">
-            <div class="row align-items-end">
-                <div class="col-md-4 mb-2 mb-md-0">
-                    <label class="small font-weight-bold text-uppercase mb-1">Search</label>
-                    <input type="text" class="form-control" id="searchInput" placeholder="Case No., Establishment...">
-                </div>
-                <div class="col-md-3 mb-2 mb-md-0">
-                    <label class="small font-weight-bold text-uppercase mb-1">Department</label>
-                    <select class="form-control" id="roleFilter">
-                        <option value="">All Departments</option>
-                        <option value="admin">Admin</option>
-                        <option value="malsu">MALSU</option>
-                        <option value="case_management">Case Management</option>
-                        <option value="province">Province</option>
-                        <option value="records">Records</option>
-                    </select>
-                </div>
-                <div class="col-md-3 mb-2 mb-md-0">
-                    <label class="small font-weight-bold text-uppercase mb-1">Status</label>
-                    <select class="form-control" id="statusFilter">
-                        <option value="">All Status</option>
-                        <option value="Received">Received</option>
-                        <option value="Pending Receipt">Pending Receipt</option>
-                        <option value="Transferred">Transferred</option>
-                    </select>
-                </div>
-                <div class="col-md-2">
-                    <button class="btn btn-secondary btn-block" id="clearFilters">
-                        <i class="fas fa-redo"></i> Reset
-                    </button>
-                </div>
-            </div>
-        </div> --}}
 
         <!-- Alert Messages -->
         <div class="alert alert-success alert-dismissible fade" role="alert" id="success-alert" style="display: none;">
@@ -332,7 +403,7 @@
                 <div class="card shadow mb-4">
                     <div class="card-header py-3 d-flex justify-content-between align-items-center">
                         <h6 class="m-0 font-weight-bold text-warning">
-                            <i class="fas fa-clock"></i> Pending Receipts for {{ Auth::user()->role == 'case_management' ? 'Case Management' : ucfirst(Auth::user()->role) }}
+                            <i class="fas fa-clock"></i> Pending Receipts for {{ App\Helpers\RoleHelper::getRoleDisplayName() }}
                         </h6>
                         <span class="badge badge-warning badge-pill">{{ $pendingDocuments->count() }} Pending</span>
                     </div>
@@ -493,6 +564,36 @@
             <!-- All Documents Tab (Admin Only) -->
             @if(Auth::user()->isAdmin())
             <div class="tab-pane fade" id="allDocs" role="tabpanel">
+                 <div class="filter-bar mb-4">
+                <div class="row align-items-end">
+                    <div class="col-md-4 mb-3 mb-md-0">
+                        <label class="small font-weight-bold text-uppercase mb-1">Search Case / Establishment</label>
+                        <input type="text" class="form-control" id="searchInput" placeholder="Type to filter...">
+                    </div>
+                    <div class="col-md-4 mb-3 mb-md-0">
+                        <label class="small font-weight-bold text-uppercase mb-1">Filter by Department</label>
+                        <select class="form-control" id="roleFilter">
+                            <option value="">All Departments</option>
+                            <option value="admin">Admin</option>
+                            <option value="malsu">MALSU</option>
+                            <option value="case_management">Case Management</option>
+                            <option value="records">Records</option>
+                            <option value="provinces">All Provinces</option> <!-- groups all province_* -->
+                            <option value="province_albay">Albay Province</option>
+                            <option value="province_camarines_sur">Camarines Sur Province</option>
+                            <option value="province_camarines_norte">Camarines Norte Province</option>
+                            <option value="province_catanduanes">Catanduanes Province</option>
+                            <option value="province_masbate">Masbate Province</option>
+                            <option value="province_sorsogon">Sorsogon Province</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <button class="btn btn-secondary btn-block mt-4" id="clearFilters">
+                            <i class="fas fa-redo"></i> Clear Filters
+                        </button>
+                    </div>
+                </div>
+            </div>
                 <div class="card shadow mb-4">
                     <div class="card-header py-3 d-flex justify-content-between align-items-center">
                         <h6 class="m-0 font-weight-bold text-primary">All Documents (Admin View)</h6>
@@ -588,13 +689,12 @@
             </div>
             <form id="transferForm">
                 @csrf
-                <input type="hidden" name="document_id" id="document_id">
                 <div class="modal-body">
                     <div class="row">
                         <div class="col-md-6">
                             <div class="form-group">
                                 <label class="font-weight-bold">Case <span class="text-danger">*</span></label>
-                                <select class="form-control" name="case_id" id="case_id" required>
+                                <select class="form-control" name="case_id" id="transfer_case_id" required>
                                     <option value="">Select Case</option>
                                     @foreach($cases ?? [] as $case)
                                         <option value="{{ $case->id }}">
@@ -602,6 +702,9 @@
                                         </option>
                                     @endforeach
                                 </select>
+                                <small id="case-locked-msg" class="text-info" style="display:none;">
+                                    <i class="fas fa-lock"></i> Case is locked for this transfer
+                                </small>
                             </div>
                         </div>
                         <div class="col-md-6">
@@ -612,8 +715,15 @@
                                     <option value="admin">Admin</option>
                                     <option value="malsu">MALSU</option>
                                     <option value="case_management">Case Management</option>
-                                    <option value="province">Province</option>
                                     <option value="records">Records</option>
+                                    <optgroup label="Province Offices">
+                                        <option value="province_albay">Albay Province</option>
+                                        <option value="province_camarines_sur">Camarines Sur Province</option>
+                                        <option value="province_camarines_norte">Camarines Norte Province</option>
+                                        <option value="province_catanduanes">Catanduanes Province</option>
+                                        <option value="province_masbate">Masbate Province</option>
+                                        <option value="province_sorsogon">Sorsogon Province</option>
+                                    </optgroup>
                                 </select>
                             </div>
                         </div>
@@ -707,95 +817,21 @@
 $(document).ready(function() {
     
     let docToReceive = null;
-    let isTransferLocked = false; // Track if case is locked
-
-    // Quick filter cards
-    $('.quick-filter').on('click', function() {
-        const role = $(this).data('role');
-        $('.quick-filter').removeClass('active');
-        $(this).addClass('active');
-        $('#roleFilter').val(role).trigger('change');
-    });
-
-    // Search functionality
-    $('#searchInput').on('keyup', function() {
-        filterTables();
-    });
-
-    $('#roleFilter, #statusFilter').on('change', function() {
-        filterTables();
-    });
-
-    function filterTables() {
-        const searchTerm = $('#searchInput').val().toLowerCase();
-        const role = $('#roleFilter').val();
-        const status = $('#statusFilter').val();
-
-        // Filter all tables
-        $('table.tracking-table tbody tr').each(function() {
-            const row = $(this);
-            
-            // Skip "no data" rows
-            if (row.find('td[colspan]').length > 0) {
-                return;
-            }
-
-            const caseNo = row.find('td:first').text().toLowerCase();
-            const establishment = row.find('td:eq(1)').text().toLowerCase();
-            
-            let rowRole = '';
-            const roleBadge = row.find('.role-badge');
-            if (roleBadge.length > 0) {
-                const classes = roleBadge.attr('class').split(' ');
-                classes.forEach(cls => {
-                    if (cls.startsWith('role-')) {
-                        rowRole = cls.replace('role-', '');
-                    }
-                });
-            }
-
-            let rowStatus = '';
-            const statusBadge = row.find('.status-badge');
-            if (statusBadge.length > 0) {
-                rowStatus = statusBadge.text().trim();
-            }
-
-            const matchesSearch = caseNo.includes(searchTerm) || establishment.includes(searchTerm);
-            const matchesRole = !role || rowRole === role;
-            const matchesStatus = !status || rowStatus === status;
-
-            if (matchesSearch && matchesRole && matchesStatus) {
-                row.show();
-            } else {
-                row.hide();
-            }
-        });
-    }
-
-    // Clear filters
-    $('#clearFilters').on('click', function() {
-        $('#searchInput').val('');
-        $('#roleFilter').val('');
-        $('#statusFilter').val('');
-        $('.quick-filter').removeClass('active');
-        filterTables();
-    });
+    let isTransferLocked = false;
 
     // Transfer form submission
     $('#transferForm').on('submit', function(e) {
         e.preventDefault();
         
-        // If case is locked (disabled), temporarily enable it for submission
-        if (isTransferLocked) {
-            $('#case_id').prop('disabled', false);
-        }
-        
-        const formData = $(this).serialize();
-        
-        // Re-disable it if it was locked
-        if (isTransferLocked) {
-            $('#case_id').prop('disabled', true);
-        }
+        // Get form data manually
+        const formData = {
+            case_id: $('#transfer_case_id').val(),
+            target_role: $('#target_role').val(),   
+            transfer_notes: $('#transfer_notes').val(),
+            _token: $('meta[name="csrf-token"]').attr('content')
+        };
+
+        console.log('Submitting:', formData);
 
         $.ajax({
             url: '/documents/transfer',
@@ -810,69 +846,59 @@ $(document).ready(function() {
                 setTimeout(() => location.reload(), 1500);
             },
             error: function(xhr) {
+                console.error('Error:', xhr);
                 let errorMsg = 'Failed to transfer document.';
                 if (xhr.responseJSON?.message) {
                     errorMsg = xhr.responseJSON.message;
+                } else if (xhr.responseJSON?.errors) {
+                    const errors = Object.values(xhr.responseJSON.errors).flat();
+                    errorMsg = errors.join(', ');
                 }
                 showAlert(errorMsg, 'danger');
             }
         });
     });
 
-    // Transfer from My Documents - Lock the case selection
+    // Transfer from My Documents
     $(document).on('click', '.transfer-from-my-docs-btn', function() {
-        const docId = $(this).data('doc-id');
         const caseId = $(this).data('case-id');
         const caseNo = $(this).data('case-no');
         
-        // Mark as locked transfer
+        console.log('Locking case:', caseId);
+        
         isTransferLocked = true;
         
-        // Store document ID for reference
-        $('#document_id').val(docId);
+        // Set the value and make it readonly
+        $('#transfer_case_id').val(caseId).prop('readonly', true)
+            .css({
+                'background-color': '#e9ecef',
+                'cursor': 'not-allowed',
+                'opacity': '0.6'
+            });
         
-        // Set case and disable it completely
-        $('#case_id').val(caseId).prop('disabled', true);
-        
-        // Visually indicate the field is locked
-        $('#case_id').css('background-color', '#e9ecef')
-                    .css('cursor', 'not-allowed')
-                    .css('opacity', '0.6');
-        
-        // Add a visual indicator
-        if (!$('#case-locked-msg').length) {
-            $('#case_id').after('<small class="text-info d-block mt-1" id="case-locked-msg"><i class="fas fa-lock"></i> Case is locked for this transfer</small>');
-        }
-        
-        // Update modal title
+        $('#case-locked-msg').show();
         $('#transferModal .modal-title').html('<i class="fas fa-exchange-alt"></i> Transfer Document - ' + caseNo);
-        
-        // Show modal
         $('#transferModal').modal('show');
     });
 
-    // Regular transfer button (from header) - Enable case selection
+    // Regular transfer button
     $('[data-target="#transferModal"]').on('click', function() {
-        // Mark as unlocked transfer
+        console.log('Opening fresh modal');
         isTransferLocked = false;
-        
+        $('#transfer_case_id').val('').prop('readonly', false)
+            .css({
+                'background-color': '',
+                'cursor': '',
+                'opacity': ''
+            });
+        $('#case-locked-msg').hide();
         $('#transferModal .modal-title').html('<i class="fas fa-exchange-alt"></i> Transfer Document');
-        $('#case_id').val('')
-                    .prop('disabled', false)
-                    .css('background-color', '')
-                    .css('cursor', '')
-                    .css('opacity', '');
-        $('#document_id').val('');
-        $('#case-locked-msg').remove();
     });
 
-    // Receive button click
+    // Receive button
     $(document).on('click', '.receive-btn', function() {
-        const docId = $(this).data('doc-id');
-        const caseNo = $(this).data('case-no');
-        
-        docToReceive = docId;
-        $('#receiveCaseNo').text(caseNo);
+        docToReceive = $(this).data('doc-id');
+        $('#receiveCaseNo').text($(this).data('case-no'));
         $('#receiveModal').modal('show');
     });
 
@@ -881,7 +907,6 @@ $(document).ready(function() {
         if (!docToReceive) return;
 
         const button = $(this);
-        const originalHtml = button.html();
         button.html('<i class="fas fa-spinner fa-spin"></i> Receiving...').prop('disabled', true);
 
         $.ajax({
@@ -896,31 +921,20 @@ $(document).ready(function() {
                 setTimeout(() => location.reload(), 1500);
             },
             error: function(xhr) {
-                button.html(originalHtml).prop('disabled', false);
-                let errorMsg = 'Failed to receive document.';
-                if (xhr.responseJSON?.message) {
-                    errorMsg = xhr.responseJSON.message;
-                }
-                showAlert(errorMsg, 'danger');
+                button.html('<i class="fas fa-check"></i> Confirm Receipt').prop('disabled', false);
+                showAlert(xhr.responseJSON?.message || 'Failed to receive document.', 'danger');
                 $('#receiveModal').modal('hide');
             }
         });
     });
 
-    // View history button
+    // View history
     $(document).on('click', '.view-history-btn', function() {
         const docId = $(this).data('doc-id');
         
         $('#historyModal').modal('show');
-        $('#historyTimeline').html(`
-            <div class="text-center py-4">
-                <div class="spinner-border text-primary" role="status">
-                    <span class="sr-only">Loading...</span>
-                </div>
-            </div>
-        `);
+        $('#historyTimeline').html('<div class="text-center py-4"><div class="spinner-border text-primary"></div></div>');
         
-        // Load history via AJAX
         $.ajax({
             url: '/documents/' + docId + '/history',
             method: 'GET',
@@ -928,37 +942,31 @@ $(document).ready(function() {
                 $('#historyCaseNo').text(response.case_no);
                 $('#historyEstablishment').text(response.establishment);
                 
-                let timelineHtml = '';
-                response.history.forEach((item, index) => {
-                    const statusClass = item.status ? item.status.toLowerCase().replace(' ', '') : 'received';
-                    const roleClass = item.role ? item.role.toLowerCase().replace(' ', '_') : '';
-                    
-                    timelineHtml += `
+                let html = '';
+                response.history.forEach((item) => {
+                    const roleClass = (item.role || '').toLowerCase().replace(/ /g, '_');
+                    html += `
                         <div class="timeline-item">
                             <div class="card mb-0">
                                 <div class="card-body py-3">
-                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <div class="d-flex justify-content-between mb-2">
                                         <div>
                                             <span class="role-badge role-${roleClass}">${item.role}</span>
                                             ${item.from_role ? '<small class="text-muted ml-2">from ' + item.from_role + '</small>' : ''}
                                         </div>
-                                        <div class="text-right">
-                                            <small class="text-muted">${item.time_ago}</small>
-                                        </div>
+                                        <small class="text-muted">${item.time_ago}</small>
                                     </div>
                                     <div class="row">
                                         <div class="col-md-6">
-                                            <small class="text-muted d-block">Transferred By:</small>
-                                            <strong>${item.transferred_by}</strong>
-                                            <br>
+                                            <small class="text-muted">Transferred By:</small><br>
+                                            <strong>${item.transferred_by}</strong><br>
                                             <small class="text-muted">${item.transferred_at}</small>
                                         </div>
                                         <div class="col-md-6">
-                                            <small class="text-muted d-block">Received By:</small>
-                                            <strong class="${item.received_by === 'Pending' || item.received_by === 'Not Received' ? 'text-warning' : 'text-success'}">
+                                            <small class="text-muted">Received By:</small><br>
+                                            <strong class="${item.received_by === 'Pending' ? 'text-warning' : 'text-success'}">
                                                 ${item.received_by}
-                                            </strong>
-                                            <br>
+                                            </strong><br>
                                             <small class="text-muted">${item.received_at}</small>
                                         </div>
                                     </div>
@@ -969,11 +977,7 @@ $(document).ready(function() {
                     `;
                 });
                 
-                if (timelineHtml === '') {
-                    timelineHtml = '<div class="alert alert-info">No history available</div>';
-                }
-                
-                $('#historyTimeline').html(timelineHtml);
+                $('#historyTimeline').html(html || '<div class="alert alert-info">No history available</div>');
             },
             error: function() {
                 $('#historyTimeline').html('<div class="alert alert-danger">Failed to load history</div>');
@@ -981,24 +985,18 @@ $(document).ready(function() {
         });
     });
 
-    // Reset transfer modal on close
+    // Reset modals on close
     $('#transferModal').on('hidden.bs.modal', function() {
         $('#transferForm')[0].reset();
-        $('#document_id').val('');
+        $('#transfer_case_id').prop('readonly', false).css({'background-color': '', 'cursor': '', 'opacity': ''});
+        $('#case-locked-msg').hide();
         isTransferLocked = false;
-        $('#case_id').prop('disabled', false)
-                    .css('background-color', '')
-                    .css('cursor', '')
-                    .css('opacity', '');
-        $('#case-locked-msg').remove();
     });
 
-    // Reset receive modal on close
     $('#receiveModal').on('hidden.bs.modal', function() {
         docToReceive = null;
         $('#confirmReceiveBtn').html('<i class="fas fa-check"></i> Confirm Receipt').prop('disabled', false);
     });
-
 });
 
 function showAlert(message, type) {
@@ -1008,13 +1006,68 @@ function showAlert(message, type) {
     $('#' + messageId).text(message);
     $('#' + alertId).removeClass('fade').addClass('show').show();
     
-    setTimeout(() => {
-        $('#' + alertId).removeClass('show').addClass('fade');
-    }, 5000);
+    setTimeout(() => $('#' + alertId).removeClass('show').addClass('fade'), 5000);
 }
 
 function hideAlert(alertId) {
     $('#' + alertId).removeClass('show').addClass('fade');
 }
+
+function filterTables() {
+    const searchTerm = $('#searchInput').val().toLowerCase().trim();
+    const role = $('#roleFilter').val();
+
+    // Apply to ALL tables: pending, myDocs, allDocs
+    $('.tracking-table tbody tr').each(function() {
+        const $row = $(this);
+
+        // Skip "no data" rows
+        if ($row.find('td[colspan]').length > 0) return;
+
+        // Get text content
+        const caseNo = $row.find('td:eq(0)').text().toLowerCase();
+        const establishment = $row.find('td:eq(1)').text().toLowerCase();
+        const matchesSearch = !searchTerm || 
+            caseNo.includes(searchTerm) || 
+            establishment.includes(searchTerm);
+
+        // Role filtering
+        let rowRole = '';
+        const $badge = $row.find('.role-badge');
+        if ($badge.length) {
+            const classes = $badge.attr('class').split(' ');
+            classes.forEach(cls => {
+                if (cls.startsWith('role-')) {
+                    rowRole = cls.replace('role-', '');
+                }
+            });
+        }
+
+        let matchesRole = !role;
+        if (role) {
+            if (role === 'provinces') {
+                matchesRole = rowRole.startsWith('province_');
+            } else {
+                matchesRole = rowRole === role;
+            }
+        }
+
+        if (matchesSearch && matchesRole) {
+            $row.show();
+        } else {
+            $row.hide();
+        }
+    });
+}
+
+// Bind events
+$('#searchInput').on('keyup', filterTables);
+$('#roleFilter').on('change', filterTables);
+
+$('#clearFilters').on('click', function() {
+    $('#searchInput').val('');
+    $('#roleFilter').val('');
+    filterTables();
+});
 </script>
 @endpush
