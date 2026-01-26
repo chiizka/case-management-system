@@ -60,77 +60,65 @@ class DocumentTrackingController extends Controller
     {
         $request->validate([
             'case_id' => 'required|exists:cases,id',
-            'target_role' => ['required', 'in:' . implode(',', [
-                User::ROLE_ADMIN,
-                User::ROLE_MALSU,
-                User::ROLE_CASE_MANAGEMENT,
-                User::ROLE_RECORDS,
-                User::ROLE_PROVINCE_ALBAY,
-                User::ROLE_PROVINCE_CAMARINES_SUR,
-                User::ROLE_PROVINCE_CAMARINES_NORTE,
-                User::ROLE_PROVINCE_CATANDUANES,
-                User::ROLE_PROVINCE_MASBATE,
-                User::ROLE_PROVINCE_SORSOGON,
-            ])],
+            'target_role' => ['required', 'in:' . implode(',', User::VALID_ROLES)],
             'transfer_notes' => 'nullable|string'
         ]);
 
         DB::beginTransaction();
         try {
             $user = Auth::user();
-            
-            // Check if document tracking exists
-            $document = DocumentTracking::where('case_id', $request->case_id)->first();
+            $caseId = $request->case_id;
+            $targetRole = $request->target_role;
 
-            if ($document) {
-                // ONLY save to history if the document was previously received
-                // This preserves the complete chain of custody
-                if ($document->status === 'Received' && $document->received_by_user_id) {
-                    DocumentTrackingHistory::create([
-                        'document_tracking_id' => $document->id,
-                        'from_role' => $document->current_role,
-                        'to_role' => $document->current_role, // Same role (completed cycle)
-                        'transferred_by_user_id' => $document->transferred_by_user_id,
-                        'transferred_at' => $document->transferred_at,
-                        'received_by_user_id' => $document->received_by_user_id,
-                        'received_at' => $document->received_at,
-                        'notes' => $document->transfer_notes
-                    ]);
-                }
-
-                // Update document with NEW transfer (no receiver yet)
-                $document->update([
-                    'current_role' => $request->target_role,
+            // Find or create tracking record
+            $document = DocumentTracking::firstOrCreate(
+                ['case_id' => $caseId],
+                [
+                    'current_role' => $targetRole,
                     'status' => 'Pending Receipt',
                     'transferred_by_user_id' => $user->id,
                     'transferred_at' => now(),
-                    'received_by_user_id' => null, // Clear receiver
-                    'received_at' => null, // Clear received time
-                    'transfer_notes' => $request->transfer_notes
+                    'transfer_notes' => $request->transfer_notes,
+                ]
+            );
+
+            // If it already existed → this is a real transfer
+            if (!$document->wasRecentlyCreated) {
+                // Save the COMPLETE OLD CYCLE to history
+                DocumentTrackingHistory::create([
+                    'document_tracking_id' => $document->id,
+                    'from_role' => $document->current_role,
+                    'to_role' => $document->current_role,  // ← CHANGED: Keep it in the same role for the cycle
+                    'transferred_by_user_id' => $document->transferred_by_user_id,  // ← CHANGED: OLD transfer
+                    'transferred_at' => $document->transferred_at,  // ← CHANGED: OLD transfer time
+                    'received_by_user_id' => $document->received_by_user_id,
+                    'received_at' => $document->received_at,
+                    'notes' => $document->transfer_notes,  // ← CHANGED: OLD notes
                 ]);
-            } else {
-                // Create new document tracking (first transfer)
-                $document = DocumentTracking::create([
-                    'case_id' => $request->case_id,
-                    'current_role' => $request->target_role,
+
+                // Now update current tracking with NEW transfer
+                $document->update([
+                    'current_role' => $targetRole,
                     'status' => 'Pending Receipt',
                     'transferred_by_user_id' => $user->id,
                     'transferred_at' => now(),
-                    'transfer_notes' => $request->transfer_notes
+                    'transfer_notes' => $request->transfer_notes,
+                    'received_by_user_id' => null,
+                    'received_at' => null,
                 ]);
             }
 
             DB::commit();
+
             return response()->json([
                 'success' => true,
-                'message' => 'Document transferred successfully to ' . DocumentTracking::ROLE_NAMES[$request->target_role] . '!'
+                'message' => 'Document transferred successfully!'
             ]);
-
         } catch (\Exception $e) {
-            DB::rollback();
+            DB::rollBack();
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to transfer document: ' . $e->getMessage()
+                'message' => 'Transfer failed: ' . $e->getMessage()
             ], 500);
         }
     }
@@ -195,29 +183,31 @@ class DocumentTrackingController extends Controller
         
         $historyData = [];
         
-        // Add current state
+        // Add current state (ongoing cycle)
         $historyData[] = [
             'role' => DocumentTracking::ROLE_NAMES[$document->current_role],
             'status' => $document->status,
             'transferred_by' => $document->transferredBy ? $document->transferredBy->fname . ' ' . $document->transferredBy->lname : 'System',
             'transferred_at' => $document->transferred_at ? $document->transferred_at->format('M d, Y h:i A') : 'N/A',
-            'received_by' => $document->receivedBy ? $document->receivedBy->fname . ' ' . $document->receivedBy->lname : 'Pending',
-            'received_at' => $document->received_at ? $document->received_at->format('M d, Y h:i A') : 'Pending',
+            'received_by' => $document->receivedBy ? $document->receivedBy->fname . ' ' . $document->receivedBy->lname : 'Awaiting Receipt',
+            'received_at' => $document->received_at ? $document->received_at->format('M d, Y h:i A') : 'Not Yet Received',
             'notes' => $document->transfer_notes,
-            'time_ago' => $document->transferred_at ? $document->transferred_at->diffForHumans() : 'N/A'
+            'time_ago' => $document->transferred_at ? $document->transferred_at->diffForHumans() : 'N/A',
+            'is_current' => true  // Flag to identify current state
         ];
 
-        // Add historical records
+        // Add completed historical cycles
         foreach ($document->history as $history) {
             $historyData[] = [
                 'role' => DocumentTracking::ROLE_NAMES[$history->to_role],
-                'from_role' => $history->from_role ? DocumentTracking::ROLE_NAMES[$history->from_role] : 'Initial',
+                'status' => 'Completed',
                 'transferred_by' => $history->transferredBy ? $history->transferredBy->fname . ' ' . $history->transferredBy->lname : 'System',
                 'transferred_at' => $history->transferred_at ? $history->transferred_at->format('M d, Y h:i A') : 'N/A',
                 'received_by' => $history->receivedBy ? $history->receivedBy->fname . ' ' . $history->receivedBy->lname : 'Not Received',
                 'received_at' => $history->received_at ? $history->received_at->format('M d, Y h:i A') : 'N/A',
                 'notes' => $history->notes,
-                'time_ago' => $history->transferred_at ? $history->transferred_at->diffForHumans() : 'N/A'
+                'time_ago' => $history->transferred_at ? $history->transferred_at->diffForHumans() : 'N/A',
+                'is_current' => false
             ];
         }
 
@@ -228,4 +218,5 @@ class DocumentTrackingController extends Controller
             'history' => $historyData
         ]);
     }
+    
 }
