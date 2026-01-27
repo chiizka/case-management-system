@@ -880,7 +880,7 @@
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="form-group">
-                                    <label for="inspection_id">Inspection ID</label>
+                                    <label for="inspection_id">Inspection ID <span class="text-danger">*</span></label>
                                     <input type="text" class="form-control" id="inspection_id" name="inspection_id" placeholder="Enter inspection ID" required>
                                 </div>
                             </div>
@@ -893,8 +893,41 @@
                         </div>
 
                         <div class="form-group">
-                            <label for="establishment_name">Establishment Name</label>
+                            <label for="establishment_name">Establishment Name <span class="text-danger">*</span></label>
                             <input type="text" class="form-control" id="establishment_name" name="establishment_name" placeholder="Enter establishment name" required>
+                        </div>
+
+                        {{-- ✨ NEW: PO Office Field --}}
+                        <div class="form-group">
+                            <label for="po_office">Provincial Office <span class="text-danger">*</span></label>
+                            
+                            @if(Auth::user()->isProvince())
+                                {{-- Province users: auto-filled and read-only --}}
+                                <input type="text" 
+                                    class="form-control" 
+                                    id="po_office" 
+                                    name="po_office"
+                                    value="{{ Auth::user()->getProvinceName() }}"
+                                    readonly
+                                    style="background-color: #e9ecef; cursor: not-allowed;">
+                                <small class="form-text text-muted">
+                                    <i class="fas fa-info-circle"></i> Automatically set to your province office
+                                </small>
+                            @else
+                                {{-- Regional office users: dropdown selection --}}
+                                <select class="form-control" id="po_office" name="po_office" required>
+                                    <option value="">Select Provincial Office</option>
+                                    <option value="Albay">Albay</option>
+                                    <option value="Camarines Sur">Camarines Sur</option>
+                                    <option value="Camarines Norte">Camarines Norte</option>
+                                    <option value="Catanduanes">Catanduanes</option>
+                                    <option value="Masbate">Masbate</option>
+                                    <option value="Sorsogon">Sorsogon</option>
+                                </select>
+                                <small class="form-text text-muted">
+                                    <i class="fas fa-info-circle"></i> Select the provincial office where this case originated
+                                </small>
+                            @endif
                         </div>
 
                         <div class="row">

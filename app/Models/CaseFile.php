@@ -203,4 +203,5 @@ class CaseFile extends Model
     {
         return $this->hasMany(Inspection::class, 'case_id');
     }
+    
 }

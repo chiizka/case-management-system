@@ -20,6 +20,7 @@ use Illuminate\Support\Facades\Validator;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use Illuminate\Support\Facades\Storage;
 use PhpOffice\PhpSpreadsheet\Writer\Csv as CsvWriter;
+use App\Models\User;
 
 class CasesController extends Controller
 {
@@ -207,21 +208,28 @@ public function index()
         }
     }
 
-/**
- * Store new case
- */
 public function store(Request $request)
 {
     $validated = $request->validate([
         'inspection_id' => 'required|string|max:255|unique:cases,inspection_id',
         'case_no' => 'nullable|string|max:255',
         'establishment_name' => 'required|string|max:255',
+        'establishment_address' => 'nullable|string',
+        'mode' => 'nullable|string|max:255',
+        'po_office' => 'required|string|max:255',  // ← Now required!
         'current_stage' => 'required|in:1: Inspections,2: Docketing,3: Hearing,4: Review & Drafting,5: Orders & Disposition,6: Compliance & Awards,7: Appeals & Resolution',
         'overall_status' => 'required|in:Active,Completed,Dismissed',
     ]);
 
     DB::beginTransaction();
     try {
+        $user = Auth::user();
+        
+        // ✨ Verify province users can only create cases for their province
+        if ($user->isProvince() && $validated['po_office'] !== $user->getProvinceName()) {
+            throw new \Exception('You can only create cases for your own province office.');
+        }
+        
         // Create the case
         $case = CaseFile::create($validated);
 
@@ -230,15 +238,20 @@ public function store(Request $request)
             Inspection::create(['case_id' => $case->id]);
         }
 
+        // ✨ Create initial document tracking
+        $this->createInitialDocumentTracking($case, $user);
+
         // Log the action
         ActivityLogger::logAction(
             'CREATE',
             'Case',
             $case->inspection_id,
-            null,
+            "Created case at {$case->po_office}",
             [
                 'establishment' => $case->establishment_name,
-                'stage' => $case->current_stage
+                'stage' => $case->current_stage,
+                'po_office' => $case->po_office,
+                'created_by' => $user->fname . ' ' . $user->lname
             ]
         );
 
@@ -254,6 +267,63 @@ public function store(Request $request)
         return redirect()->route('case.index')
             ->with('error', 'Failed to create case: ' . $e->getMessage());
     }
+}
+
+protected function createInitialDocumentTracking($case, $user)
+{
+    // Skip if no PO office is set
+    if (empty($case->po_office)) {
+        Log::info("No PO office set for case {$case->id}, skipping document tracking creation");
+        return;
+    }
+
+    // Map PO office to role
+    $poOfficeToRole = [
+        'Albay' => User::ROLE_PROVINCE_ALBAY,
+        'Camarines Sur' => User::ROLE_PROVINCE_CAMARINES_SUR,
+        'Camarines Norte' => User::ROLE_PROVINCE_CAMARINES_NORTE,
+        'Catanduanes' => User::ROLE_PROVINCE_CATANDUANES,
+        'Masbate' => User::ROLE_PROVINCE_MASBATE,
+        'Sorsogon' => User::ROLE_PROVINCE_SORSOGON,
+    ];
+
+    $initialRole = $poOfficeToRole[$case->po_office] ?? null;
+
+    if (!$initialRole) {
+        Log::warning("Could not map PO office '{$case->po_office}' to a role for case {$case->id}");
+        return;
+    }
+
+    // Check if tracking already exists
+    $existingTracking = DocumentTracking::where('case_id', $case->id)->first();
+    if ($existingTracking) {
+        Log::info("Document tracking already exists for case {$case->id}");
+        return;
+    }
+
+    // Determine if document should start as "Received" or "Pending"
+    // If the creator is from the same province, mark as received
+    $isCreatorAtProvince = $user->isProvince() && $user->role === $initialRole;
+    
+    // Create document tracking
+    DocumentTracking::create([
+        'case_id' => $case->id,
+        'current_role' => $initialRole,
+        'status' => $isCreatorAtProvince ? 'Received' : 'Pending Receipt',
+        'transferred_by_user_id' => $user->id,
+        'transferred_at' => now(),
+        'received_by_user_id' => $isCreatorAtProvince ? $user->id : null,
+        'received_at' => $isCreatorAtProvince ? now() : null,
+        'transfer_notes' => $isCreatorAtProvince 
+            ? "Case created by {$user->fname} {$user->lname} at {$case->po_office}" 
+            : "Case assigned to {$case->po_office} by {$user->fname} {$user->lname}",
+    ]);
+
+    Log::info("Created initial document tracking for case {$case->id} at {$initialRole}", [
+        'creator_role' => $user->role,
+        'creator_name' => $user->fname . ' ' . $user->lname,
+        'is_received' => $isCreatorAtProvince
+    ]);
 }
 
 /**
@@ -1543,4 +1613,24 @@ private function formatBytes($bytes, $precision = 2)
     
     return round($bytes, $precision) . ' ' . $units[$pow];
 }
+
+protected function isProvinceUser($role)
+{
+    return in_array($role, User::PROVINCE_ROLES);
+}
+
+protected function getProvinceNameFromRole($role)
+{
+    $roleToProvince = [
+        User::ROLE_PROVINCE_ALBAY => 'Albay',
+        User::ROLE_PROVINCE_CAMARINES_SUR => 'Camarines Sur',
+        User::ROLE_PROVINCE_CAMARINES_NORTE => 'Camarines Norte',
+        User::ROLE_PROVINCE_CATANDUANES => 'Catanduanes',
+        User::ROLE_PROVINCE_MASBATE => 'Masbate',
+        User::ROLE_PROVINCE_SORSOGON => 'Sorsogon',
+    ];
+    
+    return $roleToProvince[$role] ?? null;
+}
+
 }
