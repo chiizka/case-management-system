@@ -54,27 +54,37 @@ class CasesController extends Controller
     /**
      * Display the main case management page
      */
-public function index()
-{
-    // Load ALL columns from the cases table
-    $cases = CaseFile::where('overall_status', '!=', 'Completed')
-        ->orderBy('created_at', 'desc')
-        ->get();
+    public function index()
+    {
+        $user = Auth::user();
+        
+        // Start with base query for active cases
+        $query = CaseFile::where('overall_status', '!=', 'Completed')
+            ->orderBy('created_at', 'desc');
+        
+        // ✨ FILTER: Provincial users only see their province's cases
+        if ($user->isProvince()) {
+            $provinceName = $user->getProvinceName();
+            $query->where('po_office', $provinceName);
+        }
+        // Admin and MALSU see all cases (no filter applied)
+        
+        $cases = $query->get();
 
-    $allowedTabs = $this->getAllowedTabs();
+        $allowedTabs = $this->getAllowedTabs();
 
-    return view('frontend.case', [
-        'cases' => $cases,
-        'allowedTabs' => $allowedTabs,
-        'inspections' => collect([]),
-        'docketing' => collect([]),
-        'hearingProcess' => collect([]),
-        'reviewAndDrafting' => collect([]),
-        'ordersAndDisposition' => collect([]),
-        'complianceAndAwards' => collect([]),
-        'appealsAndResolutions' => collect([])
-    ]);
-}
+        return view('frontend.case', [
+            'cases' => $cases,
+            'allowedTabs' => $allowedTabs,
+            'inspections' => collect([]),
+            'docketing' => collect([]),
+            'hearingProcess' => collect([]),
+            'reviewAndDrafting' => collect([]),
+            'ordersAndDisposition' => collect([]),
+            'complianceAndAwards' => collect([]),
+            'appealsAndResolutions' => collect([])
+        ]);
+    }
 
     /**
      * Load tab data via AJAX
@@ -90,17 +100,33 @@ public function index()
         }
 
         try {
+            $user = Auth::user();
             $data = null;
             $html = '';
+
+            // ✨ Create a reusable query filter function
+            $applyProvinceFilter = function($query) use ($user) {
+                if ($user->isProvince()) {
+                    $provinceName = $user->getProvinceName();
+                    $query->whereHas('case', function($q) use ($provinceName) {
+                        $q->where('po_office', $provinceName);
+                    });
+                }
+            };
 
             switch ($tabNumber) {
                 case '1':
                     $data = Inspection::with([
-                        'case:id,inspection_id,case_no,establishment_name,current_stage,overall_status'
+                        'case:id,inspection_id,case_no,establishment_name,current_stage,overall_status,po_office'
                     ])
-                    ->whereHas('case', function($query) {
+                    ->whereHas('case', function($query) use ($user) {
                         $query->where('current_stage', '1: Inspections')
                             ->where('overall_status', '!=', 'Completed');
+                        
+                        // ✨ Apply province filter
+                        if ($user->isProvince()) {
+                            $query->where('po_office', $user->getProvinceName());
+                        }
                     })
                     ->get();
 
@@ -109,11 +135,16 @@ public function index()
 
                 case '2':
                     $data = Docketing::with([
-                        'case:id,inspection_id,case_no,establishment_name,current_stage,overall_status'
+                        'case:id,inspection_id,case_no,establishment_name,current_stage,overall_status,po_office'
                     ])
-                    ->whereHas('case', function($query) {
+                    ->whereHas('case', function($query) use ($user) {
                         $query->where('current_stage', '2: Docketing')
                             ->where('overall_status', '!=', 'Completed');
+                        
+                        // ✨ Apply province filter
+                        if ($user->isProvince()) {
+                            $query->where('po_office', $user->getProvinceName());
+                        }
                     })
                     ->get();
 
@@ -122,11 +153,16 @@ public function index()
 
                 case '3':
                     $data = HearingProcess::with([
-                        'case:id,inspection_id,case_no,establishment_name,current_stage,overall_status'
+                        'case:id,inspection_id,case_no,establishment_name,current_stage,overall_status,po_office'
                     ])
-                    ->whereHas('case', function($query) {
+                    ->whereHas('case', function($query) use ($user) {
                         $query->where('current_stage', '3: Hearing')
                             ->where('overall_status', '!=', 'Completed');
+                        
+                        // ✨ Apply province filter
+                        if ($user->isProvince()) {
+                            $query->where('po_office', $user->getProvinceName());
+                        }
                     })
                     ->get();
 
@@ -135,11 +171,16 @@ public function index()
 
                 case '4':
                     $data = ReviewAndDrafting::with([
-                        'case:id,inspection_id,case_no,establishment_name,current_stage,overall_status'
+                        'case:id,inspection_id,case_no,establishment_name,current_stage,overall_status,po_office'
                     ])
-                    ->whereHas('case', function($query) {
+                    ->whereHas('case', function($query) use ($user) {
                         $query->where('current_stage', '4: Review & Drafting')
                             ->where('overall_status', '!=', 'Completed');
+                        
+                        // ✨ Apply province filter (Admin/Case Management see all)
+                        if ($user->isProvince()) {
+                            $query->where('po_office', $user->getProvinceName());
+                        }
                     })
                     ->get();
 
@@ -148,11 +189,16 @@ public function index()
 
                 case '5':
                     $data = OrderAndDisposition::with([
-                        'case:id,inspection_id,case_no,establishment_name,current_stage,overall_status'
+                        'case:id,inspection_id,case_no,establishment_name,current_stage,overall_status,po_office'
                     ])
-                    ->whereHas('case', function($query) {
+                    ->whereHas('case', function($query) use ($user) {
                         $query->where('current_stage', '5: Orders & Disposition')
                             ->where('overall_status', '!=', 'Completed');
+                        
+                        // ✨ Apply province filter
+                        if ($user->isProvince()) {
+                            $query->where('po_office', $user->getProvinceName());
+                        }
                     })
                     ->get();
 
@@ -161,11 +207,16 @@ public function index()
 
                 case '6':
                     $data = ComplianceAndAward::with([
-                        'case:id,inspection_id,case_no,establishment_name,current_stage,overall_status'
+                        'case:id,inspection_id,case_no,establishment_name,current_stage,overall_status,po_office'
                     ])
-                    ->whereHas('case', function($query) {
+                    ->whereHas('case', function($query) use ($user) {
                         $query->where('current_stage', '6: Compliance & Awards')
                             ->where('overall_status', '!=', 'Completed');
+                        
+                        // ✨ Apply province filter
+                        if ($user->isProvince()) {
+                            $query->where('po_office', $user->getProvinceName());
+                        }
                     })
                     ->get();
 
@@ -174,11 +225,16 @@ public function index()
 
                 case '7':
                     $data = AppealsAndResolution::with([
-                        'case:id,inspection_id,case_no,establishment_name,current_stage,overall_status'
+                        'case:id,inspection_id,case_no,establishment_name,current_stage,overall_status,po_office'
                     ])
-                    ->whereHas('case', function($query) {
+                    ->whereHas('case', function($query) use ($user) {
                         $query->where('current_stage', '7: Appeals & Resolution')
                             ->where('overall_status', '!=', 'Completed');
+                        
+                        // ✨ Apply province filter (MALSU sees all)
+                        if ($user->isProvince()) {
+                            $query->where('po_office', $user->getProvinceName());
+                        }
                     })
                     ->get();
 
