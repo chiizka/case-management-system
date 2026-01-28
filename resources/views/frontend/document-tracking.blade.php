@@ -943,8 +943,64 @@ $(document).ready(function() {
                 $('#historyEstablishment').text(response.establishment);
                 
                 let html = '';
+                
                 response.history.forEach((item) => {
                     const roleClass = (item.role || '').toLowerCase().replace(/ /g, '_');
+
+                    // ────────────────────────────────────────────────────────────────
+                    // IMPORTANT: Detect case creation entry to show cleaner layout
+                    // 
+                    // We identify the very first (creation) history item by checking:
+                    // 1. Same person transferred and received (creator = initial receiver)
+                    // 2. Actions happened almost instantly (< 10 seconds apart)
+                    // 3. Notes contain "case created by" phrase
+                    // 
+                    // This avoids showing fake-looking "Transferred By" on creation.
+                    // 
+                    // Long-term better solution: Add real 'is_initial: true' flag in 
+                    // backend (DocumentTrackingController::history) when creation 
+                    // doesn't set transferred_by_user_id / transferred_at.
+                    // ────────────────────────────────────────────────────────────────
+                    const isLikelyCreation =
+                        item.transferred_by === item.received_by &&
+                        // Allow up to 10 seconds difference (covers minor clock drift, 
+                        // network delay, or very fast system actions)
+                        Math.abs(new Date(item.transferred_at) - new Date(item.received_at)) < 10000 &&
+                        (item.notes || '').toLowerCase().includes('case created by');
+
+                    let contentHtml = '';
+
+                    if (isLikelyCreation) {
+                        // Clean layout for case creation (no "Transferred By")
+                        contentHtml = `
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <small class="text-muted">Created & Initially Received By:</small><br>
+                                    <strong class="text-success">${item.received_by}</strong><br>
+                                    <small class="text-muted">${item.received_at}</small>
+                                </div>
+                            </div>
+                        `;
+                    } else {
+                        // Normal transfer layout
+                        contentHtml = `
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <small class="text-muted">Transferred By:</small><br>
+                                    <strong>${item.transferred_by}</strong><br>
+                                    <small class="text-muted">${item.transferred_at}</small>
+                                </div>
+                                <div class="col-md-6">
+                                    <small class="text-muted">Received By:</small><br>
+                                    <strong class="${item.received_by === 'Pending' || item.received_by === 'Awaiting Receipt' ? 'text-warning' : 'text-success'}">
+                                        ${item.received_by}
+                                    </strong><br>
+                                    <small class="text-muted">${item.received_at}</small>
+                                </div>
+                            </div>
+                        `;
+                    }
+
                     html += `
                         <div class="timeline-item">
                             <div class="card mb-0">
@@ -956,20 +1012,9 @@ $(document).ready(function() {
                                         </div>
                                         <small class="text-muted">${item.time_ago}</small>
                                     </div>
-                                    <div class="row">
-                                        <div class="col-md-6">
-                                            <small class="text-muted">Transferred By:</small><br>
-                                            <strong>${item.transferred_by}</strong><br>
-                                            <small class="text-muted">${item.transferred_at}</small>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <small class="text-muted">Received By:</small><br>
-                                            <strong class="${item.received_by === 'Pending' ? 'text-warning' : 'text-success'}">
-                                                ${item.received_by}
-                                            </strong><br>
-                                            <small class="text-muted">${item.received_at}</small>
-                                        </div>
-                                    </div>
+                                    
+                                    ${contentHtml}
+                                    
                                     ${item.notes ? '<hr class="my-2"><small class="text-muted">Notes: ' + item.notes + '</small>' : ''}
                                 </div>
                             </div>
