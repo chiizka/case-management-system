@@ -1459,27 +1459,59 @@ $('#newDocumentTitle').on('keypress', function(e) {
     }
 });
 
-// 11. LOAD DOCUMENTS FUNCTION
-function loadDocuments() {
-    $.ajax({
-        url: `/case/${currentCaseId}/documents`,
-        method: 'GET',
-        success: function(response) {
-            console.log('Loaded documents from DB:', response.documents);
-            if (response.success) {
-                documents = (response.documents || []).map(doc => ({
-                    ...doc,
-                    checked: doc.checked === true || doc.checked === 'true' || doc.checked === 1
-                }));
+    // 11. LOAD DOCUMENTS FUNCTION 
+    function loadDocuments() {
+        // Define the 15 required documents
+        const requiredDocuments = [
+            'Authority to Inspect',
+            'Affidavit',
+            'Labor Inspection Checklist',
+            'Notice of Inspection Result',
+            'Inspection Evaluation and Action Sheet',
+            'List of Establishments, Affected Employees, and Contact Number',
+            'Notice of Mandatory Conference',
+            'Payroll',
+            'Minutes of the Conference / Hearing',
+            'Documentary Attachment Checklist',
+            '1st Order / 2nd Order / Notice of Order',
+            'Post-Evaluation Checklist',
+            'Notice of Finality',
+            '2nd Order CNPC',
+            'Compliance Documents'
+        ];
+        
+        $.ajax({
+            url: `/case/${currentCaseId}/documents`,
+            method: 'GET',
+            success: function(response) {
+                console.log('Loaded documents from DB:', response.documents);
+                
+                if (response.success && response.documents && response.documents.length > 0) {
+                    // Use existing documents from database
+                    documents = response.documents.map(doc => ({
+                        ...doc,
+                        checked: doc.checked === true || doc.checked === 'true' || doc.checked === 1
+                    }));
+                } else {
+                    // Initialize with required documents if none exist
+                    documents = requiredDocuments.map((title, index) => ({
+                        id: Date.now() + index,
+                        title: title,
+                        checked: false
+                    }));
+                    
+                    // Save the initial required documents
+                    saveDocuments();
+                }
+                
                 console.log('Processed documents:', documents);
                 renderDocuments();
+            },
+            error: function(xhr) {
+                console.error('Load error:', xhr);
             }
-        },
-        error: function(xhr) {
-            console.error('Load error:', xhr);
-        }
-    });
-}
+        });
+    }
 
 // 12. SAVE DOCUMENTS FUNCTION
 function saveDocuments() {
