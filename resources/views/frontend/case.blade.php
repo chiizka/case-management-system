@@ -3517,107 +3517,113 @@ $(document).on('click', '.view-history-btn', function(e) {
     });
 });
 
-// Helper function to display history timeline
-function displayHistory(historyData) {
-    if (!historyData || historyData.length === 0) {
-        $('#historyContent').html(`
-            <div class="alert alert-info">
-                <i class="fas fa-info-circle"></i> No transfer history available yet.
-            </div>
-        `);
-        return;
-    }
-    
-    let timelineHtml = '<div class="timeline" style="position: relative; padding-left: 30px;">';
-    timelineHtml += '<div style="content: \'\'; position: absolute; left: 10px; top: 0; bottom: 0; width: 2px; background: #e3e6f0;"></div>';
-    
-    historyData.forEach((item, index) => {
-        const roleClass = item.role ? item.role.toLowerCase().replace(/\s+/g, '_') : '';
-        const statusClass = item.status === 'Received' ? 'success' : 'warning';
-
-        // ────────────────────────────────────────────────────────────────
-        // IMPORTANT: Detect case creation entry to show cleaner layout
-        // 
-        // We identify the very first (creation) history item by checking:
-        // 1. Same person transferred and received (creator = initial receiver)
-        // 2. Actions happened almost instantly (< 10 seconds apart)
-        // 3. Notes contain "case created by" phrase
-        // 
-        // This avoids showing fake-looking "Transferred By" on creation.
-        // 
-        // Long-term better solution: Add real 'is_initial: true' flag in 
-        // backend (in the controller that returns /case/{id}/document-history)
-        // when creation doesn't set transferred_by_user_id / transferred_at.
-        // ────────────────────────────────────────────────────────────────
-        const isLikelyCreation =
-            item.transferred_by === item.received_by &&
-            // Allow up to 10 seconds difference (covers minor clock drift, 
-            // network delay, or very fast system actions)
-            Math.abs(new Date(item.transferred_at) - new Date(item.received_at)) < 10000 &&
-            (item.notes || '').toLowerCase().includes('case created by');
-
-        let transferContent = '';
-
-        if (isLikelyCreation) {
-            // Clean layout for case creation (no "Transferred By")
-            transferContent = `
-                <div class="row">
-                    <div class="col-md-12">
-                        <small class="text-muted d-block">Created & Initially Received By:</small>
-                        <strong class="text-success">${item.received_by}</strong><br>
-                        <small class="text-muted">${item.received_at}</small>
-                    </div>
+    // Helper function to display history timeline - newest at top, oldest at bottom
+    function displayHistory(historyData) {
+        if (!historyData || historyData.length === 0) {
+            $('#historyContent').html(`
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i> No transfer history available yet.
                 </div>
-            `;
-        } else {
-            // Normal transfer layout (keep original two columns)
-            transferContent = `
-                <div class="row">
-                    <div class="col-md-6">
-                        <small class="text-muted d-block">Transferred By:</small>
-                        <strong>${item.transferred_by}</strong><br>
-                        <small class="text-muted">${item.transferred_at}</small>
-                    </div>
-                    <div class="col-md-6">
-                        <small class="text-muted d-block">Received By:</small>
-                        <strong class="${item.received_by === 'Pending' || item.received_by === 'Not Received' ? 'text-warning' : 'text-success'}">
-                            ${item.received_by}
-                        </strong><br>
-                        <small class="text-muted">${item.received_at}</small>
-                    </div>
-                </div>
-            `;
+            `);
+            return;
         }
 
-        timelineHtml += `
-            <div class="timeline-item" style="position: relative; margin-bottom: 1.5rem;">
-                <div style="content: ''; position: absolute; left: -24px; top: 5px; width: 12px; height: 12px; border-radius: 50%; background: #4e73df; border: 2px solid white; box-shadow: 0 0 0 2px #e3e6f0;"></div>
-                <div class="card mb-0">
-                    <div class="card-body py-3">
-                        <div class="d-flex justify-content-between align-items-start mb-2">
-                            <div>
-                                <span class="badge badge-${statusClass}" style="font-size: 0.85rem; padding: 0.5rem 1rem;">
-                                    ${item.role}
-                                </span>
-                                ${item.from_role ? '<small class="text-muted ml-2">from ' + item.from_role + '</small>' : ''}
-                            </div>
-                            <div class="text-right">
-                                <small class="text-muted"><i class="fas fa-clock"></i> ${item.time_ago}</small>
-                            </div>
+        // ────────────────────────────────────────────────────────────────
+        // Show newest events at the top (reverse chronological order)
+        // This matches the Document Tracking history page behavior
+        // Creation (oldest) will now appear at the bottom
+        // ────────────────────────────────────────────────────────────────
+        const reversedData = [...historyData].reverse();
+        console.log('Original first (should be oldest):', historyData[0]?.role, historyData[0]?.notes);
+        console.log('Reversed first (should be newest):', reversedData[0]?.role, reversedData[0]?.notes);
+
+        let timelineHtml = '<div class="timeline" style="position: relative; padding-left: 30px;">';
+        timelineHtml += '<div style="content: \'\'; position: absolute; left: 10px; top: 0; bottom: 0; width: 2px; background: #e3e6f0;"></div>';
+
+        reversedData.forEach((item, index) => {
+            const roleClass = item.role ? item.role.toLowerCase().replace(/\s+/g, '_') : '';
+            const statusClass = item.status === 'Received' ? 'success' : 'warning';
+
+            // ────────────────────────────────────────────────────────────────
+            // IMPORTANT: Detect case creation entry to show cleaner layout
+            // 
+            // We identify the very first (creation) history item by checking:
+            // 1. Same person transferred and received (creator = initial receiver)
+            // 2. Actions happened almost instantly (< 10 seconds apart)
+            // 3. Notes contain "case created by" phrase
+            // 
+            // This avoids showing fake-looking "Transferred By" on creation.
+            // 
+            // Long-term better solution: Add real 'is_initial: true' flag in 
+            // backend when creation doesn't set transferred_by / transferred_at.
+            // ────────────────────────────────────────────────────────────────
+            const isLikelyCreation =
+                item.transferred_by === item.received_by &&
+                Math.abs(new Date(item.transferred_at) - new Date(item.received_at)) < 10000 &&
+                (item.notes || '').toLowerCase().includes('case created by');
+
+            let transferContent = '';
+
+            if (isLikelyCreation) {
+                // Clean layout for case creation (no "Transferred By", no "from ...")
+                transferContent = `
+                    <div class="row">
+                        <div class="col-md-12">
+                            <small class="text-muted d-block">Created & Initially Received By:</small>
+                            <strong class="text-success">${item.received_by}</strong><br>
+                            <small class="text-muted">${item.received_at}</small>
                         </div>
-                        
-                        ${transferContent}
-                        
-                        ${item.notes ? '<hr class="my-2"><small class="text-muted"><i class="fas fa-sticky-note"></i> <strong>Notes:</strong> ' + item.notes + '</small>' : ''}
+                    </div>
+                `;
+            } else {
+                // Normal transfer layout
+                transferContent = `
+                    <div class="row">
+                        <div class="col-md-6">
+                            <small class="text-muted d-block">Transferred By:</small>
+                            <strong>${item.transferred_by}</strong><br>
+                            <small class="text-muted">${item.transferred_at}</small>
+                        </div>
+                        <div class="col-md-6">
+                            <small class="text-muted d-block">Received By:</small>
+                            <strong class="${item.received_by === 'Pending' || item.received_by === 'Awaiting Receipt' || item.received_by === 'Not Yet Received' ? 'text-warning' : 'text-success'}">
+                                ${item.received_by === 'Pending' ? 'Awaiting Receipt' : item.received_by}
+                            </strong><br>
+                            <small class="text-muted">${item.received_at}</small>
+                        </div>
+                    </div>
+                `;
+            }
+
+            timelineHtml += `
+                <div class="timeline-item" style="position: relative; margin-bottom: 1.5rem;">
+                    <div style="content: ''; position: absolute; left: -24px; top: 5px; width: 12px; height: 12px; border-radius: 50%; background: #4e73df; border: 2px solid white; box-shadow: 0 0 0 2px #e3e6f0;"></div>
+                    <div class="card mb-0">
+                        <div class="card-body py-3">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <div>
+                                    <span class="badge badge-${statusClass}" style="font-size: 0.85rem; padding: 0.5rem 1rem;">
+                                        ${item.role}
+                                    </span>
+                                    ${!isLikelyCreation && item.from_role ? '<small class="text-muted ml-2">from ' + item.from_role + '</small>' : ''}
+                                </div>
+                                <div class="text-right">
+                                    <small class="text-muted"><i class="fas fa-clock"></i> ${item.time_ago}</small>
+                                </div>
+                            </div>
+                            
+                            ${transferContent}
+                            
+                            ${item.notes ? '<hr class="my-2"><small class="text-muted"><i class="fas fa-sticky-note"></i> <strong>Notes:</strong> ' + item.notes + '</small>' : ''}
+                        </div>
                     </div>
                 </div>
-            </div>
-        `;
-    });
-    
-    timelineHtml += '</div>';
-    $('#historyContent').html(timelineHtml);
-}
+            `;
+        });
+
+        timelineHtml += '</div>';
+        $('#historyContent').html(timelineHtml);
+    }
 
 // UPDATED: Export button → Show modal first
 document.getElementById('exportActiveCasesXlsx').addEventListener('click', function () {
