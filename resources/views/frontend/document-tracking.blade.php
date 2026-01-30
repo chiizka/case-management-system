@@ -70,14 +70,6 @@
     box-shadow: 0 0 0 2px #e3e6f0;
 }
 
-/* Filter bar */
-.filter-bar {
-    background: #f8f9fc;
-    padding: 1.5rem;
-    border-radius: 0.35rem;
-    margin-bottom: 1.5rem;
-}
-
 /* Stats cards */
 .stat-card {
     border-left: 4px solid;
@@ -561,39 +553,9 @@
                 </div>
             </div>
 
-            <!-- All Documents Tab (Admin Only) -->
+            <!-- All Documents Tab (Admin Only) - FILTERS REMOVED -->
             @if(Auth::user()->isAdmin())
             <div class="tab-pane fade" id="allDocs" role="tabpanel">
-                 <div class="filter-bar mb-4">
-                <div class="row align-items-end">
-                    <div class="col-md-4 mb-3 mb-md-0">
-                        <label class="small font-weight-bold text-uppercase mb-1">Search Case / Establishment</label>
-                        <input type="text" class="form-control" id="searchInput" placeholder="Type to filter...">
-                    </div>
-                    <div class="col-md-4 mb-3 mb-md-0">
-                        <label class="small font-weight-bold text-uppercase mb-1">Filter by Department</label>
-                        <select class="form-control" id="roleFilter">
-                            <option value="">All Departments</option>
-                            <option value="admin">Admin</option>
-                            <option value="malsu">MALSU</option>
-                            <option value="case_management">Case Management</option>
-                            <option value="records">Records</option>
-                            <option value="provinces">All Provinces</option> <!-- groups all province_* -->
-                            <option value="province_albay">Albay Province</option>
-                            <option value="province_camarines_sur">Camarines Sur Province</option>
-                            <option value="province_camarines_norte">Camarines Norte Province</option>
-                            <option value="province_catanduanes">Catanduanes Province</option>
-                            <option value="province_masbate">Masbate Province</option>
-                            <option value="province_sorsogon">Sorsogon Province</option>
-                        </select>
-                    </div>
-                    <div class="col-md-2">
-                        <button class="btn btn-secondary btn-block mt-4" id="clearFilters">
-                            <i class="fas fa-redo"></i> Clear Filters
-                        </button>
-                    </div>
-                </div>
-            </div>
                 <div class="card shadow mb-4">
                     <div class="card-header py-3 d-flex justify-content-between align-items-center">
                         <h6 class="m-0 font-weight-bold text-primary">All Documents (Admin View)</h6>
@@ -947,24 +909,9 @@ $(document).ready(function() {
                 response.history.forEach((item) => {
                     const roleClass = (item.role || '').toLowerCase().replace(/ /g, '_');
 
-                    // ────────────────────────────────────────────────────────────────
-                    // IMPORTANT: Detect case creation entry to show cleaner layout
-                    // 
-                    // We identify the very first (creation) history item by checking:
-                    // 1. Same person transferred and received (creator = initial receiver)
-                    // 2. Actions happened almost instantly (< 10 seconds apart)
-                    // 3. Notes contain "case created by" phrase
-                    // 
-                    // This avoids showing fake-looking "Transferred By" on creation.
-                    // 
-                    // Long-term better solution: Add real 'is_initial: true' flag in 
-                    // backend (DocumentTrackingController::history) when creation 
-                    // doesn't set transferred_by_user_id / transferred_at.
-                    // ────────────────────────────────────────────────────────────────
+                    // Detect case creation entry to show cleaner layout
                     const isLikelyCreation =
                         item.transferred_by === item.received_by &&
-                        // Allow up to 10 seconds difference (covers minor clock drift, 
-                        // network delay, or very fast system actions)
                         Math.abs(new Date(item.transferred_at) - new Date(item.received_at)) < 10000 &&
                         (item.notes || '').toLowerCase().includes('case created by');
 
@@ -1057,62 +1004,5 @@ function showAlert(message, type) {
 function hideAlert(alertId) {
     $('#' + alertId).removeClass('show').addClass('fade');
 }
-
-function filterTables() {
-    const searchTerm = $('#searchInput').val().toLowerCase().trim();
-    const role = $('#roleFilter').val();
-
-    // Apply to ALL tables: pending, myDocs, allDocs
-    $('.tracking-table tbody tr').each(function() {
-        const $row = $(this);
-
-        // Skip "no data" rows
-        if ($row.find('td[colspan]').length > 0) return;
-
-        // Get text content
-        const caseNo = $row.find('td:eq(0)').text().toLowerCase();
-        const establishment = $row.find('td:eq(1)').text().toLowerCase();
-        const matchesSearch = !searchTerm || 
-            caseNo.includes(searchTerm) || 
-            establishment.includes(searchTerm);
-
-        // Role filtering
-        let rowRole = '';
-        const $badge = $row.find('.role-badge');
-        if ($badge.length) {
-            const classes = $badge.attr('class').split(' ');
-            classes.forEach(cls => {
-                if (cls.startsWith('role-')) {
-                    rowRole = cls.replace('role-', '');
-                }
-            });
-        }
-
-        let matchesRole = !role;
-        if (role) {
-            if (role === 'provinces') {
-                matchesRole = rowRole.startsWith('province_');
-            } else {
-                matchesRole = rowRole === role;
-            }
-        }
-
-        if (matchesSearch && matchesRole) {
-            $row.show();
-        } else {
-            $row.hide();
-        }
-    });
-}
-
-// Bind events
-$('#searchInput').on('keyup', filterTables);
-$('#roleFilter').on('change', filterTables);
-
-$('#clearFilters').on('click', function() {
-    $('#searchInput').val('');
-    $('#roleFilter').val('');
-    filterTables();
-});
 </script>
 @endpush

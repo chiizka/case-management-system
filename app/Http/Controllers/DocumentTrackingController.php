@@ -39,12 +39,20 @@ class DocumentTrackingController extends Controller
         $cases = CaseFile::where('overall_status', 'Active')->get();
         
         // Count documents by role - ONLY ACTIVE CASES
+        // Fixed: Now includes individual province counts
         $roleCounts = [
             'admin' => DocumentTracking::active()->where('current_role', 'admin')->count(),
             'malsu' => DocumentTracking::active()->where('current_role', 'malsu')->count(),
             'case_management' => DocumentTracking::active()->where('current_role', 'case_management')->count(),
             'records' => DocumentTracking::active()->where('current_role', 'records')->count(),
-            'provinces' => DocumentTracking::active()->whereIn('current_role', User::PROVINCE_ROLES)->count(),  // Counts all specific provinces
+            
+            // Individual province counts
+            'province_albay' => DocumentTracking::active()->where('current_role', 'province_albay')->count(),
+            'province_camarines_sur' => DocumentTracking::active()->where('current_role', 'province_camarines_sur')->count(),
+            'province_camarines_norte' => DocumentTracking::active()->where('current_role', 'province_camarines_norte')->count(),
+            'province_catanduanes' => DocumentTracking::active()->where('current_role', 'province_catanduanes')->count(),
+            'province_masbate' => DocumentTracking::active()->where('current_role', 'province_masbate')->count(),
+            'province_sorsogon' => DocumentTracking::active()->where('current_role', 'province_sorsogon')->count(),
         ];
 
         return view('frontend.document-tracking', compact(
@@ -88,12 +96,12 @@ class DocumentTrackingController extends Controller
                 DocumentTrackingHistory::create([
                     'document_tracking_id' => $document->id,
                     'from_role' => $document->current_role,
-                    'to_role' => $document->current_role,  // ← CHANGED: Keep it in the same role for the cycle
-                    'transferred_by_user_id' => $document->transferred_by_user_id,  // ← CHANGED: OLD transfer
-                    'transferred_at' => $document->transferred_at,  // ← CHANGED: OLD transfer time
+                    'to_role' => $document->current_role,  // Keep it in the same role for the cycle
+                    'transferred_by_user_id' => $document->transferred_by_user_id,  // OLD transfer
+                    'transferred_at' => $document->transferred_at,  // OLD transfer time
                     'received_by_user_id' => $document->received_by_user_id,
                     'received_at' => $document->received_at,
-                    'notes' => $document->transfer_notes,  // ← CHANGED: OLD notes
+                    'notes' => $document->transfer_notes,  // OLD notes
                 ]);
 
                 // Now update current tracking with NEW transfer
