@@ -31,15 +31,20 @@
                 </div>
             </div>
 
-            <!-- Active Cases Card -->
+            <!-- Active Cases Card - ENTIRE CARD IS NOW CLICKABLE -->
             <div class="col-xl-3 col-md-6 mb-4">
-                <div class="card border-left-success shadow h-100 py-2">
+                <div class="card border-left-success shadow h-100 py-2 clickable-card" 
+                     data-toggle="modal" 
+                     data-target="#activeCasesModal"
+                     style="cursor: pointer;">
                     <div class="card-body">
                         <div class="row no-gutters align-items-center">
                             <div class="col mr-2">
                                 <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
                                     Active Cases</div>
-                                <div class="h5 mb-0 font-weight-bold text-gray-800">{{ $activeCases }}</div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                    {{ $activeCases }}
+                                </div>
                             </div>
                             <div class="col-auto">
                                 <i class="fas fa-clipboard-list fa-2x text-gray-300"></i>
@@ -195,6 +200,149 @@
 </div>
 <!-- End of Main Content -->
 
+<!-- ===================================================================== -->
+<!--                  ACTIVE CASES DISTRIBUTION MODAL                      -->
+<!-- ===================================================================== -->
+
+<div class="modal fade" id="activeCasesModal" tabindex="-1" role="dialog" aria-labelledby="activeCasesModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-gradient-primary text-white">
+                <h5 class="modal-title" id="activeCasesModalLabel">
+                    <i class="fas fa-map-marker-alt mr-2"></i> 
+                    Active Cases by Location / Department
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">×</span>
+                </button>
+            </div>
+
+            <div class="modal-body">
+                <!-- Total summary -->
+                <div class="text-center mb-4 pb-3 border-bottom">
+                    <h4 class="font-weight-bold text-primary mb-1">
+                        Total Active Cases
+                    </h4>
+                    <h2 class="display-4 font-weight-bold text-dark mb-0">
+                        {{ $activeCases }}
+                    </h2>
+                </div>
+
+                <div class="row">
+
+                    <!-- Central Offices -->
+                    <div class="col-md-6 mb-4">
+                        <h6 class="font-weight-bold text-muted mb-3 text-uppercase">
+                            <i class="fas fa-building mr-2"></i> Central Offices
+                        </h6>
+
+                        <div class="list-group list-group-flush shadow-sm">
+                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                <div>
+                                    <i class="fas fa-user-shield text-primary mr-2"></i>
+                                    Admin
+                                </div>
+                                <span class="badge badge-primary badge-pill font-weight-bold">
+                                    {{ $activeByRole['admin'] ?? 0 }}
+                                </span>
+                            </div>
+
+                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                <div>
+                                    <i class="fas fa-balance-scale text-danger mr-2"></i>
+                                    MALSU
+                                </div>
+                                <span class="badge badge-danger badge-pill font-weight-bold">
+                                    {{ $activeByRole['malsu'] ?? 0 }}
+                                </span>
+                            </div>
+
+                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                <div>
+                                    <i class="fas fa-folder-open text-info mr-2"></i>
+                                    Case Management
+                                </div>
+                                <span class="badge badge-info badge-pill font-weight-bold">
+                                    {{ $activeByRole['case_management'] ?? 0 }}
+                                </span>
+                            </div>
+
+                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                <div>
+                                    <i class="fas fa-file-alt text-success mr-2"></i>
+                                    Records
+                                </div>
+                                <span class="badge badge-success badge-pill font-weight-bold">
+                                    {{ $activeByRole['records'] ?? 0 }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Provincial Offices -->
+                    <div class="col-md-6 mb-4">
+                        <h6 class="font-weight-bold text-muted mb-3 text-uppercase">
+                            <i class="fas fa-map-marker-alt mr-2"></i> Provincial Offices
+                        </h6>
+
+                        <div class="list-group list-group-flush shadow-sm">
+                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                <span>Albay</span>
+                                <span class="badge badge-primary badge-pill font-weight-bold">
+                                    {{ $activeByRole['province_albay'] ?? 0 }}
+                                </span>
+                            </div>
+
+                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                <span>Camarines Sur</span>
+                                <span class="badge badge-primary badge-pill font-weight-bold">
+                                    {{ $activeByRole['province_camarines_sur'] ?? 0 }}
+                                </span>
+                            </div>
+
+                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                <span>Camarines Norte</span>
+                                <span class="badge badge-primary badge-pill font-weight-bold">
+                                    {{ $activeByRole['province_camarines_norte'] ?? 0 }}
+                                </span>
+                            </div>
+
+                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                <span>Catanduanes</span>
+                                <span class="badge badge-primary badge-pill font-weight-bold">
+                                    {{ $activeByRole['province_catanduanes'] ?? 0 }}
+                                </span>
+                            </div>
+
+                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                <span>Masbate</span>
+                                <span class="badge badge-primary badge-pill font-weight-bold">
+                                    {{ $activeByRole['province_masbate'] ?? 0 }}
+                                </span>
+                            </div>
+
+                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                <span>Sorsogon</span>
+                                <span class="badge badge-primary badge-pill font-weight-bold">
+                                    {{ $activeByRole['province_sorsogon'] ?? 0 }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                <a href="{{ route('documents.tracking') }}" class="btn btn-primary">
+                    <i class="fas fa-external-link-alt mr-1"></i> 
+                    View Full Document Tracking
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
 
 @endsection
 
@@ -463,5 +611,125 @@ $(document).ready(function() {
         });
     }
 });
+
+var ctx = document.getElementById("casesAreaChart");
+if (ctx) {
+    var casesAreaChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: {!! json_encode($monthLabels) !!},
+            datasets: [{
+                label: "Cases Filed",
+                lineTension: 0.3,
+                backgroundColor: "rgba(78, 115, 223, 0.05)",
+                borderColor: "rgba(78, 115, 223, 1)",
+                pointRadius: 3,
+                pointBackgroundColor: "rgba(78, 115, 223, 1)",
+                pointBorderColor: "rgba(78, 115, 223, 1)",
+                pointHoverRadius: 3,
+                pointHoverBackgroundColor: "rgba(78, 115, 223, 1)",
+                pointHoverBorderColor: "rgba(78, 115, 223, 1)",
+                pointHitRadius: 10,
+                pointBorderWidth: 2,
+                data: {!! json_encode($monthlyData) !!},
+            }],
+        },
+        options: {
+            maintainAspectRatio: false,
+            layout: {
+                padding: {
+                    left: 10,
+                    right: 25,
+                    top: 25,
+                    bottom: 0
+                }
+            },
+            scales: {
+                x: {
+                    grid: {
+                        display: false,
+                        drawBorder: false
+                    },
+                    ticks: {
+                        maxTicksLimit: 7
+                    }
+                },
+                y: {
+                    ticks: {
+                        maxTicksLimit: 5,
+                        padding: 10,
+                    },
+                    grid: {
+                        color: "rgb(234, 236, 244)",
+                        drawBorder: false,
+                        borderDash: [2],
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    backgroundColor: "rgb(255,255,255)",
+                    bodyColor: "#858796",
+                    titleMarginBottom: 10,
+                    titleColor: '#6e707e',
+                    titleFont: {
+                        size: 14
+                    },
+                    borderColor: '#dddfeb',
+                    borderWidth: 1,
+                    padding: 15,
+                    displayColors: false,
+                    intersect: false,
+                    mode: 'index',
+                    caretPadding: 10,
+                }
+            }
+        }
+    });
+}
+
+// ────────────────────────────────────────────────
+// Hover effect for clickable card
+// ────────────────────────────────────────────────
+$('.clickable-card').hover(
+    function() {
+        $(this).addClass('shadow-lg').css('transform', 'translateY(-5px)');
+    },
+    function() {
+        $(this).removeClass('shadow-lg').css('transform', 'translateY(0)');
+    }
+);
+
+// ────────────────────────────────────────────────
+// Optional: subtle animation when modal opens
+// ────────────────────────────────────────────────
+$('#activeCasesModal').on('show.bs.modal', function () {
+    $(this).find('.badge-pill').each(function(i) {
+        $(this).css({ opacity: 0, transform: 'scale(0.7)' })
+               .delay(i * 80)
+               .animate({ opacity: 1, transform: 'scale(1)' }, 400);
+    });
+});
+
 </script>
+
+<style>
+/* Smooth transition for clickable card */
+.clickable-card {
+    transition: all 0.3s ease;
+}
+
+.clickable-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.15) !important;
+}
+
+.clickable-card:active {
+    transform: translateY(-2px);
+}
+</style>
+
 @endpush

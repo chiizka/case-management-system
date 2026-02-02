@@ -26,6 +26,75 @@ public function index()
     
     $closedCases = CaseFile::where('overall_status', 'completed')->count();
     
+    // ============================================================================
+    // FIXED: Get active cases count by CURRENT location (from document_tracking)
+    // Previously this was using po_office which shows where case was CREATED
+    // Now it uses current_role from document_tracking to show where case IS NOW
+    // ============================================================================
+    $activeByRole = [
+        // Central Offices - based on current_role in document_tracking
+        'admin' => CaseFile::where('overall_status', 'active')
+            ->whereHas('documentTracking', function($query) {
+                $query->where('current_role', 'admin');
+            })
+            ->count(),
+            
+        'malsu' => CaseFile::where('overall_status', 'active')
+            ->whereHas('documentTracking', function($query) {
+                $query->where('current_role', 'malsu');
+            })
+            ->count(),
+            
+        'case_management' => CaseFile::where('overall_status', 'active')
+            ->whereHas('documentTracking', function($query) {
+                $query->where('current_role', 'case_management');
+            })
+            ->count(),
+            
+        'records' => CaseFile::where('overall_status', 'active')
+            ->whereHas('documentTracking', function($query) {
+                $query->where('current_role', 'records');
+            })
+            ->count(),
+            
+        // Provincial Offices - based on current_role in document_tracking
+        'province_albay' => CaseFile::where('overall_status', 'active')
+            ->whereHas('documentTracking', function($query) {
+                $query->where('current_role', 'province_albay');
+            })
+            ->count(),
+            
+        'province_camarines_sur' => CaseFile::where('overall_status', 'active')
+            ->whereHas('documentTracking', function($query) {
+                $query->where('current_role', 'province_camarines_sur');
+            })
+            ->count(),
+            
+        'province_camarines_norte' => CaseFile::where('overall_status', 'active')
+            ->whereHas('documentTracking', function($query) {
+                $query->where('current_role', 'province_camarines_norte');
+            })
+            ->count(),
+            
+        'province_catanduanes' => CaseFile::where('overall_status', 'active')
+            ->whereHas('documentTracking', function($query) {
+                $query->where('current_role', 'province_catanduanes');
+            })
+            ->count(),
+            
+        'province_masbate' => CaseFile::where('overall_status', 'active')
+            ->whereHas('documentTracking', function($query) {
+                $query->where('current_role', 'province_masbate');
+            })
+            ->count(),
+            
+        'province_sorsogon' => CaseFile::where('overall_status', 'active')
+            ->whereHas('documentTracking', function($query) {
+                $query->where('current_role', 'province_sorsogon');
+            })
+            ->count(),
+    ];
+
     $userRole = Auth::user()->role;
     $pendingDocuments = DocumentTracking::where('current_role', $userRole)
         ->where('status', 'Pending Receipt')
@@ -118,8 +187,8 @@ public function index()
             'activeCases',
             'pendingInspections',
             'closedCases',
-            'pendingDocuments',        // ADD THIS
-            'totalPendingDocs',         // ADD THIS
+            'pendingDocuments',
+            'totalPendingDocs',
             'stageData',
             'monthLabels',
             'monthlyData',
@@ -139,7 +208,8 @@ public function index()
             'documentsReceived',
             'documentsInTransitPercent',
             'documentsPendingPercent',
-            'documentsReceivedPercent'
+            'documentsReceivedPercent',
+            'activeByRole'
         ));
     }
 
