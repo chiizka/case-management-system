@@ -62,10 +62,13 @@ class CasesController extends Controller
         $query = CaseFile::where('overall_status', '!=', 'Completed')
             ->orderBy('created_at', 'desc');
         
-        // ✨ FILTER: Provincial users only see their province's cases
+        // âœ¨ FILTER: Provincial users only see cases currently located at their province.
+        // Uses DocumentTracking.current_role (live location) instead of po_office (static origin).
+        // This way cases disappear from the province view once transferred elsewhere.
         if ($user->isProvince()) {
-            $provinceName = $user->getProvinceName();
-            $query->where('po_office', $provinceName);
+            $query->whereHas('documentTracking', function ($q) use ($user) {
+                $q->where('current_role', $user->role);
+            });
         }
         // Admin and MALSU see all cases (no filter applied)
         
@@ -104,7 +107,7 @@ class CasesController extends Controller
             $data = null;
             $html = '';
 
-            // ✨ Create a reusable query filter function
+            // âœ¨ Create a reusable query filter function
             $applyProvinceFilter = function($query) use ($user) {
                 if ($user->isProvince()) {
                     $provinceName = $user->getProvinceName();
@@ -123,9 +126,11 @@ class CasesController extends Controller
                         $query->where('current_stage', '1: Inspections')
                             ->where('overall_status', '!=', 'Completed');
                         
-                        // ✨ Apply province filter
+                        // âœ¨ Filter by current document location, not origin
                         if ($user->isProvince()) {
-                            $query->where('po_office', $user->getProvinceName());
+                            $query->whereHas('documentTracking', function ($q) use ($user) {
+                                $q->where('current_role', $user->role);
+                            });
                         }
                     })
                     ->get();
@@ -141,9 +146,11 @@ class CasesController extends Controller
                         $query->where('current_stage', '2: Docketing')
                             ->where('overall_status', '!=', 'Completed');
                         
-                        // ✨ Apply province filter
+                        // âœ¨ Filter by current document location, not origin
                         if ($user->isProvince()) {
-                            $query->where('po_office', $user->getProvinceName());
+                            $query->whereHas('documentTracking', function ($q) use ($user) {
+                                $q->where('current_role', $user->role);
+                            });
                         }
                     })
                     ->get();
@@ -159,9 +166,11 @@ class CasesController extends Controller
                         $query->where('current_stage', '3: Hearing')
                             ->where('overall_status', '!=', 'Completed');
                         
-                        // ✨ Apply province filter
+                        // âœ¨ Filter by current document location, not origin
                         if ($user->isProvince()) {
-                            $query->where('po_office', $user->getProvinceName());
+                            $query->whereHas('documentTracking', function ($q) use ($user) {
+                                $q->where('current_role', $user->role);
+                            });
                         }
                     })
                     ->get();
@@ -177,9 +186,11 @@ class CasesController extends Controller
                         $query->where('current_stage', '4: Review & Drafting')
                             ->where('overall_status', '!=', 'Completed');
                         
-                        // ✨ Apply province filter (Admin/Case Management see all)
+                        // âœ¨ Filter by current document location, not origin
                         if ($user->isProvince()) {
-                            $query->where('po_office', $user->getProvinceName());
+                            $query->whereHas('documentTracking', function ($q) use ($user) {
+                                $q->where('current_role', $user->role);
+                            });
                         }
                     })
                     ->get();
@@ -195,9 +206,11 @@ class CasesController extends Controller
                         $query->where('current_stage', '5: Orders & Disposition')
                             ->where('overall_status', '!=', 'Completed');
                         
-                        // ✨ Apply province filter
+                        // âœ¨ Filter by current document location, not origin
                         if ($user->isProvince()) {
-                            $query->where('po_office', $user->getProvinceName());
+                            $query->whereHas('documentTracking', function ($q) use ($user) {
+                                $q->where('current_role', $user->role);
+                            });
                         }
                     })
                     ->get();
@@ -213,9 +226,11 @@ class CasesController extends Controller
                         $query->where('current_stage', '6: Compliance & Awards')
                             ->where('overall_status', '!=', 'Completed');
                         
-                        // ✨ Apply province filter
+                        // âœ¨ Filter by current document location, not origin
                         if ($user->isProvince()) {
-                            $query->where('po_office', $user->getProvinceName());
+                            $query->whereHas('documentTracking', function ($q) use ($user) {
+                                $q->where('current_role', $user->role);
+                            });
                         }
                     })
                     ->get();
@@ -231,9 +246,11 @@ class CasesController extends Controller
                         $query->where('current_stage', '7: Appeals & Resolution')
                             ->where('overall_status', '!=', 'Completed');
                         
-                        // ✨ Apply province filter (MALSU sees all)
+                        // âœ¨ Filter by current document location, not origin
                         if ($user->isProvince()) {
-                            $query->where('po_office', $user->getProvinceName());
+                            $query->whereHas('documentTracking', function ($q) use ($user) {
+                                $q->where('current_role', $user->role);
+                            });
                         }
                     })
                     ->get();
@@ -272,7 +289,7 @@ public function store(Request $request)
         'establishment_name' => 'required|string|max:255',
         'establishment_address' => 'nullable|string',
         'mode' => 'nullable|string|max:255',
-        'po_office' => 'required|string|max:255',  // ← Now required!
+        'po_office' => 'required|string|max:255',  // â† Now required!
         'current_stage' => 'required|in:1: Inspections,2: Docketing,3: Hearing,4: Review & Drafting,5: Orders & Disposition,6: Compliance & Awards,7: Appeals & Resolution',
         'overall_status' => 'required|in:Active,Completed,Dismissed',
     ]);
@@ -281,7 +298,7 @@ public function store(Request $request)
     try {
         $user = Auth::user();
         
-        // ✨ Verify province users can only create cases for their province
+        // âœ¨ Verify province users can only create cases for their province
         if ($user->isProvince() && $validated['po_office'] !== $user->getProvinceName()) {
             throw new \Exception('You can only create cases for your own province office.');
         }
@@ -294,7 +311,7 @@ public function store(Request $request)
             Inspection::create(['case_id' => $case->id]);
         }
 
-        // ✨ Create initial document tracking
+        // âœ¨ Create initial document tracking
         $this->createInitialDocumentTracking($case, $user);
 
         // Log the action
@@ -632,7 +649,7 @@ public function destroy($id)
                 'UPDATE',
                 'Case',
                 $case->inspection_id,
-                "Stage progression: {$currentStage} → {$nextStage}",
+                "Stage progression: {$currentStage} â†’ {$nextStage}",
                 [
                     'establishment' => $case->establishment_name,
                     'previous_stage' => $currentStage,
@@ -900,7 +917,7 @@ public function destroy($id)
                     $newValue = explode(': ', $newValue)[1] ?? $newValue;
                 }
                 
-                $changes[] = "$fieldName: '$oldValue' → '$newValue'";
+                $changes[] = "$fieldName: '$oldValue' â†’ '$newValue'";
             }
         }
 
