@@ -79,6 +79,12 @@
     .hover-text-blue-800:hover {
         color: #1e40af;
     }
+    .text-red-600 {
+        color: #dc2626;
+    }
+    .hover-text-red-800:hover {
+        color: #991b1b;
+    }
     .bg-gray-50 {
         background-color: #f9fafb;
     }
@@ -233,6 +239,9 @@
         padding: 2rem;
         color: #6c757d;
     }
+    .ml-2 {
+        margin-left: 0.5rem;
+    }
 </style>
 
 <div class="container p-4 bg-gray-100">
@@ -262,21 +271,22 @@
                         </div>
                         <div>
                             <button class="text-blue-600 hover-text-blue-800">View Details</button>
+                            <button class="text-red-600 hover-text-red-800 ml-2" data-toggle="modal" data-target="#appealModal" data-case-id="{{ $case->id }}">Appeal Case</button>
                         </div>
                     </div>
                     <div class="accordion-content p-4 bg-gray-50">
                         <!-- Main Tab Navigation -->
                         <div class="flex border-b mb-4" style="flex-wrap: wrap;">
-                            <div class="tab active" data-tab="overview-{{ $case->id }}">📋 Overview</div>
-                            <div class="tab" data-tab="inspection-{{ $case->id }}">🔍 Inspection</div>
-                            <div class="tab" data-tab="docketing-{{ $case->id }}">📝 Docketing</div>
-                            <div class="tab" data-tab="hearing-{{ $case->id }}">⚖️ Hearing</div>
-                            <div class="tab" data-tab="review-{{ $case->id }}">✍️ Review & Drafting</div>
-                            <div class="tab" data-tab="orders-{{ $case->id }}">📑 Orders</div>
-                            <div class="tab" data-tab="compliance-{{ $case->id }}">💰 Compliance</div>
-                            <div class="tab" data-tab="appeals-{{ $case->id }}">📢 Appeals</div>
-                            <div class="tab" data-tab="additional-{{ $case->id }}">📌 Additional</div>
-                            <div class="tab" data-tab="doc-history-{{ $case->id }}">📍 Document History</div>
+                            <div class="tab active" data-tab="overview-{{ $case->id }}">Overview</div>
+                            <div class="tab" data-tab="inspection-{{ $case->id }}">Inspection</div>
+                            <div class="tab" data-tab="docketing-{{ $case->id }}">Docketing</div>
+                            <div class="tab" data-tab="hearing-{{ $case->id }}">Hearing</div>
+                            <div class="tab" data-tab="review-{{ $case->id }}">Review & Drafting</div>
+                            <div class="tab" data-tab="orders-{{ $case->id }}">Orders</div>
+                            <div class="tab" data-tab="compliance-{{ $case->id }}">Compliance</div>
+                            <div class="tab" data-tab="appeals-{{ $case->id }}">Appeals</div>
+                            <div class="tab" data-tab="additional-{{ $case->id }}">Additional</div>
+                            <div class="tab" data-tab="doc-history-{{ $case->id }}">Document History</div>
                         </div>
                         
                         <!-- Overview Tab -->
@@ -710,13 +720,13 @@
 
                         <!-- Document History Tab -->
                         <div id="doc-history-{{ $case->id }}" class="tab-content">
-                            <h3 class="font-bold mb-3">📍 Document Tracking History</h3>
+                            <h3 class="font-bold mb-3">Document Tracking History</h3>
                             <p class="text-muted mb-3">Complete journey of this case's physical documents through departments</p>
                             
                             <div class="doc-history-container" data-case-id="{{ $case->id }}">
                                 <div class="loading-spinner">
                                     <div class="spinner-border text-blue-600"></div>
-                                    <p class="text-muted mt-2">Loading document history...</p>
+                                        <p class="text-muted mt-2">Loading document history...</p>
                                 </div>
                             </div>
                         </div>
@@ -728,6 +738,50 @@
                 <p class="text-center">No archived cases found.</p>
             </div>
         @endif
+    </div>
+</div>
+
+<!-- Appeal Modal -->
+<div class="modal fade" id="appealModal" tabindex="-1" role="dialog" aria-labelledby="appealModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-warning text-white">
+                <h5 class="modal-title" id="appealModalLabel">
+                    <i class="fas fa-gavel mr-2"></i> Appeal Archived Case
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form id="appealForm" method="POST">
+                @csrf
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="appellate_body" class="font-weight-bold">Appellate Body:</label>
+                        <select id="appellate_body" name="appellate_body" class="form-control" required>
+                            <option value="">Select where appeal was filed</option>
+                            <option value="Office of the Secretary">Office of the Secretary</option>
+                            <option value="NLRC">NLRC</option>
+                            <option value="BLR">BLR</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="transmittal_date" class="font-weight-bold">Transmittal Date (to Manila):</label>
+                        <input type="date" id="transmittal_date" name="transmittal_date" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="font-weight-bold">New Location/Office:</label>
+                        <p class="form-control-static">Pending at Central Office (will be set automatically)</p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-warning">
+                        <i class="fas fa-gavel mr-2"></i> Submit Appeal
+                    </button>
+                </div>
+            </form>
+        </div>
     </div>
 </div>
 
