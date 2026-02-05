@@ -61,7 +61,13 @@ Route::middleware('auth')->group(function () {
         
         // ✅ SPECIFIC ROUTES MUST COME FIRST (before Route::resource)
         Route::post('/case/import-csv', [CasesController::class, 'importCsv'])->name('case.import-csv');
+        
+        // ✅ ADD THIS: Archive route (called by JavaScript)
         Route::post('/case/{id}/archive', [CasesController::class, 'moveToNextStage'])->name('case.archive');
+        
+        // ✅ KEEP THIS: Next stage route (for normal progression)
+        Route::post('/case/{id}/next-stage', [CasesController::class, 'moveToNextStage'])->name('case.nextStage');
+        
         Route::put('/case/{id}/inline-update', [CasesController::class, 'inlineUpdate'])->name('case.inlineUpdate');
         Route::get('/case/load-tab/{tabNumber}', [CasesController::class, 'loadTabData'])->name('case.loadTab');
         Route::get('/case/{id}/document-history', [CasesController::class, 'getDocumentHistory'])->name('case.documentHistory');
