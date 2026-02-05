@@ -271,7 +271,10 @@
                         </div>
                         <div>
                             <button class="text-blue-600 hover-text-blue-800">View Details</button>
-                            <button class="text-red-600 hover-text-red-800 ml-2" data-toggle="modal" data-target="#appealModal" data-case-id="{{ $case->id }}">Appeal Case</button>
+                            
+                            @if(Auth::user()->isAdmin() || Auth::user()->isMalsu() || Auth::user()->isCaseManagement())
+                                <button class="text-red-600 hover-text-red-800 ml-2" data-toggle="modal" data-target="#appealModal" data-case-id="{{ $case->id }}">Appeal Case</button>
+                            @endif
                         </div>
                     </div>
                     <div class="accordion-content p-4 bg-gray-50">
