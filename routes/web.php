@@ -58,20 +58,29 @@ Route::middleware('auth')->group(function () {
     
     // Cases - Admin, All Province Roles, MALSU, Case Management, Records
     Route::middleware('role:admin,province_albay,province_camarines_sur,province_camarines_norte,province_catanduanes,province_masbate,province_sorsogon,malsu,case_management,records')->group(function () {
-        Route::resource('case', CasesController::class);
-        Route::get('/archive', [ArchivedController::class, 'index'])->name('archive.index');
-        Route::post('/case/{id}/next-stage', [CasesController::class, 'moveToNextStage'])->name('case.nextStage');
+        
+        // ✅ SPECIFIC ROUTES MUST COME FIRST (before Route::resource)
+        Route::post('/case/import-csv', [CasesController::class, 'importCsv'])->name('case.import-csv');
+        Route::post('/case/{id}/archive', [CasesController::class, 'moveToNextStage'])->name('case.archive');
         Route::put('/case/{id}/inline-update', [CasesController::class, 'inlineUpdate'])->name('case.inlineUpdate');
         Route::get('/case/load-tab/{tabNumber}', [CasesController::class, 'loadTabData'])->name('case.loadTab');
         Route::get('/case/{id}/document-history', [CasesController::class, 'getDocumentHistory'])->name('case.documentHistory');
         Route::get('/case/{id}/documents', [CasesController::class, 'getDocuments'])->name('case.documents');
         Route::post('/case/{id}/documents', [CasesController::class, 'saveDocuments'])->name('case.documents.save');
-
+        
         // Document file upload routes
         Route::post('/case/{caseId}/documents/{documentId}/upload', [CasesController::class, 'uploadDocumentFile'])->name('case.documents.upload');
         Route::get('/case/{caseId}/documents/{documentId}/download', [CasesController::class, 'downloadDocumentFile'])->name('case.documents.download');
         Route::delete('/case/{caseId}/documents/{documentId}/file', [CasesController::class, 'deleteDocumentFile'])->name('case.documents.deleteFile');
+        
+        // ✅ RESOURCE ROUTE COMES LAST
+        Route::resource('case', CasesController::class);
+        
+        Route::get('/archive', [ArchivedController::class, 'index'])->name('archive.index');
     });
+
+    // Remove this duplicate line at the end (line 134):
+    // Route::post('/case/import-csv', [App\Http\Controllers\CasesController::class, 'importCsv'])->name('case.import-csv');
 
 
     // Inspections - Admin, MALSU, Case Management, All Province Roles

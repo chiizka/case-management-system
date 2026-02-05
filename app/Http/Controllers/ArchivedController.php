@@ -9,7 +9,8 @@ class ArchivedController extends Controller
 {
     public function index()
     {
-        $archivedCases = CaseFile::where('overall_status', 'Completed')
+        // Include Completed, Disposed, and Appealed cases in archive
+        $archivedCases = CaseFile::whereIn('overall_status', ['Completed', 'Disposed', 'Appealed'])
             ->orderBy('updated_at', 'desc')
             ->get();
         

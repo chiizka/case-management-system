@@ -513,15 +513,27 @@
                                                         <i class="fas fa-file-alt"></i>
                                                     </button>
                                                     
-                                                    <button type="button" 
-                                                            class="btn btn-success btn-sm complete-case-btn" 
-                                                            data-case-id="{{ $case->id }}"
-                                                            data-case-no="{{ $case->case_no ?? 'N/A' }}"
-                                                            data-establishment="{{ $case->establishment_name ?? 'N/A' }}"
-                                                            data-stage="{{ explode(': ', $case->current_stage)[1] ?? $case->current_stage ?? 'Unknown' }}"
-                                                            title="Mark as Complete">
-                                                        <i class="fas fa-check-circle"></i>
-                                                    </button>
+                                                    @if(Auth::user()->isProvince())
+                                                        <button type="button" 
+                                                                class="btn btn-warning btn-sm dispose-case-btn" 
+                                                                data-case-id="{{ $case->id }}"
+                                                                data-case-no="{{ $case->case_no ?? 'N/A' }}"
+                                                                data-establishment="{{ $case->establishment_name ?? 'N/A' }}"
+                                                                data-stage="{{ explode(': ', $case->current_stage)[1] ?? $case->current_stage ?? 'Unknown' }}"
+                                                                title="Mark as Disposed">
+                                                            <i class="fas fa-archive"></i>
+                                                        </button>
+                                                    @else
+                                                        <button type="button" 
+                                                                class="btn btn-success btn-sm complete-case-btn" 
+                                                                data-case-id="{{ $case->id }}"
+                                                                data-case-no="{{ $case->case_no ?? 'N/A' }}"
+                                                                data-establishment="{{ $case->establishment_name ?? 'N/A' }}"
+                                                                data-stage="{{ explode(': ', $case->current_stage)[1] ?? $case->current_stage ?? 'Unknown' }}"
+                                                                title="Mark as Complete">
+                                                            <i class="fas fa-check-circle"></i>
+                                                        </button>
+                                                    @endif
                                                 </div>
                                             </div>
                                         </td>
@@ -1084,31 +1096,49 @@
         </div>
     </div>
 
-    <!-- Stage Progression Modal -->
+    <!-- Archive/Dispose Case Modal -->
     <div class="modal fade" id="stageProgressionModal" tabindex="-1" role="dialog" aria-labelledby="stageProgressionModalLabel" aria-hidden="true">
         <div class="modal-dialog" role="document">
             <div class="modal-content">
-                <div class="modal-header bg-info text-white">
-                    <h5 class="modal-title" id="stageProgressionModalLabel">Move to Next Stage</h5>
+                <div class="modal-header" id="modalHeader">
+                    <h5 class="modal-title" id="stageProgressionModalLabel">
+                        <i class="fas fa-archive mr-2"></i>
+                        <span id="modalTitleText">Archive Case</span>
+                    </h5>
                     <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
                         <span aria-hidden="true">&times;</span>
                     </button>
                 </div>
                 <div class="modal-body">
+                    <div class="alert" id="modalAlertBox" role="alert">
+                        <i class="fas fa-exclamation-triangle mr-2"></i>
+                        <strong>Warning!</strong> This action cannot be undone.
+                    </div>
+                    
                     <p id="stageProgressionMessage"></p>
+                    
                     <div class="card bg-light">
                         <div class="card-body">
-                            <small class="text-muted">
-                                <strong>Case:</strong> <span id="stageCaseInfo"></span><br>
-                                <strong>Next Stage:</strong> <span id="stageNextStage"></span>
-                            </small>
+                            <div class="row">
+                                <div class="col-12 mb-2">
+                                    <strong>Case No:</strong> <span id="stageCaseInfo" class="text-primary"></span>
+                                </div>
+                                <div class="col-12 mb-2" id="currentStageRow">
+                                    <strong>Current Stage:</strong> <span id="stageCurrentStage" class="badge badge-info"></span>
+                                </div>
+                                <div class="col-12">
+                                    <strong>Will be marked as:</strong> <span id="stageNextStage"></span>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                        <i class="fas fa-times mr-2"></i>Cancel
+                    </button>
                     <button type="button" class="btn btn-primary" id="confirmStageBtn">
-                        <i class="fas fa-arrow-right mr-2"></i>Proceed
+                        <i class="fas fa-check mr-2"></i>Confirm
                     </button>
                 </div>
             </div>
@@ -2352,55 +2382,6 @@ $(document).on('click', function(e) {
 
 let caseToProgress = null;
 
-// Stage progression handler
-$(document).on('click', '.move-to-next-stage-btn', function(e) {
-    e.preventDefault();
-    const button = $(this);
-    const caseId = button.data('case-id');
-    
-    console.log('Next Stage button clicked - caseId:', caseId);
-    
-    if (!caseId) {
-        console.error('No case ID found on button');
-        showAlert('error', 'Error: Could not identify case');
-        return;
-    }
-    
-    const caseNo = button.data('case-no') || 'N/A';
-    const establishment = button.data('establishment') || 'N/A';
-    const currentStage = button.data('stage') || 'Unknown';
-    
-    const stageMap = {
-        'Inspections': 'Docketing',
-        'Docketing': 'Hearing Process',
-        'Hearing Process': 'Review & Drafting',
-        'Review & Drafting': 'Orders & Disposition',
-        'Orders & Disposition': 'Compliance & Awards',
-        'Compliance & Awards': 'Appeals & Resolution',
-        'Appeals & Resolution': 'Complete (Archive)'
-    };
-    
-    const nextStage = stageMap[currentStage] || 'Next Stage';
-    const isFinalStage = currentStage === 'Appeals & Resolution';
-    
-    caseToProgress = {
-        id: caseId,
-        button: button
-    };
-    
-    console.log('caseToProgress object:', caseToProgress);
-    
-    const message = isFinalStage 
-        ? `<strong>Complete ${currentStage} and move case to archived?</strong><br><small>This will mark the case as completed.</small>`
-        : `<strong>Complete ${currentStage} and move to ${nextStage}?</strong>`;
-    
-    $('#stageProgressionMessage').html(message);
-    $('#stageCaseInfo').text(`${caseNo} - ${establishment}`);
-    $('#stageNextStage').text(nextStage);
-    
-    console.log('Showing stage progression modal');
-    $('#stageProgressionModal').modal('show');
-});
 
 // Complete case handler (archives case from any stage)
 $(document).on('click', '.complete-case-btn', function(e) {
@@ -2408,8 +2389,6 @@ $(document).on('click', '.complete-case-btn', function(e) {
     const button = $(this);
     const caseId = button.data('case-id');
     
-    console.log('Complete button clicked - caseId:', caseId);
-    
     if (!caseId) {
         console.error('No case ID found on button');
         showAlert('error', 'Error: Could not identify case');
@@ -2425,18 +2404,74 @@ $(document).on('click', '.complete-case-btn', function(e) {
         button: button
     };
     
-    console.log('caseToProgress object:', caseToProgress);
+    // Set modal styling for Complete
+    $('#modalHeader').removeClass('bg-warning').addClass('bg-success text-white');
+    $('#modalTitleText').text('Complete Case');
+    $('#modalAlertBox').removeClass('alert-warning').addClass('alert-success');
     
-    const message = `<strong>Archive this case?</strong><br>
-                     <small class="text-muted">This case will be moved to archived cases.</small><br>
-                     <small class="text-warning">⚠️ Currently at Active Stages.</small>`;
+    const message = `
+        <strong>Mark this case as Completed?</strong><br>
+        <small class="text-muted">This case will be permanently moved to archived cases.</small>
+    `;
     
     $('#stageProgressionMessage').html(message);
     $('#stageCaseInfo').text(`${caseNo} - ${establishment}`);
     $('#stageCurrentStage').text(currentStage);
-    $('#stageNextStage').html('<span class="badge badge-secondary"><i class="fas fa-archive mr-1"></i>Archived Cases</span>');
+    $('#stageNextStage').html('<span class="badge badge-success"><i class="fas fa-check-circle mr-1"></i>Completed</span>');
     
-    console.log('Showing stage progression modal');
+    // Update confirm button
+    $('#confirmStageBtn')
+        .removeClass('btn-warning')
+        .addClass('btn-success')
+        .html('<i class="fas fa-check mr-2"></i>Confirm Complete');
+    
+    $('#stageProgressionModal').modal('show');
+});
+
+// Dispose case handler (for province users only)
+$(document).on('click', '.dispose-case-btn', function(e) {
+    e.preventDefault();
+    const button = $(this);
+    const caseId = button.data('case-id');
+    
+    if (!caseId) {
+        console.error('No case ID found on button');
+        showAlert('error', 'Error: Could not identify case');
+        return;
+    }
+    
+    const caseNo = button.data('case-no') || 'N/A';
+    const establishment = button.data('establishment') || 'N/A';
+    const currentStage = button.data('stage') || 'Unknown';
+    
+    caseToProgress = {
+        id: caseId,
+        button: button,
+        action: 'dispose'
+    };
+    
+    // Set modal styling for Dispose
+    $('#modalHeader').removeClass('bg-success').addClass('bg-warning text-white');
+    $('#modalTitleText').text('Dispose Case');
+    $('#modalAlertBox').removeClass('alert-success').addClass('alert-warning');
+    
+    const message = `
+        <strong>Mark this case as Disposed?</strong><br>
+        <small class="text-muted">This case will be moved to archived cases with "Disposed" status.</small><br>
+        <small class="text-info"><i class="fas fa-info-circle"></i> Disposed cases indicate the case was closed at the provincial level.</small>
+    `;
+    
+    $('#stageProgressionMessage').html(message);
+    $('#stageCaseInfo').text(`${caseNo} - ${establishment}`);
+    $('#stageCurrentStage').text(currentStage);
+    $('#stageNextStage').html('<span class="badge badge-warning"><i class="fas fa-archive mr-1"></i>Disposed</span>');
+    
+    // Update confirm button
+    $('#confirmStageBtn')
+        .removeClass('btn-success')
+        .addClass('btn-warning')
+        .html('<i class="fas fa-archive mr-2"></i>Confirm Dispose');
+    
     $('#stageProgressionModal').modal('show');
 });
 
@@ -2452,22 +2487,31 @@ $('#confirmStageBtn').off('click').on('click', function() {
     
     const button = $(this);
     const isForceComplete = caseToProgress.button && caseToProgress.button.hasClass('complete-case-btn');
+    const isDispose = caseToProgress.action === 'dispose';
     
     console.log('Is Force Complete:', isForceComplete);
+    console.log('Is Dispose:', isDispose);
     console.log('Button classes:', caseToProgress.button.attr('class'));
     
-    button.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Archiving...');
+    button.prop('disabled', true);
+    
+    if (isDispose) {
+        button.html('<i class="fas fa-spinner fa-spin"></i> Disposing...');
+    } else {
+        button.html('<i class="fas fa-spinner fa-spin"></i> Archiving...');
+    }
     
     const ajaxData = {
         _token: '{{ csrf_token() }}',
-        force_complete: isForceComplete
+        force_complete: isForceComplete,
+        dispose: isDispose
     };
     
     console.log('Sending AJAX with data:', ajaxData);
-    console.log('URL:', `/case/${caseToProgress.id}/next-stage`);
+    console.log('URL:', `/case/${caseToProgress.id}/archive`);  // ← UPDATED HERE
     
     $.ajax({
-        url: `/case/${caseToProgress.id}/next-stage`,
+        url: `/case/${caseToProgress.id}/archive`,  // ← UPDATED HERE
         method: 'POST',
         data: ajaxData,
         success: function(response) {
@@ -2479,19 +2523,17 @@ $('#confirmStageBtn').off('click').on('click', function() {
             if (response.success) {
                 showAlert('success', response.message);
                 
-                // Log the case ID and new status if available
                 if (response.case_id) {
                     console.log('Case ID:', response.case_id);
                     console.log('New Status:', response.new_status);
                 }
                 
-                // Force a hard reload after 1.5 seconds
                 setTimeout(() => {
                     console.log('Reloading page...');
                     location.href = location.href;
                 }, 1500);
             } else {
-                showAlert('error', response.message || 'Failed to archive case');
+                showAlert('error', response.message || 'Failed to process case');
             }
         },
         error: function(xhr) {
@@ -2500,7 +2542,7 @@ $('#confirmStageBtn').off('click').on('click', function() {
             console.error('Response:', xhr.responseJSON);
             console.error('Full XHR:', xhr);
             
-            const message = xhr.responseJSON?.message || 'Failed to archive case';
+            const message = xhr.responseJSON?.message || 'Failed to process case';
             showAlert('error', message);
         },
         complete: function() {

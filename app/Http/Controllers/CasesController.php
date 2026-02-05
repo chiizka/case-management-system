@@ -58,8 +58,8 @@ class CasesController extends Controller
     {
         $user = Auth::user();
         
-        // Start with base query for active cases
-        $query = CaseFile::where('overall_status', '!=', 'Completed')
+        // Start with base query for active cases (exclude Completed, Disposed, and Appealed)
+        $query = CaseFile::whereNotIn('overall_status', ['Completed', 'Disposed', 'Appealed'])
             ->orderBy('created_at', 'desc');
         
         // âœ¨ FILTER: Provincial users only see cases currently located at their province.
@@ -123,8 +123,8 @@ class CasesController extends Controller
                         'case:id,inspection_id,case_no,establishment_name,current_stage,overall_status,po_office'
                     ])
                     ->whereHas('case', function($query) use ($user) {
-                        $query->where('current_stage', '1: Inspections')
-                            ->where('overall_status', '!=', 'Completed');
+                    $query->where('current_stage', '1: Inspections')
+                    ->whereNotIn('overall_status', ['Completed', 'Disposed', 'Appealed']);
                         
                         // âœ¨ Filter by current document location, not origin
                         if ($user->isProvince()) {
@@ -536,48 +536,42 @@ public function destroy($id)
         DB::beginTransaction();
         try {
             $case = CaseFile::findOrFail($id);
+            $user = Auth::user();
             
-            // Log the initial state
-            Log::info("moveToNextStage called", [
+            Log::info("Archive/Dispose case action", [
                 'case_id' => $id,
                 'current_status' => $case->overall_status,
                 'current_stage' => $case->current_stage,
-                'force_complete' => $request->input('force_complete', false)
+                'dispose' => $request->input('dispose', false),
+                'user_role' => $user->role
             ]);
             
-            // Check if request explicitly wants to complete the case (from Complete button)
-            $forceComplete = $request->input('force_complete', false);
+            $shouldDispose = $request->input('dispose', false);
+            $oldStage = $case->current_stage;
             
-            if ($forceComplete) {
-                Log::info("Force completing case {$id}");
+            if ($shouldDispose) {
+                // Province users can ONLY dispose
+                if (!$user->isProvince()) {
+                    DB::rollBack();
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Only provincial office users can mark cases as Disposed.'
+                    ], 403);
+                }
                 
-                // Store old stage for logging
-                $oldStage = $case->current_stage;
-                
-                // Complete case from any stage
-                $case->update([
-                    'overall_status' => 'Completed',
-                ]);
-                
-                // Verify the update
+                $case->update(['overall_status' => 'Disposed']);
                 $case->refresh();
-                Log::info("Case updated", [
-                    'case_id' => $case->id,
-                    'new_status' => $case->overall_status,
-                    'inspection_id' => $case->inspection_id
-                ]);
                 
-                // **ADD THIS: Log the archive action**
                 ActivityLogger::logAction(
-                    'ARCHIVE',
+                    'DISPOSE',
                     'Case',
                     $case->inspection_id,
-                    "Case id: {$case->inspection_id} - {$case->establishment_name} moved to Archived cases",
+                    "Case marked as Disposed by {$user->fname} {$user->lname} ({$user->getProvinceName()})",
                     [
                         'establishment' => $case->establishment_name,
                         'previous_stage' => $oldStage,
-                        'new_status' => 'Completed',
-                        'action_type' => 'Force Complete'
+                        'new_status' => 'Disposed',
+                        'province' => $user->getProvinceName()
                     ]
                 );
                 
@@ -585,112 +579,52 @@ public function destroy($id)
                 
                 return response()->json([
                     'success' => true,
-                    'message' => 'Case marked as complete and moved to archived cases!',
+                    'message' => 'Case marked as Disposed and moved to archived cases!',
                     'case_id' => $case->id,
-                    'new_status' => $case->overall_status
+                    'new_status' => 'Disposed'
                 ]);
             }
             
-            // Define stage progression (for normal progression)
-            $stageMap = [
-                '1: Inspections' => '2: Docketing',
-                '2: Docketing' => '3: Hearing',
-                '3: Hearing' => '4: Review & Drafting',
-                '4: Review & Drafting' => '5: Orders & Disposition',
-                '5: Orders & Disposition' => '6: Compliance & Awards',
-                '6: Compliance & Awards' => '7: Appeals & Resolution',
-                '7: Appeals & Resolution' => 'Completed'
-            ];
-            
-            $currentStage = $case->current_stage;
-            $nextStage = $stageMap[$currentStage] ?? null;
-            
-            if (!$nextStage) {
+            // Complete case (Regional/Admin only)
+            if ($user->isProvince()) {
+                DB::rollBack();
                 return response()->json([
                     'success' => false,
-                    'message' => 'Invalid stage progression'
-                ], 400);
+                    'message' => 'Provincial office users cannot mark cases as Completed. Please use "Mark as Disposed" instead.'
+                ], 403);
             }
             
-            // If completing the final stage (Appeals & Resolution)
-            if ($currentStage === '7: Appeals & Resolution' && $nextStage === 'Completed') {
-                $case->update([
-                    'overall_status' => 'Completed',
-                ]);
-                
-                // **ADD THIS: Log completion from final stage**
-                ActivityLogger::logAction(
-                    'ARCHIVE',
-                    'Case',
-                    $case->inspection_id,
-                    "{$case->inspection_id} - {$case->establishment_name} archived from {$currentStage}",
-                    [
-                        'establishment' => $case->establishment_name,
-                        'previous_stage' => $currentStage,
-                        'new_status' => 'Completed',
-                        'action_type' => 'Normal Progression'
-                    ]
-                );
-                
-                DB::commit();
-                return response()->json([
-                    'success' => true,
-                    'message' => 'Case completed and moved to archived cases! Document removed from tracking.'
-                ]);
-            }
+            $case->update(['overall_status' => 'Completed']);
+            $case->refresh();
             
-            // Normal stage progression
-            $case->update([
-                'current_stage' => $nextStage
-            ]);
-            
-            // **ADD THIS: Log normal stage progression**
             ActivityLogger::logAction(
-                'UPDATE',
+                'COMPLETE',
                 'Case',
                 $case->inspection_id,
-                "Stage progression: {$currentStage} â†’ {$nextStage}",
+                "Case marked as Completed by {$user->fname} {$user->lname}",
                 [
                     'establishment' => $case->establishment_name,
-                    'previous_stage' => $currentStage,
-                    'new_stage' => $nextStage,
-                    'action_type' => 'Stage Progression'
+                    'previous_stage' => $oldStage,
+                    'new_status' => 'Completed'
                 ]
             );
             
             DB::commit();
+            
             return response()->json([
                 'success' => true,
-                'message' => "Case moved to {$nextStage} successfully!"
+                'message' => 'Case marked as Completed and moved to archived cases!',
+                'case_id' => $case->id,
+                'new_status' => 'Completed'
             ]);
             
         } catch (\Exception $e) {
             DB::rollback();
-            Log::error('Failed to move case to next stage: ' . $e->getMessage());
-            Log::error('Stack trace: ' . $e->getTraceAsString());
-            
-            // **ADD THIS: Log the error**
-            try {
-                $case = CaseFile::find($id);
-                if ($case) {
-                    ActivityLogger::logAction(
-                        'ERROR',
-                        'Case',
-                        $case->inspection_id,
-                        "Failed to progress/archive case: " . $e->getMessage(),
-                        [
-                            'establishment' => $case->establishment_name,
-                            'error' => $e->getMessage()
-                        ]
-                    );
-                }
-            } catch (\Exception $logError) {
-                Log::error('Failed to log error: ' . $logError->getMessage());
-            }
+            Log::error('Failed to archive case: ' . $e->getMessage());
             
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to move case: ' . $e->getMessage()
+                'message' => 'Failed to process case: ' . $e->getMessage()
             ], 500);
         }
     }
