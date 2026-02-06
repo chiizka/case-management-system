@@ -203,5 +203,8 @@ class CaseFile extends Model
     {
         return $this->hasMany(Inspection::class, 'case_id');
     }
-    
+    public function appeal()
+{
+    return $this->hasOne(CaseAppeal::class, 'case_id');
+}
 }

@@ -756,11 +756,16 @@
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
-            <form id="appealForm" method="POST">
+            <form id="appealForm">
                 @csrf
+                <input type="hidden" id="appeal_case_id" name="case_id">
                 <div class="modal-body">
+                    <div class="alert alert-info">
+                        <small><i class="fas fa-info-circle"></i> This case will be marked as "Appealed" and sent to the Central Office in Manila.</small>
+                    </div>
+                    
                     <div class="form-group">
-                        <label for="appellate_body" class="font-weight-bold">Appellate Body:</label>
+                        <label for="appellate_body" class="font-weight-bold">Appellate Body: <span class="text-danger">*</span></label>
                         <select id="appellate_body" name="appellate_body" class="form-control" required>
                             <option value="">Select where appeal was filed</option>
                             <option value="Office of the Secretary">Office of the Secretary</option>
@@ -768,13 +773,20 @@
                             <option value="BLR">BLR</option>
                         </select>
                     </div>
+                    
                     <div class="form-group">
-                        <label for="transmittal_date" class="font-weight-bold">Transmittal Date (to Manila):</label>
+                        <label for="transmittal_date" class="font-weight-bold">Transmittal Date (to Manila): <span class="text-danger">*</span></label>
                         <input type="date" id="transmittal_date" name="transmittal_date" class="form-control" required>
                     </div>
+                    
                     <div class="form-group">
-                        <label class="font-weight-bold">New Location/Office:</label>
-                        <p class="form-control-static">Pending at Central Office (will be set automatically)</p>
+                        <label class="font-weight-bold">Destination:</label>
+                        <input type="text" class="form-control" value="Central Office - Manila" readonly disabled>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="appeal_notes" class="font-weight-bold">Notes (Optional):</label>
+                        <textarea id="appeal_notes" name="notes" class="form-control" rows="3" placeholder="Add tracking number or special instructions..."></textarea>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -1407,6 +1419,64 @@ document.getElementById('confirmExportArchived').addEventListener('click', funct
         text: `${exportData.length - 1} archived cases exported`,
         timer: 2200,
         showConfirmButton: false
+    });
+});
+
+// Appeal Case Modal Handler
+$(document).on('click', '[data-target="#appealModal"]', function(e) {
+    e.stopPropagation(); // Prevent accordion toggle
+    const caseId = $(this).data('case-id');
+    $('#appeal_case_id').val(caseId);
+    
+    // Reset form
+    $('#appealForm')[0].reset();
+});
+
+// Submit Appeal Form
+$('#appealForm').on('submit', function(e) {
+    e.preventDefault();
+    
+    const caseId = $('#appeal_case_id').val();
+    const formData = {
+        appellate_body: $('#appellate_body').val(),
+        transmittal_date: $('#transmittal_date').val(),
+        notes: $('#appeal_notes').val(),
+        _token: $('meta[name="csrf-token"]').attr('content')
+    };
+    
+    // Disable submit button
+    const submitBtn = $(this).find('button[type="submit"]');
+    submitBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-2"></i> Processing...');
+    
+    $.ajax({
+        url: `/archive/${caseId}/appeal`,
+        method: 'POST',
+        data: formData,
+        success: function(response) {
+            $('#appealModal').modal('hide');
+            
+            Swal.fire({
+                icon: 'success',
+                title: 'Appeal Submitted!',
+                text: response.message,
+                confirmButtonText: 'OK'
+            }).then(() => {
+                location.reload(); // Reload to show updated status
+            });
+        },
+        error: function(xhr) {
+            const errorMsg = xhr.responseJSON?.message || 'Failed to submit appeal. Please try again.';
+            
+            Swal.fire({
+                icon: 'error',
+                title: 'Appeal Failed',
+                text: errorMsg,
+                confirmButtonText: 'OK'
+            });
+            
+            // Re-enable submit button
+            submitBtn.prop('disabled', false).html('<i class="fas fa-gavel mr-2"></i> Submit Appeal');
+        }
     });
 });
 </script>
