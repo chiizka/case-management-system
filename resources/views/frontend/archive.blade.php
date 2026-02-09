@@ -242,6 +242,16 @@
     .ml-2 {
         margin-left: 0.5rem;
     }
+.text-warning {
+    color: #f39c12;
+}
+
+/* Appeal tab - only highlight when active */
+.tab[data-tab^="appeal-details"].active {
+    border-bottom: 2px solid #f39c12;
+    color: #f39c12;
+    background-color: #fffbf0; /* Very subtle background */
+}
 </style>
 
 <div class="container p-4 bg-gray-100">
@@ -267,13 +277,31 @@
                             <span class="font-bold">Case No.:</span> {{ $case->case_no ?? 'N/A' }}<br>
                             <span class="font-bold">Establishment:</span> {{ $case->establishment_name }}<br>
                             <span class="font-bold">Date Archived:</span> {{ $case->updated_at->format('Y-m-d') }}<br>
-                            <span class="font-bold">Status:</span> <span class="text-green-600">{{ $case->overall_status }}</span>
+                            
+                            {{-- Status with Appeal Badge --}}
+                            <span class="font-bold">Status:</span> 
+                            @if($case->overall_status === 'Appealed')
+                                <span class="text-warning" style="background: #fff3cd; padding: 0.25rem 0.75rem; border-radius: 12px; font-weight: 600; font-size: 0.85rem;">
+                                    <i class="fas fa-gavel"></i> {{ $case->overall_status }}
+                                </span>
+                                @if($case->appeal)
+                                    <br>
+                                    <span style="font-size: 0.875rem; color: #6c757d; margin-left: 3.5rem;">
+                                        <i class="fas fa-arrow-right"></i> {{ $case->appeal->appellate_body }} ({{ $case->appeal->transmittal_date->format('M d, Y') }})
+                                    </span>
+                                @endif
+                            @else
+                                <span class="text-green-600">{{ $case->overall_status }}</span>
+                            @endif
                         </div>
                         <div>
                             <button class="text-blue-600 hover-text-blue-800">View Details</button>
                             
                             @if(Auth::user()->isAdmin() || Auth::user()->isMalsu() || Auth::user()->isCaseManagement())
-                                <button class="text-red-600 hover-text-red-800 ml-2" data-toggle="modal" data-target="#appealModal" data-case-id="{{ $case->id }}">Appeal Case</button>
+                                {{-- Hide Appeal button if already appealed --}}
+                                @if($case->overall_status !== 'Appealed')
+                                    <button class="text-red-600 hover-text-red-800 ml-2" data-toggle="modal" data-target="#appealModal" data-case-id="{{ $case->id }}">Appeal Case</button>
+                                @endif
                             @endif
                         </div>
                     </div>
@@ -288,10 +316,15 @@
                             <div class="tab" data-tab="orders-{{ $case->id }}">Orders</div>
                             <div class="tab" data-tab="compliance-{{ $case->id }}">Compliance</div>
                             <div class="tab" data-tab="appeals-{{ $case->id }}">Appeals</div>
+                            
+                            {{-- NEW: Appeal Details Tab (only show if appealed) - same style as others --}}
+                            @if($case->appeal)
+                                <div class="tab" data-tab="appeal-details-{{ $case->id }}">Appeal Details</div>
+                            @endif
+                            
                             <div class="tab" data-tab="additional-{{ $case->id }}">Additional</div>
                             <div class="tab" data-tab="doc-history-{{ $case->id }}">Document History</div>
                         </div>
-                        
                         <!-- Overview Tab -->
                         <div id="overview-{{ $case->id }}" class="tab-content active">
                             <h3 class="font-bold mb-3" style="font-size: 1.25rem; color: #1f2937;">Core Information</h3>
@@ -720,6 +753,71 @@
                                 <span class="detail-value">{{ $case->updated_at ? \Carbon\Carbon::parse($case->updated_at)->format('Y-m-d H:i:s') : '-' }}</span>
                             </div>
                         </div>
+
+                        <!-- Appeal Details Tab (only if appealed) -->
+                        @if($case->appeal)
+                            <div id="appeal-details-{{ $case->id }}" class="tab-content">
+                                <div style="background: linear-gradient(135deg, #ffeaa7 0%, #fdcb6e 100%); padding: 1rem; border-radius: 0.5rem; margin-bottom: 1.5rem;">
+                                    <h3 class="font-bold mb-2" style="font-size: 1.25rem; color: #2d3436; display: flex; align-items: center;">
+                                        <i class="fas fa-gavel" style="margin-right: 0.5rem; font-size: 1.5rem;"></i>
+                                        Appeal Information
+                                    </h3>
+                                    <p style="color: #2d3436; font-size: 0.875rem; margin: 0;">
+                                        This case has been appealed and forwarded to the Central Office in Manila
+                                    </p>
+                                </div>
+                                
+                                <div class="detail-row">
+                                    <span class="detail-label">Appeal Status:</span>
+                                    <span class="detail-value" style="color: #d63031; font-weight: 600;">
+                                        <i class="fas fa-exclamation-circle"></i> APPEALED
+                                    </span>
+                                </div>
+                                
+                                <div class="detail-row">
+                                    <span class="detail-label">Appellate Body:</span>
+                                    <span class="detail-value" style="font-weight: 600;">{{ $case->appeal->appellate_body }}</span>
+                                </div>
+                                
+                                <div class="detail-row">
+                                    <span class="detail-label">Transmittal Date:</span>
+                                    <span class="detail-value">{{ $case->appeal->transmittal_date->format('F d, Y') }}</span>
+                                </div>
+                                
+                                <div class="detail-row">
+                                    <span class="detail-label">Destination:</span>
+                                    <span class="detail-value">
+                                        <i class="fas fa-map-marker-alt" style="color: #0984e3;"></i> 
+                                        {{ $case->appeal->destination }}
+                                    </span>
+                                </div>
+                                
+                                <div class="detail-row">
+                                    <span class="detail-label">Days Since Appeal:</span>
+                                    <span class="detail-value">
+                                        {{ $case->appeal->transmittal_date->diffInDays(now()) }} days ago
+                                    </span>
+                                </div>
+                                
+                                @if($case->appeal->notes)
+                                    <div class="detail-row" style="border-top: 2px solid #fdcb6e; padding-top: 1rem; margin-top: 1rem;">
+                                        <span class="detail-label">Appeal Notes:</span>
+                                        <span class="detail-value" style="font-style: italic; color: #636e72;">
+                                            "{{ $case->appeal->notes }}"
+                                        </span>
+                                    </div>
+                                @endif
+                                
+                                <div class="detail-row" style="background: #f8f9fa; padding: 1rem; border-radius: 0.25rem; margin-top: 1.5rem;">
+                                    <span class="detail-label">Recorded By:</span>
+                                    <span class="detail-value">
+                                        {{ Auth::user()->fname }} {{ Auth::user()->lname }}
+                                        <br>
+                                        <small class="text-muted">{{ $case->appeal->created_at->format('M d, Y h:i A') }}</small>
+                                    </span>
+                                </div>
+                            </div>
+                        @endif
 
                         <!-- Document History Tab -->
                         <div id="doc-history-{{ $case->id }}" class="tab-content">

@@ -27,7 +27,8 @@ class ArchivedController extends Controller
                 'province' => $provinceName
             ]);
             
-            $query = CaseFile::where('overall_status', 'Disposed')
+            $query = CaseFile::with('appeal') // ← Add this relationship
+                ->where('overall_status', 'Disposed')
                 ->where('po_office', $provinceName);
             
         } else {
@@ -36,7 +37,8 @@ class ArchivedController extends Controller
                 'role' => $user->role
             ]);
             
-            $query = CaseFile::whereIn('overall_status', ['Completed', 'Disposed', 'Appealed']);
+            $query = CaseFile::with('appeal') // ← Add this relationship
+                ->whereIn('overall_status', ['Completed', 'Disposed', 'Appealed']);
         }
         
         $archivedCases = $query->orderBy('updated_at', 'desc')->get();
