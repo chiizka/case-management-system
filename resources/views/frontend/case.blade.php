@@ -233,6 +233,23 @@
     flex: 1;
     min-width: 0;
 }
+
+.readonly-cell {
+    background-color: #f8f9fa !important;
+    color: #6c757d;
+    cursor: not-allowed;
+    font-style: italic;
+}
+
+.readonly-cell:hover {
+    background-color: #e9ecef !important;
+}
+
+.readonly-cell::before {
+    content: "🔒 ";
+    font-size: 0.8em;
+    opacity: 0.6;
+}
 </style>
 
 <!-- Main Content -->
@@ -1321,6 +1338,20 @@ $(document).ready(function() {
 let documents = [];
 let currentCaseId = null;
 let currentUploadDocId = null;
+
+    // Prevent editing of computed fields
+    $(document).on('click', '.readonly-cell', function(e) {
+        e.stopPropagation();
+        e.preventDefault();
+        
+        // Visual feedback
+        const $this = $(this);
+        const originalBg = $this.css('background-color');
+        $this.css('background-color', '#fff3cd');
+        setTimeout(() => {
+            $this.css('background-color', originalBg);
+        }, 300);
+    });
 
 // 2. DOCUMENT CHECKLIST BUTTON CLICK HANDLER (from your first script)
 $(document).on('click', '.document-checklist-btn', function() {
@@ -2934,48 +2965,23 @@ $(document).ready(function() {
                 'inspector_name': { type: 'text' },
                 'inspector_authority_no': { type: 'text' },
                 'date_of_nr': { type: 'date' },
-                'lapse_20_day_period': { type: 'text' },
+                'lapse_20_day_period': { type: 'date', readonly: true }, // ✅ COMPUTED
                 
                 // Docketing Stage
-                'pct_for_docketing': { type: 'text' },
+                'pct_for_docketing': { type: 'date', readonly: true }, // ✅ COMPUTED
                 'date_scheduled_docketed': { type: 'date' },
-                'aging_docket': { type: 'number' },
-                'status_docket': {
-                    type: 'select',
-                    options: [
-                        { value: '', text: 'Select Status' },
-                        { value: 'Pending', text: 'Pending' },
-                        { value: 'Completed', text: 'Completed' },
-                        { value: 'In Progress', text: 'In Progress' },
-                        { value: 'Cancelled', text: 'Cancelled' }
-                    ]
-                },
+                'aging_docket': { type: 'number', readonly: true }, // ✅ COMPUTED
+                'status_docket': { type: 'text', readonly: true }, // ✅ COMPUTED - Changed from select to text
                 'hearing_officer_mis': { type: 'text' },
                 
                 // Hearing Process Stage
                 'date_1st_mc_actual': { type: 'date' },
-                'first_mc_pct': { type: 'text' },
-                'status_1st_mc': {
-                    type: 'select',
-                    options: [
-                        { value: '', text: 'Select Status' },
-                        { value: 'Pending', text: 'Pending' },
-                        { value: 'Ongoing', text: 'Ongoing' },
-                        { value: 'Completed', text: 'Completed' }
-                    ]
-                },
+                'first_mc_pct': { type: 'number', readonly: true }, // ✅ COMPUTED
+                'status_1st_mc': { type: 'text', readonly: true }, // ✅ COMPUTED - Changed from select to text
                 'date_2nd_last_mc': { type: 'date' },
-                'second_last_mc_pct': { type: 'text' },
-                'status_2nd_mc': {
-                    type: 'select',
-                    options: [
-                        { value: '', text: 'Select Status' },
-                        { value: 'Pending', text: 'Pending' },
-                        { value: 'In Progress', text: 'In Progress' },
-                        { value: 'Completed', text: 'Completed' }
-                    ]
-                },
-                'case_folder_forwarded_to_ro': { type: 'text' },
+                'second_last_mc_pct': { type: 'number', readonly: true }, // ✅ COMPUTED
+                'status_2nd_mc': { type: 'text', readonly: true }, // ✅ COMPUTED - Changed from select to text
+                'case_folder_forwarded_to_ro': { type: 'date' }, // Changed from text to date
                 'draft_order_from_po_type': { type: 'text' },
                 'applicable_draft_order': {
                     type: 'select',
@@ -2996,18 +3002,9 @@ $(document).ready(function() {
                 'twg_ali': { type: 'text' },
                 
                 // Review & Drafting Stage
-                'po_pct': { type: 'text' },
-                'aging_po_pct': { type: 'number' },
-                'status_po_pct': {
-                    type: 'select',
-                    options: [
-                        { value: '', text: 'Select Status' },
-                        { value: 'Pending', text: 'Pending' },
-                        { value: 'Ongoing', text: 'Ongoing' },
-                        { value: 'Overdue', text: 'Overdue' },
-                        { value: 'Completed', text: 'Completed' }
-                    ]
-                },
+                'po_pct': { type: 'date', readonly: true }, // ✅ COMPUTED
+                'aging_po_pct': { type: 'number', readonly: true }, // ✅ COMPUTED
+                'status_po_pct': { type: 'text', readonly: true }, // ✅ COMPUTED - Changed from select to text
                 'date_received_from_po': { type: 'date' },
                 'reviewer_drafter': { type: 'text' },
                 'date_received_by_reviewer': { type: 'date' },

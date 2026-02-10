@@ -735,10 +735,10 @@ public function destroy($id)
                 'inspector_name' => 'nullable|string|max:255',
                 'inspector_authority_no' => 'nullable|string|max:255',
                 'date_of_nr' => 'nullable|date',
-                'lapse_20_day_period' => 'nullable|string|max:255',
+                'lapse_20_day_period' => 'nullable|date',
                 
                 // Docketing Stage
-                'pct_for_docketing' => 'nullable|string|max:255',
+                'pct_for_docketing' => 'nullable|date',
                 'date_scheduled_docketed' => 'nullable|date',
                 'aging_docket' => 'nullable|integer',
                 'status_docket' => 'nullable|string|max:255',
@@ -746,10 +746,10 @@ public function destroy($id)
                 
                 // Hearing Process Stage
                 'date_1st_mc_actual' => 'nullable|date',
-                'first_mc_pct' => 'nullable|string|max:255',
+                'first_mc_pct' => 'nullable|integer',
                 'status_1st_mc' => 'nullable|string|max:255',
                 'date_2nd_last_mc' => 'nullable|date',
-                'second_last_mc_pct' => 'nullable|string|max:255',
+                'second_last_mc_pct' => 'nullable|integer',
                 'status_2nd_mc' => 'nullable|string|max:255',
                 'case_folder_forwarded_to_ro' => 'nullable|string|max:255',
                 'draft_order_from_po_type' => 'nullable|string|max:255',
@@ -758,7 +758,7 @@ public function destroy($id)
                 'twg_ali' => 'nullable|string|max:255',
                 
                 // Review & Drafting Stage
-                'po_pct' => 'nullable|string|max:255',
+                'po_pct' => 'nullable|date',
                 'aging_po_pct' => 'nullable|integer',
                 'status_po_pct' => 'nullable|string|max:255',
                 'date_received_from_po' => 'nullable|date',

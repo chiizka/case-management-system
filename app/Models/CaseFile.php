@@ -4,10 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Traits\CaseComputations;
 
 class CaseFile extends Model
 {
-    use HasFactory;
+    use HasFactory, CaseComputations;
 
     protected $table = 'cases';
     protected $guarded = [];
@@ -30,22 +31,22 @@ class CaseFile extends Model
         'inspector_name',
         'inspector_authority_no',
         'date_of_nr',
-        'lapse_20_day_period',
+        'lapse_20_day_period',  // ✅ COMPUTED
         
         // Docketing Stage
-        'pct_for_docketing',
+        'pct_for_docketing',  // ✅ COMPUTED
         'date_scheduled_docketed',
-        'aging_docket',
-        'status_docket',
+        'aging_docket',  // ✅ COMPUTED
+        'status_docket',  // ✅ COMPUTED
         'hearing_officer_mis',
         
         // Hearing Process Stage
         'date_1st_mc_actual',
-        'first_mc_pct',
-        'status_1st_mc',
+        'first_mc_pct',  // ✅ COMPUTED
+        'status_1st_mc',  // ✅ COMPUTED
         'date_2nd_last_mc',
-        'second_last_mc_pct',
-        'status_2nd_mc',
+        'second_last_mc_pct',  // ✅ COMPUTED
+        'status_2nd_mc',  // ✅ COMPUTED
         'case_folder_forwarded_to_ro',
         'draft_order_from_po_type',
         'applicable_draft_order',
@@ -53,9 +54,9 @@ class CaseFile extends Model
         'twg_ali',
         
         // Review & Drafting Stage
-        'po_pct',
-        'aging_po_pct',
-        'status_po_pct',
+        'po_pct',  // ✅ COMPUTED
+        'aging_po_pct',  // ✅ COMPUTED
+        'status_po_pct',  // ✅ COMPUTED
         'date_received_from_po',
         'reviewer_drafter',
         'date_received_by_reviewer',
@@ -133,9 +134,13 @@ class CaseFile extends Model
         // Dates
         'date_of_inspection' => 'date',
         'date_of_nr' => 'date',
+        'lapse_20_day_period' => 'date',  // ✅ COMPUTED
+        'pct_for_docketing' => 'date',  // ✅ COMPUTED (changed from string)
         'date_scheduled_docketed' => 'date',
         'date_1st_mc_actual' => 'date',
         'date_2nd_last_mc' => 'date',
+        'case_folder_forwarded_to_ro' => 'date',  // ✅ Added cast
+        'po_pct' => 'date',  // ✅ COMPUTED (changed from string)
         'date_received_from_po' => 'date',
         'date_received_by_reviewer' => 'date',
         'date_returned_from_drafter' => 'date',
@@ -164,8 +169,10 @@ class CaseFile extends Model
         
         // Integers
         'no' => 'integer',
-        'aging_docket' => 'integer',
-        'aging_po_pct' => 'integer',
+        'aging_docket' => 'integer',  // ✅ COMPUTED
+        'first_mc_pct' => 'integer',  // ✅ COMPUTED (changed from string)
+        'second_last_mc_pct' => 'integer',  // ✅ COMPUTED (changed from string)
+        'aging_po_pct' => 'integer',  // ✅ COMPUTED
         'aging_10_days_tssd' => 'integer',
         'aging_2_days_finalization' => 'integer',
         'aging_pct' => 'integer',
@@ -184,14 +191,26 @@ class CaseFile extends Model
         'with_order_payment_notice' => 'boolean',
         'updated_ticked_in_mis' => 'boolean',
         
-        'date_of_inspection' => 'date',
-        'date_of_nr' => 'date',
-        'date_scheduled_docketed' => 'date',
-        'date_signed_mis' => 'date',
-        // Text fields are automatically cast as strings, no need to specify
-
         'document_checklist' => 'array',
     ];
+
+    /**
+     * Boot method to automatically compute fields when saving
+     */
+    protected static function boot()
+    {
+        parent::boot();
+        
+        // Automatically compute fields before creating
+        static::creating(function ($case) {
+            $case->computeFields();
+        });
+        
+        // Automatically recompute fields before updating
+        static::updating(function ($case) {
+            $case->computeFields();
+        });
+    }
 
     // Relationships
     public function documentTracking()
@@ -203,8 +222,9 @@ class CaseFile extends Model
     {
         return $this->hasMany(Inspection::class, 'case_id');
     }
+    
     public function appeal()
-{
-    return $this->hasOne(CaseAppeal::class, 'case_id');
-}
+    {
+        return $this->hasOne(CaseAppeal::class, 'case_id');
+    }
 }
