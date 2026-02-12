@@ -245,11 +245,6 @@
     background-color: #e9ecef !important;
 }
 
-.readonly-cell::before {
-    content: "🔒 ";
-    font-size: 0.8em;
-    opacity: 0.6;
-}
 </style>
 
 <!-- Main Content -->
@@ -584,15 +579,15 @@
                                         <td class="editable-cell" data-field="date_of_nr" data-type="date">
                                             {{ $case->date_of_nr ? \Carbon\Carbon::parse($case->date_of_nr)->format('Y-m-d') : '-' }}
                                         </td>
-                                        <td class="editable-cell" data-field="lapse_20_day_period">{{ $case->lapse_20_day_period ?? '-' }}</td>
+                                        <td class="readonly-cell" data-field="lapse_20_day_period">{{ $case->lapse_20_day_period ?? '-' }}</td>
                                         
                                         <!-- Docketing Stage -->
-                                        <td class="editable-cell" data-field="pct_for_docketing">{{ $case->pct_for_docketing ?? '-' }}</td>
+                                        <td class="readonly-cell" data-field="pct_for_docketing">{{ $case->pct_for_docketing ?? '-' }}</td>
                                         <td class="editable-cell" data-field="date_scheduled_docketed" data-type="date">
                                             {{ $case->date_scheduled_docketed ? \Carbon\Carbon::parse($case->date_scheduled_docketed)->format('Y-m-d') : '-' }}
                                         </td>
-                                        <td class="editable-cell" data-field="aging_docket">{{ $case->aging_docket ?? '-' }}</td>
-                                        <td class="editable-cell" data-field="status_docket">{{ $case->status_docket ?? '-' }}</td>
+                                        <td class="readonly-cell" data-field="aging_docket">{{ $case->aging_docket ?? '-' }}</td>
+                                        <td class="readonly-cell" data-field="status_docket">{{ $case->status_docket ?? '-' }}</td>
                                         <td class="editable-cell" data-field="hearing_officer_mis" title="{{ $case->hearing_officer_mis ?? '' }}">
                                             {{ $case->hearing_officer_mis ? Str::limit($case->hearing_officer_mis, 20) : '-' }}
                                         </td>
@@ -601,13 +596,13 @@
                                         <td class="editable-cell" data-field="date_1st_mc_actual" data-type="date">
                                             {{ $case->date_1st_mc_actual ? \Carbon\Carbon::parse($case->date_1st_mc_actual)->format('Y-m-d') : '-' }}
                                         </td>
-                                        <td class="editable-cell" data-field="first_mc_pct">{{ $case->first_mc_pct ?? '-' }}</td>
-                                        <td class="editable-cell" data-field="status_1st_mc">{{ $case->status_1st_mc ?? '-' }}</td>
+                                        <td class="readonly-cell" data-field="first_mc_pct">{{ $case->first_mc_pct ?? '-' }}</td>
+                                        <td class="readonly-cell" data-field="status_1st_mc">{{ $case->status_1st_mc ?? '-' }}</td>
                                         <td class="editable-cell" data-field="date_2nd_last_mc" data-type="date">
                                             {{ $case->date_2nd_last_mc ? \Carbon\Carbon::parse($case->date_2nd_last_mc)->format('Y-m-d') : '-' }}
                                         </td>
-                                        <td class="editable-cell" data-field="second_last_mc_pct">{{ $case->second_last_mc_pct ?? '-' }}</td>
-                                        <td class="editable-cell" data-field="status_2nd_mc">{{ $case->status_2nd_mc ?? '-' }}</td>
+                                        <td class="readonly-cell" data-field="second_last_mc_pct">{{ $case->second_last_mc_pct ?? '-' }}</td>
+                                        <td class="readonly-cell" data-field="status_2nd_mc">{{ $case->status_2nd_mc ?? '-' }}</td>
                                         <td class="editable-cell" data-field="case_folder_forwarded_to_ro">{{ $case->case_folder_forwarded_to_ro ?? '-' }}</td>
                                         <td class="editable-cell" data-field="draft_order_from_po_type">{{ $case->draft_order_from_po_type ?? '-' }}</td>
                                         <td class="editable-cell" data-field="applicable_draft_order">{{ $case->applicable_draft_order ?? '-' }}</td>
@@ -615,9 +610,9 @@
                                         <td class="editable-cell" data-field="twg_ali">{{ $case->twg_ali ?? '-' }}</td>
                                         
                                         <!-- Review & Drafting Stage -->
-                                        <td class="editable-cell" data-field="po_pct">{{ $case->po_pct ?? '-' }}</td>
-                                        <td class="editable-cell" data-field="aging_po_pct">{{ $case->aging_po_pct ?? '-' }}</td>
-                                        <td class="editable-cell" data-field="status_po_pct">{{ $case->status_po_pct ?? '-' }}</td>
+                                        <td class="readonly-cell" data-field="po_pct">{{ $case->po_pct ?? '-' }}</td>
+                                        <td class="readonly-cell" data-field="aging_po_pct">{{ $case->aging_po_pct ?? '-' }}</td>
+                                        <td class="readonly-cell" data-field="status_po_pct">{{ $case->status_po_pct ?? '-' }}</td>
                                         <td class="editable-cell" data-field="date_received_from_po" data-type="date">
                                             {{ $case->date_received_from_po ? \Carbon\Carbon::parse($case->date_received_from_po)->format('Y-m-d') : '-' }}
                                         </td>
@@ -1333,6 +1328,15 @@ $(document).ready(function() {
                 targets: 0  // First column (Actions)
             }
         ]
+    });
+
+    // Block double-click editing on readonly cells
+    $(document).on('dblclick', '.readonly-cell', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        // Optional: visual feedback
+        $(this).css('background-color', '#fff3cd');
+        setTimeout(() => $(this).css('background-color', '#f8f9fa'), 400);
     });
 
 let documents = [];

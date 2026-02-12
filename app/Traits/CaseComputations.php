@@ -67,7 +67,7 @@ trait CaseComputations
 
     /**
      * Aging (Docket) = Date Scheduled/Docketed - PCT for Docketing
-     * Returns number of days
+     * Returns number of days (positive when beyond deadline)
      */
     protected function computeAgingDocket()
     {
@@ -75,7 +75,8 @@ trait CaseComputations
             try {
                 $dateScheduled = Carbon::parse($this->date_scheduled_docketed);
                 $pctDocketing = Carbon::parse($this->pct_for_docketing);
-                $this->aging_docket = $dateScheduled->diffInDays($pctDocketing, false);
+                // Subtract: later date - earlier date gives positive when beyond
+                $this->aging_docket = $pctDocketing->diffInDays($dateScheduled, false);
             } catch (\Exception $e) {
                 \Log::warning("Error computing aging_docket: " . $e->getMessage());
                 $this->aging_docket = null;
@@ -99,7 +100,7 @@ trait CaseComputations
 
     /**
      * 1st MC PCT = Date of 1st MC (Actual) - Lapse of 20 day Correction Period
-     * Returns number of days
+     * Returns number of days (positive when beyond deadline)
      */
     protected function compute1stMcPct()
     {
@@ -107,7 +108,8 @@ trait CaseComputations
             try {
                 $date1stMc = Carbon::parse($this->date_1st_mc_actual);
                 $lapsePeriod = Carbon::parse($this->lapse_20_day_period);
-                $this->first_mc_pct = $date1stMc->diffInDays($lapsePeriod, false);
+                // Subtract: later date - earlier date gives positive when beyond
+                $this->first_mc_pct = $lapsePeriod->diffInDays($date1stMc, false);
             } catch (\Exception $e) {
                 \Log::warning("Error computing first_mc_pct: " . $e->getMessage());
                 $this->first_mc_pct = null;
@@ -131,7 +133,7 @@ trait CaseComputations
 
     /**
      * 2nd/Last MC PCT = Date of 2nd MC - Date of 1st MC (Actual)
-     * Returns number of days
+     * Returns number of days (positive when beyond deadline)
      */
     protected function compute2ndLastMcPct()
     {
@@ -139,7 +141,8 @@ trait CaseComputations
             try {
                 $date2ndMc = Carbon::parse($this->date_2nd_last_mc);
                 $date1stMc = Carbon::parse($this->date_1st_mc_actual);
-                $this->second_last_mc_pct = $date2ndMc->diffInDays($date1stMc, false);
+                // Subtract: later date - earlier date gives positive when beyond
+                $this->second_last_mc_pct = $date1stMc->diffInDays($date2ndMc, false);
             } catch (\Exception $e) {
                 \Log::warning("Error computing second_last_mc_pct: " . $e->getMessage());
                 $this->second_last_mc_pct = null;
@@ -181,7 +184,7 @@ trait CaseComputations
 
     /**
      * Aging (PO PCT) = Case Folder Forwarded to RO - PO PCT
-     * Returns number of days
+     * Returns number of days (negative when within deadline, positive when beyond)
      */
     protected function computeAgingPoPct()
     {
@@ -189,7 +192,10 @@ trait CaseComputations
             try {
                 $caseFolderDate = Carbon::parse($this->case_folder_forwarded_to_ro);
                 $poPct = Carbon::parse($this->po_pct);
-                $this->aging_po_pct = $caseFolderDate->diffInDays($poPct, false);
+                // Subtract: later date - earlier date
+                // Negative when case folder is before deadline (within)
+                // Positive when case folder is after deadline (beyond)
+                $this->aging_po_pct = $poPct->diffInDays($caseFolderDate, false);
             } catch (\Exception $e) {
                 \Log::warning("Error computing aging_po_pct: " . $e->getMessage());
                 $this->aging_po_pct = null;
