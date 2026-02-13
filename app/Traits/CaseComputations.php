@@ -27,6 +27,7 @@ trait CaseComputations
         $this->computePoPct();
         $this->computeAgingPoPct();
         $this->computeStatusPoPct();
+        $this->computePct96Days(); // ✅ NEW
     }
 
     /**
@@ -214,6 +215,24 @@ trait CaseComputations
             $this->status_po_pct = $this->aging_po_pct <= 0 ? 'Within' : 'Beyond';
         } else {
             $this->status_po_pct = null;
+        }
+    }
+
+    /**
+     * PCT 96 Days = Date of NR + 96 days
+     */
+    protected function computePct96Days()
+    {
+        if ($this->date_of_nr) {
+            try {
+                $dateOfNr = Carbon::parse($this->date_of_nr);
+                $this->pct_96_days = $dateOfNr->addDays(96)->format('Y-m-d');
+            } catch (\Exception $e) {
+                \Log::warning("Error computing pct_96_days: " . $e->getMessage());
+                $this->pct_96_days = null;
+            }
+        } else {
+            $this->pct_96_days = null;
         }
     }
 }

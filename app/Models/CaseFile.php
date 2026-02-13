@@ -71,7 +71,7 @@ class CaseFile extends Model
         'status_finalization',
         
         // Orders & Disposition Stage
-        'pct_96_days',
+        'pct_96_days',  // ✅ COMPUTED
         'date_signed_mis',
         'status_pct',
         'reference_date_pct',
@@ -148,6 +148,7 @@ class CaseFile extends Model
         'date_received_drafter_finalization' => 'date',
         'date_returned_case_mgmt_signature' => 'date',
         'date_signed_mis' => 'date',
+        'pct_96_days' => 'date',  // ✅ COMPUTED
         'reference_date_pct' => 'date',
         'date_of_order_actual' => 'date',
         'released_date_actual' => 'date',

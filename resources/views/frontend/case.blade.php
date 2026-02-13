@@ -425,9 +425,9 @@
                                 <th>Status Finalization</th>
                                 
                                 <!-- Orders & Disposition Stage -->
-                                <th>PCT 96 Days</th>
+                                <th>PCT(96 days from the date of NR)</th>
                                 <th>Date Signed (MIS)</th>
-                                <th>Status PCT</th>
+                                <th>Status (PCT)</th>
                                 <th>Reference Date PCT</th>
                                 <th>Aging PCT</th>
                                 <th>Disposition (MIS)</th>
@@ -3042,7 +3042,7 @@ $(document).ready(function() {
                 },
                 
                 // Orders & Disposition Stage
-                'pct_96_days': { type: 'text' },
+                'pct_96_days': { type: 'date', readonly: true }, // ✅ COMPUTED
                 'date_signed_mis': { type: 'date' },
                 'status_pct': {
                     type: 'select',
