@@ -219,14 +219,14 @@ trait CaseComputations
     }
 
     /**
-     * PCT 96 Days = Date of NR + 96 days
+     * PCT 96 Days = Date Scheduled/Docketed + 96 days
      */
     protected function computePct96Days()
     {
-        if ($this->date_of_nr) {
+        if ($this->date_scheduled_docketed) {
             try {
-                $dateOfNr = Carbon::parse($this->date_of_nr);
-                $this->pct_96_days = $dateOfNr->addDays(96)->format('Y-m-d');
+                $dateScheduled = Carbon::parse($this->date_scheduled_docketed);
+                $this->pct_96_days = $dateScheduled->addDays(96)->format('Y-m-d');
             } catch (\Exception $e) {
                 \Log::warning("Error computing pct_96_days: " . $e->getMessage());
                 $this->pct_96_days = null;
