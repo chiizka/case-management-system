@@ -27,7 +27,7 @@ trait CaseComputations
         $this->computePoPct();
         $this->computeAgingPoPct();
         $this->computeStatusPoPct();
-        $this->computePct96Days(); // ✅ NEW
+        $this->computePct96Days();
     }
 
     /**
@@ -38,7 +38,8 @@ trait CaseComputations
         if ($this->date_of_nr) {
             try {
                 $dateOfNr = Carbon::parse($this->date_of_nr);
-                $this->lapse_20_day_period = $dateOfNr->addDays(21)->format('Y-m-d');
+                // ✅ FIX: Store as Carbon instance, not formatted string
+                $this->lapse_20_day_period = $dateOfNr->copy()->addDays(21);
             } catch (\Exception $e) {
                 \Log::warning("Error computing lapse_20_day_period: " . $e->getMessage());
                 $this->lapse_20_day_period = null;
@@ -56,7 +57,8 @@ trait CaseComputations
         if ($this->lapse_20_day_period) {
             try {
                 $lapsePeriod = Carbon::parse($this->lapse_20_day_period);
-                $this->pct_for_docketing = $lapsePeriod->addDays(5)->format('Y-m-d');
+                // ✅ FIX: Store as Carbon instance, not formatted string
+                $this->pct_for_docketing = $lapsePeriod->copy()->addDays(5);
             } catch (\Exception $e) {
                 \Log::warning("Error computing pct_for_docketing: " . $e->getMessage());
                 $this->pct_for_docketing = null;
@@ -173,7 +175,8 @@ trait CaseComputations
         if ($this->lapse_20_day_period) {
             try {
                 $lapsePeriod = Carbon::parse($this->lapse_20_day_period);
-                $this->po_pct = $lapsePeriod->addDays(45)->format('Y-m-d');
+                // ✅ FIX: Store as Carbon instance, not formatted string
+                $this->po_pct = $lapsePeriod->copy()->addDays(45);
             } catch (\Exception $e) {
                 \Log::warning("Error computing po_pct: " . $e->getMessage());
                 $this->po_pct = null;
@@ -226,7 +229,8 @@ trait CaseComputations
         if ($this->date_scheduled_docketed) {
             try {
                 $dateScheduled = Carbon::parse($this->date_scheduled_docketed);
-                $this->pct_96_days = $dateScheduled->addDays(96)->format('Y-m-d');
+                // ✅ FIX: Store as Carbon instance, not formatted string
+                $this->pct_96_days = $dateScheduled->copy()->addDays(96);
             } catch (\Exception $e) {
                 \Log::warning("Error computing pct_96_days: " . $e->getMessage());
                 $this->pct_96_days = null;

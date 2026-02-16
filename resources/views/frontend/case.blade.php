@@ -245,6 +245,25 @@
     background-color: #e9ecef !important;
 }
 
+/* Add to your <style> section */
+.readonly-cell::after {
+    content: " 🔄";
+    font-size: 0.7rem;
+    opacity: 0.5;
+    margin-left: 3px;
+}
+
+.readonly-cell {
+    background-color: #f8f9fa !important;
+    color: #495057;
+    font-style: italic;
+}
+
+/* Smooth transition for computed field updates */
+.editable-cell, .readonly-cell {
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
 </style>
 
 <!-- Main Content -->
@@ -2821,17 +2840,17 @@ $(document).ready(function() {
             },
             success: function(response) {
                 if (response.success) {
-                    // Update cell with new value
-                    restoreCellDisplay($cell, newValue, fieldType);
+                    // ✅ NEW: Update ALL cells in the row with fresh data from backend
+                    updateRowWithComputedFields($row, response.data, fieldType);
                     
-                    // Show success feedback
+                    // Highlight the cell that was just edited
                     $cell.addClass('bg-success text-white');
                     setTimeout(() => {
                         $cell.removeClass('bg-success text-white');
                     }, 1000);
                     
                     // Show toast notification
-                    showToast('Success', 'Cell updated successfully', 'success');
+                    showToast('Success', 'Updated successfully', 'success');
                 } else {
                     // Restore original value on error
                     restoreCellDisplay($cell, originalValue, fieldType);
@@ -2847,6 +2866,84 @@ $(document).ready(function() {
                 currentEditingCell = null;
             }
         });
+    }
+
+    // ✅ UPDATED FUNCTION: Update all cells in a row with computed values
+    function updateRowWithComputedFields($row, data) {
+        // Define which fields are computed (read-only)
+        const computedFields = [
+            'lapse_20_day_period',
+            'pct_for_docketing',
+            'aging_docket',
+            'status_docket',
+            'first_mc_pct',
+            'status_1st_mc',
+            'second_last_mc_pct',
+            'status_2nd_mc',
+            'po_pct',
+            'aging_po_pct',
+            'status_po_pct',
+            'pct_96_days'
+        ];
+        
+        // Update all cells in the row
+        $row.find('.editable-cell, .readonly-cell').each(function() {
+            const $cell = $(this);
+            const field = $cell.data('field');
+            
+            // Skip if this field is not in the response data
+            if (!(field in data)) return;
+            
+            let value = data[field];
+            const fieldType = $cell.data('type');
+            
+            // Format the value based on type
+            if (value === null || value === undefined || value === '') {
+                value = '-';
+            } else if (fieldType === 'date' && value !== '-') {
+                // ✅ FIX: Parse ISO date and format as YYYY-MM-DD
+                value = formatDateFromISO(value);
+            } else if (fieldType === 'boolean') {
+                value = value ? 'Yes' : 'No';
+            } else if (fieldType === 'select' && field === 'current_stage') {
+                // Handle current_stage display
+                if (value.includes(': ')) {
+                    value = value.split(': ')[1];
+                }
+            }
+            
+            // Update the cell display
+            $cell.html(value);
+            
+            // ✅ Highlight computed fields that changed with a subtle animation
+            if (computedFields.includes(field) && value !== '-') {
+                $cell.addClass('bg-info text-white');
+                setTimeout(() => {
+                    $cell.removeClass('bg-info text-white');
+                }, 1500);
+            }
+        });
+    }
+
+    // ✅ NEW HELPER FUNCTION: Format ISO date string to YYYY-MM-DD
+    function formatDateFromISO(dateString) {
+        if (!dateString || dateString === '-') return '-';
+        
+        try {
+            // Handle ISO format: "2026-02-10T16:00:00.000000Z"
+            // Handle already formatted: "2026-02-10"
+            
+            if (dateString.includes('T')) {
+                // ISO format - extract just the date part
+                return dateString.split('T')[0];
+            } else {
+                // Already in YYYY-MM-DD format
+                return dateString;
+            }
+        } catch (e) {
+            console.warn('Error formatting date:', dateString, e);
+            return dateString; // Return original if parsing fails
+        }
     }
 
     // Function to cancel edit
