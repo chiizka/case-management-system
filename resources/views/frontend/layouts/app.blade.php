@@ -102,7 +102,13 @@
                     <span>Document Tracking</span>
                 </a>
             </li>
-            <hr class="sidebar-divider">
+            <li class="nav-item">
+                <a class="nav-link" href="{{ route('analytics.index') }}">
+                    <i class="fas fa-fw fa-chart-bar"></i>
+                    <span>Cases Overview</span>
+                </a>
+            </li>
+                        <hr class="sidebar-divider">
             @endif
 
             <!-- Audit Logs - Only for Admin -->

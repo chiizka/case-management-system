@@ -87,6 +87,8 @@
             Route::post('/archive/{caseId}/appeal', [ArchivedController::class, 'storeAppeal'])
             ->name('archive.appeal')
             ->middleware('role:admin,malsu,case_management');
+
+            Route::get('/analytics', [App\Http\Controllers\AnalyticsController::class, 'index'])->name('analytics.index');
         });
 
         // Remove this duplicate line at the end (line 134):
