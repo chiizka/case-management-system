@@ -72,12 +72,12 @@
                     <span>Users</span>
                 </a>
             </li>
-            <li class="nav-item">
+            {{-- <li class="nav-item">
                 <a class="nav-link" href="cards.html">
                     <i class="fas fa-fw fa-user-tag"></i>
                     <span>Roles</span>
                 </a>
-            </li>
+            </li> --}}
             <hr class="sidebar-divider">
             @endif
 
