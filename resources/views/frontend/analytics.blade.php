@@ -321,140 +321,95 @@
 
 </div>
 
-{{-- Generate Report Modal --}}
 <div class="modal fade" id="generateReportModal" tabindex="-1" role="dialog" aria-hidden="true">
-    <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-dialog modal-sm" role="document">
         <div class="modal-content">
-            <div class="modal-header bg-primary text-white">
-                <h5 class="modal-title">
-                    <i class="fas fa-file-alt mr-2"></i> Generate Analytics Report
+
+            <div class="modal-header bg-primary text-white py-3">
+                <h5 class="modal-title font-weight-bold">
+                    <i class="fas fa-file-excel mr-2"></i> Generate Form No. 1
                 </h5>
                 <button class="close text-white" type="button" data-dismiss="modal">
-                    <span aria-hidden="true">×</span>
+                    <span aria-hidden="true">&times;</span>
                 </button>
             </div>
-            <div class="modal-body">
 
-                {{-- Quick Stats inside modal --}}
-                <div class="row text-center mb-4">
-                    <div class="col-3">
-                        <div class="h4 font-weight-bold text-primary mb-0">32</div>
-                        <div class="small text-muted">Total Cases</div>
+            <form id="reportForm"
+                  method="POST"
+                  action="{{ route('reports.form1.generate') }}">
+                @csrf
+
+                <div class="modal-body">
+
+                    <div class="form-group">
+                        <label class="font-weight-bold small text-uppercase text-muted mb-1">Year</label>
+                        <select name="year" class="form-control form-control-sm" required>
+                            @for ($y = now()->year; $y >= 2020; $y--)
+                                <option value="{{ $y }}" {{ $y == now()->year ? 'selected' : '' }}>
+                                    {{ $y }}
+                                </option>
+                            @endfor
+                        </select>
                     </div>
-                    <div class="col-3">
-                        <div class="h4 font-weight-bold text-success mb-0">100%</div>
-                        <div class="small text-muted">Within PCT</div>
+
+                    <div class="form-group">
+                        <label class="font-weight-bold small text-uppercase text-muted mb-1">Month</label>
+                        <select name="month" class="form-control form-control-sm" required>
+                            @foreach([
+                                1=>'January',2=>'February',3=>'March',4=>'April',
+                                5=>'May',6=>'June',7=>'July',8=>'August',
+                                9=>'September',10=>'October',11=>'November',12=>'December'
+                            ] as $num => $name)
+                                <option value="{{ $num }}" {{ $num == now()->month ? 'selected' : '' }}>
+                                    {{ $name }}
+                                </option>
+                            @endforeach
+                        </select>
                     </div>
-                    <div class="col-3">
-                        <div class="h4 font-weight-bold text-danger mb-0">0</div>
-                        <div class="small text-muted">Beyond PCT</div>
+
+                    <div class="form-group mb-0">
+                        <label class="font-weight-bold small text-uppercase text-muted mb-1">Office</label>
+                        <select name="office" class="form-control form-control-sm">
+                            <option value="">All Offices (DOLE-5)</option>
+                            <option value="Albay">Albay</option>
+                            <option value="Camarines Sur">Camarines Sur</option>
+                            <option value="Camarines Norte">Camarines Norte</option>
+                            <option value="Catanduanes">Catanduanes</option>
+                            <option value="Masbate">Masbate</option>
+                            <option value="Sorsogon">Sorsogon</option>
+                        </select>
                     </div>
-                    <div class="col-3">
-                        <div class="h4 font-weight-bold text-warning mb-0">24</div>
-                        <div class="small text-muted">Pending</div>
-                    </div>
+
                 </div>
 
-                <hr>
-
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label class="font-weight-bold small">Report Form</label>
-                            <select class="form-control form-control-sm">
-                                <option>Form No. 1 – Cases Handled</option>
-                                <option>Form No. 3 – Execution & Compliance</option>
-                                <option>Combined Report (Form 1 + 3)</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label class="font-weight-bold small">Office / Agency</label>
-                            <select class="form-control form-control-sm">
-                                <option>DOLE Region V (All)</option>
-                                <option>CNFO</option>
-                                <option>CSFO</option>
-                                <option>MFO</option>
-                                <option>RO5</option>
-                            </select>
-                        </div>
-                    </div>
+                <div class="modal-footer py-2">
+                    <button type="button"
+                            class="btn btn-secondary btn-sm"
+                            data-dismiss="modal">Cancel</button>
+                    <button type="submit"
+                            class="btn btn-success btn-sm"
+                            id="generateBtn">
+                        <i class="fas fa-file-excel mr-1"></i> Download
+                    </button>
                 </div>
 
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label class="font-weight-bold small">Year</label>
-                            <select class="form-control form-control-sm">
-                                <option>2026</option>
-                                <option>2025</option>
-                                <option>2024</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label class="font-weight-bold small">Month Range</label>
-                            <select class="form-control form-control-sm">
-                                <option>January only</option>
-                                <option>January – March (Q1)</option>
-                                <option>January – June (H1)</option>
-                                <option>Full Year</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
+            </form>
 
-                <div class="form-group">
-                    <label class="font-weight-bold small">Include Sections</label>
-                    <div>
-                        <div class="custom-control custom-checkbox custom-control-inline">
-                            <input type="checkbox" class="custom-control-input" id="chk1" checked>
-                            <label class="custom-control-label" for="chk1">Case Volume</label>
-                        </div>
-                        <div class="custom-control custom-checkbox custom-control-inline">
-                            <input type="checkbox" class="custom-control-input" id="chk2" checked>
-                            <label class="custom-control-label" for="chk2">PCT Status</label>
-                        </div>
-                        <div class="custom-control custom-checkbox custom-control-inline">
-                            <input type="checkbox" class="custom-control-input" id="chk3" checked>
-                            <label class="custom-control-label" for="chk3">Disposition Rate</label>
-                        </div>
-                        <div class="custom-control custom-checkbox custom-control-inline">
-                            <input type="checkbox" class="custom-control-input" id="chk4" checked>
-                            <label class="custom-control-label" for="chk4">Pending Cases</label>
-                        </div>
-                        <div class="custom-control custom-checkbox custom-control-inline">
-                            <input type="checkbox" class="custom-control-input" id="chk5">
-                            <label class="custom-control-label" for="chk5">Monetary Awards</label>
-                        </div>
-                        <div class="custom-control custom-checkbox custom-control-inline">
-                            <input type="checkbox" class="custom-control-input" id="chk6">
-                            <label class="custom-control-label" for="chk6">Workers Benefitted</label>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="form-group mb-0">
-                    <label class="font-weight-bold small">Output Format</label>
-                    <div class="btn-group btn-group-sm d-block" role="group">
-                        <button type="button" class="btn btn-primary">XLSX</button>
-                        <button type="button" class="btn btn-outline-primary">PDF</button>
-                        <button type="button" class="btn btn-outline-primary">CSV</button>
-                    </div>
-                </div>
-
-            </div>
-            <div class="modal-footer">
-                <small class="text-muted mr-auto">Est. generation time: ~3 sec</small>
-                <button class="btn btn-secondary btn-sm" type="button" data-dismiss="modal">Cancel</button>
-                <button class="btn btn-primary btn-sm" type="button">
-                    <i class="fas fa-file-download mr-1"></i> Generate Report
-                </button>
-            </div>
         </div>
     </div>
 </div>
 
+
+<script>
+document.getElementById('reportForm').addEventListener('submit', function () {
+    var btn = document.getElementById('generateBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Generating…';
+    setTimeout(function () {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-file-excel mr-1"></i> Download';
+        $('#generateReportModal').modal('hide');
+    }, 5000);
+});
+</script>
 @endsection

@@ -89,6 +89,9 @@
             ->middleware('role:admin,malsu,case_management');
 
             Route::get('/analytics', [App\Http\Controllers\AnalyticsController::class, 'index'])->name('analytics.index');
+
+            Route::post('/reports/form1', [App\Http\Controllers\ReportController::class, 'generateForm1'])
+            ->name('reports.form1.generate');
         });
 
         // Remove this duplicate line at the end (line 134):
