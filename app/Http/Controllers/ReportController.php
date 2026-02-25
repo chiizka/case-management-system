@@ -46,10 +46,11 @@ class ReportController extends Controller
         $startOfYear = Carbon::create($year, 1, 1)->startOfYear();
 
         // ── Carry-over cases ──────────────────────────────────────────────────────
-        // Cases created before this year that are still active (not yet closed)
+        // Cases created BEFORE this year that are still active (not yet archived).
+        // Active = NOT IN (Completed, Disposed, Appealed) — mirrors CasesController::index()
         $carryOver = (clone $base())
             ->whereDate('created_at', '<', $startOfYear)
-            ->whereNotIn('overall_status', ['Completed', 'Dismissed', 'Disposed', 'Appealed'])
+            ->whereNotIn('overall_status', ['Completed', 'Disposed', 'Appealed'])
             ->count();
 
         // ── New cases per month ───────────────────────────────────────────────────
@@ -64,27 +65,51 @@ class ReportController extends Controller
         }
 
         // ── Disposed cases per month ──────────────────────────────────────────────
-        // Disposed = overall_status IN (Completed, Dismissed, Disposed)
-        // Date used = date_of_order_actual (when the order was signed/issued)
-        // Within PCT  = status_pct = 'Within PCT' OR null
-        // Beyond PCT  = status_pct = 'Beyond PCT'
+        // Disposed = archived cases: overall_status IN (Completed, Disposed, Appealed)
+        // Date field: date_of_order_actual if set, otherwise fall back to updated_at
+        //   (date_of_order_actual is null on all current records — cases are archived
+        //    via moveToNextStage() which only sets overall_status, not the date field)
+        // PCT split: status_pct is null on all current records, so all go to Within PCT.
+        //   When staff start filling date_of_order_actual / status_pct, this will
+        //   automatically start using those values instead.
         $disposedWithin = [];
         $disposedBeyond = [];
         for ($m = 1; $m <= 12; $m++) {
             $s = Carbon::create($year, $m, 1)->startOfMonth();
             $e = Carbon::create($year, $m, 1)->endOfMonth();
 
+            // Use date_of_order_actual when available, fall back to updated_at
             $disposedWithin[$m] = (clone $base())
-                ->whereIn('overall_status', ['Completed', 'Dismissed', 'Disposed'])
-                ->whereDate('date_of_order_actual', '>=', $s)
-                ->whereDate('date_of_order_actual', '<=', $e)
+                ->whereIn('overall_status', ['Completed', 'Disposed', 'Appealed'])
+                ->where(fn($q) => $q
+                    ->where(fn($q2) => $q2
+                        ->whereNotNull('date_of_order_actual')
+                        ->whereDate('date_of_order_actual', '>=', $s)
+                        ->whereDate('date_of_order_actual', '<=', $e)
+                    )
+                    ->orWhere(fn($q2) => $q2
+                        ->whereNull('date_of_order_actual')
+                        ->whereDate('updated_at', '>=', $s)
+                        ->whereDate('updated_at', '<=', $e)
+                    )
+                )
                 ->where(fn($q) => $q->where('status_pct', 'Within PCT')->orWhereNull('status_pct'))
                 ->count();
 
             $disposedBeyond[$m] = (clone $base())
-                ->whereIn('overall_status', ['Completed', 'Dismissed', 'Disposed'])
-                ->whereDate('date_of_order_actual', '>=', $s)
-                ->whereDate('date_of_order_actual', '<=', $e)
+                ->whereIn('overall_status', ['Completed', 'Disposed', 'Appealed'])
+                ->where(fn($q) => $q
+                    ->where(fn($q2) => $q2
+                        ->whereNotNull('date_of_order_actual')
+                        ->whereDate('date_of_order_actual', '>=', $s)
+                        ->whereDate('date_of_order_actual', '<=', $e)
+                    )
+                    ->orWhere(fn($q2) => $q2
+                        ->whereNull('date_of_order_actual')
+                        ->whereDate('updated_at', '>=', $s)
+                        ->whereDate('updated_at', '<=', $e)
+                    )
+                )
                 ->where('status_pct', 'Beyond PCT')
                 ->count();
         }
@@ -93,14 +118,28 @@ class ReportController extends Controller
         $selStart = Carbon::create($year, $month, 1)->startOfMonth();
         $selEnd   = Carbon::create($year, $month, 1)->endOfMonth();
 
+        // Same date fallback: date_of_order_actual if set, else updated_at
+        $dateFilter = fn($q) => $q->where(fn($q2) => $q2
+            ->where(fn($q3) => $q3
+                ->whereNotNull('date_of_order_actual')
+                ->whereDate('date_of_order_actual', '>=', $selStart)
+                ->whereDate('date_of_order_actual', '<=', $selEnd)
+            )
+            ->orWhere(fn($q3) => $q3
+                ->whereNull('date_of_order_actual')
+                ->whereDate('updated_at', '>=', $selStart)
+                ->whereDate('updated_at', '<=', $selEnd)
+            )
+        );
+
         $monetary = (clone $base())
-            ->whereDate('date_of_order_actual', '>=', $selStart)
-            ->whereDate('date_of_order_actual', '<=', $selEnd)
+            ->whereIn('overall_status', ['Completed', 'Disposed', 'Appealed'])
+            ->where($dateFilter)
             ->sum('compliance_order_monetary_award') ?? 0;
 
         $workers = (clone $base())
-            ->whereDate('date_of_order_actual', '>=', $selStart)
-            ->whereDate('date_of_order_actual', '<=', $selEnd)
+            ->whereIn('overall_status', ['Completed', 'Disposed', 'Appealed'])
+            ->where($dateFilter)
             ->selectRaw('SUM(COALESCE(affected_male,0) + COALESCE(affected_female,0)) as total')
             ->value('total') ?? 0;
 
@@ -152,7 +191,6 @@ class ReportController extends Controller
         // ── Header block (rows 1–7) ───────────────────────────────────────────────
         $endDay      = Carbon::create($year, $month, 1)->endOfMonth()->day;
         $monthName   = self::MONTH_NAMES[$month];
-        $officeLabel = $office ?: 'DOLE-5 (All Offices)';
 
         foreach (range(1, 7) as $r) {
             $ws->mergeCells("A{$r}:N{$r}");
@@ -169,20 +207,24 @@ class ReportController extends Controller
         $font('A3', true);
 
         $v('A4', "as of {$endDay} {$monthName} {$year}");
-        $v('A5', "Name of Office/Agency: {$officeLabel}");
+        $v('A5', 'Name of Office/Agency: DOLE-5');
         $v('A6', 'Type of Case: Labor Standard Case');
         $v('A7', 'Process Cycle Time: 96 days');
 
         // ── Column headers (row 9) ────────────────────────────────────────────────
+        // Only show columns up to the selected month — future months are hidden.
         $ws->getRowDimension(9)->setRowHeight(22);
-        $headers = [
-            'INDICATORS','TOTAL','JANUARY','FEBRUARY','MARCH','APRIL',
-            'MAY','JUNE','JULY','AUGUST','SEPTEMBER','OCTOBER','NOVEMBER','DECEMBER',
-        ];
-        foreach ($headers as $i => $label) {
-            $col = Coordinate::stringFromColumnIndex($i + 1);
-            $v($col . '9', $label);
+
+        // Fixed columns: Indicators + Total
+        $v('A9', 'INDICATORS');
+        $v('B9', 'TOTAL');
+
+        // All 12 month columns always visible; future months will just show 0
+        for ($m = 1; $m <= 12; $m++) {
+            $col = $this->monthCol($m);
+            $v($col . '9', self::MONTH_NAMES[$m]);
         }
+
         $fill('A9:N9', $BLUE);
         $font('A9:N9', true, $WHITE);
         $align('A9:N9', 'center');
@@ -221,27 +263,37 @@ class ReportController extends Controller
         }
 
         // ── Populate values & formulas ────────────────────────────────────────────
+        // NOTE: For all data rows, months BEYOND the selected month are written as 0.
+        // The DB queries collect all 12 months, but we only show up to $month.
 
-        // Row 12 – Carry-over (Jan col = carryOver; rest = 0)
+        \Illuminate\Support\Facades\Log::info('=== REPORT MONTH DATA ===', [
+            'selected_year'  => $year,
+            'selected_month' => $month,
+            'newByMonth'     => $newByMonth,
+            'disposedWithin' => $disposedWithin,
+            'carryOver'      => $carryOver,
+        ]);
+
+        // Row 12 – Carry-over (only Jan; future months = 0)
         $v('B12', $carryOver);
         for ($m = 1; $m <= 12; $m++) {
             $v($this->monthCol($m) . '12', $m === 1 ? $carryOver : 0);
         }
 
-        // Row 14 – New cases
+        // Row 14 – New cases (0 for months beyond selected)
         for ($m = 1; $m <= 12; $m++) {
-            $v($this->monthCol($m) . '14', $newByMonth[$m]);
+            $v($this->monthCol($m) . '14', $m <= $month ? $newByMonth[$m] : 0);
         }
-        $v('B14', '=SUM(C14:N14)');
+        $v('B14', "=SUM(C14:N14)");
 
-        // Row 17 – Cases handled within PCT
+        // Row 17 – Cases handled within PCT (0 for months beyond selected)
         for ($m = 1; $m <= 12; $m++) {
             $c = $this->monthCol($m);
-            $v($c . '17', ($m === 1 ? $carryOver : 0) + $newByMonth[$m]);
+            $v($c . '17', $m <= $month ? ($m === 1 ? $carryOver : 0) + $newByMonth[$m] : 0);
         }
-        $v('B17', '=SUM(C17:N17)');
+        $v('B17', "=SUM(C17:N17)");
 
-        // Row 18 – Cases handled beyond PCT (0 — PCT tracking is per disposition)
+        // Row 18 – Cases handled beyond PCT (always 0)
         for ($m = 1; $m <= 12; $m++) {
             $v($this->monthCol($m) . '18', 0);
         }
@@ -252,27 +304,28 @@ class ReportController extends Controller
             $c = $this->monthCol($m);
             $v($c . '16', "=SUM({$c}17:{$c}18)");
         }
-        $v('B16', '=SUM(C16:N16)');
+        $v('B16', "=SUM(C16:N16)");
 
         // Row 20 – Total cases handled
         for ($m = 1; $m <= 12; $m++) {
             $c = $this->monthCol($m);
             $v($c . '20', "={$c}12+{$c}14");
         }
-        $v('B20', '=SUM(C20:N20)');
+        $v('B20', "=SUM(C20:N20)");
 
-        // Row 25 – Disposed within PCT
+        // Row 25 – Disposed within PCT (0 for months beyond selected)
         for ($m = 1; $m <= 12; $m++) {
-            $v($this->monthCol($m) . '25', $disposedWithin[$m]);
+            $v($this->monthCol($m) . '25', $m <= $month ? $disposedWithin[$m] : 0);
         }
-        $v('B25', '=SUM(C25:N25)');
+        $v('B25', "=SUM(C25:N25)");
 
-        // Row 26 – Disposed beyond PCT
+        // Row 26 – Disposed beyond PCT (0 for months beyond selected)
         for ($m = 1; $m <= 12; $m++) {
-            $v($this->monthCol($m) . '26', $disposedBeyond[$m]);
+            $v($this->monthCol($m) . '26', $m <= $month ? $disposedBeyond[$m] : 0);
         }
-        $v('B26', '=SUM(C26:N26)');
+        $v('B26', "=SUM(C26:N26)");
 
+        // Row 24 – Disposed total
         // Row 24 – Disposed total
         for ($m = 1; $m <= 12; $m++) {
             $c = $this->monthCol($m);
@@ -281,12 +334,14 @@ class ReportController extends Controller
         $v('B24', '=SUM(B25:B26)');
 
         // Row 28 – Total disposed (mirrors row 24)
+        // Row 28 – Total disposed (mirrors row 24)
         for ($m = 1; $m <= 12; $m++) {
             $c = $this->monthCol($m);
             $v($c . '28', "={$c}24");
         }
-        $v('B28', '=SUM(C28:N28)');
+        $v('B28', "=SUM(C28:N28)");
 
+        // Row 30 – Disposition rate
         // Row 30 – Disposition rate
         for ($m = 1; $m <= 12; $m++) {
             $c = $this->monthCol($m);
@@ -298,19 +353,22 @@ class ReportController extends Controller
         $ws->getStyle('B30')->getNumberFormat()->setFormatCode(NumberFormat::FORMAT_PERCENTAGE);
 
         // Row 33 – Pending within PCT
+        // Row 33 – Pending within PCT
         for ($m = 1; $m <= 12; $m++) {
             $c = $this->monthCol($m);
             $v($c . '33', "={$c}17-{$c}25");
         }
-        $v('B33', '=SUM(C33:N33)');
+        $v('B33', "=SUM(C33:N33)");
 
+        // Row 34 – Pending beyond PCT
         // Row 34 – Pending beyond PCT
         for ($m = 1; $m <= 12; $m++) {
             $c = $this->monthCol($m);
             $v($c . '34', "={$c}18-{$c}26");
         }
-        $v('B34', '=SUM(C34:N34)');
+        $v('B34', "=SUM(C34:N34)");
 
+        // Row 32 – Pending total
         // Row 32 – Pending total
         for ($m = 1; $m <= 12; $m++) {
             $c = $this->monthCol($m);
@@ -319,12 +377,14 @@ class ReportController extends Controller
         $v('B32', '=SUM(B33:B34)');
 
         // Row 36 – Total pending
+        // Row 36 – Total pending
         for ($m = 1; $m <= 12; $m++) {
             $c = $this->monthCol($m);
             $v($c . '36', "={$c}20-{$c}24");
         }
         $v('B36', '=B20-B24');
 
+        // Row 22 – Net cases handled
         // Row 22 – Net cases handled
         for ($m = 1; $m <= 12; $m++) {
             $c = $this->monthCol($m);
@@ -340,7 +400,7 @@ class ReportController extends Controller
             $ws->getStyle($c . '38')->getNumberFormat()
                ->setFormatCode(NumberFormat::FORMAT_NUMBER_COMMA_SEPARATED2);
         }
-        $v('B38', '=SUM(C38:N38)');
+        $v('B38', "=SUM(C38:N38)");
         $ws->getStyle('B38')->getNumberFormat()
            ->setFormatCode(NumberFormat::FORMAT_NUMBER_COMMA_SEPARATED2);
 
@@ -348,7 +408,7 @@ class ReportController extends Controller
         for ($m = 1; $m <= 12; $m++) {
             $v($this->monthCol($m) . '39', $m === $month ? (int)$workers : 0);
         }
-        $v('B39', '=SUM(C39:N39)');
+        $v('B39', "=SUM(C39:N39)");
 
         // ── Alignment for data area ───────────────────────────────────────────────
         $dataRows = [12,14,16,17,18,20,22,24,25,26,28,30,32,33,34,36,38,39];

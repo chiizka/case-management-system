@@ -321,6 +321,7 @@
 
 </div>
 
+{{-- Generate Report Modal --}}
 <div class="modal fade" id="generateReportModal" tabindex="-1" role="dialog" aria-hidden="true">
     <div class="modal-dialog modal-sm" role="document">
         <div class="modal-content">
@@ -338,6 +339,7 @@
                   method="POST"
                   action="{{ route('reports.form1.generate') }}">
                 @csrf
+                <input type="hidden" name="office" value="">
 
                 <div class="modal-body">
 
@@ -352,7 +354,7 @@
                         </select>
                     </div>
 
-                    <div class="form-group">
+                    <div class="form-group mb-0">
                         <label class="font-weight-bold small text-uppercase text-muted mb-1">Month</label>
                         <select name="month" class="form-control form-control-sm" required>
                             @foreach([
@@ -364,19 +366,6 @@
                                     {{ $name }}
                                 </option>
                             @endforeach
-                        </select>
-                    </div>
-
-                    <div class="form-group mb-0">
-                        <label class="font-weight-bold small text-uppercase text-muted mb-1">Office</label>
-                        <select name="office" class="form-control form-control-sm">
-                            <option value="">All Offices (DOLE-5)</option>
-                            <option value="Albay">Albay</option>
-                            <option value="Camarines Sur">Camarines Sur</option>
-                            <option value="Camarines Norte">Camarines Norte</option>
-                            <option value="Catanduanes">Catanduanes</option>
-                            <option value="Masbate">Masbate</option>
-                            <option value="Sorsogon">Sorsogon</option>
                         </select>
                     </div>
 
@@ -398,7 +387,6 @@
         </div>
     </div>
 </div>
-
 
 <script>
 document.getElementById('reportForm').addEventListener('submit', function () {
