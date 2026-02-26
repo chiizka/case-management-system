@@ -92,6 +92,9 @@
 
             Route::post('/reports/form1', [App\Http\Controllers\ReportController::class, 'generateForm1'])
             ->name('reports.form1.generate');
+
+            Route::post('/reports/form3', [App\Http\Controllers\ReportController::class, 'generateForm3'])
+            ->name('reports.form3.generate');
         });
 
         // Remove this duplicate line at the end (line 134):

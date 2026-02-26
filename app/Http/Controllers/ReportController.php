@@ -462,4 +462,304 @@ class ReportController extends Controller
             'Content-Disposition' => 'attachment',
         ]);
     }
+
+    // ══════════════════════════════════════════════════════════════════════════
+    //  FORM NO. 3 — Execution and Satisfaction of Decisions/Orders
+    // ══════════════════════════════════════════════════════════════════════════
+    public function generateForm3(Request $request)
+    {
+        $request->validate([
+            'year'  => 'required|integer|min:2020|max:2099',
+            'month' => 'required|integer|min:1|max:12',
+        ]);
+
+        $year  = (int) $request->year;
+        $month = (int) $request->month;
+
+        // Month col mapping: Jan=D(col4), Feb=E(5) ... Dec=O(15)
+        $mCol = fn(int $m): string => \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($m + 3);
+
+        // ── New Decisions = disposed/archived cases, per month up to selected ──
+        $newDecisions = [];
+        for ($m = 1; $m <= 12; $m++) {
+            if ($m > $month) {
+                $newDecisions[$m] = 0;
+                continue;
+            }
+            $s = Carbon::create($year, $m, 1)->startOfMonth();
+            $e = Carbon::create($year, $m, 1)->endOfMonth();
+            $newDecisions[$m] = CaseFile::whereIn('overall_status', ['Completed', 'Disposed', 'Appealed'])
+                ->where(fn($q) => $q
+                    ->where(fn($q2) => $q2->whereNotNull('date_of_order_actual')
+                        ->whereDate('date_of_order_actual', '>=', $s)
+                        ->whereDate('date_of_order_actual', '<=', $e))
+                    ->orWhere(fn($q2) => $q2->whereNull('date_of_order_actual')
+                        ->whereDate('updated_at', '>=', $s)
+                        ->whereDate('updated_at', '<=', $e))
+                )->count();
+        }
+
+        // Monetary award for selected month only
+        $selStart = Carbon::create($year, $month, 1)->startOfMonth();
+        $selEnd   = Carbon::create($year, $month, 1)->endOfMonth();
+        $monetary = CaseFile::whereIn('overall_status', ['Completed', 'Disposed', 'Appealed'])
+            ->where(fn($q) => $q
+                ->where(fn($q2) => $q2->whereNotNull('date_of_order_actual')
+                    ->whereDate('date_of_order_actual', '>=', $selStart)
+                    ->whereDate('date_of_order_actual', '<=', $selEnd))
+                ->orWhere(fn($q2) => $q2->whereNull('date_of_order_actual')
+                    ->whereDate('updated_at', '>=', $selStart)
+                    ->whereDate('updated_at', '<=', $selEnd))
+            )->sum('compliance_order_monetary_award') ?? 0;
+
+        // ── Build spreadsheet ─────────────────────────────────────────────────
+        $spreadsheet = new Spreadsheet();
+        $ws = $spreadsheet->getActiveSheet();
+        $ws->setTitle('STATISTICAL TABLE Part 1');
+
+        // Column widths
+        $ws->getColumnDimension('A')->setWidth(30);
+        $ws->getColumnDimension('B')->setWidth(44);
+        $ws->getColumnDimension('C')->setWidth(12);
+        foreach (range('D', 'O') as $c) {
+            $ws->getColumnDimension($c)->setWidth(10);
+        }
+
+        // Colours
+        $BLUE  = '003087'; $WHITE = 'FFFFFF'; $LBLUE = 'D6E4F0';
+        $YELL  = 'FFF3CD'; $GREEN = 'D4EDDA'; $GRAY  = 'F2F2F2';
+        $ORNG  = 'FCE4D6';
+
+        // Style helpers
+        $fill = fn(string $r, string $h) =>
+            $ws->getStyle($r)->getFill()->setFillType(Fill::FILL_SOLID)
+               ->getStartColor()->setARGB('FF'.$h);
+        $font = fn(string $r, bool $b=false, string $c='000000', int $s=9) =>
+            $ws->getStyle($r)->getFont()->setName('Arial')->setSize($s)->setBold($b)
+               ->getColor()->setARGB('FF'.$c);
+        $al = fn(string $r, string $h='left', string $v='center') =>
+            $ws->getStyle($r)->getAlignment()->setHorizontal($h)->setVertical($v)->setWrapText(true);
+        $bd = fn(string $r) =>
+            $ws->getStyle($r)->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
+        $mg = fn(string $r) => $ws->mergeCells($r);
+        $v  = fn(string $cell, $val) => $ws->setCellValue($cell, $val);
+
+        $monthName      = self::MONTH_NAMES[$month];
+        $monthNameTitle = ucwords(strtolower($monthName));
+
+        // ── Header rows 1–9 ──────────────────────────────────────────────────
+        foreach (range(1,9) as $r) {
+            $mg("A{$r}:O{$r}");
+            $ws->getRowDimension($r)->setRowHeight(13);
+        }
+        $v('A1', 'Project Speed Form No. 3');       $font('A1', true, $BLUE, 12);
+        $v('A3', 'PROJECT SPEED 7');                $font('A3', true, '000000', 10);
+        $v('A4', 'REPORT ON EXECUTION AND SATISFACTION OF DECISIONS/ORDERS BY MONTH:  PHILIPPINES');
+        $v('A5', 'ORIGINAL CASES');
+        $v('A6', 'Name of Office/Agency:  DOLE Region V');
+        $v('A7', "As of {$monthNameTitle} {$year}");
+        $v('A9', 'Part 1:  BEFORE THE ISSUANCE OF WRIT OF EXECUTION');
+        $font('A9', true, $BLUE);
+
+        // ── Column header row 10 ─────────────────────────────────────────────
+        $ws->getRowDimension(10)->setRowHeight(20);
+        $mg('A10:B10');
+        $v('A10', 'INDICATORS');
+        $v('C10', 'TOTAL');
+        $mNames = ['January','February','March','April','May','June',
+                   'July','August','September','October','November','December'];
+        foreach ($mNames as $i => $mn) { $v($mCol($i+1).'10', $mn); }
+        $fill('A10:O10', $BLUE); $font('A10:O10', true, $WHITE); $al('A10:O10','center'); $bd('A10:O10');
+
+        // ── Helper: write a data row (all months, total=SUM formula) ─────────
+        $dataRow = function(int $row, array $vals, bool $subRow=false) use ($ws,$v,$mCol,$al,$bd,$font) {
+            $v('C'.$row, '=SUM(D'.$row.':O'.$row.')');
+            for ($m=1;$m<=12;$m++) { $v($mCol($m).$row, $vals[$m] ?? 0); }
+            $al('C'.$row.':O'.$row, 'center');
+            $bd('A'.$row.':O'.$row);
+            $ws->getRowDimension($row)->setRowHeight($subRow ? 14 : 20);
+        };
+
+        // ── Row 11: Carry-over (all zeros) ────────────────────────────────────
+        $mg('A11:B11');
+        $v('A11', 'CARRY-OVER DECISIONS/ COMPLIANCE ORDERS ISSUED');
+        $font('A11', true); $ws->getRowDimension(11)->setRowHeight(28);
+        $dataRow(11, array_fill(1,12,0));
+
+        // ── Row 12: Carry-over monetary (sub-row, gray) ───────────────────────
+        $ws->getRowDimension(12)->setRowHeight(14);
+        $v('B12', 'Total Monetary Award');
+        $v('D12', '-');
+        $al('B12:O12','center'); $bd('A12:O12'); $fill('A12:O12',$GRAY);
+
+        // ── Row 14: New decisions ─────────────────────────────────────────────
+        $mg('A14:B14');
+        $v('A14', 'Add:   NEW DECISIONS/ COMPLIANCE ORDERS ISSUED');
+        $font('A14', true); $ws->getRowDimension(14)->setRowHeight(20);
+        $dataRow(14, $newDecisions);
+
+        // ── Row 15: Monetary award new decisions (gray sub-row) ───────────────
+        $ws->getRowDimension(15)->setRowHeight(14);
+        $v('B15', 'Monetary Award (New Decisions/ Compliance Orders)');
+        $v('C15', '=SUM(D15:O15)');
+        $v('D15', round((float)$monetary, 2));
+        for ($m=2;$m<=12;$m++) { $v($mCol($m).'15', 0); }
+        $ws->getStyle('C15:O15')->getNumberFormat()->setFormatCode(NumberFormat::FORMAT_NUMBER_COMMA_SEPARATED2);
+        $al('C15:O15','center'); $bd('A15:O15'); $fill('A15:O15',$GRAY);
+
+        // ── Row 16: Total decisions handled ──────────────────────────────────
+        $mg('A16:B16');
+        $v('A16', 'TOTAL DECISIONS/ COMPLIANCE ORDERS HANDLED');
+        $font('A16', true); $ws->getRowDimension(16)->setRowHeight(20);
+        $v('C16', '=SUM(D16:O16)');
+        for ($m=1;$m<=12;$m++) { $col=$mCol($m); $v($col.'16', "={$col}11+{$col}14"); }
+        $al('C16:O16','center'); $bd('A16:O16'); $fill('A16:O16',$YELL); $font('A16:O16',true);
+
+        // ── Row 17: Monetary award carry-over+new (gray sub-row) ─────────────
+        $ws->getRowDimension(17)->setRowHeight(14);
+        $v('B17', 'Monetary Award (Carry-Over and New Decisions/ Compliance Orders)');
+        $al('C17:O17','center'); $bd('A17:O17'); $fill('A17:O17',$GRAY);
+
+        // ── Row 19: Section — Complied before finality ────────────────────────
+        $mg('A19:O19');
+        $v('A19', 'COMPLIED WITH BEFORE ISSUANCE OF FINALITY');
+        $fill('A19:O19',$LBLUE); $font('A19:O19',true,$BLUE); $al('A19:O19','left'); $bd('A19:O19');
+        $ws->getRowDimension(19)->setRowHeight(20);
+
+        // ── Row 21: Voluntarily complied before finality ──────────────────────
+        $mg('A21:B21');
+        $v('A21', 'NO. OF DECISIONS/ COMPLIANCE ORDERS VOLUNTARILY COMPLIED WITH BEFORE ISSUANCE OF FINALITY');
+        $font('A21', true); $ws->getRowDimension(21)->setRowHeight(36);
+        $dataRow(21, array_fill(1,12,0));
+
+        // ── Rows 23–25: Full judgment before finality (gray sub-rows) ─────────
+        foreach ([23=>'NO. OF DECISIONS WITH FULL JUDGMENT AWARD PAID',
+                  24=>'Amount of Judgment Award',
+                  25=>'Workers Benefitted'] as $row=>$lbl) {
+            $v('B'.$row, $lbl);
+            $dataRow($row, array_fill(1,12,0), true);
+            $fill("A{$row}:O{$row}", $GRAY);
+        }
+
+        // ── Rows 27–29: Compromise before finality (gray sub-rows) ───────────
+        foreach ([27=>'NO. OF DECISIONS SATISFIED THROUGH COMPROMISE SETTLEMENT',
+                  28=>'Amount of Monetary Award',
+                  29=>'Workers Benefitted'] as $row=>$lbl) {
+            $v('B'.$row, $lbl);
+            $dataRow($row, array_fill(1,12,0), true);
+            $fill("A{$row}:O{$row}", $GRAY);
+        }
+
+        // ── Row 31: Section — Complied after finality ─────────────────────────
+        $mg('A31:O31');
+        $v('A31', 'COMPLIED WITH AFTER ISSUANCE OF FINALITY');
+        $fill('A31:O31',$LBLUE); $font('A31:O31',true,$BLUE); $al('A31:O31','left'); $bd('A31:O31');
+        $ws->getRowDimension(31)->setRowHeight(20);
+
+        // ── Row 33: Notice of finality ────────────────────────────────────────
+        $mg('A33:B33');
+        $v('A33', 'NO. OF DECISIONS / ORDERS WITH NOTICE OF FINALITY');
+        $font('A33', true); $ws->getRowDimension(33)->setRowHeight(28);
+        $dataRow(33, array_fill(1,12,0));
+
+        // ── Row 35: Voluntarily complied after finality ───────────────────────
+        $mg('A35:B35');
+        $v('A35', 'NO. OF DECISIONS / ORDERS WITH NOTICE OF FINALITY VOLUNTARILY COMPLIED WITH');
+        $font('A35', true); $ws->getRowDimension(35)->setRowHeight(36);
+        $dataRow(35, array_fill(1,12,0));
+
+        // ── Rows 37–39: Full judgment after finality (gray sub-rows) ──────────
+        foreach ([37=>'NO. OF DECISIONS WITH FULL JUDGMENT AWARD PAID',
+                  38=>'Amount of Judgment Award',
+                  39=>'Workers Benefitted'] as $row=>$lbl) {
+            $v('B'.$row, $lbl);
+            $dataRow($row, array_fill(1,12,0), true);
+            $fill("A{$row}:O{$row}", $GRAY);
+        }
+
+        // ── Rows 41–43: Compromise after finality (gray sub-rows) ────────────
+        foreach ([41=>'NO. OF DECISIONS SATISFIED THROUGH COMPROMISE SETTLEMENT',
+                  42=>'Amount of Monetary Award',
+                  43=>'Workers Benefitted'] as $row=>$lbl) {
+            $v('B'.$row, $lbl);
+            $dataRow($row, array_fill(1,12,0), true);
+            $fill("A{$row}:O{$row}", $GRAY);
+        }
+
+        // ── Row 45: Total voluntarily complied ───────────────────────────────
+        $mg('A45:B45');
+        $v('A45', 'TOTAL NO. OF DECISIONS/ COMPLIANCE ORDERS COMPLIED WITH VOLUNTARILY (BEFORE AND AFTER ISSUANCE OF FINALITY)');
+        $font('A45', true); $ws->getRowDimension(45)->setRowHeight(36);
+        $v('C45', '=SUM(D45:O45)');
+        for ($m=1;$m<=12;$m++) { $col=$mCol($m); $v($col.'45', "={$col}21+{$col}35"); }
+        $al('C45:O45','center'); $bd('A45:O45'); $fill('A45:O45',$YELL); $font('A45:O45',true);
+
+        // ── Rows 46–47: Monetary & workers in voluntary compliance (gray) ──────
+        foreach ([46=>'Total Monetary Award in Voluntary Compliance',
+                  47=>'Total No. of Workers Benefitted'] as $row=>$lbl) {
+            $v('B'.$row, $lbl);
+            $dataRow($row, array_fill(1,12,0), true);
+            $fill("A{$row}:O{$row}", $GRAY);
+        }
+
+        // ── Row 48: Voluntary satisfaction rate ──────────────────────────────
+        $mg('A48:B48');
+        $v('A48', 'VOLUNTARY SATISFACTION RATE');
+        $font('A48', true); $ws->getRowDimension(48)->setRowHeight(20);
+        $v('C48', '=IF(C16=0,0,C45/C16)');
+        $ws->getStyle('C48')->getNumberFormat()->setFormatCode(NumberFormat::FORMAT_PERCENTAGE);
+        $al('C48:O48','center'); $bd('A48:O48'); $fill('A48:O48',$GREEN); $font('A48:O48',true);
+
+        // ── Row 49: Non-monetary award header ────────────────────────────────
+        $mg('A49:B49');
+        $v('A49', 'NON-MONETARY AWARD');
+        $font('A49', true, $BLUE); $ws->getRowDimension(49)->setRowHeight(16);
+        $fill('A49:O49',$LBLUE); $al('A49:O49','left'); $bd('A49:O49');
+
+        // ── Rows 50–52: Non-monetary sub-rows ────────────────────────────────
+        foreach ([50=>'No. of Workers Regularized/Absorbed',
+                  51=>'No. of Workers Reinstated',
+                  52=>'Others (Please Specify)'] as $row=>$lbl) {
+            $v('B'.$row, $lbl);
+            $dataRow($row, array_fill(1,12,0), true);
+            $fill("A{$row}:O{$row}", $GRAY);
+        }
+
+        // ── Row 53: Total fines/penalties ─────────────────────────────────────
+        $mg('A53:B53');
+        $v('A53', 'TOTAL AMOUNT OF FINES/ PENALTIES');
+        $font('A53', true); $ws->getRowDimension(53)->setRowHeight(20);
+        $dataRow(53, array_fill(1,12,0));
+        $fill('A53:O53',$YELL); $font('A53:O53',true);
+
+        // ── Row 54: Pending decisions ─────────────────────────────────────────
+        $mg('A54:B54');
+        $v('A54', 'PENDING DECISIONS/ COMPLIANCE ORDERS ISSUED');
+        $font('A54', true); $ws->getRowDimension(54)->setRowHeight(28);
+        $v('C54', '=C16-C45');
+        for ($m=1;$m<=12;$m++) { $col=$mCol($m); $v($col.'54', "={$col}16-{$col}45"); }
+        $al('C54:O54','center'); $bd('A54:O54'); $fill('A54:O54',$ORNG); $font('A54:O54',true);
+
+        // ── Collapse empty gap rows (34, 36, 40, 44) to zero height ─────────
+        foreach ([34, 36, 40, 44] as $emptyRow) {
+            $ws->getRowDimension($emptyRow)->setRowHeight(3);
+        }
+
+        // ── Left-align indicator column, freeze header ────────────────────────
+        $al('A1:B60','left');
+        $ws->freezePane('D11');
+
+        // ── Stream download ───────────────────────────────────────────────────
+        $filename = "Form3_{$monthName}_{$year}.xlsx";
+        $writer   = new Xlsx($spreadsheet);
+
+        return response()->streamDownload(function () use ($writer) {
+            if (ob_get_level() > 0) { ob_clean(); }
+            $writer->save('php://output');
+        }, $filename, [
+            'Content-Type'        => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'Cache-Control'       => 'max-age=0',
+            'Content-Disposition' => 'attachment',
+        ]);
+    }
 }

@@ -22,7 +22,6 @@
 
     {{-- Stat Cards --}}
     <div class="row">
-
         <div class="col-xl-3 col-md-6 mb-4">
             <div class="card border-left-primary shadow h-100 py-2">
                 <div class="card-body">
@@ -32,14 +31,11 @@
                             <div class="h5 mb-0 font-weight-bold text-gray-800">32</div>
                             <div class="text-xs text-muted mt-1">January 2026</div>
                         </div>
-                        <div class="col-auto">
-                            <i class="fas fa-folder-open fa-2x text-gray-300"></i>
-                        </div>
+                        <div class="col-auto"><i class="fas fa-folder-open fa-2x text-gray-300"></i></div>
                     </div>
                 </div>
             </div>
         </div>
-
         <div class="col-xl-3 col-md-6 mb-4">
             <div class="card border-left-warning shadow h-100 py-2">
                 <div class="card-body">
@@ -49,14 +45,11 @@
                             <div class="h5 mb-0 font-weight-bold text-gray-800">24</div>
                             <div class="text-xs text-muted mt-1">From previous year</div>
                         </div>
-                        <div class="col-auto">
-                            <i class="fas fa-sync-alt fa-2x text-gray-300"></i>
-                        </div>
+                        <div class="col-auto"><i class="fas fa-sync-alt fa-2x text-gray-300"></i></div>
                     </div>
                 </div>
             </div>
         </div>
-
         <div class="col-xl-3 col-md-6 mb-4">
             <div class="card border-left-success shadow h-100 py-2">
                 <div class="card-body">
@@ -66,14 +59,11 @@
                             <div class="h5 mb-0 font-weight-bold text-gray-800">8</div>
                             <div class="text-xs text-muted mt-1">Filed in January</div>
                         </div>
-                        <div class="col-auto">
-                            <i class="fas fa-plus-circle fa-2x text-gray-300"></i>
-                        </div>
+                        <div class="col-auto"><i class="fas fa-plus-circle fa-2x text-gray-300"></i></div>
                     </div>
                 </div>
             </div>
         </div>
-
         <div class="col-xl-3 col-md-6 mb-4">
             <div class="card border-left-info shadow h-100 py-2">
                 <div class="card-body">
@@ -83,20 +73,15 @@
                             <div class="h5 mb-0 font-weight-bold text-gray-800">100%</div>
                             <div class="text-xs text-muted mt-1">New cases disposed</div>
                         </div>
-                        <div class="col-auto">
-                            <i class="fas fa-check-circle fa-2x text-gray-300"></i>
-                        </div>
+                        <div class="col-auto"><i class="fas fa-check-circle fa-2x text-gray-300"></i></div>
                     </div>
                 </div>
             </div>
         </div>
-
     </div>
 
     {{-- PCT Breakdown + Disposed vs Pending --}}
     <div class="row">
-
-        {{-- PCT Status --}}
         <div class="col-lg-6 mb-4">
             <div class="card shadow mb-4">
                 <div class="card-header py-3 d-flex align-items-center justify-content-between">
@@ -104,47 +89,40 @@
                     <span class="badge badge-primary">96-day limit</span>
                 </div>
                 <div class="card-body">
-
                     <div class="mb-3">
                         <div class="d-flex justify-content-between small mb-1">
                             <span class="font-weight-bold">Cases Handled</span>
                             <span class="text-muted">Within: 32 &nbsp;·&nbsp; Beyond: 0</span>
                         </div>
-                        <div class="progress" style="height: 10px;">
-                            <div class="progress-bar bg-success" style="width: 100%"></div>
+                        <div class="progress" style="height:10px;">
+                            <div class="progress-bar bg-success" style="width:100%"></div>
                         </div>
                     </div>
-
                     <div class="mb-3">
                         <div class="d-flex justify-content-between small mb-1">
                             <span class="font-weight-bold">Disposed Cases</span>
                             <span class="text-muted">Within: 8 &nbsp;·&nbsp; Beyond: 0</span>
                         </div>
-                        <div class="progress" style="height: 10px;">
-                            <div class="progress-bar bg-success" style="width: 100%"></div>
+                        <div class="progress" style="height:10px;">
+                            <div class="progress-bar bg-success" style="width:100%"></div>
                         </div>
                     </div>
-
                     <div class="mb-1">
                         <div class="d-flex justify-content-between small mb-1">
                             <span class="font-weight-bold">Pending Cases</span>
                             <span class="text-warning font-weight-bold">24 remaining</span>
                         </div>
-                        <div class="progress" style="height: 10px;">
-                            <div class="progress-bar bg-warning" style="width: 75%"></div>
+                        <div class="progress" style="height:10px;">
+                            <div class="progress-bar bg-warning" style="width:75%"></div>
                         </div>
                     </div>
-
                     <div class="mt-3 small text-muted">
                         <span class="mr-3"><i class="fas fa-circle text-success mr-1"></i> Within PCT</span>
                         <span><i class="fas fa-circle text-danger mr-1"></i> Beyond PCT</span>
                     </div>
-
                 </div>
             </div>
         </div>
-
-        {{-- Disposed vs Pending --}}
         <div class="col-lg-6 mb-4">
             <div class="card shadow mb-4">
                 <div class="card-header py-3">
@@ -198,7 +176,6 @@
                 </div>
             </div>
         </div>
-
     </div>
 
     {{-- Monthly Breakdown Table --}}
@@ -229,86 +206,60 @@
                             <tbody>
                                 <tr>
                                     <td>Carry-Over Cases</td>
-                                    <td class="text-center">24</td>
-                                    <td class="text-center">24</td>
-                                    <td class="text-center text-muted">—</td>
-                                    <td class="text-center text-muted">—</td>
-                                    <td class="text-center text-muted">—</td>
-                                    <td class="text-center text-muted">—</td>
-                                    <td class="text-center text-muted">—</td>
-                                    <td class="text-center text-muted">—</td>
+                                    <td class="text-center">24</td><td class="text-center">24</td>
+                                    <td class="text-center text-muted">—</td><td class="text-center text-muted">—</td>
+                                    <td class="text-center text-muted">—</td><td class="text-center text-muted">—</td>
+                                    <td class="text-center text-muted">—</td><td class="text-center text-muted">—</td>
                                     <td class="text-center"><span class="badge badge-primary">Ongoing</span></td>
                                 </tr>
                                 <tr>
                                     <td>New Cases</td>
-                                    <td class="text-center">8</td>
-                                    <td class="text-center">8</td>
-                                    <td class="text-center">0</td>
-                                    <td class="text-center">0</td>
-                                    <td class="text-center">0</td>
-                                    <td class="text-center">0</td>
-                                    <td class="text-center">0</td>
-                                    <td class="text-center">0</td>
+                                    <td class="text-center">8</td><td class="text-center">8</td>
+                                    <td class="text-center">0</td><td class="text-center">0</td>
+                                    <td class="text-center">0</td><td class="text-center">0</td>
+                                    <td class="text-center">0</td><td class="text-center">0</td>
                                     <td class="text-center"><span class="badge badge-success">Within PCT</span></td>
                                 </tr>
                                 <tr>
                                     <td>Cases Handled (Within PCT)</td>
-                                    <td class="text-center">32</td>
-                                    <td class="text-center">32</td>
-                                    <td class="text-center">0</td>
-                                    <td class="text-center">0</td>
-                                    <td class="text-center">0</td>
-                                    <td class="text-center">0</td>
-                                    <td class="text-center">0</td>
-                                    <td class="text-center">0</td>
+                                    <td class="text-center">32</td><td class="text-center">32</td>
+                                    <td class="text-center">0</td><td class="text-center">0</td>
+                                    <td class="text-center">0</td><td class="text-center">0</td>
+                                    <td class="text-center">0</td><td class="text-center">0</td>
                                     <td class="text-center"><span class="badge badge-success">✓ Within PCT</span></td>
                                 </tr>
                                 <tr>
                                     <td>Cases Handled (Beyond PCT)</td>
-                                    <td class="text-center">0</td>
-                                    <td class="text-center">0</td>
-                                    <td class="text-center">0</td>
-                                    <td class="text-center">0</td>
-                                    <td class="text-center">0</td>
-                                    <td class="text-center">0</td>
-                                    <td class="text-center">0</td>
-                                    <td class="text-center">0</td>
+                                    <td class="text-center">0</td><td class="text-center">0</td>
+                                    <td class="text-center">0</td><td class="text-center">0</td>
+                                    <td class="text-center">0</td><td class="text-center">0</td>
+                                    <td class="text-center">0</td><td class="text-center">0</td>
                                     <td class="text-center"><span class="badge badge-success">None</span></td>
                                 </tr>
                                 <tr>
                                     <td>Disposed Cases</td>
-                                    <td class="text-center">8</td>
-                                    <td class="text-center">8</td>
-                                    <td class="text-center">0</td>
-                                    <td class="text-center">0</td>
-                                    <td class="text-center">0</td>
-                                    <td class="text-center">0</td>
-                                    <td class="text-center">0</td>
-                                    <td class="text-center">0</td>
+                                    <td class="text-center">8</td><td class="text-center">8</td>
+                                    <td class="text-center">0</td><td class="text-center">0</td>
+                                    <td class="text-center">0</td><td class="text-center">0</td>
+                                    <td class="text-center">0</td><td class="text-center">0</td>
                                     <td class="text-center"><span class="badge badge-success">Within PCT</span></td>
                                 </tr>
                                 <tr>
                                     <td>Pending Cases</td>
                                     <td class="text-center text-warning font-weight-bold">24</td>
                                     <td class="text-center">24</td>
-                                    <td class="text-center">0</td>
-                                    <td class="text-center">0</td>
-                                    <td class="text-center">0</td>
-                                    <td class="text-center">0</td>
-                                    <td class="text-center">0</td>
-                                    <td class="text-center">0</td>
+                                    <td class="text-center">0</td><td class="text-center">0</td>
+                                    <td class="text-center">0</td><td class="text-center">0</td>
+                                    <td class="text-center">0</td><td class="text-center">0</td>
                                     <td class="text-center"><span class="badge badge-warning">Monitoring</span></td>
                                 </tr>
                                 <tr class="table-success">
                                     <td><strong>Disposition Rate</strong></td>
                                     <td class="text-center text-success font-weight-bold">100%</td>
                                     <td class="text-center">100%</td>
-                                    <td class="text-center text-muted">—</td>
-                                    <td class="text-center text-muted">—</td>
-                                    <td class="text-center text-muted">—</td>
-                                    <td class="text-center text-muted">—</td>
-                                    <td class="text-center text-muted">—</td>
-                                    <td class="text-center text-muted">—</td>
+                                    <td class="text-center text-muted">—</td><td class="text-center text-muted">—</td>
+                                    <td class="text-center text-muted">—</td><td class="text-center text-muted">—</td>
+                                    <td class="text-center text-muted">—</td><td class="text-center text-muted">—</td>
                                     <td class="text-center"><span class="badge badge-success">✓ Target Met</span></td>
                                 </tr>
                             </tbody>
@@ -328,76 +279,127 @@
 
             <div class="modal-header bg-primary text-white py-3">
                 <h5 class="modal-title font-weight-bold">
-                    <i class="fas fa-file-excel mr-2"></i> Generate Form No. 1
+                    <i class="fas fa-file-excel mr-2"></i> Generate Report
                 </h5>
                 <button class="close text-white" type="button" data-dismiss="modal">
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
 
-            <form id="reportForm"
-                  method="POST"
-                  action="{{ route('reports.form1.generate') }}">
-                @csrf
-                <input type="hidden" name="office" value="">
+            <div class="modal-body">
 
-                <div class="modal-body">
-
-                    <div class="form-group">
-                        <label class="font-weight-bold small text-uppercase text-muted mb-1">Year</label>
-                        <select name="year" class="form-control form-control-sm" required>
-                            @for ($y = now()->year; $y >= 2020; $y--)
-                                <option value="{{ $y }}" {{ $y == now()->year ? 'selected' : '' }}>
-                                    {{ $y }}
-                                </option>
-                            @endfor
-                        </select>
+                <div class="form-group">
+                    <label class="font-weight-bold small text-uppercase text-muted mb-1">Form</label>
+                    <div class="btn-group btn-group-sm w-100" id="formToggle">
+                        <button type="button" class="btn btn-primary active" data-form="1">
+                            Form No. 1
+                        </button>
+                        <button type="button" class="btn btn-outline-primary" data-form="3">
+                            Form No. 3
+                        </button>
                     </div>
-
-                    <div class="form-group mb-0">
-                        <label class="font-weight-bold small text-uppercase text-muted mb-1">Month</label>
-                        <select name="month" class="form-control form-control-sm" required>
-                            @foreach([
-                                1=>'January',2=>'February',3=>'March',4=>'April',
-                                5=>'May',6=>'June',7=>'July',8=>'August',
-                                9=>'September',10=>'October',11=>'November',12=>'December'
-                            ] as $num => $name)
-                                <option value="{{ $num }}" {{ $num == now()->month ? 'selected' : '' }}>
-                                    {{ $name }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
-
+                    <small class="text-muted mt-1 d-block" id="formDescription">
+                        Cases handled by month
+                    </small>
                 </div>
 
-                <div class="modal-footer py-2">
-                    <button type="button"
-                            class="btn btn-secondary btn-sm"
-                            data-dismiss="modal">Cancel</button>
-                    <button type="submit"
-                            class="btn btn-success btn-sm"
-                            id="generateBtn">
-                        <i class="fas fa-file-excel mr-1"></i> Download
-                    </button>
+                <div class="form-group">
+                    <label class="font-weight-bold small text-uppercase text-muted mb-1">Year</label>
+                    <select id="reportYear" class="form-control form-control-sm" required>
+                        @for ($y = now()->year; $y >= 2020; $y--)
+                            <option value="{{ $y }}" {{ $y == now()->year ? 'selected' : '' }}>
+                                {{ $y }}
+                            </option>
+                        @endfor
+                    </select>
                 </div>
 
-            </form>
+                <div class="form-group mb-0">
+                    <label class="font-weight-bold small text-uppercase text-muted mb-1">Month</label>
+                    <select id="reportMonth" class="form-control form-control-sm" required>
+                        @foreach([1=>'January',2=>'February',3=>'March',4=>'April',
+                                  5=>'May',6=>'June',7=>'July',8=>'August',
+                                  9=>'September',10=>'October',11=>'November',12=>'December']
+                                 as $num => $name)
+                            <option value="{{ $num }}" {{ $num == now()->month ? 'selected' : '' }}>
+                                {{ $name }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+
+            </div>
+
+            <div class="modal-footer py-2">
+                <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-success btn-sm" id="generateBtn"
+                        onclick="submitReport()">
+                    <i class="fas fa-file-excel mr-1"></i> Download
+                </button>
+            </div>
 
         </div>
     </div>
 </div>
 
+{{-- Hidden forms — one per report type --}}
+<form id="form1Action" method="POST" action="{{ route('reports.form1.generate') }}" style="display:none">
+    @csrf
+    <input type="hidden" name="office" value="">
+    <input type="hidden" name="year"  id="f1year">
+    <input type="hidden" name="month" id="f1month">
+</form>
+
+<form id="form3Action" method="POST" action="{{ route('reports.form3.generate') }}" style="display:none">
+    @csrf
+    <input type="hidden" name="year"  id="f3year">
+    <input type="hidden" name="month" id="f3month">
+</form>
+
 <script>
-document.getElementById('reportForm').addEventListener('submit', function () {
-    var btn = document.getElementById('generateBtn');
-    btn.disabled = true;
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Generating…';
-    setTimeout(function () {
-        btn.disabled = false;
-        btn.innerHTML = '<i class="fas fa-file-excel mr-1"></i> Download';
-        $('#generateReportModal').modal('hide');
-    }, 5000);
-});
+    var selectedForm = '1';
+
+    // Toggle active form button
+    document.querySelectorAll('#formToggle .btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            document.querySelectorAll('#formToggle .btn').forEach(function(b) {
+                b.classList.remove('btn-primary', 'active');
+                b.classList.add('btn-outline-primary');
+            });
+            this.classList.remove('btn-outline-primary');
+            this.classList.add('btn-primary', 'active');
+            selectedForm = this.dataset.form;
+            document.getElementById('formDescription').textContent =
+                selectedForm === '1'
+                    ? 'Cases handled by month'
+                    : 'Execution & satisfaction of decisions/orders';
+        });
+    });
+
+    function submitReport() {
+        var year  = document.getElementById('reportYear').value;
+        var month = document.getElementById('reportMonth').value;
+        var btn   = document.getElementById('generateBtn');
+
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Generating…';
+
+        if (selectedForm === '3') {
+            document.getElementById('f3year').value  = year;
+            document.getElementById('f3month').value = month;
+            document.getElementById('form3Action').submit();
+        } else {
+            document.getElementById('f1year').value  = year;
+            document.getElementById('f1month').value = month;
+            document.getElementById('form1Action').submit();
+        }
+
+        setTimeout(function() {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-file-excel mr-1"></i> Download';
+            $('#generateReportModal').modal('hide');
+        }, 5000);
+    }
 </script>
+
 @endsection
