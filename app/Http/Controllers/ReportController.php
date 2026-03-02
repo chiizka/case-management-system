@@ -518,7 +518,7 @@ class ReportController extends Controller
         $ws->setTitle('STATISTICAL TABLE Part 1');
 
         // Column widths
-        $ws->getColumnDimension('A')->setWidth(30);
+        $ws->getColumnDimension('A')->setWidth(2);
         $ws->getColumnDimension('B')->setWidth(44);
         $ws->getColumnDimension('C')->setWidth(12);
         foreach (range('D', 'O') as $c) {
