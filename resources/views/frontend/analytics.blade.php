@@ -92,11 +92,10 @@
                 <div class="card-body">
                     <div class="row no-gutters align-items-center">
                         <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Total Cases Handled</div>
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Total Cases</div>
                             <div class="h4 mb-0 font-weight-bold text-gray-800">{{ number_format($totalHandled) }}</div>
                             <div class="kpi-sub text-muted">
-                                {{ number_format($carryOver) }} carry-over
-                                + {{ number_format($newCases) }} new this month
+                               <div class="kpi-sub text-muted">Month of {{ $currentMonthName }} {{ $year }}</div>
                             </div>
                         </div>
                         <div class="col-auto">
@@ -301,10 +300,10 @@
 
     </div>
 
-    {{-- ── Row 3: Monthly Trend Chart + Stage Distribution ─────────────── --}}
+    {{-- ── Row 3: Monthly Trend Chart (full width) ──────────────────────── --}}
     <div class="row mb-4">
 
-        <div class="col-lg-8 mb-4">
+        <div class="col-12 mb-4">
             <div class="card shadow h-100">
                 <div class="card-header py-3 d-flex align-items-center justify-content-between">
                     <h6 class="m-0 font-weight-bold text-primary">Monthly Trend — {{ $year }}</h6>
@@ -318,56 +317,7 @@
                     </div>
                 </div>
                 <div class="card-body">
-                    <canvas id="trendChart" height="130"></canvas>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-lg-4 mb-4">
-            <div class="card shadow h-100">
-                <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold text-primary">Active Cases by Stage</h6>
-                </div>
-                <div class="card-body p-0">
-                    @php
-                        $stageMap = [
-                            1 => ['label'=>'Inspection',        'color'=>'primary'],
-                            2 => ['label'=>'Docketing',         'color'=>'info'],
-                            3 => ['label'=>'Hearing',           'color'=>'warning'],
-                            4 => ['label'=>'Review & Drafting', 'color'=>'secondary'],
-                            5 => ['label'=>'Orders',            'color'=>'danger'],
-                            6 => ['label'=>'Compliance',        'color'=>'success'],
-                            7 => ['label'=>'Appeals',           'color'=>'dark'],
-                        ];
-                        $stageTotal = $stageDistribution->sum();
-                    @endphp
-                    <div class="list-group list-group-flush">
-                        @forelse($stageDistribution as $stage => $count)
-                        @php
-                            $info = $stageMap[$stage] ?? ['label'=>'Stage '.$stage,'color'=>'secondary'];
-                            $pct  = $stageTotal > 0 ? round(($count/$stageTotal)*100) : 0;
-                        @endphp
-                        <div class="list-group-item px-3 py-2 activity-row">
-                            <div class="d-flex justify-content-between align-items-center mb-1">
-                                <span class="badge badge-{{ $info['color'] }} stage-pill">{{ $info['label'] }}</span>
-                                <span class="font-weight-bold small">{{ $count }}</span>
-                            </div>
-                            <div class="progress" style="height:4px;">
-                                <div class="progress-bar bg-{{ $info['color'] }}" style="width:{{ $pct }}%"></div>
-                            </div>
-                        </div>
-                        @empty
-                        <div class="list-group-item text-center text-muted py-4">
-                            <i class="fas fa-inbox fa-2x d-block mb-2"></i>
-                            No active cases
-                        </div>
-                        @endforelse
-                    </div>
-                    @if($stageTotal > 0)
-                    <div class="px-3 py-2 border-top small text-muted">
-                        Total active: <strong class="text-gray-800">{{ $stageTotal }}</strong>
-                    </div>
-                    @endif
+                    <canvas id="trendChart" height="80"></canvas>
                 </div>
             </div>
         </div>
