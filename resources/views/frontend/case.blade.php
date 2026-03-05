@@ -2,44 +2,166 @@
 @section('content')
 
 <style>
-/* Table container for horizontal and vertical scrolling */
+/* ==================== TABLE CONTAINER - TALLER ==================== */
 .table-container {
     overflow-x: auto;
     overflow-y: auto;
     max-width: 100%;
-    max-height: 500px; /* Adjust as needed for vertical scrolling */
+    max-height: calc(100vh - 165px);
     border: 1px solid #dee2e6;
-    border-radius: 0.25rem;
+    border-radius: 0.35rem;
     position: relative;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    margin-bottom: 0;
 }
 
-/* Smaller text and compact spacing */
+/* Sticky Header */
+.sticky-table thead th {
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    background-color: #f8f9fc !important;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+    white-space: nowrap;
+    font-weight: 600;
+    padding: 0.75rem 0.7rem;
+}
+
+/* ==================== STICKY LEFT COLUMNS ==================== */
+
+/* 1. No. Column */
+.table th:nth-child(2),
+.table td:nth-child(2) {
+    position: sticky;
+    left: 0;
+    z-index: 35;
+    background-color: #f8f9fc !important;
+    box-shadow: 3px 0 8px rgba(0,0,0,0.1);
+    width: 55px;
+    min-width: 55px;
+}
+
+/* 2. Inspection ID Column */
+.table th:nth-child(3),
+.table td:nth-child(3) {
+    position: sticky;
+    left: 55px;
+    z-index: 35;
+    background-color: #f8f9fc !important;
+    box-shadow: 3px 0 8px rgba(0,0,0,0.1);
+    width: 110px;
+    min-width: 110px;
+}
+
+/* 3. Establishment Name Column */
+.table th:nth-child(5),
+.table td:nth-child(5) {
+    position: sticky;
+    left: 165px;
+    z-index: 35;
+    background-color: #f8f9fc !important;
+    box-shadow: 3px 0 8px rgba(0,0,0,0.1);
+    min-width: 260px;
+    max-width: 340px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* ==================== COMPACT TABLE - SHORTER ROWS ==================== */
 .compact-table {
-    font-size: 1rem;
+    font-size: 0.85rem;
+    table-layout: fixed;
+    width: 100%;
+    min-width: 100%;
+    border-collapse: collapse;
 }
 
 .compact-table th,
 .compact-table td {
-    padding: 0.25rem 0.5rem;
+    padding: 0.45rem 0.7rem;     /* ← Shorter vertical padding */
     vertical-align: middle;
+    border-right: 1px solid #dee2e6;
+    height: 38px;                /* ← Much shorter row height */
+    line-height: 1.1;
+}
+
+/* ==================== ACTIONS CELL - ONE LINE BUTTONS ==================== */
+.actions-cell {
+    padding: 0.35rem 0.5rem !important;
     white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    box-shadow: inset -1px 0 0 #dee2e6; /* Prevent gaps */
+    vertical-align: middle;
+    min-width: 68px;
+    transition: all 0.25s ease;
 }
 
-.compact-table .btn {
-    font-size: 0.65rem;
-    padding: 0.2rem 0.4rem;
-    margin: 0 0.1rem;
+.actions-cell.collapsed {
+    width: 68px;
+    min-width: 68px;
+    max-width: 68px;
 }
 
-.compact-table .badge {
-    font-size: 0.65rem;
-    padding: 0.2rem 0.4rem;
+.actions-cell.expanded {
+    width: auto;
+    min-width: 320px;
+    max-width: 380px;
 }
 
-/* Custom search styling */
+.action-buttons-container {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: nowrap;
+    width: 100%;
+}
+
+.action-toggle-btn {
+    background: #007bff;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 6px 10px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    min-width: 34px;
+    height: 34px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.action-toggle-btn:hover {
+    background: #0056b3;
+}
+
+.action-toggle-btn i {
+    font-size: 0.95rem;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    flex-wrap: nowrap;
+}
+
+.action-buttons .btn {
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    border-radius: 6px;
+}
+
+.actions-cell.collapsed .action-buttons {
+    display: none;
+}
+
+/* ==================== OTHER STYLES ==================== */
 .custom-search-container {
     margin-bottom: 1rem;
 }
@@ -48,13 +170,6 @@
     font-size: 0.8rem;
 }
 
-/* Ensure DataTables wrapper doesn't interfere */
-.dataTables_wrapper {
-    position: relative;
-    overflow: visible !important; /* Prevent DataTables from overriding container overflow */
-}
-
-/* Inline editing styles */
 .editable-cell {
     cursor: pointer;
     min-height: 20px;
@@ -78,162 +193,6 @@
     background-color: #e3f2fd !important;
 }
 
-.save-cancel-buttons {
-    white-space: nowrap;
-}
-
-/* Make establishment name column wider */
-.table th:nth-child(2),
-.table td:nth-child(2) {
-    min-width: 200px;
-    max-width: 250px;
-}
-
-/* Date columns styling */
-.table th:nth-child(6),
-.table th:nth-child(7),
-.table th:nth-child(8),
-.table td:nth-child(6),
-.table td:nth-child(7),
-.table td:nth-child(8) {
-    min-width: 110px;
-}
-
-/* Actions column */
-.table th:last-child,
-.table td:last-child {
-    min-width: 180px;
-}
-
-.readonly-cell {
-    background-color: #f8f9fa !important;
-    color: #6c757d;
-    cursor: not-allowed;
-}
-
-.readonly-cell:hover {
-    background-color: #e9ecef !important;
-}
-
-.tab-loading {
-    text-align: center;
-    padding: 3rem;
-}
-.actions-cell {
-    padding: 0.25rem 0.5rem !important;
-    white-space: nowrap;
-    vertical-align: middle;
-    overflow: hidden;
-}
-
-.actions-cell.collapsed {
-    width: 60px !important;
-    min-width: 60px !important;
-    max-width: 60px !important;
-}
-
-.actions-cell.expanded {
-    width: auto !important;
-    min-width: 200px !important;   /* ← make this wider than your longest button row */
-    max-width: 320px !important;
-}
-
-.dataTable td.actions-cell,
-.dataTable th:last-child {
-    box-sizing: border-box !important;
-}
-
-/* Help prevent header/body desync */
-.table-container {
-    overflow-x: auto !important;
-    -webkit-overflow-scrolling: touch;
-}
-
-/* Container for all buttons in one line */
-.action-buttons-container {
-    display: flex;
-    align-items: center;
-    gap: 0.25rem;
-    flex-wrap: nowrap;
-}
-
-/* Toggle button - always visible */
-.action-toggle-btn {
-    background: #007bff;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    padding: 0.3rem 0.5rem;
-    cursor: pointer;
-    font-size: 0.75rem;
-    transition: background 0.2s;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 32px;
-    height: 28px;
-    flex-shrink: 0;
-}
-
-.action-toggle-btn:hover {
-    background: #0056b3;
-}
-
-.action-toggle-btn i {
-    font-size: 0.7rem;
-    margin: 0;
-}
-
-/* Action buttons wrapper - hidden when collapsed */
-.action-buttons {
-    display: none;
-    gap: 0.25rem;
-    align-items: center;
-    flex-wrap: nowrap;
-}
-
-.actions-cell.expanded .action-buttons {
-    display: flex;
-}
-
-.actions-cell.collapsed .action-buttons {
-    display: none;
-}
-
-
-.document-item-actions {
-    display: flex;
-    gap: 5px;
-    align-items: center;
-}
-
-.file-info {
-    font-size: 0.75rem;
-    color: #6c757d;
-    margin-top: 0.25rem;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-
-.file-info i {
-    color: #28a745;
-}
-
-.upload-btn {
-    padding: 0.25rem 0.5rem;
-    font-size: 0.875rem;
-}
-
-.list-group-item {
-    padding: 0.75rem 1rem;
-}
-
-.document-content {
-    flex: 1;
-    min-width: 0;
-}
-
 .readonly-cell {
     background-color: #f8f9fa !important;
     color: #6c757d;
@@ -245,101 +204,46 @@
     background-color: #e9ecef !important;
 }
 
-/* Add to your <style> section */
-.readonly-cell::after {
-    /*content: " 🔄";*/
-    font-size: 0.7rem;
-    opacity: 0.5;
-    margin-left: 3px;
+.compact-table .btn {
+    font-size: 0.65rem;
+    padding: 0.2rem 0.4rem;
+    margin: 0 0.1rem;
 }
 
-.readonly-cell {
-    background-color: #f8f9fa !important;
-    color: #495057;
-    font-style: italic;
+.compact-table .badge {
+    font-size: 0.65rem;
+    padding: 0.2rem 0.4rem;
 }
 
-/* Smooth transition for computed field updates */
+/* Scrollbar - Neutral gray */
+.table-container::-webkit-scrollbar {
+    height: 10px;
+    width: 10px;
+}
+
+.table-container::-webkit-scrollbar-thumb {
+    background: #adb5bd;
+    border-radius: 10px;
+}
+
+.table-container::-webkit-scrollbar-thumb:hover {
+    background: #6c757d;
+}
+
+/* Smooth transitions */
 .editable-cell, .readonly-cell {
     transition: background-color 0.3s ease, color 0.3s ease;
 }
-
 </style>
 
 <!-- Main Content -->
 <div id="content">
     <!-- Begin Page Content -->
     <div class="container-fluid">
-        {{-- <!-- Tabs Navigation -->
-        <ul class="nav nav-tabs" id="dataTableTabs" role="tablist">
-            <li class="nav-item">
-                <a class="nav-link active" id="tab0-tab" data-toggle="tab" href="#tab0" role="tab" aria-controls="tab0" aria-selected="true">
-                    All Active Cases
-                </a>
-            </li>
-            
-            @if(in_array(1, $allowedTabs))
-            <li class="nav-item">
-                <a class="nav-link" id="tab1-tab" data-toggle="tab" href="#tab1" role="tab" aria-controls="tab1" aria-selected="false">
-                    Inspection
-                </a>
-            </li>
-            @endif
-            
-            @if(in_array(2, $allowedTabs))
-            <li class="nav-item">
-                <a class="nav-link" id="tab2-tab" data-toggle="tab" href="#tab2" role="tab" aria-controls="tab2" aria-selected="false">
-                    Docketing
-                </a>
-            </li>
-            @endif
-            
-            @if(in_array(3, $allowedTabs))
-            <li class="nav-item">
-                <a class="nav-link" id="tab3-tab" data-toggle="tab" href="#tab3" role="tab" aria-controls="tab3" aria-selected="false">
-                    Hearing Process
-                </a>
-            </li>
-            @endif
-            
-            @if(in_array(4, $allowedTabs))
-            <li class="nav-item">
-                <a class="nav-link" id="tab4-tab" data-toggle="tab" href="#tab4" role="tab" aria-controls="tab4" aria-selected="false">
-                    Review & Drafting
-                </a>
-            </li>
-            @endif
-            
-            @if(in_array(5, $allowedTabs))
-            <li class="nav-item">
-                <a class="nav-link" id="tab5-tab" data-toggle="tab" href="#tab5" role="tab" aria-controls="tab5" aria-selected="false">
-                    Orders & Disposition
-                </a>
-            </li>
-            @endif
-            
-            @if(in_array(6, $allowedTabs))
-            <li class="nav-item">
-                <a class="nav-link" id="tab6-tab" data-toggle="tab" href="#tab6" role="tab" aria-controls="tab6" aria-selected="false">
-                    Compliance & Awards
-                </a>
-            </li>
-            @endif
-            
-            @if(in_array(7, $allowedTabs))
-            <li class="nav-item">
-                <a class="nav-link" id="tab7-tab" data-toggle="tab" href="#tab7" role="tab" aria-controls="tab7" aria-selected="false">
-                    Appeals & Resolution
-                </a>
-            </li>
-            @endif
-        </ul> --}}
 
-        <!-- Tabs Content -->
-        <div class="tab-content mt-3" id="dataTableTabsContent">
             
         <!-- Tabs Content -->
-<div class="tab-content mt-3" id="dataTableTabsContent">
+    <div class="tab-content mt-3" id="dataTableTabsContent">
     
     <!-- Tab 0: All Active Cases (Enhanced with corrected columns) -->
     <div class="tab-pane fade show active" id="tab0" role="tabpanel" aria-labelledby="tab0-tab">
@@ -384,7 +288,7 @@
                 
                 <!-- Table Container -->
                 <div class="table-container">
-                    <table class="table table-bordered compact-table sticky-table" id="dataTable0" width="100%" cellspacing="0">
+                    <table class="table table-bordered compact-table sticky-table" id="dataTable0" style="min-width: 100%;">
                         <thead>
                             <tr>
                                 <th>Actions</th>
