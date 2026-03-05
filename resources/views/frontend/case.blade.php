@@ -396,7 +396,6 @@
                                 <th>Establishment Address</th>
                                 <th>Mode</th>
                                 <th>PO </th>
-                                <th>Current Stage</th>
                                 <th>Overall Status</th>
                                 
                                 <!-- Inspection Stage -->
@@ -579,10 +578,7 @@
                                             {{ $case->establishment_address ? Str::limit($case->establishment_address, 30) : '-' }}
                                         </td>
                                         <td class="editable-cell" data-field="mode">{{ $case->mode ?? '-' }}</td>
-                                        <td class="editable-cell" data-field="po_office">{{ $case->po_office ?? '-' }}</td>
-                                        <td class="editable-cell" data-field="current_stage" data-type="select">
-                                            {{ explode(': ', $case->current_stage)[1] ?? $case->current_stage ?? '-' }}
-                                        </td>
+                                        <td class="readonly-cell" data-field="po_office">{{ $case->po_office ?? '-' }}</td>
                                         <td class="editable-cell" data-field="overall_status" data-type="select">
                                             {{ $case->overall_status ?? '-' }}
                                         </td>
