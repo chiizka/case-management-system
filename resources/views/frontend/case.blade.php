@@ -86,9 +86,9 @@
     line-height: 1.1;
 }
 
-/* ==================== ACTIONS CELL - ONE LINE BUTTONS ==================== */
+/* ==================== ACTIONS CELL - TIGHT ONE LINE BUTTONS ==================== */
 .actions-cell {
-    padding: 0.35rem 0.5rem !important;
+    padding: 0.4rem 0.6rem !important;
     white-space: nowrap;
     vertical-align: middle;
     min-width: 68px;
@@ -102,17 +102,27 @@
 }
 
 .actions-cell.expanded {
-    width: auto;
-    min-width: 320px;
-    max-width: 380px;
+    width: auto !important;
+    min-width: 320px !important;
+    max-width: 380px !important;
 }
 
+/* This is the main fix */
 .action-buttons-container {
-    display: flex;
+    display: flex !important;
     align-items: center;
     gap: 6px;
     flex-wrap: nowrap;
-    width: 100%;
+    width: fit-content !important;     /* Only as wide as the buttons */
+    max-width: 100%;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+/* Extra strong rule for when it's expanded */
+.actions-cell.expanded .action-buttons-container {
+    width: 100% !important;
+    justify-content: flex-start !important;
 }
 
 .action-toggle-btn {
@@ -135,10 +145,6 @@
     background: #0056b3;
 }
 
-.action-toggle-btn i {
-    font-size: 0.95rem;
-}
-
 .action-buttons {
     display: flex;
     gap: 6px;
@@ -147,13 +153,13 @@
 }
 
 .action-buttons .btn {
-    width: 32px;
-    height: 32px;
+    width: 34px;
+    height: 34px;
     padding: 0;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1rem;
+    font-size: 1.05rem;
     border-radius: 6px;
 }
 
@@ -204,6 +210,8 @@
     background-color: #e9ecef !important;
 }
 
+.readonly-cell::after { content: none !important; }
+
 .compact-table .btn {
     font-size: 0.65rem;
     padding: 0.2rem 0.4rem;
@@ -234,6 +242,49 @@
 .editable-cell, .readonly-cell {
     transition: background-color 0.3s ease, color 0.3s ease;
 }
+
+/* ==================== FIX FOR DATATABLES OVERRIDE ==================== */
+/* This targets the exact class you saw in inspect element */
+.actions-cell.expanded.sorting_1 {
+    width: auto !important;
+    min-width: 320px !important;
+    max-width: 380px !important;
+    padding: 0.4rem 0.6rem !important;
+    white-space: nowrap !important;
+}
+
+/* Make sure the container takes full available width inside the cell */
+.actions-cell.expanded .action-buttons-container {
+    width: 100% !important;
+    justify-content: flex-start !important;
+    gap: 6px !important;
+}
+
+/* Force the action buttons to stay tight and left-aligned */
+.actions-cell.expanded .action-buttons {
+    display: flex !important;
+    gap: 6px !important;
+    flex-wrap: nowrap !important;
+}
+
+/* Remove any extra margin or padding DataTables might add */
+td.actions-cell.expanded {
+    box-sizing: border-box !important;
+    overflow: hidden !important;
+}
+
+.actions-cell.expanded,
+.actions-cell.expanded.sorting_1 {
+    width: fit-content !important;
+    min-width: fit-content !important;
+    max-width: fit-content !important;
+    padding-right: 8px !important;
+}
+
+.action-buttons-container {
+    justify-content: flex-start !important;
+}
+
 </style>
 
 <!-- Main Content -->
