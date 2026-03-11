@@ -202,7 +202,6 @@
 .readonly-cell {
     background-color: #f8f9fa !important;
     color: #6c757d;
-    cursor: not-allowed;
     font-style: italic;
 }
 
@@ -913,7 +912,7 @@ td.actions-cell.expanded {
                                     name="po_office"
                                     value="{{ Auth::user()->getProvinceName() }}"
                                     readonly
-                                    style="background-color: #e9ecef; cursor: not-allowed;">
+                                    style="background-color: #e9ecef;">
                                 <small class="form-text text-muted">
                                     <i class="fas fa-info-circle"></i> Automatically set to your province office
                                 </small>
