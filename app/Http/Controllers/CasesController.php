@@ -30,17 +30,31 @@ class CasesController extends Controller
     private function getAllowedTabs()
     {
         $user = Auth::user();
-        
-        // Tab mapping: 1=Inspections, 2=Docketing, 3=Hearing, 4=Review&Drafting, 5=Orders&Disposition, 6=Compliance&Awards, 7=Appeals&Resolution
-        $tabPermissions = [
-            'admin' => [1, 2, 3, 4, 5, 6, 7],           // Admin sees all
-            'malsu' => [7],                             // MALSU sees Appeals
-            'province' => [1, 2, 3],                    // Province sees Inspections, Docketing, Hearing
-            'case_management' => [4, 5, 6],             // Case Management sees Review, Orders, Compliance
-        ];
 
-        // Return allowed tabs for user's role, default to empty if role not found
-        return $tabPermissions[$user->role] ?? [];
+        // Admin sees all tabs
+        if ($user->isAdmin()) {
+            return [1, 2, 3, 4, 5, 6, 7];
+        }
+
+        // Regional roles
+        if ($user->isMalsu()) {
+            return [7];
+        }
+
+        if ($user->isCaseManagement()) {
+            return [4, 5, 6];
+        }
+
+        if ($user->isRecords()) {
+            return [1, 2, 3, 4, 5, 6, 7]; // adjust as needed
+        }
+
+        // Province roles
+        if ($user->isProvince()) {
+            return [1, 2, 3];
+        }
+
+        return [];
     }
 
     /**
@@ -65,7 +79,7 @@ class CasesController extends Controller
         // âœ¨ FILTER: Provincial users only see cases currently located at their province.
         // Uses DocumentTracking.current_role (live location) instead of po_office (static origin).
         // This way cases disappear from the province view once transferred elsewhere.
-        if ($user->isProvince()) {
+        if (!$user->isAdmin()) {
             $query->whereHas('documentTracking', function ($q) use ($user) {
                 $q->where('current_role', $user->role);
             });
@@ -147,7 +161,7 @@ class CasesController extends Controller
                             ->where('overall_status', '!=', 'Completed');
                         
                         // âœ¨ Filter by current document location, not origin
-                        if ($user->isProvince()) {
+                        if (!$user->isAdmin()) {
                             $query->whereHas('documentTracking', function ($q) use ($user) {
                                 $q->where('current_role', $user->role);
                             });
@@ -167,7 +181,7 @@ class CasesController extends Controller
                             ->where('overall_status', '!=', 'Completed');
                         
                         // âœ¨ Filter by current document location, not origin
-                        if ($user->isProvince()) {
+                        if (!$user->isAdmin()) {
                             $query->whereHas('documentTracking', function ($q) use ($user) {
                                 $q->where('current_role', $user->role);
                             });
@@ -187,7 +201,7 @@ class CasesController extends Controller
                             ->where('overall_status', '!=', 'Completed');
                         
                         // âœ¨ Filter by current document location, not origin
-                        if ($user->isProvince()) {
+                        if (!$user->isAdmin()) {
                             $query->whereHas('documentTracking', function ($q) use ($user) {
                                 $q->where('current_role', $user->role);
                             });
@@ -207,7 +221,7 @@ class CasesController extends Controller
                             ->where('overall_status', '!=', 'Completed');
                         
                         // âœ¨ Filter by current document location, not origin
-                        if ($user->isProvince()) {
+                        if (!$user->isAdmin()) {
                             $query->whereHas('documentTracking', function ($q) use ($user) {
                                 $q->where('current_role', $user->role);
                             });
@@ -227,7 +241,7 @@ class CasesController extends Controller
                             ->where('overall_status', '!=', 'Completed');
                         
                         // âœ¨ Filter by current document location, not origin
-                        if ($user->isProvince()) {
+                        if (!$user->isAdmin()) {
                             $query->whereHas('documentTracking', function ($q) use ($user) {
                                 $q->where('current_role', $user->role);
                             });
@@ -247,7 +261,7 @@ class CasesController extends Controller
                             ->where('overall_status', '!=', 'Completed');
                         
                         // âœ¨ Filter by current document location, not origin
-                        if ($user->isProvince()) {
+                        if (!$user->isAdmin()) {
                             $query->whereHas('documentTracking', function ($q) use ($user) {
                                 $q->where('current_role', $user->role);
                             });
