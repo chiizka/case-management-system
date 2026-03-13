@@ -82,8 +82,9 @@
     padding: 0.45rem 0.7rem;     /* ← Shorter vertical padding */
     vertical-align: middle;
     border-right: 1px solid #dee2e6;
-    height: 38px;                /* ← Much shorter row height */
-    line-height: 1.1;
+    min-height: 38px;   ← rows can now grow taller
+    height: auto;
+    line-height: 1.4;               /* ← Much shorter row height */
 }
 
 /* ==================== ACTIONS CELL - TIGHT ONE LINE BUTTONS ==================== */
@@ -529,7 +530,7 @@ td.actions-cell.expanded {
                                             {{ $case->establishment_name ? Str::limit($case->establishment_name, 25) : '-' }}
                                         </td>
                                         <td class="editable-cell" data-field="establishment_address" title="{{ $case->establishment_address ?? '' }}">
-                                            {{ $case->establishment_address ? Str::limit($case->establishment_address, 30) : '-' }}
+                                            {{ $case->establishment_address ?? '-' }}
                                         </td>
                                         <td class="editable-cell" data-field="mode">{{ $case->mode ?? '-' }}</td>
                                         <td class="readonly-cell" data-field="po_office">{{ $case->po_office ?? '-' }}</td>
