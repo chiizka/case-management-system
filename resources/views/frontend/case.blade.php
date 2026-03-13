@@ -534,7 +534,7 @@ td.actions-cell.expanded {
                                         </td>
                                         <td class="editable-cell" data-field="mode">{{ $case->mode ?? '-' }}</td>
                                         <td class="readonly-cell" data-field="po_office">{{ $case->po_office ?? '-' }}</td>
-                                        <td class="editable-cell" data-field="overall_status" data-type="select">
+                                        <td class="readonly-cell" data-field="overall_status" data-type="select">
                                             {{ $case->overall_status ?? '-' }}
                                         </td>
                                         
