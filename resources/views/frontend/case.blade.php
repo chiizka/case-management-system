@@ -7,7 +7,7 @@
     overflow-x: auto;
     overflow-y: auto;
     max-width: 100%;
-    max-height: calc(100vh - 165px);
+    height: calc(100vh - 185px);
     border: 1px solid #dee2e6;
     border-radius: 0.35rem;
     position: relative;
@@ -297,6 +297,57 @@ td.actions-cell.expanded {
     justify-content: flex-start !important;
 }
 
+#dataTableTabsContent .card {
+    margin-bottom: 0 !important;
+}
+
+#dataTableTabsContent .card-body {
+    padding-bottom: 0 !important;
+}
+
+
+#content-wrapper {
+    min-height: unset !important;
+    height: 100vh !important;
+    overflow: hidden !important;
+}
+
+#content {
+    overflow: hidden !important;
+    flex: 1 !important;
+}
+
+#content .container-fluid {
+    padding-bottom: 0 !important;
+}
+
+#content {
+    padding-bottom: 0 !important;
+    margin-bottom: 0 !important;
+}
+
+#content .container-fluid {
+    padding-top: 0 !important;
+}
+
+#dataTableTabsContent {
+    margin-top: 0 !important;
+}
+
+.dataTables_wrapper .dataTables_info {
+    float: left !important;
+    padding-top: 0.5rem !important;
+}
+
+.dataTables_wrapper .dataTables_paginate {
+    float: right !important;
+}
+
+.dataTables_wrapper::after {
+    content: '';
+    display: table;
+    clear: both;
+}
 </style>
 
 <!-- Main Content -->
@@ -306,7 +357,7 @@ td.actions-cell.expanded {
 
             
         <!-- Tabs Content -->
-    <div class="tab-content mt-3" id="dataTableTabsContent">
+    <div class="tab-content mt-1" id="dataTableTabsContent">
     
     <!-- Tab 0: All Active Cases (Enhanced with corrected columns) -->
     <div class="tab-pane fade show active" id="tab0" role="tabpanel" aria-labelledby="tab0-tab">
@@ -1928,7 +1979,7 @@ $(document).on('click', function(e) {
         dom: 'tip',
         order: [[0, "asc"]],
         scrollX: true,
-        scrollY: '400px',
+        scrollY: (window.innerHeight - 280) + 'px',
         scrollCollapse: true,
         drawCallback: function() {
             $('.sticky-table thead th').css({
@@ -3883,6 +3934,40 @@ document.getElementById('confirmExportBtn').addEventListener('click', function (
         showConfirmButton: false
     });
 });
+
+// document.addEventListener('DOMContentLoaded', function() {
+//     const els = {
+//         'body':              document.body,
+//         '#wrapper':          document.getElementById('wrapper'),
+//         '#content-wrapper':  document.getElementById('content-wrapper'),
+//         '#content':          document.getElementById('content'),
+//         '.container-fluid':  document.querySelector('#content .container-fluid'),
+//         '#dataTableTabsContent': document.getElementById('dataTableTabsContent'),
+//         '#tab0':             document.getElementById('tab0'),
+//         '.card':             document.querySelector('#tab0 .card'),
+//         '.card-body':        document.querySelector('#tab0 .card-body'),
+//         '.table-container': document.querySelector('.table-container'),
+// '.dataTables_wrapper': document.querySelector('.dataTables_wrapper'),
+// '.dataTables_paginate': document.querySelector('.dataTables_paginate'),
+//     };
+
+//     let output = '<div style="position:fixed;bottom:0;left:0;right:0;background:#000;color:#0f0;font-family:monospace;font-size:12px;padding:10px;z-index:99999;max-height:200px;overflow:auto;">';
+//     output += '<strong>HEIGHT DEBUG:</strong><br>';
+    
+//     for (const [name, el] of Object.entries(els)) {
+//         if (el) {
+//             const rect = el.getBoundingClientRect();
+//             const computed = window.getComputedStyle(el);
+//             output += `<span style="color:yellow">${name}</span>: 
+//                 height=${Math.round(rect.height)}px | 
+//                 bottom=${Math.round(rect.bottom)}px | 
+//                 padding-bottom=${computed.paddingBottom} | 
+//                 margin-bottom=${computed.marginBottom}<br>`;
+//         }
+//     }
+//     output += '</div>';
+//     document.body.insertAdjacentHTML('beforeend', output);
+// });
 
 </script>
 @endpush
