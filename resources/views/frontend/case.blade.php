@@ -3458,7 +3458,7 @@ $(document).ready(function() {
                 if (response.success) {
                     updateRowDisplay(row, response.data, config);
                     restoreActionButtons(row);
-                    showAlert(response.message || `${config.name} updated successfully!`, 'success');
+                    showToast('Success', 'Updated successfully', 'success');
                     resetEditState();
                 } else {
                     throw new Error(response.message || 'Update failed');
