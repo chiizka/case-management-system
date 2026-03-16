@@ -180,6 +180,30 @@
     display: none;
 }
 
+/* Edit mode: action cell stays collapsed-width but shows save/cancel in toggle area */
+.actions-cell.edit-mode-cell {
+    width: 68px !important;
+    min-width: 68px !important;
+    max-width: 68px !important;
+}
+
+.actions-cell.edit-mode-cell .action-buttons {
+    display: none !important;
+}
+
+.action-toggle-btn.save-mode {
+    background: #28a745;
+}
+.action-toggle-btn.save-mode:hover {
+    background: #1e7e34;
+}
+.action-toggle-btn.exit-mode {
+    background: #dc3545;
+}
+.action-toggle-btn.exit-mode:hover {
+    background: #bd2130;
+}
+
 /* ==================== OTHER STYLES ==================== */
 .custom-search-container {
     margin-bottom: 1rem;
@@ -3340,40 +3364,44 @@ $(document).ready(function() {
         currentEditingRow = row;
         const config = getTabConfig(currentTab);
         originalData = {};
-        
+
         row.find('.editable-cell:not(.readonly-cell)').each(function() {
             const cell = $(this);
             const field = cell.data('field');
             originalData[field] = cell.text().trim();
-            
+
             const input = createInput(field, cell, config);
             cell.html(input);
             cell.addClass('edit-mode');
         });
-        
-        const actionsCell = row.find('td:last');
-        const currentButtons = actionsCell.html();
-        actionsCell.data('original-buttons', currentButtons);
-        
-        const buttonSuffix = config.name === 'case' ? '-case' : 
+
+        const buttonSuffix = config.name === 'case' ? '-case' :
                             config.name === 'docketing' ? '-docketing' :
                             config.name === 'hearing' ? '-hearing' :
                             config.name === 'review-and-drafting' ? '-review' :
                             config.name === 'orders-and-disposition' ? '-orders' :
                             config.name === 'compliance-and-awards' ? '-compliance' :
                             config.name === 'appeals-and-resolution' ? '-appeals' : '';
-        
-        actionsCell.html(`
-            <div class="save-cancel-buttons">
-                <button class="btn btn-success btn-sm save-btn${buttonSuffix}" title="Save">
-                    <i class="fas fa-check"></i>
-                </button>
-                <button class="btn btn-secondary btn-sm cancel-btn${buttonSuffix} ml-1" title="Cancel">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
+
+        // ── NEW: Put save/cancel into the actions cell (toggle-btn area), collapse it back ──
+        const $actionsCell = row.find('.actions-cell');
+        $actionsCell.data('was-expanded', $actionsCell.hasClass('expanded'));
+
+        // Force cell to collapsed width
+        $actionsCell.removeClass('expanded').addClass('collapsed edit-mode-cell');
+
+        // Replace toggle button with Save + Cancel
+        const $container = $actionsCell.find('.action-buttons-container');
+        $container.data('original-html', $container.html());
+        $container.html(`
+            <button class="action-toggle-btn save-mode save-btn${buttonSuffix}" title="Save changes">
+                <i class="fas fa-check"></i>
+            </button>
+            <button class="action-toggle-btn exit-mode cancel-btn${buttonSuffix}" title="Cancel editing" style="margin-left:4px;">
+                <i class="fas fa-times"></i>
+            </button>
         `);
-        
+
         row.find('.edit-input').first().focus();
     }
 
@@ -3551,33 +3579,42 @@ $(document).ready(function() {
     }
 
     function restoreActionButtons(row) {
-        const actionsCell = row.find('td:last');
-        actionsCell.html(actionsCell.data('original-buttons'));
+        const $actionsCell = row.find('.actions-cell');
+        const $container = $actionsCell.find('.action-buttons-container');
+
+        // Restore original toggle + action buttons HTML
+        $container.html($container.data('original-html'));
+
+        // Remove edit-mode-cell, restore to collapsed
+        $actionsCell.removeClass('edit-mode-cell expanded').addClass('collapsed');
+
+        // Re-icon the toggle button back to chevron-right
+        $actionsCell.find('.action-toggle-btn i')
+            .removeClass('fa-chevron-left fa-check fa-times')
+            .addClass('fa-chevron-right');
     }
 
     function cancelEdit() {
         if (!currentEditingRow) return;
-        
-        const config = getTabConfig(currentTab);
-        
+
         currentEditingRow.find('.editable-cell:not(.readonly-cell)').each(function() {
             const cell = $(this);
             const field = cell.data('field');
             let displayValue = originalData[field] || '';
-            
+
             if (field === 'current_stage' && displayValue.includes(': ')) {
                 displayValue = displayValue.split(': ')[1];
             }
-            
+
             if (field === 'establishment_name' && displayValue.length > 25) {
                 cell.attr('title', displayValue);
                 displayValue = displayValue.substring(0, 25) + '...';
             }
-            
+
             cell.html(displayValue);
             cell.removeClass('edit-mode');
         });
-        
+
         restoreActionButtons(currentEditingRow);
         resetEditState();
     }
