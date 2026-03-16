@@ -82,9 +82,21 @@
     padding: 0.45rem 0.7rem;     /* ← Shorter vertical padding */
     vertical-align: middle;
     border-right: 1px solid #dee2e6;
-    min-height: 38px;   ← rows can now grow taller
+    min-height: 38px;            /* ← Allow rows to grow for wrapped text */
     height: auto;
-    line-height: 1.4;               /* ← Much shorter row height */
+    line-height: 1.4;
+}
+
+/* ==================== WRAP COLUMNS ==================== */
+/* Allow long text columns to wrap instead of truncating */
+.wrap-cell {
+    white-space: normal !important;
+    word-break: break-word;
+    overflow: visible !important;
+    text-overflow: unset !important;
+    max-width: 220px;
+    min-width: 140px;
+    line-height: 1.4;
 }
 
 /* ==================== ACTIONS CELL - TIGHT ONE LINE BUTTONS ==================== */
@@ -526,15 +538,15 @@ td.actions-cell.expanded {
                                         <td class="editable-cell" data-field="no">{{ $case->no ?? '-' }}</td>
                                         <td class="editable-cell" data-field="inspection_id">{{ $case->inspection_id ?? '-' }}</td>
                                         <td class="editable-cell" data-field="case_no">{{ $case->case_no ?? '-' }}</td>
-                                        <td class="editable-cell" data-field="establishment_name" title="{{ $case->establishment_name ?? '' }}">
-                                            {{ $case->establishment_name ? Str::limit($case->establishment_name, 25) : '-' }}
+                                        <td class="editable-cell wrap-cell" data-field="establishment_name">
+                                            {{ $case->establishment_name ?? '-' }}
                                         </td>
-                                        <td class="editable-cell" data-field="establishment_address" title="{{ $case->establishment_address ?? '' }}">
+                                        <td class="editable-cell wrap-cell" data-field="establishment_address">
                                             {{ $case->establishment_address ?? '-' }}
                                         </td>
                                         <td class="editable-cell" data-field="mode">{{ $case->mode ?? '-' }}</td>
                                         <td class="readonly-cell" data-field="po_office">{{ $case->po_office ?? '-' }}</td>
-                                        <td class="readonly-cell" data-field="overall_status" data-type="select">
+                                        <td class="editable-cell" data-field="overall_status" data-type="select">
                                             {{ $case->overall_status ?? '-' }}
                                         </td>
                                         
@@ -1822,14 +1834,19 @@ $(document).on('click', '.action-toggle-btn', function(e) {
         .toggleClass('fa-chevron-right fa-chevron-left');
 
     setTimeout(() => {
+        const $container = $table.closest('.table-container');
+        const savedScrollTop = $container.scrollTop();
+        const savedScrollLeft = $container.scrollLeft();
+
         dt.columns.adjust().draw(false);
         $table.css('table-layout', 'auto');
         dt.columns.adjust().draw(false);
         $table.css('table-layout', 'fixed');
 
-        const $container = $table.closest('.table-container');
-        $container.scrollLeft($container.scrollLeft() + 1);
-        $container.scrollLeft($container.scrollLeft() - 1);
+        // Restore scroll position after DataTables redraws
+        $container.scrollTop(savedScrollTop);
+        $container.scrollLeft(savedScrollLeft + 1);
+        $container.scrollLeft(savedScrollLeft);
     }, 20);
 });
 
