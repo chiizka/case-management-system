@@ -204,97 +204,33 @@
                             </form>
                         </div>
                     </li>
-                    <li class="nav-item dropdown no-arrow mx-1">
-                        <a class="nav-link dropdown-toggle" href="#" id="alertsDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    <!-- Notification Bell -->
+                    <li class="nav-item dropdown no-arrow mx-1" id="notificationDropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="notifToggle" role="button"
+                        data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                             <i class="fas fa-bell fa-fw"></i>
-                            <span class="badge badge-danger badge-counter">3+</span>
+                            <span class="badge badge-danger badge-counter d-none" id="notifBadge"></span>
                         </a>
-                        <div class="dropdown-list dropdown-menu dropdown-menu-right shadow animated--grow-in" aria-labelledby="alertsDropdown">
-                            <h6 class="dropdown-header">Alerts Center</h6>
-                            <a class="dropdown-item d-flex align-items-center" href="#">
-                                <div class="mr-3">
-                                    <div class="icon-circle bg-primary">
-                                        <i class="fas fa-file-alt text-white"></i>
-                                    </div>
+
+                        <div class="dropdown-list dropdown-menu dropdown-menu-right shadow animated--grow-in"
+                            aria-labelledby="notifToggle" style="min-width: 340px; max-width: 380px;">
+
+                            <h6 class="dropdown-header d-flex justify-content-between align-items-center">
+                                <span>Pending Documents</span>
+                                <span class="badge badge-pill badge-warning" id="notifHeaderCount"></span>
+                            </h6>
+
+                            <!-- Items injected here by JS -->
+                            <div id="notifItems">
+                                <div class="dropdown-item text-center text-muted py-3" id="notifEmpty">
+                                    <i class="fas fa-check-circle text-success mr-1"></i> No pending documents
                                 </div>
-                                <div>
-                                    <div class="small text-gray-500">December 12, 2019</div>
-                                    <span class="font-weight-bold">A new monthly report is ready to download!</span>
-                                </div>
+                            </div>
+
+                            <a class="dropdown-item text-center small text-gray-500 py-2"
+                            href="{{ route('documents.tracking') }}">
+                                <i class="fas fa-map-marker-alt mr-1"></i> Go to Document Tracking
                             </a>
-                            <a class="dropdown-item d-flex align-items-center" href="#">
-                                <div class="mr-3">
-                                    <div class="icon-circle bg-success">
-                                        <i class="fas fa-donate text-white"></i>
-                                    </div>
-                                </div>
-                                <div>
-                                    <div class="small text-gray-500">December 7, 2019</div>
-                                    $290.29 has been deposited into your account!
-                                </div>
-                            </a>
-                            <a class="dropdown-item d-flex align-items-center" href="#">
-                                <div class="mr-3">
-                                    <div class="icon-circle bg-warning">
-                                        <i class="fas fa-exclamation-triangle text-white"></i>
-                                    </div>
-                                </div>
-                                <div>
-                                    <div class="small text-gray-500">December 2, 2019</div>
-                                    Spending Alert: We've noticed unusually high spending for your account.
-                                </div>
-                            </a>
-                            <a class="dropdown-item text-center small text-gray-500" href="#">Show All Alerts</a>
-                        </div>
-                    </li>
-                    <li class="nav-item dropdown no-arrow mx-1">
-                        <a class="nav-link dropdown-toggle" href="#" id="messagesDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                            <i class="fas fa-envelope fa-fw"></i>
-                            <span class="badge badge-danger badge-counter">7</span>
-                        </a>
-                        <div class="dropdown-list dropdown-menu dropdown-menu-right shadow animated--grow-in" aria-labelledby="messagesDropdown">
-                            <h6 class="dropdown-header">Message Center</h6>
-                            <a class="dropdown-item d-flex align-items-center" href="#">
-                                <div class="dropdown-list-image mr-3">
-                                    <img class="rounded-circle" src="img/undraw_profile_1.svg" alt="...">
-                                    <div class="status-indicator bg-success"></div>
-                                </div>
-                                <div class="font-weight-bold">
-                                    <div class="text-truncate">Hi there! I am wondering if you can help me with a problem I've been having.</div>
-                                    <div class="small text-gray-500">Emily Fowler · 58m</div>
-                                </div>
-                            </a>
-                            <a class="dropdown-item d-flex align-items-center" href="#">
-                                <div class="dropdown-list-image mr-3">
-                                    <img class="rounded-circle" src="img/undraw_profile_2.svg" alt="...">
-                                    <div class="status-indicator"></div>
-                                </div>
-                                <div>
-                                    <div class="text-truncate">I have the photos that you ordered last month, how would you like them sent to you?</div>
-                                    <div class="small text-gray-500">Jae Chun · 1d</div>
-                                </div>
-                            </a>
-                            <a class="dropdown-item d-flex align-items-center" href="#">
-                                <div class="dropdown-list-image mr-3">
-                                    <img class="rounded-circle" src="img/undraw_profile_3.svg" alt="...">
-                                    <div class="status-indicator bg-warning"></div>
-                                </div>
-                                <div>
-                                    <div class="text-truncate">Last month's report looks great, I am very happy with the progress so far, keep up the good work!</div>
-                                    <div class="small text-gray-500">Morgan Alvarez · 2d</div>
-                                </div>
-                            </a>
-                            <a class="dropdown-item d-flex align-items-center" href="#">
-                                <div class="dropdown-list-image mr-3">
-                                    <img class="rounded-circle" src="https://source.unsplash.com/Mv9hjnEUHR4/60x60" alt="...">
-                                    <div class="status-indicator bg-success"></div>
-                                </div>
-                                <div>
-                                    <div class="text-truncate">Am I a good boy? The reason I ask is because someone told me that people say this to all dogs, even if they aren't good...</div>
-                                    <div class="small text-gray-500">Chicken the Dog · 2w</div>
-                                </div>
-                            </a>
-                            <a class="dropdown-item text-center small text-gray-500" href="#">Read More Messages</a>
                         </div>
                     </li>
                     <div class="topbar-divider d-none d-sm-block"></div>
@@ -372,7 +308,129 @@
     <!-- Page-Specific Scripts Load Here -->
     <!-- ============================================ -->
     @stack('scripts')
+    <script>
+    (function () {
+        // ─── Config ───────────────────────────────────────────────────
+        const POLL_INTERVAL_MS = 60000; // poll every 60 seconds
+        const trackingUrl      = "{{ route('documents.tracking') }}";
+        const pendingUrl       = "{{ route('notifications.pending') }}";
+        const markSeenUrl      = "{{ route('notifications.markSeen') }}";
+        const csrfToken        = "{{ csrf_token() }}";
 
+        let lastCount = 0;
+
+        // ─── Fetch pending notifications ──────────────────────────────
+        function fetchNotifications() {
+            $.ajax({
+                url: pendingUrl,
+                method: 'GET',
+                headers: { 'X-CSRF-TOKEN': csrfToken },
+                success: function (response) {
+                    if (!response.success) return;
+                    renderNotifications(response.count, response.items);
+                },
+                error: function () {
+                    // Silently fail — don't disrupt the UI
+                }
+            });
+        }
+
+        // ─── Render bell badge + dropdown items ───────────────────────
+        function renderNotifications(count, items) {
+            const $badge        = $('#notifBadge');
+            const $headerCount  = $('#notifHeaderCount');
+            const $itemsBox     = $('#notifItems');
+            const $empty        = $('#notifEmpty');
+
+            // Badge
+            if (count > 0) {
+                $badge.text(count > 9 ? '9+' : count).removeClass('d-none');
+                $headerCount.text(count + ' pending').show();
+            } else {
+                $badge.addClass('d-none').text('');
+                $headerCount.text('').hide();
+            }
+
+            // Pulse the bell once when count increases
+            if (count > lastCount && lastCount !== null) {
+                $('#notifToggle .fa-bell')
+                    .addClass('text-warning')
+                    .css('animation', 'bell-shake 0.5s ease');
+                setTimeout(() => {
+                    $('#notifToggle .fa-bell')
+                        .removeClass('text-warning')
+                        .css('animation', '');
+                }, 600);
+            }
+            lastCount = count;
+
+            // Items
+            if (items.length === 0) {
+                $empty.show();
+                $itemsBox.find('.notif-item').remove();
+                return;
+            }
+
+            $empty.hide();
+            $itemsBox.find('.notif-item').remove();
+
+            items.forEach(function (item) {
+                const html = `
+                    <a class="dropdown-item d-flex align-items-start notif-item py-2"
+                    href="${trackingUrl}"
+                    style="white-space: normal; border-bottom: 1px solid #f0f0f0;">
+                        <div class="mr-3 mt-1">
+                            <div class="icon-circle bg-warning" style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:50%;">
+                                <i class="fas fa-file-alt text-white" style="font-size:0.85rem;"></i>
+                            </div>
+                        </div>
+                        <div style="flex:1; min-width:0;">
+                            <div class="font-weight-bold text-dark"
+                                style="font-size:0.82rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"
+                                title="${item.establishment}">
+                                ${item.establishment}
+                            </div>
+                            <div class="small text-gray-600">
+                                Case: <strong>${item.case_no}</strong>
+                            </div>
+                            <div class="small text-muted">
+                                From: ${item.transferred_by}
+                            </div>
+                            <div class="small text-muted">
+                                <i class="fas fa-clock mr-1"></i>${item.transferred_at}
+                            </div>
+                        </div>
+                    </a>
+                `;
+                $itemsBox.append(html);
+            });
+        }
+
+        // ─── Mark seen when dropdown opens ────────────────────────────
+        $(document).on('shown.bs.dropdown', '#notificationDropdown', function () {
+            $.post(markSeenUrl, { _token: csrfToken });
+        });
+
+        // ─── Bell shake animation ──────────────────────────────────────
+        $('<style>')
+            .text(`
+                @keyframes bell-shake {
+                    0%,100% { transform: rotate(0deg); }
+                    20%      { transform: rotate(-15deg); }
+                    40%      { transform: rotate(15deg); }
+                    60%      { transform: rotate(-10deg); }
+                    80%      { transform: rotate(10deg); }
+                }
+            `)
+            .appendTo('head');
+
+        // ─── Init ─────────────────────────────────────────────────────
+        fetchNotifications();
+        setInterval(fetchNotifications, POLL_INTERVAL_MS);
+
+    })();
+    </script>
+        
 </body>
 
 </html>
