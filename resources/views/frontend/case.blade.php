@@ -30,6 +30,7 @@
 /* ==================== STICKY LEFT COLUMNS ==================== */
 
 /* 1. No. Column */
+/* 1. No. Column */
 .table th:nth-child(2),
 .table td:nth-child(2) {
     position: sticky;
@@ -37,31 +38,46 @@
     z-index: 35;
     background-color: #f8f9fc !important;
     box-shadow: 3px 0 8px rgba(0,0,0,0.1);
-    width: 55px;
-    min-width: 55px;
+    width: 75px;
+    min-width: 75px;
+    max-width: 75px;
 }
 
 /* 2. Inspection ID Column */
 .table th:nth-child(3),
 .table td:nth-child(3) {
     position: sticky;
-    left: 55px;
+    left: 75px;
     z-index: 35;
     background-color: #f8f9fc !important;
     box-shadow: 3px 0 8px rgba(0,0,0,0.1);
     width: 110px;
     min-width: 110px;
+    max-width: 110px;
 }
 
-/* 3. Establishment Name Column */
-.table th:nth-child(5),
-.table td:nth-child(5) {
+/* 3. Case No. Column */
+.table th:nth-child(4),
+.table td:nth-child(4) {
     position: sticky;
-    left: 165px;
+    left: 185px;
     z-index: 35;
     background-color: #f8f9fc !important;
     box-shadow: 3px 0 8px rgba(0,0,0,0.1);
-    min-width: 260px;
+    width: 100px;
+    min-width: 100px;
+    max-width: 100px;
+}
+
+/* 4. Establishment Name Column */
+.table th:nth-child(5),
+.table td:nth-child(5) {
+    position: sticky;
+    left: 285px;
+    z-index: 35;
+    background-color: #f8f9fc !important;
+    box-shadow: 3px 0 8px rgba(0,0,0,0.1);
+    min-width: 200px;
     max-width: 340px;
     white-space: nowrap;
     overflow: hidden;
