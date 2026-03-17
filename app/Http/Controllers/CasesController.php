@@ -1311,23 +1311,45 @@ public function getDocuments($id)
     }
 }
 
-/**
- * Save document checklist for a case
- */
 public function saveDocuments(Request $request, $id)
 {
     DB::beginTransaction();
     try {
         $case = CaseFile::findOrFail($id);
         
-        // Get documents and ensure checked is boolean
+        // Get existing documents from DB (contains real file paths)
+        $existingDocuments = $case->document_checklist ?? [];
+        
+        // Build a lookup map of existing docs by ID so we can preserve file data
+        $existingById = [];
+        foreach ($existingDocuments as $doc) {
+            if (isset($doc['id'])) {
+                $existingById[(string)$doc['id']] = $doc;
+            }
+        }
+        
+        // Get documents from request and ensure checked is boolean
         $documents = $request->input('documents', []);
         
-        // Convert 'checked' from string to boolean
-        $documents = array_map(function($doc) {
+        // Merge: keep frontend changes (title, checked) but preserve server-side file data
+        $documents = array_map(function($doc) use ($existingById) {
             if (isset($doc['checked'])) {
                 $doc['checked'] = filter_var($doc['checked'], FILTER_VALIDATE_BOOLEAN);
             }
+            
+            $docId = (string)($doc['id'] ?? '');
+            if (isset($existingById[$docId])) {
+                $existing = $existingById[$docId];
+                $fileFields = ['file_path', 'file_name', 'file_size', 'uploaded_at', 'uploaded_by'];
+                foreach ($fileFields as $field) {
+                    if (isset($existing[$field])) {
+                        $doc[$field] = $existing[$field];
+                    } else {
+                        unset($doc[$field]);
+                    }
+                }
+            }
+            
             return $doc;
         }, $documents);
         
@@ -1336,26 +1358,18 @@ public function saveDocuments(Request $request, $id)
         ]);
 
         ActivityLogger::logAction(
-            'UPDATE',
-            'Case',
-            $case->inspection_id,
+            'UPDATE', 'Case', $case->inspection_id,
             "Updated document checklist",
             ['establishment' => $case->establishment_name]
         );
 
         DB::commit();
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Documents saved successfully'
-        ]);
+        return response()->json(['success' => true, 'message' => 'Documents saved successfully']);
     } catch (\Exception $e) {
         DB::rollBack();
         Log::error('Error saving documents: ' . $e->getMessage());
-        return response()->json([
-            'success' => false,
-            'message' => 'Failed to save documents'
-        ], 500);
+        return response()->json(['success' => false, 'message' => 'Failed to save documents'], 500);
     }
 }
 
