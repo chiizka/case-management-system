@@ -81,7 +81,8 @@ class CasesController extends Controller
         // This way cases disappear from the province view once transferred elsewhere.
         if (!$user->isAdmin()) {
             $query->whereHas('documentTracking', function ($q) use ($user) {
-                $q->where('current_role', $user->role);
+                $q->where('current_role', $user->role)
+                ->where('status', 'Received');
             });
         }
         // Admin and MALSU see all cases (no filter applied)
@@ -1115,7 +1116,7 @@ public function importCsv(Request $request)
                 
                 // Extract fields from MIS CSV format
                 $inspectionId = trim($data['Inspection ID'] ?? '');
-                $fieldOffice = trim($data['Field Office'] ?? '');
+                $fieldOffice = $this->normalizeFieldOffice(trim($data['Field Office'] ?? ''));
                 $establishmentName = trim($data['Establishment/Ship Name'] ?? '');
                 $establishmentAddress = trim($data['Establishment/Ship Address'] ?? '');
                 $mode = trim($data['Mode'] ?? '');
@@ -1148,7 +1149,7 @@ public function importCsv(Request $request)
                 
                 // Create case record
                 try {
-                    CaseFile::create([
+                    $case = CaseFile::create([
                         'inspection_id' => $inspectionId,
                         'po_office' => $fieldOffice,
                         'establishment_name' => $establishmentName,
@@ -1168,6 +1169,7 @@ public function importCsv(Request $request)
                         'current_stage' => '1: Inspections',
                         'overall_status' => 'Active',
                     ]);
+                    $this->createInitialDocumentTracking($case, Auth::user());
                     $successCount++;
                 } catch (\Exception $e) {
                     $errors[] = "Row {$rowNumber}: " . $e->getMessage();
@@ -1739,6 +1741,50 @@ protected function getProvinceNameFromRole($role)
     ];
     
     return $roleToProvince[$role] ?? null;
+}
+private function normalizeFieldOffice(string $value): string
+{
+    $normalized = strtolower(trim($value));
+
+    $map = [
+        // Sorsogon variants
+        'sorsogon'                  => 'Sorsogon',
+        'sorsogon province'         => 'Sorsogon',
+        'province of sorsogon'      => 'Sorsogon',
+        'sorsogon city'             => 'Sorsogon',
+        'fo-sorsogon'               => 'Sorsogon',
+        'field office sorsogon'     => 'Sorsogon',
+
+        // Albay variants
+        'albay'                     => 'Albay',
+        'province of albay'         => 'Albay',
+        'albay province'            => 'Albay',
+        'fo-albay'                  => 'Albay',
+
+        // Camarines Sur variants
+        'camarines sur'             => 'Camarines Sur',
+        'cam sur'                   => 'Camarines Sur',
+        'province of camarines sur' => 'Camarines Sur',
+        'fo-camarines sur'          => 'Camarines Sur',
+
+        // Camarines Norte variants
+        'camarines norte'           => 'Camarines Norte',
+        'cam norte'                 => 'Camarines Norte',
+        'province of camarines norte'=> 'Camarines Norte',
+        'fo-camarines norte'        => 'Camarines Norte',
+
+        // Catanduanes variants
+        'catanduanes'               => 'Catanduanes',
+        'province of catanduanes'   => 'Catanduanes',
+        'fo-catanduanes'            => 'Catanduanes',
+
+        // Masbate variants
+        'masbate'                   => 'Masbate',
+        'province of masbate'       => 'Masbate',
+        'fo-masbate'                => 'Masbate',
+    ];
+
+    return $map[$normalized] ?? $value; // fallback to original if no match
 }
 
 }
