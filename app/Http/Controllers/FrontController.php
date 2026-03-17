@@ -18,11 +18,7 @@ public function index()
     $totalCases = CaseFile::count();
     $activeCases = CaseFile::where('overall_status', 'active')->count();
     
-    // Pending Inspections
-    $pendingInspections = Inspection::where(function($query) {
-        $query->whereNull('date_of_nr')
-              ->orWhere('lapse_20_day_period', '>=', Carbon::now()->format('Y-m-d'));
-    })->count();
+    $disposedCases = CaseFile::where('overall_status', 'Disposed')->count();
     
     $closedCases = CaseFile::where('overall_status', 'completed')->count();
     
@@ -185,7 +181,7 @@ public function index()
         return view('frontend.index', compact(
             'totalCases',
             'activeCases',
-            'pendingInspections',
+            'disposedCases',
             'closedCases',
             'pendingDocuments',
             'totalPendingDocs',
