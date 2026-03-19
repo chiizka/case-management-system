@@ -865,10 +865,7 @@
                     <div class="form-group">
                         <label for="appellate_body" class="font-weight-bold">Appellate Body: <span class="text-danger">*</span></label>
                         <select id="appellate_body" name="appellate_body" class="form-control" required>
-                            <option value="">Select where appeal was filed</option>
-                            <option value="Office of the Secretary">Office of the Secretary</option>
-                            <option value="NLRC">NLRC</option>
-                            <option value="BLR">BLR</option>
+                            <option value="Office of the Secretary" selected>Office of the Secretary</option>
                         </select>
                     </div>
                     
