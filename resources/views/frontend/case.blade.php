@@ -1037,31 +1037,8 @@ td.actions-cell.expanded {
                             @endif
                         </div>
 
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="current_stage">Current Stage</label>
-                                    <select class="form-control" id="current_stage" name="current_stage" required disabled>
-                                        <option value="1: Inspections" selected>1: Inspections</option>
-                                    </select>
-                                    <!-- Hidden input to ensure the value is submitted -->
-                                    <input type="hidden" name="current_stage" value="1: Inspections">
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="overall_status">Overall Status</label>
-                                    <select class="form-control" id="overall_status" name="overall_status" required disabled>
-                                        <option value="Active" selected>Active</option>
-                                        <option value="Completed">Completed</option>
-                                        <option value="Appealed">Appealed</option>
-                                        <option value="Disposed">Disposed</option>
-                                    </select>
-                                    <!-- Hidden input to ensure the value is submitted -->
-                                    <input type="hidden" name="overall_status" value="Active">
-                                </div>
-                            </div>
-                        </div>
+                            <input type="hidden" name="current_stage" value="1: Inspections">
+                            <input type="hidden" name="overall_status" value="Active">
 
                         <div class="modal-footer">
                             <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
