@@ -1252,7 +1252,7 @@ td.actions-cell.expanded {
 
     <!-- Document Checklist Modal -->
     <div class="modal fade" id="documentChecklistModal" tabindex="-1" role="dialog" aria-labelledby="documentChecklistModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable" role="document">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="documentChecklistModalLabel">
@@ -1300,9 +1300,6 @@ td.actions-cell.expanded {
             </div>
         </div>
     </div>
- 
-    <input type="file" id="documentFileInput" style="display: none;" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.xlsx,.xls">
-
 
     <!-- Export Options Modal (Pure Client-Side) -->
     <div class="modal fade" id="exportOptionsModal" tabindex="-1" role="dialog" aria-labelledby="exportModalLabel" aria-hidden="true">
@@ -1363,6 +1360,41 @@ td.actions-cell.expanded {
         </div>
     </div>
 
+    <!-- Add Link Modal -->
+<div class="modal fade" id="addLinkModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-link"></i> Add Link</h5>
+                <button type="button" class="close" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="linkDocId">
+                <div class="form-group">
+                    <label for="linkUrl">URL <span class="text-danger">*</span></label>
+                    <input type="url" class="form-control" id="linkUrl"
+                           placeholder="https://drive.google.com/...">
+                    <small class="form-text text-muted">Google Drive, OneDrive, SharePoint, etc.</small>
+                </div>
+                <div class="form-group">
+                    <label for="linkLabel">Display Label</label>
+                    <input type="text" class="form-control" id="linkLabel"
+                           placeholder="e.g. Google Drive, SharePoint">
+                    <small class="form-text text-muted">Optional. Defaults to "Open Link".</small>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="confirmAddLinkBtn">
+                    <i class="fas fa-save"></i> Save Link
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 @endsection
 @push('scripts')
 <!-- DataTables plugins -->
@@ -1401,7 +1433,7 @@ $(document).ready(function() {
 
 let documents = [];
 let currentCaseId = null;
-let currentUploadDocId = null;
+
 
     // Prevent editing of computed fields
     $(document).on('click', '.readonly-cell', function(e) {
@@ -1457,26 +1489,18 @@ $(document).on('change', '.document-checkbox', function() {
     const docId = parseInt($(this).data('doc-id'));
     const isChecked = $(this).is(':checked');
     
-    console.log('Checkbox changed:', docId, 'checked:', isChecked, typeof isChecked);
-    
     const doc = documents.find(d => d.id == docId);
     if (doc) {
         doc.checked = isChecked;
-        console.log('Updated document:', doc);
         
-        // Update UI immediately BEFORE saving
         const $label = $(`label[for="doc-${doc.id}"]`);
-        const $fileInfo = $label.closest('.document-content').find('.file-info');
         
         if (isChecked) {
             $label.addClass('text-muted').css('text-decoration', 'line-through');
-            $fileInfo.addClass('text-muted').css('text-decoration', 'line-through');
         } else {
             $label.removeClass('text-muted').css('text-decoration', 'none');
-            $fileInfo.removeClass('text-muted').css('text-decoration', 'none');
         }
         
-        // Save to server
         saveDocuments();
     }
 });
@@ -1486,7 +1510,7 @@ $(document).on('click', '.remove-document-btn', function() {
     const docId = parseInt($(this).data('doc-id'));
     
     const doc = documents.find(d => d.id == docId);
-    const hasFile = doc && doc.file_path;
+    const hasLink = doc && doc.link;
     
     // Different confirmation messages based on whether file exists
     let confirmMessage = hasFile 
@@ -1499,25 +1523,6 @@ $(document).on('click', '.remove-document-btn', function() {
     
     console.log('Removing document:', docId);
     
-    // If document has file, delete it first from server
-    if (hasFile) {
-        // Delete file from server without waiting for response
-        $.ajax({
-            url: `/case/${currentCaseId}/documents/${docId}/file`,
-            method: 'DELETE',
-            data: {
-                _token: $('meta[name="csrf-token"]').attr('content')
-            },
-            success: function(response) {
-                console.log('File deleted from server:', response);
-            },
-            error: function(xhr) {
-                console.log('File delete error (may already be deleted):', xhr);
-                // Don't show error to user - file might already be gone
-            }
-        });
-    }
-    
     // Remove document from array
     documents = documents.filter(d => d.id != docId);
     console.log('Documents after removal:', documents);
@@ -1527,56 +1532,6 @@ $(document).on('click', '.remove-document-btn', function() {
     renderDocuments();
 });
 
-// 6. UPLOAD FILE BUTTON
-$(document).on('click', '.upload-file-btn', function() {
-    currentUploadDocId = parseInt($(this).data('doc-id'));
-    $('#documentFileInput').click();
-});
-
-// 7. FILE INPUT CHANGE HANDLER
-$('#documentFileInput').on('change', function(e) {
-    const file = e.target.files[0];
-    
-    if (!file) {
-        return;
-    }
-    
-    // Validate file size (10MB max)
-    if (file.size > 10 * 1024 * 1024) {
-        alert('File size must be less than 10MB');
-        $(this).val('');
-        return;
-    }
-    
-    // Validate file type
-    const allowedExtensions = ['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png', 'xlsx', 'xls'];
-    const fileExtension = file.name.split('.').pop().toLowerCase();
-    
-    if (!allowedExtensions.includes(fileExtension)) {
-        alert('Invalid file type. Allowed: PDF, DOC, DOCX, JPG, PNG, XLSX, XLS');
-        $(this).val('');
-        return;
-    }
-    
-    uploadDocumentFile(currentUploadDocId, file);
-});
-
-// 8. VIEW/DOWNLOAD FILE BUTTON
-$(document).on('click', '.view-file-btn', function() {
-    const docId = parseInt($(this).data('doc-id'));
-    viewDocumentFile(docId);
-});
-
-// 9. DELETE FILE BUTTON
-$(document).on('click', '.delete-file-btn', function() {
-    const docId = parseInt($(this).data('doc-id'));
-    
-    if (!confirm('Delete this uploaded file?')) {
-        return;
-    }
-    
-    deleteDocumentFile(docId);
-});
 
 // 10. ENTER KEY HANDLER
 $('#newDocumentTitle').on('keypress', function(e) {
@@ -1660,113 +1615,6 @@ function saveDocuments() {
     });
 }
 
-// 13. UPLOAD FILE FUNCTION
-function uploadDocumentFile(docId, file) {
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('_token', $('meta[name="csrf-token"]').attr('content'));
-    
-    // Show loading state
-    const $uploadBtn = $(`.upload-file-btn[data-doc-id="${docId}"]`);
-    const originalHtml = $uploadBtn.html();
-    $uploadBtn.html('<i class="fas fa-spinner fa-spin"></i>').prop('disabled', true);
-    
-    $.ajax({
-        url: `/case/${currentCaseId}/documents/${docId}/upload`,
-        method: 'POST',
-        data: formData,
-        processData: false,
-        contentType: false,
-        success: function(response) {
-            if (response.success) {
-                // Update document with file info
-                const doc = documents.find(d => d.id == docId);
-                if (doc) {
-                    doc.file_name = response.file_name;
-                    doc.file_size = response.file_size;
-                    doc.uploaded_at = response.uploaded_at;
-                    doc.file_path = 'uploaded'; // Flag that file exists
-                }
-                
-                // Clear file input
-                $('#documentFileInput').val('');
-                
-                // Re-render documents
-                renderDocuments();
-                
-                // Show success message
-                showToast('success', response.message);
-            } else {
-                alert(response.message || 'Upload failed');
-                $uploadBtn.html(originalHtml).prop('disabled', false);
-            }
-        },
-        error: function(xhr) {
-            console.error('Upload error:', xhr);
-            const errorMsg = xhr.responseJSON?.message || 'Failed to upload file';
-            alert(errorMsg);
-            $uploadBtn.html(originalHtml).prop('disabled', false);
-        }
-    });
-}
-
-// 14. VIEW FILE FUNCTION (opens in new tab)
-function viewDocumentFile(docId) {
-    const url = `/case/${currentCaseId}/documents/${docId}/download`;
-    window.open(url, '_blank');
-}
-
-// 15. DELETE FILE FUNCTION
-function deleteDocumentFile(docId) {
-    $.ajax({
-        url: `/case/${currentCaseId}/documents/${docId}/file`,
-        method: 'DELETE',
-        data: {
-            _token: $('meta[name="csrf-token"]').attr('content')
-        },
-        success: function(response) {
-            if (response.success) {
-                // Update document - remove file info
-                const doc = documents.find(d => d.id == docId);
-                if (doc) {
-                    delete doc.file_name;
-                    delete doc.file_size;
-                    delete doc.uploaded_at;
-                    delete doc.uploaded_by;
-                    delete doc.file_path;
-                }
-                
-                // Re-render documents
-                renderDocuments();
-                
-                showToast('success', response.message);
-            }
-        },
-        error: function(xhr) {
-            console.error('Delete error:', xhr);
-            
-            // Only show error if it's not a 404 (file already deleted)
-            if (xhr.status !== 404) {
-                alert('Failed to delete file');
-            } else {
-                console.log('File already deleted or not found - continuing anyway');
-                
-                // Clean up the document anyway
-                const doc = documents.find(d => d.id == docId);
-                if (doc) {
-                    delete doc.file_name;
-                    delete doc.file_size;
-                    delete doc.uploaded_at;
-                    delete doc.uploaded_by;
-                    delete doc.file_path;
-                }
-                
-                renderDocuments();
-            }
-        }
-    });
-}
-
 // 16. RENDER DOCUMENTS FUNCTION
 function renderDocuments() {
     console.log('Rendering documents:', documents);
@@ -1786,72 +1634,73 @@ function renderDocuments() {
     documents.forEach(doc => {
         const isChecked = doc.checked === true;
         const hasFile = doc.file_path && doc.file_name;
+        const hasLink = doc.link && doc.link.trim() !== '';
         
         console.log(`Rendering doc ${doc.id}: checked=${doc.checked}, hasFile=${hasFile}`);
         
         let fileInfo = '';
         let uploadButton = '';
         
-        if (hasFile) {
-            // Show file info and action buttons
+        if (hasLink) {
             fileInfo = `
-                <div class="file-info">
-                    <i class="fas fa-paperclip"></i>
-                    <span>${doc.file_name} (${doc.file_size || 'Unknown size'})</span>
-                    <button class="btn btn-sm btn-outline-primary view-file-btn" 
-                            data-doc-id="${doc.id}" 
-                            title="View/Download file"
-                            type="button">
-                        <i class="fas fa-download"></i>
-                    </button>
-                    <button class="btn btn-sm btn-outline-danger delete-file-btn" 
-                            data-doc-id="${doc.id}" 
-                            title="Delete file"
+                <div class="file-info mt-1" style="text-decoration: none !important; font-style: normal !important;">
+                    <i class="fas fa-link text-primary" style="text-decoration: none !important;"></i>
+                    <a href="${doc.link}" target="_blank" class="ml-1 mr-2" 
+                    title="${doc.link}"
+                    style="text-decoration: underline !important;">
+                        ${doc.link_label || 'Open Link'}
+                    </a>
+                    <small class="text-muted" style="text-decoration: none !important;">
+                        (added by ${doc.link_added_by || 'unknown'} on ${doc.link_added_at || ''})
+                    </small>
+                    <button class="btn btn-sm btn-outline-danger delete-link-btn ml-2"
+                            data-doc-id="${doc.id}"
+                            title="Remove link"
                             type="button">
                         <i class="fas fa-trash"></i>
                     </button>
                 </div>
             `;
         } else {
-            // Show upload button
-            uploadButton = `
-                <button class="btn btn-sm btn-success upload-file-btn upload-btn" 
+                    uploadButton = `
+                <button class="btn btn-sm btn-outline-primary add-link-btn"
                         data-doc-id="${doc.id}"
-                        title="Upload file"
+                        title="Add link"
                         type="button">
-                    <i class="fas fa-upload"></i> Upload
+                    <i class="fas fa-link"></i> Add Link
                 </button>
             `;
         }
         
         const item = `
-            <li class="list-group-item d-flex justify-content-between align-items-start">
-                <div class="document-content">
-                    <div class="custom-control custom-checkbox">
-                        <input type="checkbox" 
-                               class="custom-control-input document-checkbox" 
-                               id="doc-${doc.id}" 
-                               data-doc-id="${doc.id}"
-                               ${isChecked ? 'checked' : ''}>
-                        <label class="custom-control-label ${isChecked ? 'text-muted' : ''}" 
-                               for="doc-${doc.id}" 
-                               style="${isChecked ? 'text-decoration: line-through;' : ''}">
-                            ${doc.title}
-                        </label>
-                    </div>
-                    ${fileInfo}
+        <li class="list-group-item d-flex justify-content-between align-items-start" 
+            style="text-decoration: none !important;">
+            <div class="document-content" style="text-decoration: none !important;">
+                <div class="custom-control custom-checkbox">
+                    <input type="checkbox" 
+                        class="custom-control-input document-checkbox" 
+                        id="doc-${doc.id}" 
+                        data-doc-id="${doc.id}"
+                        ${isChecked ? 'checked' : ''}>
+                    <label class="custom-control-label ${isChecked ? 'text-muted' : ''}" 
+                        for="doc-${doc.id}" 
+                        style="${isChecked ? 'text-decoration: line-through;' : 'text-decoration: none;'}">
+                        ${doc.title}
+                    </label>
                 </div>
-                <div class="document-item-actions">
-                    ${uploadButton}
-                    <button class="btn btn-sm btn-danger remove-document-btn" 
-                            data-doc-id="${doc.id}"
-                            title="Remove from checklist"
-                            type="button">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-            </li>
-        `;
+                ${fileInfo}
+            </div>
+            <div class="document-item-actions">
+                ${uploadButton}
+                <button class="btn btn-sm btn-danger remove-document-btn" 
+                        data-doc-id="${doc.id}"
+                        title="Remove from checklist"
+                        type="button">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </li>
+    `;
         docsList.append(item);
     });
 }
@@ -2049,6 +1898,63 @@ $(document).on('click', function(e) {
             return false;
         }
     }
+
+        // Open add-link modal
+    $(document).on('click', '.add-link-btn', function() {
+        const docId = parseInt($(this).data('doc-id'));
+        $('#linkDocId').val(docId);
+        $('#linkUrl').val('');
+        $('#linkLabel').val('');
+        $('#addLinkModal').modal('show');
+    });
+
+    // Save the link
+    $('#confirmAddLinkBtn').on('click', function() {
+        const docId = parseInt($('#linkDocId').val());
+        const url   = $('#linkUrl').val().trim();
+        const label = $('#linkLabel').val().trim();
+
+        if (!url) {
+            alert('Please enter a URL.');
+            return;
+        }
+
+        try { new URL(url); } catch(e) {
+            alert('Please enter a valid URL (must start with http:// or https://).');
+            return;
+        }
+
+        const doc = documents.find(d => d.id == docId);
+        if (doc) {
+            doc.link        = url;
+            doc.link_label  = label || 'Open Link';
+            doc.link_added_at = new Date().toISOString().slice(0, 10); // just YYYY-MM-DD
+            doc.link_added_by = '{{ Auth::user()->fname }} {{ Auth::user()->lname }}';
+        }
+
+        $('#addLinkModal').modal('hide');
+        saveDocuments();
+        renderDocuments();
+        showToast('success', 'Link saved successfully.');
+    });
+
+    // Delete the link
+    $(document).on('click', '.delete-link-btn', function() {
+        if (!confirm('Remove this link from the document?')) return;
+
+        const docId = parseInt($(this).data('doc-id'));
+        const doc = documents.find(d => d.id == docId);
+        if (doc) {
+            delete doc.link;
+            delete doc.link_label;
+            delete doc.uploaded_at;
+            delete doc.uploaded_by;
+        }
+
+        saveDocuments();
+        renderDocuments();
+        showToast('success', 'Link removed.');
+    });
 
     // NEW: Function to bind search to a specific table
     function bindSearchForTable(tableId) {
