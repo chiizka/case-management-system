@@ -12,172 +12,187 @@ use Illuminate\Support\Facades\Auth;
 
 class FrontController extends Controller
 {
-public function index()
-{
-    // Statistics Cards
-    $totalCases = CaseFile::count();
-    $activeCases = CaseFile::where('overall_status', 'active')->count();
-    
-    $disposedCases = CaseFile::where('overall_status', 'Disposed')->count();
-    
-    $closedCases = CaseFile::where('overall_status', 'completed')->count();
-    
-    // ============================================================================
-    // FIXED: Get active cases count by CURRENT location (from document_tracking)
-    // Previously this was using po_office which shows where case was CREATED
-    // Now it uses current_role from document_tracking to show where case IS NOW
-    // ============================================================================
-    $activeByRole = [
-        // Central Offices - based on current_role in document_tracking
-        'admin' => CaseFile::where('overall_status', 'active')
-            ->whereHas('documentTracking', function($query) {
-                $query->where('current_role', 'admin');
-            })
-            ->count(),
-            
-        'malsu' => CaseFile::where('overall_status', 'active')
-            ->whereHas('documentTracking', function($query) {
-                $query->where('current_role', 'malsu');
-            })
-            ->count(),
-            
-        'case_management' => CaseFile::where('overall_status', 'active')
-            ->whereHas('documentTracking', function($query) {
-                $query->where('current_role', 'case_management');
-            })
-            ->count(),
-            
-        'records' => CaseFile::where('overall_status', 'active')
-            ->whereHas('documentTracking', function($query) {
-                $query->where('current_role', 'records');
-            })
-            ->count(),
-            
-        // Provincial Offices - based on current_role in document_tracking
-        'province_albay' => CaseFile::where('overall_status', 'active')
-            ->whereHas('documentTracking', function($query) {
-                $query->where('current_role', 'province_albay');
-            })
-            ->count(),
-            
-        'province_camarines_sur' => CaseFile::where('overall_status', 'active')
-            ->whereHas('documentTracking', function($query) {
-                $query->where('current_role', 'province_camarines_sur');
-            })
-            ->count(),
-            
-        'province_camarines_norte' => CaseFile::where('overall_status', 'active')
-            ->whereHas('documentTracking', function($query) {
-                $query->where('current_role', 'province_camarines_norte');
-            })
-            ->count(),
-            
-        'province_catanduanes' => CaseFile::where('overall_status', 'active')
-            ->whereHas('documentTracking', function($query) {
-                $query->where('current_role', 'province_catanduanes');
-            })
-            ->count(),
-            
-        'province_masbate' => CaseFile::where('overall_status', 'active')
-            ->whereHas('documentTracking', function($query) {
-                $query->where('current_role', 'province_masbate');
-            })
-            ->count(),
-            
-        'province_sorsogon' => CaseFile::where('overall_status', 'active')
-            ->whereHas('documentTracking', function($query) {
-                $query->where('current_role', 'province_sorsogon');
-            })
-            ->count(),
-    ];
+    public function index()
+    {
+        $user       = Auth::user();
+        $isProvince = $user->isProvince();
+        $userRole   = $user->role; // e.g. 'province_albay'
 
-    $userRole = Auth::user()->role;
-    $pendingDocuments = DocumentTracking::where('current_role', $userRole)
-        ->where('status', 'Pending Receipt')
-        ->whereNull('received_by_user_id')
-        ->with(['case', 'transferredBy'])
-        ->orderBy('transferred_at', 'desc')
-        ->limit(5) // Show only top 5 on dashboard
-        ->get();
-    
-    // Count total pending for this user's role
-    $totalPendingDocs = DocumentTracking::where('current_role', $userRole)
-        ->where('status', 'Pending Receipt')
-        ->whereNull('received_by_user_id')
-        ->count();
-    
-    // Cases by Stage Distribution
-    $stageData = [
-        CaseFile::where('current_stage', 'inspection')->count(),
-        CaseFile::where('current_stage', 'docketing')->count(),
-        CaseFile::where('current_stage', 'hearing')->count(),
-        CaseFile::where('current_stage', 'resolution')->count(),
-    ];
-        
-        // Monthly Trend (Last 6 Months)
+        // ─────────────────────────────────────────────────────────────────────
+        // For province users, all counts follow the same rule:
+        //
+        //   - Case must have originated from their province (po_office)
+        //   - The document must have been RECEIVED by their office
+        //     (documentTracking.status = 'Received')
+        //   - Active Cases:  overall_status = Active  + received
+        //   - Disposed Cases: overall_status = Disposed + received
+        //   - Total Cases:  Active + Disposed (both received) — no raw count
+        //   - Closed Cases: overall_status = Completed + received
+        //
+        // For non-province users: no scoping, see everything system-wide.
+        // ─────────────────────────────────────────────────────────────────────
+
+        if ($isProvince) {
+            $provinceName = $user->getProvinceName();
+
+            // Base: cases from this province that this office has already received
+            $receivedByProvince = CaseFile::where('po_office', $provinceName)
+                ->whereHas('documentTracking', function ($q) use ($userRole) {
+                    $q->where('current_role', $userRole)
+                      ->where('status', 'Received');
+                });
+
+            $activeCases   = (clone $receivedByProvince)->where('overall_status', 'Active')->count();
+            $disposedCases = (clone $receivedByProvince)->where('overall_status', 'Disposed')->count();
+            $closedCases   = (clone $receivedByProvince)->where('overall_status', 'Completed')->count();
+
+            // Total = Active + Disposed (received by this province only)
+            $totalCases = $activeCases + $disposedCases;
+
+        } else {
+            // Regional roles: system-wide counts, no scoping
+            $activeCases   = CaseFile::where('overall_status', 'Active')->count();
+            $disposedCases = CaseFile::where('overall_status', 'Disposed')->count();
+            $closedCases   = CaseFile::where('overall_status', 'Completed')->count();
+            $totalCases    = CaseFile::count();
+        }
+
+        // ── Active Cases Modal Breakdown ──────────────────────────────────────
+        if ($isProvince) {
+            $activeByRole = [
+                $userRole => $activeCases,
+            ];
+        } else {
+            $rolesForBreakdown = [
+                'admin', 'malsu', 'case_management', 'records',
+                'province_albay', 'province_camarines_sur', 'province_camarines_norte',
+                'province_catanduanes', 'province_masbate', 'province_sorsogon',
+            ];
+
+            $activeByRole = [];
+            foreach ($rolesForBreakdown as $role) {
+                $activeByRole[$role] = CaseFile::where('overall_status', 'Active')
+                    ->whereHas('documentTracking', fn($q) => $q->where('current_role', $role))
+                    ->count();
+            }
+        }
+
+        // ── Pending Documents for THIS user's role ────────────────────────────
+        $pendingDocuments = DocumentTracking::where('current_role', $userRole)
+            ->where('status', 'Pending Receipt')
+            ->whereNull('received_by_user_id')
+            ->with(['case', 'transferredBy'])
+            ->orderBy('transferred_at', 'desc')
+            ->limit(5)
+            ->get();
+
+        $totalPendingDocs = DocumentTracking::where('current_role', $userRole)
+            ->where('status', 'Pending Receipt')
+            ->whereNull('received_by_user_id')
+            ->count();
+
+        // ── Monthly Trend — Last 6 Months ────────────────────────────────────
         $monthLabels = [];
         $monthlyData = [];
-        
+
         for ($i = 5; $i >= 0; $i--) {
-            $date = Carbon::now()->subMonths($i);
+            $date          = Carbon::now()->subMonths($i);
             $monthLabels[] = $date->format('M Y');
-            
-            $count = CaseFile::whereYear('created_at', $date->year)
-                         ->whereMonth('created_at', $date->month)
-                         ->count();
-            $monthlyData[] = $count;
+
+            if ($isProvince) {
+                // Only received cases from this province per month
+                $monthlyData[] = CaseFile::where('po_office', $user->getProvinceName())
+                    ->whereHas('documentTracking', function ($q) use ($userRole) {
+                        $q->where('current_role', $userRole)
+                          ->where('status', 'Received');
+                    })
+                    ->whereYear('created_at', $date->year)
+                    ->whereMonth('created_at', $date->month)
+                    ->count();
+            } else {
+                $monthlyData[] = CaseFile::whereYear('created_at', $date->year)
+                    ->whereMonth('created_at', $date->month)
+                    ->count();
+            }
         }
-        
-        // Cases by Location (Top 5) - Using establishment_name as location
-        $locationStats = CaseFile::select('establishment_name', DB::raw('count(*) as total'))
-                             ->whereNotNull('establishment_name')
-                             ->where('establishment_name', '!=', '')
-                             ->groupBy('establishment_name')
-                             ->orderByDesc('total')
-                             ->limit(5)
-                             ->get();
-        
+
+        // ── Top Establishments ────────────────────────────────────────────────
+        $estQuery = $isProvince
+            ? CaseFile::where('po_office', $user->getProvinceName())
+                ->whereHas('documentTracking', function ($q) use ($userRole) {
+                    $q->where('current_role', $userRole)->where('status', 'Received');
+                })
+            : CaseFile::query();
+
+        $locationStats = $estQuery
+            ->select('establishment_name', DB::raw('count(*) as total'))
+            ->whereNotNull('establishment_name')
+            ->where('establishment_name', '!=', '')
+            ->groupBy('establishment_name')
+            ->orderByDesc('total')
+            ->limit(5)
+            ->get();
+
         $locationLabels = $locationStats->pluck('establishment_name')->toArray();
-        $locationData = $locationStats->pluck('total')->toArray();
-        
-        // If no location data, provide defaults
+        $locationData   = $locationStats->pluck('total')->toArray();
+
         if (empty($locationLabels)) {
             $locationLabels = ['No Data Available'];
-            $locationData = [0];
+            $locationData   = [0];
         }
-        
-        // Priority Breakdown - Based on current_stage as priority indicator
-        // You may need to add a 'priority' column or adjust this logic
-        $criticalCases = CaseFile::where('current_stage', 'hearing')->count(); // Assuming hearing is critical
-        $highCases = CaseFile::where('current_stage', 'docketing')->count();
-        $mediumCases = CaseFile::where('current_stage', 'inspection')->count();
-        $lowCases = CaseFile::where('current_stage', 'resolution')->count();
-        
+
+        // ── Stage / Priority Breakdown ────────────────────────────────────────
+        $stageBaseQuery = $isProvince
+            ? CaseFile::where('po_office', $user->getProvinceName())
+                ->whereHas('documentTracking', function ($q) use ($userRole) {
+                    $q->where('current_role', $userRole)->where('status', 'Received');
+                })
+            : CaseFile::query();
+
+        $stageData = [
+            (clone $stageBaseQuery)->where('current_stage', 'like', '%Inspections%')->count(),
+            (clone $stageBaseQuery)->where('current_stage', 'like', '%Docketing%')->count(),
+            (clone $stageBaseQuery)->where('current_stage', 'like', '%Hearing%')->count(),
+            (clone $stageBaseQuery)->where('current_stage', 'like', '%Resolution%')->count(),
+        ];
+
+        $criticalCases = (clone $stageBaseQuery)->where('current_stage', 'like', '%Hearing%')->count();
+        $highCases     = (clone $stageBaseQuery)->where('current_stage', 'like', '%Docketing%')->count();
+        $mediumCases   = (clone $stageBaseQuery)->where('current_stage', 'like', '%Inspections%')->count();
+        $lowCases      = (clone $stageBaseQuery)->where('current_stage', 'like', '%Resolution%')->count();
+
         $totalForPercentage = $totalCases > 0 ? $totalCases : 1;
-        
+
         $criticalPercentage = round(($criticalCases / $totalForPercentage) * 100);
-        $highPercentage = round(($highCases / $totalForPercentage) * 100);
-        $mediumPercentage = round(($mediumCases / $totalForPercentage) * 100);
-        $lowPercentage = round(($lowCases / $totalForPercentage) * 100);
-        
-        // Recent Cases (Last 10)
-        $recentCases = CaseFile::with('inspections')
-                           ->orderBy('created_at', 'desc')
-                           ->limit(10)
-                           ->get();
-        
-        // Document Tracking Statistics
+        $highPercentage     = round(($highCases     / $totalForPercentage) * 100);
+        $mediumPercentage   = round(($mediumCases   / $totalForPercentage) * 100);
+        $lowPercentage      = round(($lowCases      / $totalForPercentage) * 100);
+
+        // ── Recent Cases ──────────────────────────────────────────────────────
+        $recentQuery = $isProvince
+            ? CaseFile::where('po_office', $user->getProvinceName())
+                ->whereHas('documentTracking', function ($q) use ($userRole) {
+                    $q->where('current_role', $userRole)->where('status', 'Received');
+                })
+            : CaseFile::query();
+
+        $recentCases = $recentQuery
+            ->with('inspections')
+            ->orderBy('created_at', 'desc')
+            ->limit(10)
+            ->get();
+
+        // ── Document Tracking Stats (global) ──────────────────────────────────
         $documentsInTransit = DocumentTracking::where('status', 'in_transit')->count();
-        $documentsPending = DocumentTracking::where('status', 'pending')->count();
-        $documentsReceived = DocumentTracking::where('status', 'received')->count();
-        
-        $totalDocuments = $documentsInTransit + $documentsPending + $documentsReceived;
-        $totalDocuments = $totalDocuments > 0 ? $totalDocuments : 1;
-        
+        $documentsPending   = DocumentTracking::where('status', 'pending')->count();
+        $documentsReceived  = DocumentTracking::where('status', 'received')->count();
+
+        $totalDocuments = max($documentsInTransit + $documentsPending + $documentsReceived, 1);
+
         $documentsInTransitPercent = round(($documentsInTransit / $totalDocuments) * 100);
-        $documentsPendingPercent = round(($documentsPending / $totalDocuments) * 100);
-        $documentsReceivedPercent = round(($documentsReceived / $totalDocuments) * 100);
-        
+        $documentsPendingPercent   = round(($documentsPending   / $totalDocuments) * 100);
+        $documentsReceivedPercent  = round(($documentsReceived  / $totalDocuments) * 100);
+
         return view('frontend.index', compact(
             'totalCases',
             'activeCases',
@@ -205,7 +220,8 @@ public function index()
             'documentsInTransitPercent',
             'documentsPendingPercent',
             'documentsReceivedPercent',
-            'activeByRole'
+            'activeByRole',
+            'isProvince'
         ));
     }
 
