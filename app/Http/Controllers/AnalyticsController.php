@@ -14,7 +14,7 @@ class AnalyticsController extends Controller
     {
         $user       = Auth::user();
         $isProvince = $user->isProvince();
-        $userRole   = $user->role; // e.g. 'province_albay'
+        $userRole   = $user->role;
 
         $year  = (int) $request->get('year',  now()->year);
         $month = (int) $request->get('month', now()->month);
@@ -25,18 +25,9 @@ class AnalyticsController extends Controller
 
         $archived = ['Completed', 'Disposed', 'Appealed'];
 
-        // ─────────────────────────────────────────────────────────────────────
-        // Base scope helpers
-        //
-        // Province users:
-        //   - "origin" queries  → filter by po_office (their province)
-        //   - "received" queries → also require documentTracking.status = Received
-        //     so unacknowledged cases are excluded from all counts
-        //
-        // Regional roles: no scoping, see everything system-wide
-        // ─────────────────────────────────────────────────────────────────────
-
-        // Applies province + received filter to any query builder
+        // ── Scope helper ──────────────────────────────────────────────────────
+        // Province users: po_office + documentTracking received
+        // Regional roles: no scope
         $scopeToProvince = function ($q) use ($isProvince, $user, $userRole) {
             if ($isProvince) {
                 $q->where('po_office', $user->getProvinceName())
@@ -48,7 +39,7 @@ class AnalyticsController extends Controller
             return $q;
         };
 
-        // ── Carry-over: created before this year, still active ───────────────
+        // ── Carry-over ────────────────────────────────────────────────────────
         $carryOver = $scopeToProvince(
             CaseFile::whereDate('created_at', '<', $startOfYear)
                 ->whereNotIn('overall_status', $archived)
@@ -60,7 +51,7 @@ class AnalyticsController extends Controller
                 ->whereDate('created_at', '<=', $monthEnd)
         )->count();
 
-        // ── Total cases handled this month ────────────────────────────────────
+        // ── Total handled ─────────────────────────────────────────────────────
         $newUpToMonth = $scopeToProvince(
             CaseFile::whereDate('created_at', '>=', $startOfYear)
                 ->whereDate('created_at', '<=', $monthEnd)
@@ -85,10 +76,8 @@ class AnalyticsController extends Controller
             );
         };
 
-        // ── Disposed this month ───────────────────────────────────────────────
         $disposedThisMonth = $disposedQuery($monthStart, $monthEnd)->count();
 
-        // ── Within / beyond PCT ───────────────────────────────────────────────
         $disposedWithin = $disposedQuery($monthStart, $monthEnd)
             ->where(fn($q) => $q->where('status_pct', 'Within PCT')->orWhereNull('status_pct'))
             ->count();
@@ -97,11 +86,9 @@ class AnalyticsController extends Controller
             ->where('status_pct', 'Beyond PCT')
             ->count();
 
-        // ── Pending ───────────────────────────────────────────────────────────
         $disposedYTD = $disposedQuery($startOfYear, $monthEnd)->count();
         $pending     = $totalHandled - $disposedYTD;
 
-        // ── Disposition rate ──────────────────────────────────────────────────
         $dispositionRate = $newCases > 0
             ? round(($disposedThisMonth / $newCases) * 100, 1)
             : 0;
@@ -114,8 +101,7 @@ class AnalyticsController extends Controller
             ->selectRaw('SUM(COALESCE(affected_male,0) + COALESCE(affected_female,0)) as total')
             ->value('total') ?? 0;
 
-        // ── By province breakdown (regional roles only) ───────────────────────
-        // Province users don't need this — they only see their own data.
+        // ── Province breakdown (regional only) ────────────────────────────────
         $byProvince = collect();
 
         if (!$isProvince) {
@@ -131,7 +117,6 @@ class AnalyticsController extends Controller
             $byProvince = collect($provinceRoleMap)->map(function ($role, $prov) use ($archived, $monthStart, $monthEnd) {
                 $total = CaseFile::where('po_office', $prov)->count();
 
-                // Active cases currently physically at this province (received)
                 $active = CaseFile::whereNotIn('overall_status', $archived)
                     ->whereHas('documentTracking', fn($q) => $q
                         ->where('current_role', $role)
@@ -151,12 +136,7 @@ class AnalyticsController extends Controller
                             ->whereDate('updated_at', '<=', $monthEnd))
                     )->count();
 
-                return [
-                    'name'     => $prov,
-                    'total'    => $total,
-                    'active'   => $active,
-                    'disposed' => $disposed,
-                ];
+                return ['name' => $prov, 'total' => $total, 'active' => $active, 'disposed' => $disposed];
             });
         }
 
@@ -171,12 +151,11 @@ class AnalyticsController extends Controller
                     CaseFile::whereDate('created_at', '>=', $s)
                         ->whereDate('created_at', '<=', $e)
                 )->count(),
-
                 'disposed' => $disposedQuery($s, $e)->count(),
             ];
         }
 
-        // ── Stage distribution (active cases, scoped) ─────────────────────────
+        // ── Stage distribution ────────────────────────────────────────────────
         $stageDistribution = $scopeToProvince(
             CaseFile::whereNotIn('overall_status', $archived)
         )
@@ -185,10 +164,17 @@ class AnalyticsController extends Controller
             ->orderBy('current_stage')
             ->pluck('count', 'current_stage');
 
-        // ── Recent activity (last 5 archived cases, scoped) ───────────────────
-        $recentActivity = $scopeToProvince(
-            CaseFile::whereIn('overall_status', $archived)
-        )
+        // ── Recently disposed cases ───────────────────────────────────────────
+        // Province users: cases disposed IN their province (po_office match)
+        //   regardless of where the document is now — disposal is a historical
+        //   fact tied to the origin province.
+        // Regional roles: all archived cases.
+        $recentActivityQuery = $isProvince
+            ? CaseFile::whereIn('overall_status', $archived)
+                ->where('po_office', $user->getProvinceName())
+            : CaseFile::whereIn('overall_status', $archived);
+
+        $recentActivity = $recentActivityQuery
             ->orderBy('updated_at', 'desc')
             ->limit(5)
             ->get(['inspection_id', 'case_no', 'establishment_name', 'po_office', 'overall_status', 'updated_at']);
