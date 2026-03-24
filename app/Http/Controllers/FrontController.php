@@ -42,19 +42,23 @@ class FrontController extends Controller
                       ->where('status', 'Received');
                 });
 
-            $activeCases   = (clone $receivedByProvince)->where('overall_status', 'Active')->count();
-            $disposedCases = (clone $receivedByProvince)->where('overall_status', 'Disposed')->count();
-            $closedCases   = (clone $receivedByProvince)->where('overall_status', 'Completed')->count();
+            $activeCases         = (clone $receivedByProvince)->where('overall_status', 'Active')->count();
+            $disposedCases       = (clone $receivedByProvince)->where('overall_status', 'Disposed')->count();
+            $actualDisposedCases = 0;
+            $misDisposedCases    = 0;
 
-            // Total = Active + Disposed (received by this province only)
-            $totalCases = $activeCases + $disposedCases;
+            // Total Handled = ALL cases that originated from this province (regardless of current location)
+            $totalCases = CaseFile::where('po_office', $provinceName)->count();
 
         } else {
             // Regional roles: system-wide counts, no scoping
-            $activeCases   = CaseFile::where('overall_status', 'Active')->count();
-            $disposedCases = CaseFile::where('overall_status', 'Disposed')->count();
-            $closedCases   = CaseFile::where('overall_status', 'Completed')->count();
-            $totalCases    = CaseFile::count();
+            $activeCases         = CaseFile::where('overall_status', 'Active')->count();
+            $disposedCases       = CaseFile::where('overall_status', 'Disposed')->count();
+           $actualDisposedCases = CaseFile::where('overall_status', 'Completed')->count();
+            $misDisposedCases    = CaseFile::whereNotNull('date_scheduled_docketed')
+                ->whereRaw('DATE_ADD(date_scheduled_docketed, INTERVAL 96 DAY) < CURDATE()')
+                ->count();
+            $totalCases          = CaseFile::count();
         }
 
         // ── Active Cases Modal Breakdown ──────────────────────────────────────
@@ -197,7 +201,8 @@ class FrontController extends Controller
             'totalCases',
             'activeCases',
             'disposedCases',
-            'closedCases',
+            'actualDisposedCases',
+            'misDisposedCases',
             'pendingDocuments',
             'totalPendingDocs',
             'stageData',

@@ -19,24 +19,88 @@
         <!-- Content Row - Statistics Cards -->
         <div class="row">
 
-            <!-- Total Cases Card -->
-            <div class="col-xl-3 col-md-6 mb-4">
-                <div class="card border-left-primary shadow h-100 py-2">
+        @if($isProvince)
+
+            <!-- PROVINCIAL VIEW: Total Handled, Active, Disposed -->
+
+            <!-- Total Cases Handled -->
+            <div class="col-xl-4 col-md-6 mb-4">
+                <div class="card border-left-secondary shadow h-100 py-2">
                     <div class="card-body">
                         <div class="row no-gutters align-items-center">
                             <div class="col mr-2">
-                                <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
-                                    {{ $isProvince ? 'Your Total Cases' : 'Total Cases' }}
+                                <div class="text-xs font-weight-bold text-secondary text-uppercase mb-1">
+                                    Total Cases Handled
                                 </div>
                                 <div class="h5 mb-0 font-weight-bold text-gray-800">{{ $totalCases }}</div>
+                                <div class="mt-1">
+                                    <span class="badge" style="font-size: 0.65rem; padding: 0.25rem 0.5rem; background-color: #e67e22; color: white;">
+                                        <i class="fas fa-map-marker-alt mr-1"></i>{{ Auth::user()->getProvinceName() }}
+                                    </span>
+                                </div>
                             </div>
                             <div class="col-auto">
-                                <i class="fas fa-folder fa-2x text-gray-300"></i>
+                                <i class="fas fa-folder-open fa-2x text-gray-300"></i>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
+
+            <!-- Active Cases -->
+            <div class="col-xl-4 col-md-6 mb-4">
+                <div class="card border-left-success shadow h-100 py-2 clickable-card"
+                     data-toggle="modal"
+                     data-target="#activeCasesModal"
+                     style="cursor: pointer;">
+                    <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                    Active Cases
+                                </div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800">{{ $activeCases }}</div>
+                                <div class="mt-1">
+                                    <span class="badge" style="font-size: 0.65rem; padding: 0.25rem 0.5rem; background-color: #e67e22; color: white;">
+                                        <i class="fas fa-map-marker-alt mr-1"></i>{{ Auth::user()->getProvinceName() }}
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="col-auto">
+                                <i class="fas fa-clipboard-list fa-2x text-gray-300"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Disposed Cases (Provincial) -->
+            <div class="col-xl-4 col-md-6 mb-4">
+                <div class="card shadow h-100 py-2" style="border-left: 4px solid #e67e22;">
+                    <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs font-weight-bold text-uppercase mb-1" style="color: #e67e22;">
+                                    Disposed Cases
+                                </div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800">{{ $disposedCases }}</div>
+                                <div class="mt-1">
+                                    <span class="badge" style="font-size: 0.65rem; padding: 0.25rem 0.5rem; background-color: #e67e22; color: white;">
+                                        <i class="fas fa-map-marker-alt mr-1"></i>{{ Auth::user()->getProvinceName() }}
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="col-auto">
+                                <i class="fas fa-landmark fa-2x text-gray-300"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        @else
+
+            <!-- REGIONAL/ADMIN VIEW: Active, Disposed Actual, MIS Disposed, Disposed Provincial -->
 
             <!-- Active Cases Card - clickable to open modal -->
             <div class="col-xl-3 col-md-6 mb-4">
@@ -48,11 +112,9 @@
                         <div class="row no-gutters align-items-center">
                             <div class="col mr-2">
                                 <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
-                                    {{ $isProvince ? 'Your Active Cases' : 'Active Cases' }}
+                                    Active Cases
                                 </div>
-                                <div class="h5 mb-0 font-weight-bold text-gray-800">
-                                    {{ $activeCases }}
-                                </div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800">{{ $activeCases }}</div>
                             </div>
                             <div class="col-auto">
                                 <i class="fas fa-clipboard-list fa-2x text-gray-300"></i>
@@ -62,43 +124,80 @@
                 </div>
             </div>
 
-            <!-- Disposed Cases Card -->
+            <!-- Disposed Cases (Actual) - Regional -->
             <div class="col-xl-3 col-md-6 mb-4">
-                <div class="card border-left-info shadow h-100 py-2">
+                <div class="card border-left-primary shadow h-100 py-2">
                     <div class="card-body">
                         <div class="row no-gutters align-items-center">
                             <div class="col mr-2">
-                                <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
-                                    {{ $isProvince ? 'Your Disposed Cases' : 'Disposed Cases' }}
+                                <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                    Disposed Cases (Actual)
                                 </div>
-                                <div class="h5 mb-0 font-weight-bold text-gray-800">{{ $disposedCases }}</div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800">{{ $actualDisposedCases }}</div>
+                                <div class="mt-1">
+                                    <span class="badge badge-primary" style="font-size: 0.65rem; padding: 0.25rem 0.5rem;">
+                                        <i class="fas fa-building mr-1"></i>Regional
+                                    </span>
+                                </div>
                             </div>
                             <div class="col-auto">
-                                <i class="fas fa-archive fa-2x text-gray-300"></i>
+                                <i class="fas fa-gavel fa-2x text-gray-300"></i>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Closed Cases Card -->
+            <!-- MIS Disposed Cases - Regional -->
             <div class="col-xl-3 col-md-6 mb-4">
-                <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card border-left-info shadow h-100 py-2">
                     <div class="card-body">
                         <div class="row no-gutters align-items-center">
                             <div class="col mr-2">
-                                <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
-                                    {{ $isProvince ? 'Your Closed Cases' : 'Closed Cases' }}
+                                <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                    MIS Disposed Cases
                                 </div>
-                                <div class="h5 mb-0 font-weight-bold text-gray-800">{{ $closedCases }}</div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800">{{ $misDisposedCases }}</div>
+                                <div class="mt-1">
+                                    <span class="badge badge-info" style="font-size: 0.65rem; padding: 0.25rem 0.5rem;">
+                                        <i class="fas fa-building mr-1"></i>Regional
+                                    </span>
+                                </div>
                             </div>
                             <div class="col-auto">
-                                <i class="fas fa-check-circle fa-2x text-gray-300"></i>
+                                <i class="fas fa-database fa-2x text-gray-300"></i>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
+
+            <!-- Disposed Cases - Provincial -->
+            <div class="col-xl-3 col-md-6 mb-4">
+                <div class="card shadow h-100 py-2" style="border-left: 4px solid #e67e22;">
+                    <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs font-weight-bold text-uppercase mb-1" style="color: #e67e22;">
+                                    Disposed Cases (Provincial)
+                                </div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800">{{ $disposedCases }}</div>
+                                <div class="mt-1">
+                                    <span class="badge" style="font-size: 0.65rem; padding: 0.25rem 0.5rem; background-color: #e67e22; color: white;">
+                                        <i class="fas fa-map-marker-alt mr-1"></i>Provincial
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="col-auto">
+                                <i class="fas fa-landmark fa-2x text-gray-300"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        @endif
+
         </div>
 
         <!-- Content Row - Charts -->
@@ -267,17 +366,13 @@
                                 <hr class="my-3">
 
                                 <div class="row text-center">
-                                    <div class="col-4">
+                                    <div class="col-6">
                                         <div class="font-weight-bold text-primary">{{ $totalCases }}</div>
-                                        <small class="text-muted">Total</small>
+                                        <small class="text-muted">Total Handled</small>
                                     </div>
-                                    <div class="col-4">
+                                    <div class="col-6">
                                         <div class="font-weight-bold text-warning">{{ $disposedCases }}</div>
                                         <small class="text-muted">Disposed</small>
-                                    </div>
-                                    <div class="col-4">
-                                        <div class="font-weight-bold text-success">{{ $closedCases }}</div>
-                                        <small class="text-muted">Closed</small>
                                     </div>
                                 </div>
                             </div>
