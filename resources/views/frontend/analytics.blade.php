@@ -13,8 +13,7 @@
         7=>'Jul',8=>'Aug',9=>'Sep',10=>'Oct',11=>'Nov',12=>'Dec'
     ];
     $currentMonthName = $monthNames[$month];
-    $disposedPct  = $totalHandled > 0 ? round(($disposedThisMonth / $totalHandled) * 100) : 0;
-    $pendingPct   = $totalHandled > 0 ? round(($pending / $totalHandled) * 100) : 0;
+    $provinceName     = $isProvince ? Auth::user()->getProvinceName() : null;
 @endphp
 
 <style>
@@ -27,7 +26,6 @@
     }
     .province-bar { height: 8px; border-radius: 4px; background: #e3e6f0; overflow: hidden; margin-top: 4px; }
     .province-bar-fill { height: 100%; border-radius: 4px; transition: width .6s ease; }
-    .stage-pill { font-size: .7rem; padding: .2rem .55rem; border-radius: 999px; font-weight: 600; }
     .metric-divider { border-left: 3px solid #e3e6f0; padding-left: 1rem; }
     .activity-row:hover { background: #f8f9fc; }
     .pct-ring { position: relative; width: 80px; height: 80px; flex-shrink: 0; }
@@ -50,13 +48,27 @@
                 Labor Standards Cases &nbsp;·&nbsp;
                 <strong>{{ $currentMonthName }} {{ $year }}</strong> &nbsp;·&nbsp;
                 PCT: <strong>96 days</strong> &nbsp;·&nbsp;
-                <strong>DOLE Region V</strong>
+                @if($isProvince)
+                    <strong>{{ $provinceName }} Provincial Office</strong>
+                @else
+                    <strong>DOLE Region V</strong>
+                @endif
             </p>
         </div>
-        <button class="btn btn-primary btn-sm shadow-sm mt-2 mt-sm-0"
-                data-toggle="modal" data-target="#generateReportModal">
-            <i class="fas fa-file-excel fa-sm mr-1"></i> Generate Report
-        </button>
+        <div class="d-flex align-items-center mt-2 mt-sm-0" style="gap:.5rem;">
+            @if($isProvince)
+                {{-- Province users see their office badge but NO report button --}}
+                <span class="badge badge-primary px-3 py-2" style="font-size: 0.8rem;">
+                    <i class="fas fa-map-marker-alt mr-1"></i> {{ $provinceName }}
+                </span>
+            @else
+                {{-- Regional/admin users see the Generate Report button --}}
+                <button class="btn btn-primary btn-sm shadow-sm"
+                        data-toggle="modal" data-target="#generateReportModal">
+                    <i class="fas fa-file-excel fa-sm mr-1"></i> Generate Report
+                </button>
+            @endif
+        </div>
     </div>
 
     {{-- ── Filter Bar ───────────────────────────────────────────────────── --}}
@@ -80,6 +92,9 @@
             </select>
             <span class="small text-muted">
                 Data as of end of {{ $currentMonthName }} {{ $year }}
+                @if($isProvince)
+                    &nbsp;·&nbsp; Showing only <strong>{{ $provinceName }}</strong> cases
+                @endif
             </span>
         </form>
     </div>
@@ -92,15 +107,13 @@
                 <div class="card-body">
                     <div class="row no-gutters align-items-center">
                         <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Total Cases</div>
-                            <div class="h4 mb-0 font-weight-bold text-gray-800">{{ number_format($totalHandled) }}</div>
-                            <div class="kpi-sub text-muted">
-                               <div class="kpi-sub text-muted">Month of {{ $currentMonthName }} {{ $year }}</div>
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                {{ $isProvince ? 'Total Handled Cases' : 'Total Cases' }}
                             </div>
+                            <div class="h4 mb-0 font-weight-bold text-gray-800">{{ number_format($totalHandled) }}</div>
+                            <div class="kpi-sub text-muted">Month of {{ $currentMonthName }} {{ $year }}</div>
                         </div>
-                        <div class="col-auto">
-                            <i class="fas fa-folder-open fa-2x text-gray-300"></i>
-                        </div>
+                        <div class="col-auto"><i class="fas fa-folder-open fa-2x text-gray-300"></i></div>
                     </div>
                 </div>
             </div>
@@ -111,13 +124,13 @@
                 <div class="card-body">
                     <div class="row no-gutters align-items-center">
                         <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">New Cases This Month</div>
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                {{ $isProvince ? 'Your New Cases This Month' : 'New Cases This Month' }}
+                            </div>
                             <div class="h4 mb-0 font-weight-bold text-gray-800">{{ number_format($newCases) }}</div>
                             <div class="kpi-sub text-muted">Filed in {{ $currentMonthName }} {{ $year }}</div>
                         </div>
-                        <div class="col-auto">
-                            <i class="fas fa-plus-circle fa-2x text-gray-300"></i>
-                        </div>
+                        <div class="col-auto"><i class="fas fa-plus-circle fa-2x text-gray-300"></i></div>
                     </div>
                 </div>
             </div>
@@ -128,7 +141,9 @@
                 <div class="card-body">
                     <div class="row no-gutters align-items-center">
                         <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Disposed This Month</div>
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                {{ $isProvince ? 'Your Disposed This Month' : 'Disposed This Month' }}
+                            </div>
                             <div class="h4 mb-0 font-weight-bold text-gray-800">{{ number_format($disposedThisMonth) }}</div>
                             <div class="kpi-sub">
                                 @if($disposedWithin > 0 || $disposedBeyond > 0)
@@ -141,9 +156,7 @@
                                 @endif
                             </div>
                         </div>
-                        <div class="col-auto">
-                            <i class="fas fa-check-double fa-2x text-gray-300"></i>
-                        </div>
+                        <div class="col-auto"><i class="fas fa-check-double fa-2x text-gray-300"></i></div>
                     </div>
                 </div>
             </div>
@@ -167,9 +180,7 @@
                                 @endif
                             </div>
                         </div>
-                        <div class="col-auto">
-                            <i class="fas fa-chart-pie fa-2x text-gray-300"></i>
-                        </div>
+                        <div class="col-auto"><i class="fas fa-chart-pie fa-2x text-gray-300"></i></div>
                     </div>
                 </div>
             </div>
@@ -177,19 +188,22 @@
 
     </div>
 
-    {{-- ── Row 2: PCT Status Ring + Province Table ──────────────────────── --}}
+    {{-- ── Row 2: PCT Status + Province Table ──────────────────────────── --}}
     <div class="row mb-4">
 
-        {{-- PCT Status --}}
-        <div class="col-lg-5 mb-4">
+        <div class="col-lg-{{ $isProvince ? '12' : '5' }} mb-4">
             <div class="card shadow h-100">
                 <div class="card-header py-3 d-flex align-items-center justify-content-between">
-                    <h6 class="m-0 font-weight-bold text-primary">PCT Status — {{ $currentMonthName }}</h6>
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        PCT Status — {{ $currentMonthName }}
+                        @if($isProvince)
+                            <small class="text-muted font-weight-normal ml-1">({{ $provinceName }})</small>
+                        @endif
+                    </h6>
                     <span class="badge badge-primary badge-pill">96-day limit</span>
                 </div>
                 <div class="card-body">
                     <div class="d-flex align-items-center mb-4">
-                        {{-- Disposition ring --}}
                         <div class="pct-ring mr-3">
                             @php $circumference = 201.06; $filled = round(($dispositionRate/100)*$circumference); @endphp
                             <svg width="80" height="80" viewBox="0 0 80 80">
@@ -205,7 +219,6 @@
                                 <span class="text-muted" style="font-size:.58rem; line-height:1;">disposed</span>
                             </div>
                         </div>
-                        {{-- Stats --}}
                         <div class="flex-grow-1">
                             <div class="d-flex justify-content-between small mb-1">
                                 <span class="text-muted">Total Handled</span>
@@ -232,15 +245,18 @@
 
                     <hr class="my-3">
 
-                    {{-- Monetary & Workers --}}
                     <div class="row text-center">
                         <div class="col-6">
-                            <div class="text-xs text-muted text-uppercase mb-1">Monetary Award</div>
+                            <div class="text-xs text-muted text-uppercase mb-1">
+                                {{ $isProvince ? 'Your Monetary Award' : 'Monetary Award' }}
+                            </div>
                             <div class="h6 font-weight-bold text-gray-800 mb-0">₱{{ number_format($monetary, 2) }}</div>
                             <div class="text-xs text-muted">{{ $currentMonthName }}</div>
                         </div>
                         <div class="col-6 metric-divider">
-                            <div class="text-xs text-muted text-uppercase mb-1">Workers Benefitted</div>
+                            <div class="text-xs text-muted text-uppercase mb-1">
+                                {{ $isProvince ? 'Your Workers Benefitted' : 'Workers Benefitted' }}
+                            </div>
                             <div class="h6 font-weight-bold text-gray-800 mb-0">{{ number_format($workers) }}</div>
                             <div class="text-xs text-muted">{{ $currentMonthName }}</div>
                         </div>
@@ -249,7 +265,8 @@
             </div>
         </div>
 
-        {{-- Province Breakdown --}}
+        {{-- Province Breakdown — regional/admin only --}}
+        @if(!$isProvince)
         <div class="col-lg-7 mb-4">
             <div class="card shadow h-100">
                 <div class="card-header py-3 d-flex align-items-center justify-content-between">
@@ -297,23 +314,24 @@
                 </div>
             </div>
         </div>
+        @endif
 
     </div>
 
-    {{-- ── Row 3: Monthly Trend Chart (full width) ──────────────────────── --}}
+    {{-- ── Monthly Trend Chart ───────────────────────────────────────────── --}}
     <div class="row mb-4">
-
         <div class="col-12 mb-4">
             <div class="card shadow h-100">
                 <div class="card-header py-3 d-flex align-items-center justify-content-between">
-                    <h6 class="m-0 font-weight-bold text-primary">Monthly Trend — {{ $year }}</h6>
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        Monthly Trend — {{ $year }}
+                        @if($isProvince)
+                            <small class="text-muted font-weight-normal ml-1">({{ $provinceName }})</small>
+                        @endif
+                    </h6>
                     <div class="small">
-                        <span class="mr-3">
-                            <i class="fas fa-square text-primary mr-1"></i>New
-                        </span>
-                        <span>
-                            <i class="fas fa-square text-success mr-1"></i>Disposed
-                        </span>
+                        <span class="mr-3"><i class="fas fa-square text-primary mr-1"></i>New</span>
+                        <span><i class="fas fa-square text-success mr-1"></i>Disposed</span>
                     </div>
                 </div>
                 <div class="card-body">
@@ -321,15 +339,20 @@
                 </div>
             </div>
         </div>
-
     </div>
 
-    {{-- ── Row 4: Recently Disposed Cases ──────────────────────────────── --}}
+    {{-- ── Recently Disposed Cases ──────────────────────────────────────── --}}
     <div class="row mb-4">
         <div class="col-12">
             <div class="card shadow">
                 <div class="card-header py-3 d-flex align-items-center justify-content-between">
-                    <h6 class="m-0 font-weight-bold text-primary">Recently Disposed Cases</h6>
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        @if($isProvince)
+                            {{ $provinceName }}'s Recently Disposed Cases
+                        @else
+                            Recently Disposed Cases
+                        @endif
+                    </h6>
                     <a href="{{ route('archive.index') }}" class="btn btn-sm btn-outline-primary">
                         <i class="fas fa-archive mr-1"></i> View All
                     </a>
@@ -341,7 +364,9 @@
                                 <tr>
                                     <th class="pl-3">Case / Inspection No.</th>
                                     <th>Establishment</th>
-                                    <th>Province</th>
+                                    @if(!$isProvince)
+                                        <th>Province</th>
+                                    @endif
                                     <th>Status</th>
                                     <th>Date Archived</th>
                                 </tr>
@@ -363,7 +388,9 @@
                                     <td class="small align-middle">
                                         {{ Str::limit($case->establishment_name ?? '—', 40) }}
                                     </td>
-                                    <td class="small align-middle">{{ $case->po_office ?? '—' }}</td>
+                                    @if(!$isProvince)
+                                        <td class="small align-middle">{{ $case->po_office ?? '—' }}</td>
+                                    @endif
                                     <td class="align-middle">
                                         <span class="badge badge-{{ $sColor }}">{{ $case->overall_status }}</span>
                                     </td>
@@ -373,7 +400,7 @@
                                 </tr>
                                 @empty
                                 <tr>
-                                    <td colspan="5" class="text-center text-muted py-4">
+                                    <td colspan="{{ $isProvince ? 4 : 5 }}" class="text-center text-muted py-4">
                                         <i class="fas fa-inbox fa-2x d-block mb-2"></i>
                                         No disposed cases yet
                                     </td>
@@ -389,7 +416,8 @@
 
 </div>
 
-{{-- ── Generate Report Modal ────────────────────────────────────────────── --}}
+{{-- ── Generate Report Modal — regional/admin only ─────────────────────── --}}
+@if(!$isProvince)
 <div class="modal fade" id="generateReportModal" tabindex="-1" role="dialog" aria-hidden="true">
     <div class="modal-dialog modal-sm" role="document">
         <div class="modal-content">
@@ -437,7 +465,7 @@
     </div>
 </div>
 
-{{-- Hidden report forms --}}
+{{-- Hidden report forms — regional only --}}
 <form id="form1Action" method="POST" action="{{ route('reports.form1.generate') }}" style="display:none">
     @csrf
     <input type="hidden" name="office" value="">
@@ -446,17 +474,18 @@
 </form>
 <form id="form3Action" method="POST" action="{{ route('reports.form3.generate') }}" style="display:none">
     @csrf
+    <input type="hidden" name="office" value="">
     <input type="hidden" name="year"  id="f3year">
     <input type="hidden" name="month" id="f3month">
 </form>
+@endif
 
 @push('scripts')
 <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
 <script>
-// ── Monthly Trend Chart ──────────────────────────────────────────────────────
 (function() {
-    const labels      = @json(array_values(array_map(fn($m) => $shortMonths[$m], array_keys($monthlyTrend))));
-    const newData     = @json(array_values(array_column($monthlyTrend, 'new')));
+    const labels       = @json(array_values(array_map(fn($m) => $shortMonths[$m], array_keys($monthlyTrend))));
+    const newData      = @json(array_values(array_column($monthlyTrend, 'new')));
     const disposedData = @json(array_values(array_column($monthlyTrend, 'disposed')));
 
     new Chart(document.getElementById('trendChart'), {
@@ -504,7 +533,7 @@
     });
 })();
 
-// ── Report Modal ─────────────────────────────────────────────────────────────
+@if(!$isProvince)
 var selectedForm = '1';
 document.querySelectorAll('#formToggle .btn').forEach(function(btn) {
     btn.addEventListener('click', function() {
@@ -523,17 +552,17 @@ document.querySelectorAll('#formToggle .btn').forEach(function(btn) {
 });
 
 function submitReport() {
-    var year = document.getElementById('reportYear').value;
+    var year  = document.getElementById('reportYear').value;
     var month = document.getElementById('reportMonth').value;
-    var btn = document.getElementById('generateBtn');
+    var btn   = document.getElementById('generateBtn');
     btn.disabled = true;
     btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Generating…';
     if (selectedForm === '3') {
-        document.getElementById('f3year').value = year;
+        document.getElementById('f3year').value  = year;
         document.getElementById('f3month').value = month;
         document.getElementById('form3Action').submit();
     } else {
-        document.getElementById('f1year').value = year;
+        document.getElementById('f1year').value  = year;
         document.getElementById('f1month').value = month;
         document.getElementById('form1Action').submit();
     }
@@ -543,6 +572,7 @@ function submitReport() {
         $('#generateReportModal').modal('hide');
     }, 5000);
 }
+@endif
 </script>
 @endpush
 

@@ -6,73 +6,107 @@ use Illuminate\Http\Request;
 use App\Models\CaseFile;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 
 class AnalyticsController extends Controller
 {
     public function index(Request $request)
     {
+        $user       = Auth::user();
+        $isProvince = $user->isProvince();
+        $userRole   = $user->role; // e.g. 'province_albay'
+
         $year  = (int) $request->get('year',  now()->year);
         $month = (int) $request->get('month', now()->month);
 
-        $startOfYear  = Carbon::create($year, 1, 1)->startOfYear();
-        $monthStart   = Carbon::create($year, $month, 1)->startOfMonth();
-        $monthEnd     = Carbon::create($year, $month, 1)->endOfMonth();
+        $startOfYear = Carbon::create($year, 1, 1)->startOfYear();
+        $monthStart  = Carbon::create($year, $month, 1)->startOfMonth();
+        $monthEnd    = Carbon::create($year, $month, 1)->endOfMonth();
 
         $archived = ['Completed', 'Disposed', 'Appealed'];
-        $active   = fn($q) => $q->whereNotIn('overall_status', $archived);
+
+        // ─────────────────────────────────────────────────────────────────────
+        // Base scope helpers
+        //
+        // Province users:
+        //   - "origin" queries  → filter by po_office (their province)
+        //   - "received" queries → also require documentTracking.status = Received
+        //     so unacknowledged cases are excluded from all counts
+        //
+        // Regional roles: no scoping, see everything system-wide
+        // ─────────────────────────────────────────────────────────────────────
+
+        // Applies province + received filter to any query builder
+        $scopeToProvince = function ($q) use ($isProvince, $user, $userRole) {
+            if ($isProvince) {
+                $q->where('po_office', $user->getProvinceName())
+                  ->whereHas('documentTracking', function ($dq) use ($userRole) {
+                      $dq->where('current_role', $userRole)
+                         ->where('status', 'Received');
+                  });
+            }
+            return $q;
+        };
 
         // ── Carry-over: created before this year, still active ───────────────
-        $carryOver = CaseFile::whereDate('created_at', '<', $startOfYear)
-            ->whereNotIn('overall_status', $archived)
-            ->count();
+        $carryOver = $scopeToProvince(
+            CaseFile::whereDate('created_at', '<', $startOfYear)
+                ->whereNotIn('overall_status', $archived)
+        )->count();
 
         // ── New cases this month ──────────────────────────────────────────────
-        $newCases = CaseFile::whereDate('created_at', '>=', $monthStart)
-            ->whereDate('created_at', '<=', $monthEnd)
-            ->count();
+        $newCases = $scopeToProvince(
+            CaseFile::whereDate('created_at', '>=', $monthStart)
+                ->whereDate('created_at', '<=', $monthEnd)
+        )->count();
 
-        // ── Total cases handled this month (carry-over at year start + new up to selected month) ──
-        $newUpToMonth = CaseFile::whereDate('created_at', '>=', $startOfYear)
-            ->whereDate('created_at', '<=', $monthEnd)
-            ->count();
+        // ── Total cases handled this month ────────────────────────────────────
+        $newUpToMonth = $scopeToProvince(
+            CaseFile::whereDate('created_at', '>=', $startOfYear)
+                ->whereDate('created_at', '<=', $monthEnd)
+        )->count();
+
         $totalHandled = $carryOver + $newUpToMonth;
 
-        // ── Disposed helper (uses updated_at fallback) ───────────────────────
-        $disposedQuery = function($start, $end) use ($archived) {
-            return CaseFile::whereIn('overall_status', $archived)
-                ->where(fn($q) => $q
-                    ->where(fn($q2) => $q2
-                        ->whereNotNull('date_of_order_actual')
-                        ->whereDate('date_of_order_actual', '>=', $start)
-                        ->whereDate('date_of_order_actual', '<=', $end))
-                    ->orWhere(fn($q2) => $q2
-                        ->whereNull('date_of_order_actual')
-                        ->whereDate('updated_at', '>=', $start)
-                        ->whereDate('updated_at', '<=', $end))
-                );
+        // ── Disposed helper ───────────────────────────────────────────────────
+        $disposedQuery = function ($start, $end) use ($archived, $scopeToProvince) {
+            return $scopeToProvince(
+                CaseFile::whereIn('overall_status', $archived)
+                    ->where(fn($q) => $q
+                        ->where(fn($q2) => $q2
+                            ->whereNotNull('date_of_order_actual')
+                            ->whereDate('date_of_order_actual', '>=', $start)
+                            ->whereDate('date_of_order_actual', '<=', $end))
+                        ->orWhere(fn($q2) => $q2
+                            ->whereNull('date_of_order_actual')
+                            ->whereDate('updated_at', '>=', $start)
+                            ->whereDate('updated_at', '<=', $end))
+                    )
+            );
         };
 
         // ── Disposed this month ───────────────────────────────────────────────
         $disposedThisMonth = $disposedQuery($monthStart, $monthEnd)->count();
 
-        // ── Disposed within / beyond PCT ─────────────────────────────────────
+        // ── Within / beyond PCT ───────────────────────────────────────────────
         $disposedWithin = $disposedQuery($monthStart, $monthEnd)
             ->where(fn($q) => $q->where('status_pct', 'Within PCT')->orWhereNull('status_pct'))
             ->count();
+
         $disposedBeyond = $disposedQuery($monthStart, $monthEnd)
             ->where('status_pct', 'Beyond PCT')
             ->count();
 
-        // ── Pending = total handled - total disposed year-to-date ─────────────
+        // ── Pending ───────────────────────────────────────────────────────────
         $disposedYTD = $disposedQuery($startOfYear, $monthEnd)->count();
         $pending     = $totalHandled - $disposedYTD;
 
-        // ── Disposition rate (of new cases only — DOLE standard) ─────────────
+        // ── Disposition rate ──────────────────────────────────────────────────
         $dispositionRate = $newCases > 0
             ? round(($disposedThisMonth / $newCases) * 100, 1)
             : 0;
 
-        // ── Monetary & workers this month ─────────────────────────────────────
+        // ── Monetary & workers ────────────────────────────────────────────────
         $monetary = $disposedQuery($monthStart, $monthEnd)
             ->sum('compliance_order_monetary_award') ?? 0;
 
@@ -80,76 +114,84 @@ class AnalyticsController extends Controller
             ->selectRaw('SUM(COALESCE(affected_male,0) + COALESCE(affected_female,0)) as total')
             ->value('total') ?? 0;
 
-        // ── By province breakdown ─────────────────────────────────────────────
-        // Map province display names → document_tracking current_role values
-        $provinceRoleMap = [
-            'Albay'            => 'province_albay',
-            'Camarines Sur'    => 'province_camarines_sur',
-            'Camarines Norte'  => 'province_camarines_norte',
-            'Catanduanes'      => 'province_catanduanes',
-            'Masbate'          => 'province_masbate',
-            'Sorsogon'         => 'province_sorsogon',
-        ];
+        // ── By province breakdown (regional roles only) ───────────────────────
+        // Province users don't need this — they only see their own data.
+        $byProvince = collect();
 
-        $byProvince = collect($provinceRoleMap)->map(function($role, $prov) use ($archived, $monthStart, $monthEnd) {
-            // Total cases that originated from this province (po_office = origin)
-            $total = CaseFile::where('po_office', $prov)->count();
-
-            // Active cases CURRENTLY located at this province (via DocumentTracking.current_role)
-            // This excludes cases transferred out to regional or another province
-            $active = CaseFile::whereNotIn('overall_status', $archived)
-                ->whereHas('documentTracking', fn($q) => $q->where('current_role', $role))
-                ->count();
-
-            // Disposed cases that originated from this province this month
-            $disposed = CaseFile::where('po_office', $prov)
-                ->whereIn('overall_status', $archived)
-                ->where(fn($q) => $q
-                    ->where(fn($q2) => $q2->whereNotNull('date_of_order_actual')
-                        ->whereDate('date_of_order_actual', '>=', $monthStart)
-                        ->whereDate('date_of_order_actual', '<=', $monthEnd))
-                    ->orWhere(fn($q2) => $q2->whereNull('date_of_order_actual')
-                        ->whereDate('updated_at', '>=', $monthStart)
-                        ->whereDate('updated_at', '<=', $monthEnd))
-                )->count();
-
-            return [
-                'name'     => $prov,
-                'total'    => $total,
-                'active'   => $active,  // Only cases physically still at this province
-                'disposed' => $disposed,
+        if (!$isProvince) {
+            $provinceRoleMap = [
+                'Albay'           => 'province_albay',
+                'Camarines Sur'   => 'province_camarines_sur',
+                'Camarines Norte' => 'province_camarines_norte',
+                'Catanduanes'     => 'province_catanduanes',
+                'Masbate'         => 'province_masbate',
+                'Sorsogon'        => 'province_sorsogon',
             ];
-        });
 
-        // ── Monthly trend (all months up to selected) ─────────────────────────
+            $byProvince = collect($provinceRoleMap)->map(function ($role, $prov) use ($archived, $monthStart, $monthEnd) {
+                $total = CaseFile::where('po_office', $prov)->count();
+
+                // Active cases currently physically at this province (received)
+                $active = CaseFile::whereNotIn('overall_status', $archived)
+                    ->whereHas('documentTracking', fn($q) => $q
+                        ->where('current_role', $role)
+                        ->where('status', 'Received'))
+                    ->count();
+
+                $disposed = CaseFile::where('po_office', $prov)
+                    ->whereIn('overall_status', $archived)
+                    ->where(fn($q) => $q
+                        ->where(fn($q2) => $q2
+                            ->whereNotNull('date_of_order_actual')
+                            ->whereDate('date_of_order_actual', '>=', $monthStart)
+                            ->whereDate('date_of_order_actual', '<=', $monthEnd))
+                        ->orWhere(fn($q2) => $q2
+                            ->whereNull('date_of_order_actual')
+                            ->whereDate('updated_at', '>=', $monthStart)
+                            ->whereDate('updated_at', '<=', $monthEnd))
+                    )->count();
+
+                return [
+                    'name'     => $prov,
+                    'total'    => $total,
+                    'active'   => $active,
+                    'disposed' => $disposed,
+                ];
+            });
+        }
+
+        // ── Monthly trend ─────────────────────────────────────────────────────
         $monthlyTrend = [];
         for ($m = 1; $m <= $month; $m++) {
             $s = Carbon::create($year, $m, 1)->startOfMonth();
             $e = Carbon::create($year, $m, 1)->endOfMonth();
+
             $monthlyTrend[$m] = [
-                'new'      => CaseFile::whereDate('created_at', '>=', $s)->whereDate('created_at', '<=', $e)->count(),
-                'disposed' => CaseFile::whereIn('overall_status', $archived)
-                    ->where(fn($q) => $q
-                        ->where(fn($q2) => $q2->whereNotNull('date_of_order_actual')
-                            ->whereDate('date_of_order_actual', '>=', $s)->whereDate('date_of_order_actual', '<=', $e))
-                        ->orWhere(fn($q2) => $q2->whereNull('date_of_order_actual')
-                            ->whereDate('updated_at', '>=', $s)->whereDate('updated_at', '<=', $e))
-                    )->count(),
+                'new'      => $scopeToProvince(
+                    CaseFile::whereDate('created_at', '>=', $s)
+                        ->whereDate('created_at', '<=', $e)
+                )->count(),
+
+                'disposed' => $disposedQuery($s, $e)->count(),
             ];
         }
 
-        // ── Stage distribution (active cases) ────────────────────────────────
-        $stageDistribution = CaseFile::whereNotIn('overall_status', $archived)
+        // ── Stage distribution (active cases, scoped) ─────────────────────────
+        $stageDistribution = $scopeToProvince(
+            CaseFile::whereNotIn('overall_status', $archived)
+        )
             ->select('current_stage', DB::raw('count(*) as count'))
             ->groupBy('current_stage')
             ->orderBy('current_stage')
             ->pluck('count', 'current_stage');
 
-        // ── Recent activity (last 5 archived cases) ───────────────────────────
-        $recentActivity = CaseFile::whereIn('overall_status', $archived)
+        // ── Recent activity (last 5 archived cases, scoped) ───────────────────
+        $recentActivity = $scopeToProvince(
+            CaseFile::whereIn('overall_status', $archived)
+        )
             ->orderBy('updated_at', 'desc')
             ->limit(5)
-            ->get(['inspection_id', 'establishment_name', 'po_office', 'overall_status', 'updated_at']);
+            ->get(['inspection_id', 'case_no', 'establishment_name', 'po_office', 'overall_status', 'updated_at']);
 
         return view('frontend.analytics', compact(
             'year', 'month',
@@ -158,7 +200,8 @@ class AnalyticsController extends Controller
             'pending', 'dispositionRate',
             'monetary', 'workers',
             'byProvince', 'monthlyTrend', 'stageDistribution',
-            'recentActivity'
+            'recentActivity',
+            'isProvince'
         ));
     }
 }
