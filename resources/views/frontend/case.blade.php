@@ -451,26 +451,26 @@ td.actions-cell.expanded {
                                 <th>Inspection ID</th>
                                 <th>Case No.</th>
                                 <th>Establishment Name</th>
-                                <th>Establishment Address</th>
+                                {{-- <th>Establishment Address</th> --}}
                                 <th>Mode</th>
                                 <th>PO </th>
-                                <th>Overall Status</th>
+                                {{-- <th>Overall Status</th> --}}
                                 
                                 <!-- Inspection Stage -->
                                 <th>Date of Inspection</th>
-                                <th>Inspector Name</th>
-                                <th>Inspector Authority No.</th>
+                                <th>Name of Inspector</th>
+                                <th>Authority No.</th>
                                 <th>Date of NR</th>
-                                <th>Lapse 20 Day Period</th>
+                                {{-- <th>Lapse 20 Day Period</th> --}}
                                 
                                 <!-- Docketing Stage -->
-                                <th>PCT for Docketing</th>
+                                {{-- <th>PCT for Docketing</th>
                                 <th>Date Scheduled Docketed</th>
                                 <th>Aging Docket</th>
-                                <th>Status Docket</th>
+                                <th>Status Docket</th> --}}
                                 <th>Hearing Officer (MIS)</th>
                                 
-                                <!-- Hearing Process Stage -->
+                                {{-- <!-- Hearing Process Stage -->
                                 <th>Date 1st MC (Actual)</th>
                                 <th>First MC PCT</th>
                                 <th>Status 1st MC</th>
@@ -498,13 +498,13 @@ td.actions-cell.expanded {
                                 <th>Date Received Drafter Finalization</th>
                                 <th>Date Returned Case Mgmt Signature</th>
                                 <th>Aging 2 Days Finalization</th>
-                                <th>Status Finalization</th>
+                                <th>Status Finalization</th> --}}
                                 
                                 <!-- Orders & Disposition Stage -->
                                 <th>PCT(96 days from the date of NR)</th>
-                                <th>Date Signed (MIS)</th>
+                                {{-- <th>Date Signed (MIS)</th> --}}
                                 <th>Status (PCT)</th>
-                                <th>Reference Date PCT</th>
+                                {{-- <th>Reference Date PCT</th>
                                 <th>Aging PCT</th>
                                 <th>Disposition (MIS)</th>
                                 <th>Disposition (Actual)</th>
@@ -554,7 +554,7 @@ td.actions-cell.expanded {
                                 
                                 <!-- Additional Information -->
                                 <th>Logbook Page Number</th>
-                                <th>Remarks/Notes</th>
+                                <th>Remarks/Notes</th> --}}
                                 
                                 <th>Created At</th>
                             </tr>
@@ -632,13 +632,13 @@ td.actions-cell.expanded {
                                         <td class="editable-cell wrap-cell" data-field="establishment_name">
                                             {{ $case->establishment_name ?? '-' }}
                                         </td>
-                                        <td class="editable-cell wrap-cell" data-field="establishment_address">
+                                        {{-- <td class="editable-cell wrap-cell" data-field="establishment_address">
                                             {{ $case->establishment_address ?? '-' }}
-                                        </td>
+                                        </td> --}}
                                         <td class="editable-cell" data-field="mode">{{ $case->mode ?? '-' }}</td>
                                         <td class="readonly-cell" data-field="po_office">{{ $case->po_office ?? '-' }}</td>
-                                        <td class="readonly-cell" data-field="overall_status" data-type="select">
-                                            {{ $case->overall_status ?? '-' }}
+                                        {{-- <td class="readonly-cell" data-field="overall_status" data-type="select">
+                                            {{ $case->overall_status ?? '-' }} --}}
                                         </td>
                                         
                                         <!-- Inspection Stage -->
@@ -652,25 +652,25 @@ td.actions-cell.expanded {
                                         <td class="editable-cell" data-field="date_of_nr" data-type="date">
                                             {{ $case->date_of_nr ? \Carbon\Carbon::parse($case->date_of_nr)->format('Y-m-d') : '-' }}
                                         </td>
-                                        <td class="readonly-cell" data-field="lapse_20_day_period">
+                                        {{-- <td class="readonly-cell" data-field="lapse_20_day_period">
                                             {{ $case->lapse_20_day_period ? $case->lapse_20_day_period->format('Y-m-d') : '-' }}
-                                        </td>
+                                        </td> --}}
                                         
                                         <!-- Docketing Stage -->
-                                        <td class="readonly-cell" data-field="pct_for_docketing">
+                                        {{-- <td class="readonly-cell" data-field="pct_for_docketing">
                                             {{ $case->pct_for_docketing ? $case->pct_for_docketing->format('Y-m-d') : '-' }}
                                         </td>
                                         <td class="editable-cell" data-field="date_scheduled_docketed" data-type="date">
                                             {{ $case->date_scheduled_docketed ? \Carbon\Carbon::parse($case->date_scheduled_docketed)->format('Y-m-d') : '-' }}
                                         </td>
                                         <td class="readonly-cell" data-field="aging_docket">{{ $case->aging_docket ?? '-' }}</td>
-                                        <td class="readonly-cell" data-field="status_docket">{{ $case->status_docket ?? '-' }}</td>
+                                        <td class="readonly-cell" data-field="status_docket">{{ $case->status_docket ?? '-' }}</td> --}}
                                         <td class="editable-cell" data-field="hearing_officer_mis" title="{{ $case->hearing_officer_mis ?? '' }}">
                                             {{ $case->hearing_officer_mis ? Str::limit($case->hearing_officer_mis, 20) : '-' }}
                                         </td>
                                         
                                         <!-- Hearing Process Stage -->
-                                        <td class="editable-cell" data-field="date_1st_mc_actual" data-type="date">
+                                        {{-- <td class="editable-cell" data-field="date_1st_mc_actual" data-type="date">
                                             {{ $case->date_1st_mc_actual ? \Carbon\Carbon::parse($case->date_1st_mc_actual)->format('Y-m-d') : '-' }}
                                         </td>
                                         <td class="readonly-cell" data-field="first_mc_pct">{{ $case->first_mc_pct ?? '-' }}</td>
@@ -686,10 +686,10 @@ td.actions-cell.expanded {
                                         <td class="editable-cell" data-field="draft_order_from_po_type">{{ $case->draft_order_from_po_type ?? '-' }}</td>
                                         <td class="editable-cell" data-field="applicable_draft_order">{{ $case->applicable_draft_order ?? '-' }}</td>
                                         <td class="editable-cell" data-field="complete_case_folder">{{ $case->complete_case_folder ?? '-' }}</td>
-                                        <td class="editable-cell" data-field="twg_ali">{{ $case->twg_ali ?? '-' }}</td>
+                                        <td class="editable-cell" data-field="twg_ali">{{ $case->twg_ali ?? '-' }}</td> --}}
                                         
                                         <!-- Review & Drafting Stage -->
-                                        <td class="readonly-cell" data-field="po_pct">
+                                        {{-- <td class="readonly-cell" data-field="po_pct">
                                             {{ $case->po_pct ? $case->po_pct->format('Y-m-d') : '-' }}
                                         </td>
                                         <td class="readonly-cell" data-field="aging_po_pct">{{ $case->aging_po_pct ?? '-' }}</td>
@@ -719,17 +719,17 @@ td.actions-cell.expanded {
                                             {{ $case->date_returned_case_mgmt_signature ? \Carbon\Carbon::parse($case->date_returned_case_mgmt_signature)->format('Y-m-d') : '-' }}
                                         </td>
                                         <td class="editable-cell" data-field="aging_2_days_finalization">{{ $case->aging_2_days_finalization ?? '-' }}</td>
-                                        <td class="editable-cell" data-field="status_finalization">{{ $case->status_finalization ?? '-' }}</td>
+                                        <td class="editable-cell" data-field="status_finalization">{{ $case->status_finalization ?? '-' }}</td> --}}
                                         
                                         <!-- Orders & Disposition Stage -->
                                         <td class="editable-cell" data-field="pct_96_days">
                                             {{ $case->pct_96_days ? $case->pct_96_days->format('Y-m-d') : '-' }}
                                         </td>
-                                        <td class="editable-cell" data-field="date_signed_mis" data-type="date">
+                                        {{-- <td class="editable-cell" data-field="date_signed_mis" data-type="date">
                                             {{ $case->date_signed_mis ? \Carbon\Carbon::parse($case->date_signed_mis)->format('Y-m-d') : '-' }}
-                                        </td>
+                                        </td> --}}
                                         <td class="editable-cell" data-field="status_pct">{{ $case->status_pct ?? '-' }}</td>
-                                        <td class="editable-cell" data-field="reference_date_pct" data-type="date">
+                                        {{-- <td class="editable-cell" data-field="reference_date_pct" data-type="date">
                                             {{ $case->reference_date_pct ? \Carbon\Carbon::parse($case->reference_date_pct)->format('Y-m-d') : '-' }}
                                         </td>
                                         <td class="editable-cell" data-field="aging_pct">{{ $case->aging_pct ?? '-' }}</td>
@@ -751,10 +751,10 @@ td.actions-cell.expanded {
                                         </td>
                                         <td class="editable-cell" data-field="released_date_actual" data-type="date">
                                             {{ $case->released_date_actual ? \Carbon\Carbon::parse($case->released_date_actual)->format('Y-m-d') : '-' }}
-                                        </td>
+                                        </td> --}}
                                         
                                         <!-- Compliance & Awards Stage (Boolean fields now show Yes/No) -->
-                                        <td class="editable-cell" data-field="first_order_dismissal_cnpc" data-type="boolean">
+                                        {{-- <td class="editable-cell" data-field="first_order_dismissal_cnpc" data-type="boolean">
                                             {{ $case->first_order_dismissal_cnpc ? 'Yes' : 'No' }}
                                         </td>
                                         <td class="editable-cell" data-field="tavable_less_than_10_workers" data-type="boolean">
@@ -781,10 +781,10 @@ td.actions-cell.expanded {
                                         <td class="editable-cell" data-field="scanned_notice_finality">{{ $case->scanned_notice_finality ?? '-' }}</td>
                                         <td class="editable-cell" data-field="updated_ticked_in_mis" data-type="boolean">
                                             {{ $case->updated_ticked_in_mis ? 'Yes' : 'No' }}
-                                        </td>
+                                        </td> --}}
                                         
                                         <!-- Appeals & Resolution Stage (2nd Order) -->
-                                        <td class="editable-cell" data-field="second_order_drafter" title="{{ $case->second_order_drafter ?? '' }}">
+                                        {{-- <td class="editable-cell" data-field="second_order_drafter" title="{{ $case->second_order_drafter ?? '' }}">
                                             {{ $case->second_order_drafter ? Str::limit($case->second_order_drafter, 20) : '-' }}
                                         </td>
                                         <td class="editable-cell" data-field="date_received_by_drafter_ct_cnpc" data-type="date">
@@ -806,10 +806,10 @@ td.actions-cell.expanded {
                                         <td class="editable-cell" data-field="released_date_2nd_cnpc" data-type="date">
                                             {{ $case->released_date_2nd_cnpc ? \Carbon\Carbon::parse($case->released_date_2nd_cnpc)->format('Y-m-d') : '-' }}
                                         </td>
-                                        <td class="editable-cell" data-field="scanned_order_2nd_cnpc">{{ $case->scanned_order_2nd_cnpc ?? '-' }}</td>
+                                        <td class="editable-cell" data-field="scanned_order_2nd_cnpc">{{ $case->scanned_order_2nd_cnpc ?? '-' }}</td> --}}
                                         
                                         <!-- Appeals & Resolution Stage (MALSU) -->
-                                        <td class="editable-cell" data-field="date_forwarded_malsu" data-type="date">
+                                        {{-- <td class="editable-cell" data-field="date_forwarded_malsu" data-type="date">
                                             {{ $case->date_forwarded_malsu ? \Carbon\Carbon::parse($case->date_forwarded_malsu)->format('Y-m-d') : '-' }}
                                         </td>
                                         <td class="editable-cell" data-field="scanned_indorsement_malsu">{{ $case->scanned_indorsement_malsu ?? '-' }}</td>
@@ -831,13 +831,13 @@ td.actions-cell.expanded {
                                         </td>
                                         <td class="editable-cell" data-field="date_indorsed_office_secretary" data-type="date">
                                             {{ $case->date_indorsed_office_secretary ? \Carbon\Carbon::parse($case->date_indorsed_office_secretary)->format('Y-m-d') : '-' }}
-                                        </td>
+                                        </td> --}}
                                         
                                         <!-- Additional Information -->
-                                        <td class="editable-cell" data-field="logbook_page_number">{{ $case->logbook_page_number ?? '-' }}</td>
+                                        {{-- <td class="editable-cell" data-field="logbook_page_number">{{ $case->logbook_page_number ?? '-' }}</td>
                                         <td class="editable-cell" data-field="remarks_notes" title="{{ $case->remarks_notes ?? '' }}">
                                             {{ $case->remarks_notes ? Str::limit($case->remarks_notes, 30) : '-' }}
-                                        </td>
+                                        </td> --}}
                                         
                                         <td class="non-editable">
                                             {{ $case->created_at ? \Carbon\Carbon::parse($case->created_at)->format('Y-m-d') : '-' }}
