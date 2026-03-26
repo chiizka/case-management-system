@@ -51,7 +51,14 @@ class ProfileController extends Controller
         // Validate input
         $validator = Validator::make($request->all(), [
             'current_password' => 'required',
-            'new_password' => ['required', 'confirmed', Password::min(8)],
+            'new_password' => [
+                'required',
+                'confirmed',
+                Password::min(8)
+                    ->mixedCase()   // requires upper + lowercase
+                    ->numbers()     // requires at least one number
+                    ->symbols(),    // requires at least one special character
+            ],
         ]);
 
         if ($validator->fails()) {

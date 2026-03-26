@@ -123,7 +123,16 @@
                             @error('new_password')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
-                            <small class="form-text text-muted">Minimum 8 characters</small>
+                            <small class="form-text text-muted">
+                                Must be at least 8 characters with uppercase, lowercase, number, and special character.
+                            </small>
+                            <div id="password-requirements" class="mt-2" style="display:none; font-size: 13px;">
+                                <div id="req-length"  class="text-danger"><i class="fas fa-times-circle"></i> At least 8 characters</div>
+                                <div id="req-upper"   class="text-danger"><i class="fas fa-times-circle"></i> At least one uppercase letter</div>
+                                <div id="req-lower"   class="text-danger"><i class="fas fa-times-circle"></i> At least one lowercase letter</div>
+                                <div id="req-number"  class="text-danger"><i class="fas fa-times-circle"></i> At least one number</div>
+                                <div id="req-symbol"  class="text-danger"><i class="fas fa-times-circle"></i> At least one special character (!@#$...)</div>
+                            </div>
                         </div>
 
                         <div class="form-group">
@@ -172,4 +181,32 @@
     </div>
 </div>
 
+@push('scripts')
+<script>
+document.getElementById('new_password').addEventListener('input', function () {
+    const val = this.value;
+    const reqs = document.getElementById('password-requirements');
+    reqs.style.display = val.length > 0 ? 'block' : 'none';
+
+    const checks = {
+        'req-length': val.length >= 8,
+        'req-upper':  /[A-Z]/.test(val),
+        'req-lower':  /[a-z]/.test(val),
+        'req-number': /[0-9]/.test(val),
+        'req-symbol': /[^a-zA-Z0-9]/.test(val),
+    };
+
+    for (const [id, passed] of Object.entries(checks)) {
+        const el = document.getElementById(id);
+        if (passed) {
+            el.className = 'text-success';
+            el.querySelector('i').className = 'fas fa-check-circle';
+        } else {
+            el.className = 'text-danger';
+            el.querySelector('i').className = 'fas fa-times-circle';
+        }
+    }
+});
+</script>
+@endpush
 @endsection

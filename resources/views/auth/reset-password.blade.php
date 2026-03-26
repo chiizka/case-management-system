@@ -311,9 +311,16 @@
                                required 
                                autocomplete="new-password"
                                id="password-input">
-                        <small class="form-text">
-                            Password must be at least 8 characters
-                        </small>
+                            <small class="form-text">
+                                Must be at least 8 characters with uppercase, lowercase, number, and special character.
+                            </small>
+                            <div id="password-requirements" class="mt-2" style="display:none; font-size: 13px; text-align:left;">
+                                <div id="req-length"  style="color:#fc8181"><i class="fas fa-times-circle"></i> At least 8 characters</div>
+                                <div id="req-upper"   style="color:#fc8181"><i class="fas fa-times-circle"></i> At least one uppercase letter</div>
+                                <div id="req-lower"   style="color:#fc8181"><i class="fas fa-times-circle"></i> At least one lowercase letter</div>
+                                <div id="req-number"  style="color:#fc8181"><i class="fas fa-times-circle"></i> At least one number</div>
+                                <div id="req-symbol"  style="color:#fc8181"><i class="fas fa-times-circle"></i> At least one special character (!@#$...)</div>
+                            </div>
                         <div class="password-strength" id="password-strength">
                             <div class="password-strength-bar" id="strength-bar"></div>
                         </div>
@@ -359,35 +366,30 @@
 
     <script>
         $(document).ready(function() {
-            // Password strength indicator
-            $('#password-input').on('input', function() {
-                const password = $(this).val();
-                const strengthBar = $('#strength-bar');
-                const strengthContainer = $('#password-strength');
+            // Password requirements checker
+            $('#password-input').on('input', function () {
+                const val = $(this).val();
+                const reqs = $('#password-requirements');
+                reqs.css('display', val.length > 0 ? 'block' : 'none');
 
-                if (password.length > 0) {
-                    strengthContainer.show();
+                const checks = {
+                    'req-length': val.length >= 8,
+                    'req-upper':  /[A-Z]/.test(val),
+                    'req-lower':  /[a-z]/.test(val),
+                    'req-number': /[0-9]/.test(val),
+                    'req-symbol': /[^a-zA-Z0-9]/.test(val),
+                };
 
-                    let strength = 0;
-                    if (password.length >= 8) strength += 25;
-                    if (password.match(/[a-z]/) && password.match(/[A-Z]/)) strength += 25;
-                    if (password.match(/[0-9]/)) strength += 25;
-                    if (password.match(/[^a-zA-Z0-9]/)) strength += 25;
-
-                    strengthBar.css('width', strength + '%');
-
-                    if (strength <= 25) {
-                        strengthBar.css('background-color', '#fc8181');
-                    } else if (strength <= 50) {
-                        strengthBar.css('background-color', '#f6ad55');
-                    } else if (strength <= 75) {
-                        strengthBar.css('background-color', '#68d391');
+                $.each(checks, function (id, passed) {
+                    const el = $('#' + id);
+                    if (passed) {
+                        el.css('color', '#48bb78');
+                        el.find('i').attr('class', 'fas fa-check-circle');
                     } else {
-                        strengthBar.css('background-color', '#48bb78');
+                        el.css('color', '#fc8181');
+                        el.find('i').attr('class', 'fas fa-times-circle');
                     }
-                } else {
-                    strengthContainer.hide();
-                }
+                });
             });
 
             // Auto-dismiss alerts after 5 seconds
