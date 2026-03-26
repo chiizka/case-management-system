@@ -226,11 +226,10 @@ trait CaseComputations
      */
     protected function computePct96Days()
     {
-        if ($this->date_scheduled_docketed) {
+        if ($this->date_of_nr) {
             try {
-                $dateScheduled = Carbon::parse($this->date_scheduled_docketed);
-                // ✅ FIX: Store as Carbon instance, not formatted string
-                $this->pct_96_days = $dateScheduled->copy()->addDays(96);
+                $dateOfNr = Carbon::parse($this->date_of_nr);
+                $this->pct_96_days = $dateOfNr->copy()->addDays(96);
             } catch (\Exception $e) {
                 \Log::warning("Error computing pct_96_days: " . $e->getMessage());
                 $this->pct_96_days = null;

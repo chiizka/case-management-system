@@ -148,9 +148,12 @@
                 </div>
             </div>
 
-            <!-- MIS Disposed Cases - Regional -->
+            <!-- MIS Disposed Cases - Regional (clickable) -->
             <div class="col-xl-3 col-md-6 mb-4">
-                <div class="card border-left-info shadow h-100 py-2">
+                <div class="card border-left-info shadow h-100 py-2 clickable-card"
+                     data-toggle="modal"
+                     data-target="#misDisposedModal"
+                     style="cursor: pointer;">
                     <div class="card-body">
                         <div class="row no-gutters align-items-center">
                             <div class="col mr-2">
@@ -309,6 +312,89 @@
     <!-- /.container-fluid -->
 </div>
 <!-- End of Main Content -->
+
+{{-- ===================================================================== --}}
+{{--            MIS DISPOSED CASES MODAL                                   --}}
+{{-- ===================================================================== --}}
+
+<div class="modal fade" id="misDisposedModal" tabindex="-1" role="dialog" aria-labelledby="misDisposedModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title" id="misDisposedModalLabel">
+                    <i class="fas fa-database mr-2"></i> MIS Disposed Cases
+                    <span class="badge badge-light ml-2" style="font-size: 0.85rem;">{{ $misDisposedCases }}</span>
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">×</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted mb-3" style="font-size: 0.85rem;">
+                    <i class="fas fa-info-circle mr-1"></i>
+                    Active cases where <strong>Date Scheduled/Docketed + 96 days</strong> has already passed today.
+                </p>
+
+                @if($misDisposedCasesList->count() > 0)
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-hover table-sm">
+                            <thead class="thead-light">
+                                <tr>
+                                    <th>#</th>
+                                    <th>Case No.</th>
+                                    <th>Inspection ID</th>
+                                    <th>Establishment</th>
+                                    <th>Provincial Office</th>
+                                    <th>PCT (96 Days)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach($misDisposedCasesList as $index => $misCase)
+                                    @php
+                                        $pct96 = $misCase->pct_96_days
+                                            ? \Carbon\Carbon::parse($misCase->pct_96_days)
+                                            : (\Carbon\Carbon::parse($misCase->date_scheduled_docketed)->addDays(96));
+                                        $daysOverdue = $pct96->diffInDays(\Carbon\Carbon::now());
+                                    @endphp
+                                    <tr>
+                                        <td>{{ $index + 1 }}</td>
+                                        <td>
+                                            <strong>{{ $misCase->case_no ?? 'N/A' }}</strong>
+                                        </td>
+                                        <td>{{ $misCase->inspection_id ?? 'N/A' }}</td>
+                                        <td>{{ $misCase->establishment_name ?? 'N/A' }}</td>
+                                        <td>
+                                            <span class="badge" style="background-color: #e67e22; color: white; font-size: 0.75rem;">
+                                                <i class="fas fa-map-marker-alt mr-1"></i>{{ $misCase->po_office ?? 'N/A' }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <span class="d-block font-weight-bold text-danger">
+                                                {{ $pct96->format('M d, Y') }}
+                                            </span>
+                                            <small class="text-danger">
+                                                <i class="fas fa-exclamation-circle mr-1"></i>{{ $daysOverdue }} days overdue
+                                            </small>
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                @else
+                    <div class="text-center text-muted py-4">
+                        <i class="fas fa-check-circle fa-3x mb-3 d-block text-success"></i>
+                        <p class="mb-0">No MIS Disposed cases found</p>
+                        <small>All active cases are within the 96-day threshold.</small>
+                    </div>
+                @endif
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
 
 {{-- ===================================================================== --}}
 {{--            ACTIVE CASES DISTRIBUTION MODAL                            --}}
