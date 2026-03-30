@@ -508,8 +508,8 @@ td.actions-cell.expanded {
                                 
                                 <!-- Orders & Disposition Stage -->
                                 <th>PCT(96 days from the date of NR)</th>
-                                {{-- <th>Date Signed (MIS)</th> --}}
-                                <th>Status (PCT)</th>
+                                <th>Status (PO PCT)</th>
+                                <th>Date Signed (MIS)</th>
                                 {{-- <th>Reference Date PCT</th>
                                 <th>Aging PCT</th>
                                 <th>Disposition (MIS)</th>
@@ -731,10 +731,10 @@ td.actions-cell.expanded {
                                         <td class="editable-cell" data-field="pct_96_days">
                                             {{ $case->pct_96_days ? $case->pct_96_days->format('Y-m-d') : '-' }}
                                         </td>
-                                        {{-- <td class="editable-cell" data-field="date_signed_mis" data-type="date">
-                                            {{ $case->date_signed_mis ? \Carbon\Carbon::parse($case->date_signed_mis)->format('Y-m-d') : '-' }}
-                                        </td> --}}
                                         <td class="editable-cell" data-field="status_pct">{{ $case->status_pct ?? '-' }}</td>
+                                        <td class="editable-cell" data-field="date_signed_mis" data-type="date">
+                                            {{ $case->date_signed_mis ? \Carbon\Carbon::parse($case->date_signed_mis)->format('Y-m-d') : '-' }}
+                                        </td>
                                         {{-- <td class="editable-cell" data-field="reference_date_pct" data-type="date">
                                             {{ $case->reference_date_pct ? \Carbon\Carbon::parse($case->reference_date_pct)->format('Y-m-d') : '-' }}
                                         </td>
