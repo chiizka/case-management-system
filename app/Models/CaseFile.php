@@ -16,6 +16,7 @@ class CaseFile extends Model
     protected $fillable = [
         // Core Information
         'no',
+        'type_of_industry',
         'inspection_id',
         'case_no', 
         'establishment_name',

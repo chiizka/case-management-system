@@ -305,6 +305,7 @@ public function store(Request $request)
         'establishment_address' => 'nullable|string',
         'mode' => 'nullable|string|max:255',
         'po_office' => 'required|string|max:255',  // â† Now required!
+        'type_of_industry'   => 'required|string|max:255',
         'current_stage' => 'required|in:1: Inspections,2: Docketing,3: Hearing,4: Review & Drafting,5: Orders & Disposition,6: Compliance & Awards,7: Appeals & Resolution',
         'overall_status' => 'required|in:Active,Completed,Dismissed',
     ]);
@@ -736,6 +737,7 @@ public function destroy($id)
             return [
                 // Core Information
                 'no' => 'nullable|integer',
+                'type_of_industry' => 'nullable|string|max:255',
                 'inspection_id' => 'nullable|string|max:255',
                 'case_no' => 'nullable|string|max:255',
                 'establishment_name' => 'nullable|string|max:255',

@@ -460,6 +460,7 @@ td.actions-cell.expanded {
                                 {{-- <th>Establishment Address</th> --}}
                                 <th>Mode</th>
                                 <th>PO </th>
+                                <th>Type of Industry</th>
                                 {{-- <th>Overall Status</th> --}}
                                 
                                 <!-- Inspection Stage -->
@@ -643,6 +644,7 @@ td.actions-cell.expanded {
                                         </td> --}}
                                         <td class="editable-cell" data-field="mode">{{ $case->mode ?? '-' }}</td>
                                         <td class="readonly-cell" data-field="po_office">{{ $case->po_office ?? '-' }}</td>
+                                        <td class="editable-cell" data-field="type_of_industry">{{ $case->type_of_industry ?? '-' }}</td>
                                         {{-- <td class="readonly-cell" data-field="overall_status" data-type="select">
                                             {{ $case->overall_status ?? '-' }} --}}
                                         </td>
@@ -975,7 +977,6 @@ td.actions-cell.expanded {
 </div>
 <!-- End of Main Content -->
 
-    <!-- Modal for Adding/Editing Case Records -->
     <div class="modal fade" id="addCaseModal" tabindex="-1" role="dialog" aria-labelledby="addCaseModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg" role="document">
             <div class="modal-content">
@@ -989,6 +990,64 @@ td.actions-cell.expanded {
                     <form id="caseForm" method="POST" action="{{ route('case.store') }}">
                         @csrf
                         <input type="hidden" name="_method" id="formMethod" value="POST">
+
+                        {{-- ✨ FIRST FIELD: Type of Industry --}}
+                        <div class="form-group">
+                            <label for="type_of_industry">Type of Industry <span class="text-danger">*</span></label>
+                            <select class="form-control" id="type_of_industry" name="type_of_industry" required>
+                                <option value="">-- Select Type of Industry --</option>
+
+                                <optgroup label="1. Retail Establishments">
+                                    <option value="Retail - Specifics">Specifics</option>
+                                    <option value="Retail - Sales Methods">Sales Methods</option>
+                                </optgroup>
+
+                                <optgroup label="2. Food Service Establishments">
+                                    <option value="Food Service - Specifics">Specifics</option>
+                                    <option value="Food Service - Includes">Includes</option>
+                                    <option value="Food Service - Drinking Establishments">Drinking Establishments</option>
+                                </optgroup>
+
+                                <optgroup label="3. Professional Service Establishments">
+                                    <option value="Professional - Legal & Finance">Legal &amp; Finance</option>
+                                    <option value="Professional - Technical & Design">Technical &amp; Design</option>
+                                    <option value="Professional - Consulting & Management">Consulting &amp; Management</option>
+                                    <option value="Professional - Creative & Media">Creative &amp; Media</option>
+                                    <option value="Professional - Rent">Rent</option>
+                                </optgroup>
+
+                                <optgroup label="4. Healthcare Industry">
+                                    <option value="Healthcare - Specifics">Specifics</option>
+                                </optgroup>
+
+                                <optgroup label="5. Non-Agricultural Establishment">
+                                    <option value="Non-Agricultural - Construction (Principal)">Construction - Principal</option>
+                                    <option value="Non-Agricultural - Construction (Contractor)">Construction - Contractor</option>
+                                    <option value="Non-Agricultural - Manufacturing">Manufacturing</option>
+                                    <option value="Non-Agricultural - Mining & Quarrying">Mining &amp; Quarrying</option>
+                                    <option value="Non-Agricultural - Energy Sector">Energy Sector</option>
+                                    <option value="Non-Agricultural - Transportation & Logistics">Transportation &amp; Logistics</option>
+                                    <option value="Non-Agricultural - Telecommunications">Telecommunications</option>
+                                    <option value="Non-Agricultural - BPO">BPO</option>
+                                </optgroup>
+
+                                <optgroup label="6. Agriculture Establishment">
+                                    <option value="Agriculture - Agriculture">Agriculture</option>
+                                    <option value="Agriculture - Plantation">Plantation</option>
+                                    <option value="Agriculture - Non-Plantation">Non-Plantation</option>
+                                    <option value="Agriculture - Fishing/Marine Industry">Fishing/Marine Industry</option>
+                                    <option value="Agriculture - Horticultural">Horticultural</option>
+                                    <option value="Agriculture - Animal Farming">Animal Farming</option>
+                                </optgroup>
+
+                                <optgroup label="7. Other">
+                                    <option value="Other">Other (Please specify in remarks)</option>
+                                </optgroup>
+                            </select>
+                            <small class="form-text text-muted">
+                                <i class="fas fa-info-circle"></i> Select the industry category that best describes the establishment
+                            </small>
+                        </div>
 
                         <div class="row">
                             <div class="col-md-6">
@@ -1010,15 +1069,13 @@ td.actions-cell.expanded {
                             <input type="text" class="form-control" id="establishment_name" name="establishment_name" placeholder="Enter establishment name" required>
                         </div>
 
-                        {{-- ✨ NEW: PO Office Field --}}
                         <div class="form-group">
                             <label for="po_office">Provincial Office <span class="text-danger">*</span></label>
-                            
+
                             @if(Auth::user()->isProvince())
-                                {{-- Province users: auto-filled and read-only --}}
-                                <input type="text" 
-                                    class="form-control" 
-                                    id="po_office" 
+                                <input type="text"
+                                    class="form-control"
+                                    id="po_office"
                                     name="po_office"
                                     value="{{ Auth::user()->getProvinceName() }}"
                                     readonly
@@ -1027,7 +1084,6 @@ td.actions-cell.expanded {
                                     <i class="fas fa-info-circle"></i> Automatically set to your province office
                                 </small>
                             @else
-                                {{-- Regional office users: dropdown selection --}}
                                 <select class="form-control" id="po_office" name="po_office" required>
                                     <option value="">Select Provincial Office</option>
                                     <option value="Albay">Albay</option>
@@ -1043,8 +1099,8 @@ td.actions-cell.expanded {
                             @endif
                         </div>
 
-                            <input type="hidden" name="current_stage" value="1: Inspections">
-                            <input type="hidden" name="overall_status" value="Active">
+                        <input type="hidden" name="current_stage" value="1: Inspections">
+                        <input type="hidden" name="overall_status" value="Active">
 
                         <div class="modal-footer">
                             <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
@@ -2995,6 +3051,7 @@ $(document).ready(function() {
                 'establishment_address': { type: 'text' }, 
                 'mode': { type: 'text' },                  
                 'po_office': { type: 'text' },
+                'type_of_industry': { type: 'text' },
                 'current_stage': { 
                     type: 'select',
                     options: [
