@@ -1041,12 +1041,20 @@ td.actions-cell.expanded {
                                 </optgroup>
 
                                 <optgroup label="7. Other">
-                                    <option value="Other">Other (Please specify in remarks)</option>
+                                    <option value="Other - Please specify in remarks">Other (Please specify in the column)</option>
                                 </optgroup>
                             </select>
+                             </select>
                             <small class="form-text text-muted">
                                 <i class="fas fa-info-circle"></i> Select the industry category that best describes the establishment
                             </small>
+                            
+                            {{-- shown only when Other is selected --}}
+                            <div id="otherIndustryNote" class="alert alert-warning mt-2 py-2" style="display:none; font-size:0.85rem;">
+                                <i class="fas fa-exclamation-circle"></i>
+                                You selected <strong>Other</strong> — please specify the industry type in the
+                                <strong>Type of Industry</strong> column after saving this case.
+                            </div>
                         </div>
 
                         <div class="row">
@@ -2244,6 +2252,20 @@ $(document).on('click', function(e) {
     
     // Initialize only Tab 0 on page load
     initDataTable('#dataTable0');
+
+    // Show/hide "Other" note in Add Case modal
+    $('#type_of_industry').on('change', function() {
+        if ($(this).val().startsWith('Other')) {
+            $('#otherIndustryNote').slideDown(200);
+        } else {
+            $('#otherIndustryNote').slideUp(200);
+        }
+    });
+
+    // Reset the note when modal closes
+    $('#addCaseModal').on('hidden.bs.modal', function() {
+        $('#otherIndustryNote').hide();
+    });
     
     // Adjust table after auto-minimize
     setTimeout(function() {
