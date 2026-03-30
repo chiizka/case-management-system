@@ -62,7 +62,7 @@
     position: sticky;
     left: 185px;
     z-index: 35;
-    background-color: #f8f9fc !important;
+     background-color: #fff3cd !important;
     box-shadow: 3px 0 8px rgba(0,0,0,0.1);
     width: 100px;
     min-width: 100px;
@@ -75,13 +75,19 @@
     position: sticky;
     left: 285px;
     z-index: 35;
-    background-color: #f8f9fc !important;
+    background-color: #d1ecf1 !important;
     box-shadow: 3px 0 8px rgba(0,0,0,0.1);
     min-width: 200px;
     max-width: 340px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+}
+
+/* PO column (7th column) */
+.table th:nth-child(7),
+.table td:nth-child(7) {
+    background-color: #d4edda !important; /* green for PO */
 }
 
 /* ==================== COMPACT TABLE - SHORTER ROWS ==================== */
