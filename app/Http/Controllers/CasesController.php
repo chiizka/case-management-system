@@ -30,31 +30,17 @@ class CasesController extends Controller
     private function getAllowedTabs()
     {
         $user = Auth::user();
+        
+        // Tab mapping: 1=Inspections, 2=Docketing, 3=Hearing, 4=Review&Drafting, 5=Orders&Disposition, 6=Compliance&Awards, 7=Appeals&Resolution
+        $tabPermissions = [
+            'admin' => [1, 2, 3, 4, 5, 6, 7],           // Admin sees all
+            'malsu' => [7],                             // MALSU sees Appeals
+            'province' => [1, 2, 3],                    // Province sees Inspections, Docketing, Hearing
+            'case_management' => [4, 5, 6],             // Case Management sees Review, Orders, Compliance
+        ];
 
-        // Admin sees all tabs
-        if ($user->isAdmin()) {
-            return [1, 2, 3, 4, 5, 6, 7];
-        }
-
-        // Regional roles
-        if ($user->isMalsu()) {
-            return [7];
-        }
-
-        if ($user->isCaseManagement()) {
-            return [4, 5, 6];
-        }
-
-        if ($user->isRecords()) {
-            return [1, 2, 3, 4, 5, 6, 7]; // adjust as needed
-        }
-
-        // Province roles
-        if ($user->isProvince()) {
-            return [1, 2, 3];
-        }
-
-        return [];
+        // Return allowed tabs for user's role, default to empty if role not found
+        return $tabPermissions[$user->role] ?? [];
     }
 
     /**
@@ -76,13 +62,12 @@ class CasesController extends Controller
         $query = CaseFile::whereNotIn('overall_status', ['Completed', 'Disposed', 'Appealed'])
             ->orderBy('created_at', 'desc');
         
-        // âœ¨ FILTER: Provincial users only see cases currently located at their province.
+        // Ã¢Å“Â¨ FILTER: Provincial users only see cases currently located at their province.
         // Uses DocumentTracking.current_role (live location) instead of po_office (static origin).
         // This way cases disappear from the province view once transferred elsewhere.
-        if (!$user->isAdmin()) {
+        if ($user->isProvince()) {
             $query->whereHas('documentTracking', function ($q) use ($user) {
-                $q->where('current_role', $user->role)
-                ->where('status', 'Received');
+                $q->where('current_role', $user->role);
             });
         }
         // Admin and MALSU see all cases (no filter applied)
@@ -122,7 +107,7 @@ class CasesController extends Controller
             $data = null;
             $html = '';
 
-            // âœ¨ Create a reusable query filter function
+            // Ã¢Å“Â¨ Create a reusable query filter function
             $applyProvinceFilter = function($query) use ($user) {
                 if ($user->isProvince()) {
                     $provinceName = $user->getProvinceName();
@@ -141,7 +126,7 @@ class CasesController extends Controller
                     $query->where('current_stage', '1: Inspections')
                     ->whereNotIn('overall_status', ['Completed', 'Disposed', 'Appealed']);
                         
-                        // âœ¨ Filter by current document location, not origin
+                        // Ã¢Å“Â¨ Filter by current document location, not origin
                         if ($user->isProvince()) {
                             $query->whereHas('documentTracking', function ($q) use ($user) {
                                 $q->where('current_role', $user->role);
@@ -161,8 +146,8 @@ class CasesController extends Controller
                         $query->where('current_stage', '2: Docketing')
                             ->where('overall_status', '!=', 'Completed');
                         
-                        // âœ¨ Filter by current document location, not origin
-                        if (!$user->isAdmin()) {
+                        // Ã¢Å“Â¨ Filter by current document location, not origin
+                        if ($user->isProvince()) {
                             $query->whereHas('documentTracking', function ($q) use ($user) {
                                 $q->where('current_role', $user->role);
                             });
@@ -181,8 +166,8 @@ class CasesController extends Controller
                         $query->where('current_stage', '3: Hearing')
                             ->where('overall_status', '!=', 'Completed');
                         
-                        // âœ¨ Filter by current document location, not origin
-                        if (!$user->isAdmin()) {
+                        // Ã¢Å“Â¨ Filter by current document location, not origin
+                        if ($user->isProvince()) {
                             $query->whereHas('documentTracking', function ($q) use ($user) {
                                 $q->where('current_role', $user->role);
                             });
@@ -201,8 +186,8 @@ class CasesController extends Controller
                         $query->where('current_stage', '4: Review & Drafting')
                             ->where('overall_status', '!=', 'Completed');
                         
-                        // âœ¨ Filter by current document location, not origin
-                        if (!$user->isAdmin()) {
+                        // Ã¢Å“Â¨ Filter by current document location, not origin
+                        if ($user->isProvince()) {
                             $query->whereHas('documentTracking', function ($q) use ($user) {
                                 $q->where('current_role', $user->role);
                             });
@@ -221,8 +206,8 @@ class CasesController extends Controller
                         $query->where('current_stage', '5: Orders & Disposition')
                             ->where('overall_status', '!=', 'Completed');
                         
-                        // âœ¨ Filter by current document location, not origin
-                        if (!$user->isAdmin()) {
+                        // Ã¢Å“Â¨ Filter by current document location, not origin
+                        if ($user->isProvince()) {
                             $query->whereHas('documentTracking', function ($q) use ($user) {
                                 $q->where('current_role', $user->role);
                             });
@@ -241,8 +226,8 @@ class CasesController extends Controller
                         $query->where('current_stage', '6: Compliance & Awards')
                             ->where('overall_status', '!=', 'Completed');
                         
-                        // âœ¨ Filter by current document location, not origin
-                        if (!$user->isAdmin()) {
+                        // Ã¢Å“Â¨ Filter by current document location, not origin
+                        if ($user->isProvince()) {
                             $query->whereHas('documentTracking', function ($q) use ($user) {
                                 $q->where('current_role', $user->role);
                             });
@@ -261,8 +246,8 @@ class CasesController extends Controller
                         $query->where('current_stage', '7: Appeals & Resolution')
                             ->where('overall_status', '!=', 'Completed');
                         
-                        // âœ¨ Filter by current document location, not origin
-                        if (!$user->isAdmin()) {
+                        // Ã¢Å“Â¨ Filter by current document location, not origin
+                        if ($user->isProvince()) {
                             $query->whereHas('documentTracking', function ($q) use ($user) {
                                 $q->where('current_role', $user->role);
                             });
@@ -304,8 +289,7 @@ public function store(Request $request)
         'establishment_name' => 'required|string|max:255',
         'establishment_address' => 'nullable|string',
         'mode' => 'nullable|string|max:255',
-        'po_office' => 'required|string|max:255',  // â† Now required!
-        'type_of_industry'   => 'required|string|max:255',
+        'po_office' => 'required|string|max:255',  // Ã¢â€ Â Now required!
         'current_stage' => 'required|in:1: Inspections,2: Docketing,3: Hearing,4: Review & Drafting,5: Orders & Disposition,6: Compliance & Awards,7: Appeals & Resolution',
         'overall_status' => 'required|in:Active,Completed,Dismissed',
     ]);
@@ -314,7 +298,7 @@ public function store(Request $request)
     try {
         $user = Auth::user();
         
-        // âœ¨ Verify province users can only create cases for their province
+        // Ã¢Å“Â¨ Verify province users can only create cases for their province
         if ($user->isProvince() && $validated['po_office'] !== $user->getProvinceName()) {
             throw new \Exception('You can only create cases for your own province office.');
         }
@@ -322,12 +306,16 @@ public function store(Request $request)
         // Create the case
         $case = CaseFile::create($validated);
 
+        // Compute all auto-calculated fields on first save
+        $case->computeFields();
+        $case->saveQuietly();
+
         // Create related inspection record if starting at inspections stage
         if ($case->current_stage === '1: Inspections') {
             Inspection::create(['case_id' => $case->id]);
         }
 
-        // âœ¨ Create initial document tracking
+        // Ã¢Å“Â¨ Create initial document tracking
         $this->createInitialDocumentTracking($case, $user);
 
         // Log the action
@@ -552,41 +540,27 @@ public function destroy($id)
         DB::beginTransaction();
         try {
             $case = CaseFile::findOrFail($id);
-            $user = Auth::user();
             
             // Log the initial state
             Log::info("moveToNextStage called", [
                 'case_id' => $id,
                 'current_status' => $case->overall_status,
                 'current_stage' => $case->current_stage,
-                'force_complete' => $request->input('force_complete', false),
-                'dispose' => $request->input('dispose', false),
-                'user_role' => $user->role,
-                'is_province' => $user->isProvince()
+                'force_complete' => $request->input('force_complete', false)
             ]);
             
-            // Check if request explicitly wants to complete/dispose the case (from Complete button)
+            // Check if request explicitly wants to complete the case (from Complete button)
             $forceComplete = $request->input('force_complete', false);
-            $dispose = $request->input('dispose', false);
             
-            if ($forceComplete || $dispose) {
-                Log::info("Force completing/disposing case {$id}");
+            if ($forceComplete) {
+                Log::info("Force completing case {$id}");
                 
                 // Store old stage for logging
                 $oldStage = $case->current_stage;
                 
-                // ✅ CRITICAL FIX: Determine status based on user role
-                // Provincial users → Disposed
-                // Non-provincial users (Admin, MALSU, etc.) → Completed
-                $newStatus = 'Completed'; // Default for non-provincial
-                
-                if ($user->isProvince()) {
-                    $newStatus = 'Disposed';
-                }
-                
-                // Update case status
+                // Complete case from any stage
                 $case->update([
-                    'overall_status' => $newStatus,
+                    'overall_status' => 'Completed',
                 ]);
                 
                 // Verify the update
@@ -594,23 +568,20 @@ public function destroy($id)
                 Log::info("Case updated", [
                     'case_id' => $case->id,
                     'new_status' => $case->overall_status,
-                    'inspection_id' => $case->inspection_id,
-                    'user_role' => $user->role
+                    'inspection_id' => $case->inspection_id
                 ]);
                 
-                // Log the archive action
+                // **ADD THIS: Log the archive action**
                 ActivityLogger::logAction(
                     'ARCHIVE',
                     'Case',
                     $case->inspection_id,
-                    "Case {$case->inspection_id} - {$case->establishment_name} moved to Archived cases as {$newStatus}",
+                    "Case id: {$case->inspection_id} - {$case->establishment_name} moved to Archived cases",
                     [
                         'establishment' => $case->establishment_name,
                         'previous_stage' => $oldStage,
-                        'new_status' => $newStatus,
-                        'action_type' => 'Force Archive',
-                        'archived_by' => $user->fname . ' ' . $user->lname,
-                        'user_role' => $user->role
+                        'new_status' => 'Completed',
+                        'action_type' => 'Force Complete'
                     ]
                 );
                 
@@ -618,7 +589,7 @@ public function destroy($id)
                 
                 return response()->json([
                     'success' => true,
-                    'message' => "Case marked as {$newStatus} and moved to archived cases!",
+                    'message' => 'Case marked as complete and moved to archived cases!',
                     'case_id' => $case->id,
                     'new_status' => $case->overall_status
                 ]);
@@ -647,32 +618,28 @@ public function destroy($id)
             
             // If completing the final stage (Appeals & Resolution)
             if ($currentStage === '7: Appeals & Resolution' && $nextStage === 'Completed') {
-                // ✅ Also apply role-based status here
-                $newStatus = $user->isProvince() ? 'Disposed' : 'Completed';
-                
                 $case->update([
-                    'overall_status' => $newStatus,
+                    'overall_status' => 'Completed',
                 ]);
                 
-                // Log completion from final stage
+                // **ADD THIS: Log completion from final stage**
                 ActivityLogger::logAction(
                     'ARCHIVE',
                     'Case',
                     $case->inspection_id,
-                    "{$case->inspection_id} - {$case->establishment_name} archived from {$currentStage} as {$newStatus}",
+                    "{$case->inspection_id} - {$case->establishment_name} archived from {$currentStage}",
                     [
                         'establishment' => $case->establishment_name,
                         'previous_stage' => $currentStage,
-                        'new_status' => $newStatus,
-                        'action_type' => 'Normal Progression',
-                        'user_role' => $user->role
+                        'new_status' => 'Completed',
+                        'action_type' => 'Normal Progression'
                     ]
                 );
                 
                 DB::commit();
                 return response()->json([
                     'success' => true,
-                    'message' => "Case completed and moved to archived cases as {$newStatus}!"
+                    'message' => 'Case completed and moved to archived cases! Document removed from tracking.'
                 ]);
             }
             
@@ -681,12 +648,12 @@ public function destroy($id)
                 'current_stage' => $nextStage
             ]);
             
-            // Log normal stage progression
+            // **ADD THIS: Log normal stage progression**
             ActivityLogger::logAction(
                 'UPDATE',
                 'Case',
                 $case->inspection_id,
-                "Stage progression: {$currentStage} → {$nextStage}",
+                "Stage progression: {$currentStage} Ã¢â€ â€™ {$nextStage}",
                 [
                     'establishment' => $case->establishment_name,
                     'previous_stage' => $currentStage,
@@ -706,7 +673,7 @@ public function destroy($id)
             Log::error('Failed to move case to next stage: ' . $e->getMessage());
             Log::error('Stack trace: ' . $e->getTraceAsString());
             
-            // Log the error
+            // **ADD THIS: Log the error**
             try {
                 $case = CaseFile::find($id);
                 if ($case) {
@@ -737,7 +704,6 @@ public function destroy($id)
             return [
                 // Core Information
                 'no' => 'nullable|integer',
-                'type_of_industry' => 'nullable|string|max:255',
                 'inspection_id' => 'nullable|string|max:255',
                 'case_no' => 'nullable|string|max:255',
                 'establishment_name' => 'nullable|string|max:255',
@@ -752,10 +718,10 @@ public function destroy($id)
                 'inspector_name' => 'nullable|string|max:255',
                 'inspector_authority_no' => 'nullable|string|max:255',
                 'date_of_nr' => 'nullable|date',
-                'lapse_20_day_period' => 'nullable|date',
+                'lapse_20_day_period' => 'nullable|string|max:255',
                 
                 // Docketing Stage
-                'pct_for_docketing' => 'nullable|date',
+                'pct_for_docketing' => 'nullable|string|max:255',
                 'date_scheduled_docketed' => 'nullable|date',
                 'aging_docket' => 'nullable|integer',
                 'status_docket' => 'nullable|string|max:255',
@@ -763,10 +729,10 @@ public function destroy($id)
                 
                 // Hearing Process Stage
                 'date_1st_mc_actual' => 'nullable|date',
-                'first_mc_pct' => 'nullable|integer',
+                'first_mc_pct' => 'nullable|string|max:255',
                 'status_1st_mc' => 'nullable|string|max:255',
                 'date_2nd_last_mc' => 'nullable|date',
-                'second_last_mc_pct' => 'nullable|integer',
+                'second_last_mc_pct' => 'nullable|string|max:255',
                 'status_2nd_mc' => 'nullable|string|max:255',
                 'case_folder_forwarded_to_ro' => 'nullable|string|max:255',
                 'draft_order_from_po_type' => 'nullable|string|max:255',
@@ -775,7 +741,7 @@ public function destroy($id)
                 'twg_ali' => 'nullable|string|max:255',
                 
                 // Review & Drafting Stage
-                'po_pct' => 'nullable|date',
+                'po_pct' => 'nullable|string|max:255',
                 'aging_po_pct' => 'nullable|integer',
                 'status_po_pct' => 'nullable|string|max:255',
                 'date_received_from_po' => 'nullable|date',
@@ -894,7 +860,13 @@ public function destroy($id)
 
             $case->update($updateData);
             $case->refresh();
-            
+
+            // Recompute all auto-calculated fields (PCT dates, aging, statuses)
+            // after every inline save so computed columns always stay in sync.
+            $case->computeFields();
+            $case->saveQuietly();   // persist computed values without firing events again
+            $case->refresh();
+
             Log::info('Update successful. New data:', $case->toArray());
 
             $changes = $this->getChanges($oldData, $updateData);
@@ -955,7 +927,7 @@ public function destroy($id)
                     $newValue = explode(': ', $newValue)[1] ?? $newValue;
                 }
                 
-                $changes[] = "$fieldName: '$oldValue' â†’ '$newValue'";
+                $changes[] = "$fieldName: '$oldValue' Ã¢â€ â€™ '$newValue'";
             }
         }
 
@@ -1118,7 +1090,7 @@ public function importCsv(Request $request)
                 
                 // Extract fields from MIS CSV format
                 $inspectionId = trim($data['Inspection ID'] ?? '');
-                $fieldOffice = $this->normalizeFieldOffice(trim($data['Field Office'] ?? ''));
+                $fieldOffice = trim($data['Field Office'] ?? '');
                 $establishmentName = trim($data['Establishment/Ship Name'] ?? '');
                 $establishmentAddress = trim($data['Establishment/Ship Address'] ?? '');
                 $mode = trim($data['Mode'] ?? '');
@@ -1151,7 +1123,7 @@ public function importCsv(Request $request)
                 
                 // Create case record
                 try {
-                    $case = CaseFile::create([
+                    CaseFile::create([
                         'inspection_id' => $inspectionId,
                         'po_office' => $fieldOffice,
                         'establishment_name' => $establishmentName,
@@ -1171,7 +1143,6 @@ public function importCsv(Request $request)
                         'current_stage' => '1: Inspections',
                         'overall_status' => 'Active',
                     ]);
-                    $this->createInitialDocumentTracking($case, Auth::user());
                     $successCount++;
                 } catch (\Exception $e) {
                     $errors[] = "Row {$rowNumber}: " . $e->getMessage();
@@ -1313,45 +1284,23 @@ public function getDocuments($id)
     }
 }
 
+/**
+ * Save document checklist for a case
+ */
 public function saveDocuments(Request $request, $id)
 {
     DB::beginTransaction();
     try {
         $case = CaseFile::findOrFail($id);
         
-        // Get existing documents from DB (contains real file paths)
-        $existingDocuments = $case->document_checklist ?? [];
-        
-        // Build a lookup map of existing docs by ID so we can preserve file data
-        $existingById = [];
-        foreach ($existingDocuments as $doc) {
-            if (isset($doc['id'])) {
-                $existingById[(string)$doc['id']] = $doc;
-            }
-        }
-        
-        // Get documents from request and ensure checked is boolean
+        // Get documents and ensure checked is boolean
         $documents = $request->input('documents', []);
         
-        // Merge: keep frontend changes (title, checked) but preserve server-side file data
-        $documents = array_map(function($doc) use ($existingById) {
+        // Convert 'checked' from string to boolean
+        $documents = array_map(function($doc) {
             if (isset($doc['checked'])) {
                 $doc['checked'] = filter_var($doc['checked'], FILTER_VALIDATE_BOOLEAN);
             }
-            
-            $docId = (string)($doc['id'] ?? '');
-            if (isset($existingById[$docId])) {
-                $existing = $existingById[$docId];
-                $fileFields = ['file_path', 'file_name', 'file_size', 'uploaded_at', 'uploaded_by'];
-                foreach ($fileFields as $field) {
-                    if (isset($existing[$field])) {
-                        $doc[$field] = $existing[$field];
-                    } else {
-                        unset($doc[$field]);
-                    }
-                }
-            }
-            
             return $doc;
         }, $documents);
         
@@ -1360,18 +1309,26 @@ public function saveDocuments(Request $request, $id)
         ]);
 
         ActivityLogger::logAction(
-            'UPDATE', 'Case', $case->inspection_id,
+            'UPDATE',
+            'Case',
+            $case->inspection_id,
             "Updated document checklist",
             ['establishment' => $case->establishment_name]
         );
 
         DB::commit();
 
-        return response()->json(['success' => true, 'message' => 'Documents saved successfully']);
+        return response()->json([
+            'success' => true,
+            'message' => 'Documents saved successfully'
+        ]);
     } catch (\Exception $e) {
         DB::rollBack();
         Log::error('Error saving documents: ' . $e->getMessage());
-        return response()->json(['success' => false, 'message' => 'Failed to save documents'], 500);
+        return response()->json([
+            'success' => false,
+            'message' => 'Failed to save documents'
+        ], 500);
     }
 }
 
@@ -1757,50 +1714,6 @@ protected function getProvinceNameFromRole($role)
     ];
     
     return $roleToProvince[$role] ?? null;
-}
-private function normalizeFieldOffice(string $value): string
-{
-    $normalized = strtolower(trim($value));
-
-    $map = [
-        // Sorsogon variants
-        'sorsogon'                  => 'Sorsogon',
-        'sorsogon province'         => 'Sorsogon',
-        'province of sorsogon'      => 'Sorsogon',
-        'sorsogon city'             => 'Sorsogon',
-        'fo-sorsogon'               => 'Sorsogon',
-        'field office sorsogon'     => 'Sorsogon',
-
-        // Albay variants
-        'albay'                     => 'Albay',
-        'province of albay'         => 'Albay',
-        'albay province'            => 'Albay',
-        'fo-albay'                  => 'Albay',
-
-        // Camarines Sur variants
-        'camarines sur'             => 'Camarines Sur',
-        'cam sur'                   => 'Camarines Sur',
-        'province of camarines sur' => 'Camarines Sur',
-        'fo-camarines sur'          => 'Camarines Sur',
-
-        // Camarines Norte variants
-        'camarines norte'           => 'Camarines Norte',
-        'cam norte'                 => 'Camarines Norte',
-        'province of camarines norte'=> 'Camarines Norte',
-        'fo-camarines norte'        => 'Camarines Norte',
-
-        // Catanduanes variants
-        'catanduanes'               => 'Catanduanes',
-        'province of catanduanes'   => 'Catanduanes',
-        'fo-catanduanes'            => 'Catanduanes',
-
-        // Masbate variants
-        'masbate'                   => 'Masbate',
-        'province of masbate'       => 'Masbate',
-        'fo-masbate'                => 'Masbate',
-    ];
-
-    return $map[$normalized] ?? $value; // fallback to original if no match
 }
 
 }
