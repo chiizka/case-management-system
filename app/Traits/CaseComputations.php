@@ -275,11 +275,34 @@ trait CaseComputations
     protected function computePct96Days(): void
     {
         if ($this->date_of_nr) {
+            // Forward: date_of_nr → pct_96_days
             try {
                 $this->pct_96_days = Carbon::parse($this->date_of_nr)->addDays(96);
             } catch (\Exception $e) {
-                \Log::warning("computePct96Days error: {$e->getMessage()}");
+                \Log::warning("computePct96Days (forward) error: {$e->getMessage()}");
                 $this->pct_96_days = null;
+            }
+        } elseif ($this->pct_96_days) {
+            // Reverse: pct_96_days → date_of_nr
+            try {
+                $this->date_of_nr = Carbon::parse($this->pct_96_days)->subDays(96);
+
+                // Re-run all computations that depend on date_of_nr
+                $this->computeLapseOf20DayPeriod();
+                $this->computePctForDocketing();
+                $this->computeAgingDocket();
+                $this->computeStatusDocket();
+                $this->compute1stMcPct();
+                $this->computeStatus1stMc();
+                $this->compute2ndLastMcPct();
+                $this->computeStatus2ndMc();
+                $this->computePoPct();
+                $this->computeAgingPoPct();
+                $this->computeStatusPoPct();
+                $this->computeAgingPct();
+            } catch (\Exception $e) {
+                \Log::warning("computePct96Days (reverse) error: {$e->getMessage()}");
+                $this->date_of_nr = null;
             }
         } else {
             $this->pct_96_days = null;
