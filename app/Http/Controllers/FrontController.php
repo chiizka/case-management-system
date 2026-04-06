@@ -35,21 +35,19 @@ class FrontController extends Controller
         if ($isProvince) {
             $provinceName = $user->getProvinceName();
 
-            // Base: cases from this province that this office has already received
             $receivedByProvince = CaseFile::where('po_office', $provinceName)
                 ->whereHas('documentTracking', function ($q) use ($userRole) {
                     $q->where('current_role', $userRole)
-                      ->where('status', 'Received');
+                    ->where('status', 'Received');
                 });
 
             $activeCases         = (clone $receivedByProvince)->where('overall_status', 'Active')->count();
             $disposedCases       = (clone $receivedByProvince)->where('overall_status', 'Disposed')->count();
             $actualDisposedCases = 0;
             $misDisposedCases    = 0;
+            $misDisposedCasesList = collect(); // ← ADD THIS
 
-            // Total Handled = ALL cases that originated from this province (regardless of current location)
             $totalCases = CaseFile::where('po_office', $provinceName)->count();
-
         } else {
             // Regional roles: system-wide counts, no scoping
             $activeCases         = CaseFile::where('overall_status', 'Active')->count();
