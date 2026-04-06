@@ -332,7 +332,7 @@
             <div class="modal-body">
                 <p class="text-muted mb-3" style="font-size: 0.85rem;">
                     <i class="fas fa-info-circle mr-1"></i>
-                    Active cases where <strong>Date Scheduled/Docketed + 96 days</strong> has already passed today.
+                    Active cases where a <strong>Date Signed (MIS)</strong> has been recorded.
                 </p>
 
                 @if($misDisposedCasesList->count() > 0)
@@ -345,22 +345,14 @@
                                     <th>Inspection ID</th>
                                     <th>Establishment</th>
                                     <th>Provincial Office</th>
-                                    <th>PCT (96 Days)</th>
+                                    <th>Date Signed (MIS)</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 @foreach($misDisposedCasesList as $index => $misCase)
-                                    @php
-                                        $pct96 = $misCase->pct_96_days
-                                            ? \Carbon\Carbon::parse($misCase->pct_96_days)
-                                            : (\Carbon\Carbon::parse($misCase->date_scheduled_docketed)->addDays(96));
-                                        $daysOverdue = $pct96->diffInDays(\Carbon\Carbon::now());
-                                    @endphp
                                     <tr>
                                         <td>{{ $index + 1 }}</td>
-                                        <td>
-                                            <strong>{{ $misCase->case_no ?? 'N/A' }}</strong>
-                                        </td>
+                                        <td><strong>{{ $misCase->case_no ?? 'N/A' }}</strong></td>
                                         <td>{{ $misCase->inspection_id ?? 'N/A' }}</td>
                                         <td>{{ $misCase->establishment_name ?? 'N/A' }}</td>
                                         <td>
@@ -369,12 +361,9 @@
                                             </span>
                                         </td>
                                         <td>
-                                            <span class="d-block font-weight-bold text-danger">
-                                                {{ $pct96->format('M d, Y') }}
+                                            <span class="d-block font-weight-bold text-primary">
+                                                {{ $misCase->date_signed_mis ? \Carbon\Carbon::parse($misCase->date_signed_mis)->format('M d, Y') : 'N/A' }}
                                             </span>
-                                            <small class="text-danger">
-                                                <i class="fas fa-exclamation-circle mr-1"></i>{{ $daysOverdue }} days overdue
-                                            </small>
                                         </td>
                                     </tr>
                                 @endforeach

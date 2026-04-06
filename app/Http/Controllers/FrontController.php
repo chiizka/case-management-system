@@ -55,15 +55,13 @@ class FrontController extends Controller
             $activeCases         = CaseFile::where('overall_status', 'Active')->count();
             $disposedCases       = CaseFile::where('overall_status', 'Disposed')->count();
            $actualDisposedCases = CaseFile::where('overall_status', 'Completed')->count();
-            $misDisposedCases    = CaseFile::where('overall_status', 'Active')
-                ->whereNotNull('date_scheduled_docketed')
-                ->whereRaw('DATE_ADD(date_scheduled_docketed, INTERVAL 96 DAY) < CURDATE()')
+            $misDisposedCases = CaseFile::where('overall_status', 'Active')
+                ->whereNotNull('date_signed_mis')
                 ->count();
 
             $misDisposedCasesList = CaseFile::where('overall_status', 'Active')
-                ->whereNotNull('date_scheduled_docketed')
-                ->whereRaw('DATE_ADD(date_scheduled_docketed, INTERVAL 96 DAY) < CURDATE()')
-                ->select('case_no', 'po_office', 'inspection_id', 'establishment_name', 'pct_96_days', 'date_scheduled_docketed')
+                ->whereNotNull('date_signed_mis')
+                ->select('case_no', 'po_office', 'inspection_id', 'establishment_name', 'pct_96_days', 'date_signed_mis', 'date_scheduled_docketed')
                 ->orderBy('po_office')
                 ->get();
             $totalCases          = CaseFile::count();
