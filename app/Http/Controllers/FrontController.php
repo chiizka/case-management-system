@@ -57,10 +57,14 @@ class FrontController extends Controller
            $actualDisposedCases = CaseFile::where('overall_status', 'Completed')->count();
             $misDisposedCases = CaseFile::where('overall_status', 'Active')
                 ->whereNotNull('date_signed_mis')
+                ->whereMonth('date_signed_mis', Carbon::now()->month)
+                ->whereYear('date_signed_mis', Carbon::now()->year)
                 ->count();
 
             $misDisposedCasesList = CaseFile::where('overall_status', 'Active')
                 ->whereNotNull('date_signed_mis')
+                ->whereMonth('date_signed_mis', Carbon::now()->month)
+                ->whereYear('date_signed_mis', Carbon::now()->year)
                 ->select('case_no', 'po_office', 'inspection_id', 'establishment_name', 'pct_96_days', 'date_signed_mis', 'date_scheduled_docketed')
                 ->orderBy('po_office')
                 ->get();
