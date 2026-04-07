@@ -457,26 +457,25 @@ td.actions-cell.expanded {
     <!-- Begin Page Content -->
     <div class="container-fluid">
 
-        <!-- Tab Navigation -->
+    <!-- Tab Navigation -->
+    @if(Auth::user()->isCaseManagement() || Auth::user()->isAdmin())
         <ul class="nav nav-tabs mb-0" id="dataTableTabs" role="tablist">
             <li class="nav-item">
                 <a class="nav-link active" id="tab0-tab"
-                   data-toggle="tab" href="#tab0"
-                   role="tab" aria-controls="tab0" aria-selected="true">
+                data-toggle="tab" href="#tab0"
+                role="tab" aria-controls="tab0" aria-selected="true">
                     <i class="fas fa-folder-open mr-1"></i> All Active Cases
                 </a>
             </li>
-
-            @if(Auth::user()->isCaseManagement() || Auth::user()->isAdmin())
-                <li class="nav-item">
-                    <a class="nav-link" id="tabCM-tab"
-                       data-toggle="tab" href="#tabCM"
-                       role="tab" aria-controls="tabCM" aria-selected="false">
-                        <i class="fas fa-briefcase mr-1"></i> My Cases
-                    </a>
-                </li>
-            @endif
+            <li class="nav-item">
+                <a class="nav-link" id="tabCM-tab"
+                data-toggle="tab" href="#tabCM"
+                role="tab" aria-controls="tabCM" aria-selected="false">
+                    <i class="fas fa-briefcase mr-1"></i> My Cases
+                </a>
+            </li>
         </ul>
+    @endif
 
         <!-- Tabs Content -->
         <div class="tab-content mt-1" id="dataTableTabsContent">
