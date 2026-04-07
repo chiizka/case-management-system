@@ -31,8 +31,8 @@
 
 /* 1. No. Column */
 /* 1. No. Column */
-.table th:nth-child(2),
-.table td:nth-child(2) {
+.table:not(.cm-table) th:nth-child(2),
+.table:not(.cm-table) td:nth-child(2) {
     position: sticky;
     left: 0;
     z-index: 35;
@@ -44,8 +44,8 @@
 }
 
 /* 2. Inspection ID Column */
-.table th:nth-child(3),
-.table td:nth-child(3) {
+.table:not(.cm-table) th:nth-child(3),
+.table:not(.cm-table) td:nth-child(3) {
     position: sticky;
     left: 75px;
     z-index: 35;
@@ -57,8 +57,8 @@
 }
 
 /* 3. Case No. Column */
-.table th:nth-child(4),
-.table td:nth-child(4) {
+.table:not(.cm-table) th:nth-child(4),
+.table:not(.cm-table) td:nth-child(4) {
     position: sticky;
     left: 185px;
     z-index: 35;
@@ -70,8 +70,8 @@
 }
 
 /* 4. Establishment Name Column */
-.table th:nth-child(5),
-.table td:nth-child(5) {
+.table:not(.cm-table) th:nth-child(5),
+.table:not(.cm-table) td:nth-child(5) {
     position: sticky;
     left: 285px;
     z-index: 35;
@@ -85,8 +85,8 @@
 }
 
 /* PO column (7th column) */
-.table th:nth-child(7),
-.table td:nth-child(7) {
+.table:not(.cm-table) th:nth-child(7),
+.table:not(.cm-table) td:nth-child(7) {
     background-color: #d4edda !important; /* green for PO */
 }
 
@@ -394,6 +394,62 @@ td.actions-cell.expanded {
     display: table;
     clear: both;
 }
+
+/* ==================== CM TABLE STICKY COLUMNS ==================== */
+.cm-table th:nth-child(2),
+.cm-table td:nth-child(2) {
+    position: sticky;
+    left: 0;
+    z-index: 35;
+    background-color: #f8f9fc !important;
+    box-shadow: 3px 0 8px rgba(0,0,0,0.1);
+    width: 75px;
+    min-width: 75px;
+    max-width: 75px;
+}
+
+.cm-table th:nth-child(3),
+.cm-table td:nth-child(3) {
+    position: sticky;
+    left: 75px;
+    z-index: 35;
+    background-color: #f8f9fc !important;
+    box-shadow: 3px 0 8px rgba(0,0,0,0.1);
+    width: 110px;
+    min-width: 110px;
+    max-width: 110px;
+}
+
+.cm-table th:nth-child(4),
+.cm-table td:nth-child(4) {
+    position: sticky;
+    left: 185px;
+    z-index: 35;
+    background-color: #fff3cd !important;
+    box-shadow: 3px 0 8px rgba(0,0,0,0.1);
+    width: 100px;
+    min-width: 100px;
+    max-width: 100px;
+}
+
+.cm-table th:nth-child(5),
+.cm-table td:nth-child(5) {
+    position: sticky;
+    left: 285px;
+    z-index: 35;
+    background-color: #d1ecf1 !important;
+    box-shadow: 3px 0 8px rgba(0,0,0,0.1);
+    min-width: 200px;
+    max-width: 340px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.cm-table th:nth-child(7),
+.cm-table td:nth-child(7) {
+    background-color: #d4edda !important;
+}
 </style>
 
 <!-- Main Content -->
@@ -401,9 +457,29 @@ td.actions-cell.expanded {
     <!-- Begin Page Content -->
     <div class="container-fluid">
 
-            
+        <!-- Tab Navigation -->
+        <ul class="nav nav-tabs mb-0" id="dataTableTabs" role="tablist">
+            <li class="nav-item">
+                <a class="nav-link active" id="tab0-tab"
+                   data-toggle="tab" href="#tab0"
+                   role="tab" aria-controls="tab0" aria-selected="true">
+                    <i class="fas fa-folder-open mr-1"></i> All Active Cases
+                </a>
+            </li>
+
+            @if(Auth::user()->isCaseManagement() || Auth::user()->isAdmin())
+                <li class="nav-item">
+                    <a class="nav-link" id="tabCM-tab"
+                       data-toggle="tab" href="#tabCM"
+                       role="tab" aria-controls="tabCM" aria-selected="false">
+                        <i class="fas fa-briefcase mr-1"></i> My Cases
+                    </a>
+                </li>
+            @endif
+        </ul>
+
         <!-- Tabs Content -->
-    <div class="tab-content mt-1" id="dataTableTabsContent">
+        <div class="tab-content mt-1" id="dataTableTabsContent">
     
     <!-- Tab 0: All Active Cases (Enhanced with corrected columns) -->
     <div class="tab-pane fade show active" id="tab0" role="tabpanel" aria-labelledby="tab0-tab">
@@ -969,6 +1045,24 @@ td.actions-cell.expanded {
             </div>
         </div>
     </div>
+
+            @if(Auth::user()->isCaseManagement() || Auth::user()->isAdmin())
+                <!-- Tab CM: Case Management's Cases (LAZY LOAD) -->
+                <div class="tab-pane fade" id="tabCM" role="tabpanel" aria-labelledby="tabCM-tab">
+                    <div class="card shadow mb-4">
+                        <div class="card-body">
+                            <div class="tab-loading text-center" style="padding: 3rem;">
+                                <div class="spinner-border text-primary mb-3" role="status"
+                                     style="width: 3rem; height: 3rem;">
+                                    <span class="sr-only">Loading...</span>
+                                </div>
+                                <p class="text-muted">Loading cases assigned to Case Management...</p>
+                                <small class="text-muted">This may take a moment for the first load</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            @endif
 
         </div>
         <!-- End Tabs Content -->
@@ -2096,6 +2190,103 @@ $(document).on('click', function(e) {
         });
     }
 
+        // ── Case Management tab lazy load ──────────────────────────────────────
+    var cmTabLoaded = false;
+
+    $('a[href="#tabCM"]').on('shown.bs.tab', function () {
+        if (cmTabLoaded) {
+            // Already loaded — just re-init the DataTable if needed
+            if ($.fn.DataTable.isDataTable('#dataTableCM')) {
+                $('#dataTableCM').DataTable().columns.adjust().draw(false);
+            }
+            return;
+        }
+
+        const $cardBody = $('#tabCM .card-body');
+
+        $cardBody.html(`
+            <div class="tab-loading text-center" style="padding: 3rem;">
+                <div class="spinner-border text-primary mb-3" role="status" style="width: 3rem; height: 3rem;">
+                    <span class="sr-only">Loading...</span>
+                </div>
+                <p class="text-muted">Loading cases assigned to Case Management...</p>
+            </div>
+        `);
+
+        $.ajax({
+            url: '/case/load-case-management-tab',
+            method: 'GET',
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'),
+                'Accept': 'application/json'
+            },
+            success: function (response) {
+                if (response.success) {
+                    $cardBody.html(response.html);
+                    cmTabLoaded = true;
+
+                    // Small delay to let DOM settle before DataTable init
+                    setTimeout(function () {
+                        if ($.fn.DataTable.isDataTable('#dataTableCM')) {
+                            $('#dataTableCM').DataTable().destroy();
+                        }
+
+                        var cmTable = $('#dataTableCM').DataTable({
+                            pageLength: 10,
+                            lengthChange: false,
+                            paging: true,
+                            searching: true,
+                            info: true,
+                            dom: 'tip',
+                            columnDefs: [{ orderable: false, targets: 0 }],
+                            scrollX: true,
+                            scrollY: (window.innerHeight - 280) + 'px',
+                            scrollCollapse: true,
+                            drawCallback: function() {
+                                $('#dataTableCM thead th').css({
+                                    'position': 'sticky',
+                                    'top': 0,
+                                    'z-index': 12
+                                });
+                                $('#dataTableCM thead th:nth-child(-n+5)').css({
+                                    'z-index': 13
+                                });
+                            }
+                        });
+
+                        // Bind search box
+                        $('#customSearchCM').off('keyup input change').on('keyup input change', function () {
+                            cmTable.search(this.value).draw();
+                        });
+
+                        // ── FIX: Force column recalculation after tab is fully visible ──
+                        setTimeout(function() {
+                            cmTable.columns.adjust().draw(false);
+                        }, 50);
+
+                        setTimeout(function() {
+                            cmTable.columns.adjust().draw(false);
+                        }, 300);
+
+                    }, 100);
+                } else {
+                    $cardBody.html(`
+                        <div class="alert alert-danger">
+                            Failed to load Case Management cases. Please try again.
+                        </div>
+                    `);
+                }
+            },
+            error: function (xhr) {
+                $cardBody.html(`
+                    <div class="alert alert-danger">
+                        <strong>Error:</strong> ${xhr.responseJSON?.error || 'Failed to load data.'}
+                    </div>
+                `);
+            }
+        });
+    });
+
     // Update file input label with selected filename
     $('#csv_file').on('change', function() {
         const fileName = $(this).val().split('\\').pop();
@@ -2280,7 +2471,10 @@ $(document).on('click', function(e) {
         var tableId = target.replace('#tab', '#dataTable');
         var tabId = target.replace('#', '');
         var tabNumber = tabId.replace('tab', '');
-        
+
+        // ── Skip the CM tab — it has its own dedicated handler ──
+        if (tabId === 'tabCM') return;
+
         console.log('Tab switched to:', target);
         
         if (tabId === 'tab0') {

@@ -58,20 +58,18 @@ class CasesController extends Controller
     {
         $user = Auth::user();
         
-        // Start with base query for active cases (exclude Completed, Disposed, and Appealed)
         $query = CaseFile::whereNotIn('overall_status', ['Completed', 'Disposed', 'Appealed'])
             ->orderBy('created_at', 'desc');
-        
-        // Ã¢Å“Â¨ FILTER: Provincial users only see cases currently located at their province.
-        // Uses DocumentTracking.current_role (live location) instead of po_office (static origin).
-        // This way cases disappear from the province view once transferred elsewhere.
+
         if ($user->isProvince()) {
+            // Province users only see cases currently at their province
             $query->whereHas('documentTracking', function ($q) use ($user) {
                 $q->where('current_role', $user->role);
             });
         }
-        // Admin and MALSU see all cases (no filter applied)
-        
+        // Admin, MALSU, case_management see all active cases in Tab 0
+        // case_management gets a second filtered tab via AJAX (loadCaseManagementTab)
+
         $cases = $query->get();
 
         $allowedTabs = $this->getAllowedTabs();
@@ -1715,6 +1713,44 @@ protected function getProvinceNameFromRole($role)
     ];
     
     return $roleToProvince[$role] ?? null;
+}
+
+/**
+ * Load case management's own cases (currently located at case_management role)
+ * This powers the "My Cases" tab for case_management users.
+ */
+public function loadCaseManagementTab(Request $request)
+{
+    if (!Auth::user()->isCaseManagement() && !Auth::user()->isAdmin()) {
+        return response()->json([
+            'success' => false,
+            'error' => 'Access denied.'
+        ], 403);
+    }
+
+    try {
+        $cases = CaseFile::whereNotIn('overall_status', ['Completed', 'Disposed', 'Appealed'])
+            ->whereHas('documentTracking', function ($q) {
+                $q->where('current_role', User::ROLE_CASE_MANAGEMENT);
+            })
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        $html = view('frontend.partials.case_management_tab', ['cases' => $cases])->render();
+
+        return response()->json([
+            'success' => true,
+            'html'  => $html,
+            'count' => $cases->count()
+        ]);
+
+    } catch (\Exception $e) {
+        Log::error('Error loading case management tab: ' . $e->getMessage());
+        return response()->json([
+            'success' => false,
+            'error'   => 'Failed to load data.'
+        ], 500);
+    }
 }
 
 }
