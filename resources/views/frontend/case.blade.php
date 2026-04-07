@@ -2243,12 +2243,12 @@ $(document).on('click', function(e) {
                             scrollY: (window.innerHeight - 280) + 'px',
                             scrollCollapse: true,
                             drawCallback: function() {
-                                $('#dataTableCM thead th').css({
+                                $('.sticky-table thead th, #dataTableCM thead th').css({
                                     'position': 'sticky',
                                     'top': 0,
                                     'z-index': 12
                                 });
-                                $('#dataTableCM thead th:nth-child(-n+5)').css({
+                                $('.sticky-table thead th:nth-child(-n+5), #dataTableCM thead th:nth-child(-n+5)').css({
                                     'z-index': 13
                                 });
                             }
@@ -2460,10 +2460,13 @@ $(document).on('click', function(e) {
     
     // Adjust table after auto-minimize
     setTimeout(function() {
+        cmTable.columns.adjust().draw(false);
+        
+        // If Tab 0 is initialized, trigger its draw to apply shared sticky CSS
         if (tables['#dataTable0']) {
-            tables['#dataTable0'].columns.adjust().draw(false);
+            tables['#dataTable0'].draw(false);
         }
-    }, 100);
+    }, 200);
 
     // Tab switching with lazy loading
     $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
