@@ -62,9 +62,9 @@ class CasesController extends Controller
             ->orderBy('created_at', 'desc');
 
         if ($user->isProvince()) {
-            // Province users only see cases currently at their province
             $query->whereHas('documentTracking', function ($q) use ($user) {
-                $q->where('current_role', $user->role);
+                $q->where('current_role', $user->role)
+                ->where('status', 'Received');  // ← this is the only change
             });
         }
         // Admin, MALSU, case_management see all active cases in Tab 0
