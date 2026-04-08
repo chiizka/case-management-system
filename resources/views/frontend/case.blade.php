@@ -928,8 +928,10 @@ td.actions-cell.expanded {
                                     </tr>
                                 @endforeach
                             @else
-                                <tr>
-                                    <td colspan="100" class="text-center">No cases found. Click "Add Case" to create your first case.</td>
+                                <tr id="no-data-row">
+                                    <td colspan="1" class="text-center py-4 text-muted">
+                                        No cases found. Click <strong>"Add Case"</strong> to create your first case.
+                                    </td>
                                 </tr>
                             @endif
                         </tbody>
@@ -2029,32 +2031,33 @@ $(document).on('click', function(e) {
                 console.warn('Table not found:', tableId);
                 return false;
             }
-            
+
+            // If table has no real data, fix colspan and skip DataTable init
             const $tbody = $(tableId + ' tbody');
-            const $rows = $tbody.find('tr');
-            
-            if ($rows.length === 0) {
-                console.log('Table has no rows:', tableId);
+            const hasRealData = $tbody.find('tr').length > 0 && 
+                                $tbody.find('tr td[colspan]').length === 0;
+
+            if (!hasRealData) {
+                // Fix the colspan to span all headers
+                const colCount = $(tableId + ' thead th').length;
+                $tbody.find('tr td').attr('colspan', colCount);
+                // Remove fixed table layout so headers render correctly
+                $(tableId).css('table-layout', 'auto');
+                console.log('Table has no data, skipping DataTable init:', tableId);
                 return false;
             }
-            
-            if ($rows.length === 1 && $rows.first().find('td[colspan]').length > 0) {
-                console.log('Table has no data (only "no records" message):', tableId);
-                return false;
-            }
-            
+
             if ($.fn.DataTable.isDataTable(tableId)) {
                 $(tableId).DataTable().destroy();
             }
-            
+
             $(tableId).off();
-            
+
             tables[tableId] = $(tableId).DataTable(dtConfig);
             console.log('✓ Initialized ' + tableId);
-            
-            // IMPORTANT: Bind search after table initialization
+
             bindSearchForTable(tableId);
-            
+
             return true;
         } catch (error) {
             console.error('✗ Failed to initialize ' + tableId + ':', error);
