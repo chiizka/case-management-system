@@ -458,7 +458,7 @@ td.actions-cell.expanded {
     <div class="container-fluid">
 
     <!-- Tab Navigation -->
-    @if(Auth::user()->isCaseManagement() || Auth::user()->isAdmin())
+    @if(Auth::user()->isCaseManagement())
         <ul class="nav nav-tabs mb-0" id="dataTableTabs" role="tablist">
             <li class="nav-item">
                 <a class="nav-link active" id="tab0-tab"
