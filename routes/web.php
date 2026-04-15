@@ -67,6 +67,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/case/{id}/archive', [CasesController::class, 'moveToNextStage'])->name('case.archive');
         Route::post('/case/{id}/next-stage', [CasesController::class, 'moveToNextStage'])->name('case.nextStage');
         Route::put('/case/{id}/inline-update', [CasesController::class, 'inlineUpdate'])->name('case.inlineUpdate');
+        Route::get('/case/load-tab/0', [CasesController::class, 'loadTab0']);
         Route::get('/case/load-tab/{tabNumber}', [CasesController::class, 'loadTabData'])->name('case.loadTab');
         Route::get('/case/load-case-management-tab', [CasesController::class, 'loadCaseManagementTab'])->name('case.loadCaseManagementTab');
         Route::get('/case/{id}/document-history', [CasesController::class, 'getDocumentHistory'])->name('case.documentHistory');

@@ -1753,4 +1753,40 @@ public function loadCaseManagementTab(Request $request)
     }
 }
 
+public function loadTab0()
+{
+    try {
+        $user = Auth::user();
+
+        $query = CaseFile::whereNotIn('overall_status', ['Completed', 'Disposed', 'Appealed'])
+            ->orderBy('created_at', 'desc');
+
+        if ($user->isProvince()) {
+            $query->whereHas('documentTracking', function ($q) use ($user) {
+                $q->where('current_role', $user->role)
+                  ->where('status', 'Received');
+            });
+        }
+
+        $cases = $query->get();
+
+        $html = view('frontend.partials.tab0-rows', compact('cases'))->render();
+
+        return response()->json([
+            'success' => true,
+            'html'    => $html,
+            'count'   => $cases->count(),
+        ]);
+
+    } catch (\Exception $e) {
+        \Log::error('loadTab0 error: ' . $e->getMessage());
+        \Log::error($e->getTraceAsString());
+
+        return response()->json([
+            'success' => false,
+            'error'   => $e->getMessage()  // ← will show in browser console
+        ], 500);
+    }
+}
+
 }
