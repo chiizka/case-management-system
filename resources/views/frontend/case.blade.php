@@ -3157,14 +3157,12 @@ $(document).ready(function() {
                 // Orders & Disposition Stage
                 'pct_96_days': { type: 'date', readonly: true }, // ✅ COMPUTED
                 'date_signed_mis': { type: 'date' },
-                'status_pct': {
+                'status_po_pct': {
                     type: 'select',
                     options: [
-                        { value: '', text: 'Select Status' },
-                        { value: 'Pending', text: 'Pending' },
-                        { value: 'Ongoing', text: 'Ongoing' },
-                        { value: 'Completed', text: 'Completed' },
-                        { value: 'Overdue', text: 'Overdue' }
+                        { value: '', text: 'Select' },
+                        { value: 'Within', text: 'Within' },
+                        { value: 'Beyond', text: 'Beyond' }
                     ]
                 },
                 'reference_date_pct': { type: 'date' },

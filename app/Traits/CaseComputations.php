@@ -258,9 +258,15 @@ trait CaseComputations
     protected function computeStatusPoPct(): void
     {
         if ($this->aging_po_pct !== null) {
+            // Auto-compute takes priority
             $this->status_po_pct = $this->aging_po_pct <= 0 ? 'Within' : 'Beyond';
         } else {
-            $this->status_po_pct = null;
+            // aging_po_pct is null means case_folder_forwarded_to_ro or po_pct is missing.
+            // Only clear the manual value if it wasn't already set — preserve manual input.
+            if (!in_array($this->status_po_pct, ['Within', 'Beyond'])) {
+                $this->status_po_pct = null;
+            }
+            // else: leave the existing manual value untouched
         }
     }
 

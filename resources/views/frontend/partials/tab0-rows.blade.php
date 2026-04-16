@@ -158,7 +158,11 @@
         <td class="editable-cell" data-field="pct_96_days">
             {{ $case->pct_96_days ? $case->pct_96_days->format('Y-m-d') : '-' }}
         </td>
-        <td class="editable-cell" data-field="status_pct">{{ $case->status_pct ?? '-' }}</td>
+        <td class="{{ ($case->case_folder_forwarded_to_ro && $case->po_pct) ? 'readonly-cell' : 'editable-cell' }}" 
+            data-field="status_po_pct" 
+            data-type="select">
+            {{ $case->status_po_pct ?? '-' }}
+        </td>
         <td class="editable-cell" data-field="date_signed_mis" data-type="date">
             {{ $case->date_signed_mis ? \Carbon\Carbon::parse($case->date_signed_mis)->format('Y-m-d') : '-' }}
         </td>

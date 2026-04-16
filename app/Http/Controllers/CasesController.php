@@ -860,10 +860,21 @@ public function destroy($id)
             $case->update($updateData);
             $case->refresh();
 
-            // Recompute all auto-calculated fields (PCT dates, aging, statuses)
-            // after every inline save so computed columns always stay in sync.
+            // Capture manual status_po_pct before computeFields() potentially clears it
+            $manualStatusPoPct = array_key_exists('status_po_pct', $updateData)
+                ? $updateData['status_po_pct']
+                : null;
+
+            // Recompute all auto-calculated fields
             $case->computeFields();
-            $case->saveQuietly();   // persist computed values without firing events again
+
+            // If auto-compute couldn't determine status_po_pct (missing folder date or po_pct)
+            // and user provided a manual value, restore it
+            if ($case->status_po_pct === null && in_array($manualStatusPoPct, ['Within', 'Beyond'])) {
+                $case->status_po_pct = $manualStatusPoPct;
+            }
+
+            $case->saveQuietly();
             $case->refresh();
 
             Log::info('Update successful. New data:', $case->toArray());
