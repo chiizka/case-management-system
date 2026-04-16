@@ -1950,6 +1950,9 @@ $(document).on('click', function(e) {
                             $('#dataTableCM').DataTable().destroy();
                         }
 
+                        // Remove colspan "no data" row before DataTables touches it
+                        $('#dataTableCM tbody tr td[colspan]').closest('tr').remove();
+
                         var cmTable = $('#dataTableCM').DataTable({
                             pageLength: 10,
                             lengthChange: false,
@@ -1961,6 +1964,9 @@ $(document).on('click', function(e) {
                             scrollX: true,
                             scrollY: (window.innerHeight - 280) + 'px',
                             scrollCollapse: true,
+                            language: {
+                                emptyTable: 'No cases are currently assigned to Case Management.'
+                            },
                             drawCallback: function() {
                                 $('.sticky-table thead th, #dataTableCM thead th').css({
                                     'position': 'sticky',
@@ -1972,7 +1978,6 @@ $(document).on('click', function(e) {
                                 });
                             }
                         });
-
                         // Bind search box
                         $('#customSearchCM').off('keyup input change').on('keyup input change', function () {
                             cmTable.search(this.value).draw();
