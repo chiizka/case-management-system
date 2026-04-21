@@ -323,6 +323,7 @@
                             @endif
                             
                             <div class="tab" data-tab="additional-{{ $case->id }}">Additional</div>
+                            <div class="tab" data-tab="documents-{{ $case->id }}">Documents</div>
                             <div class="tab" data-tab="doc-history-{{ $case->id }}">Document History</div>
                         </div>
                         <!-- Overview Tab -->
@@ -818,6 +819,124 @@
                                 </div>
                             </div>
                         @endif
+                        
+                        <!-- Documents Tab -->
+                        <div id="documents-{{ $case->id }}" class="tab-content">
+                            <h3 class="font-bold mb-3" style="font-size: 1.25rem; color: #1f2937;">Document Checklist</h3>
+
+                            @php
+                                $documents = $case->document_checklist ?? [];
+                            @endphp
+
+                            @if(count($documents) > 0)
+                                @php
+                                    $checkedCount = collect($documents)->where('checked', true)->count();
+                                    $totalCount = count($documents);
+                                @endphp
+
+                                {{-- Progress Summary --}}
+                                <div style="background: #f7fafc; border: 1px solid #e2e8f0; border-radius: 0.25rem; padding: 1rem; margin-bottom: 1.5rem;">
+                                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; text-align: center;">
+                                        <div>
+                                            <div style="font-size: 1.5rem; font-weight: bold; color: #2b6cb0;">{{ $totalCount }}</div>
+                                            <div style="font-size: 0.75rem; color: #718096; text-transform: uppercase;">Total Documents</div>
+                                        </div>
+                                        <div>
+                                            <div style="font-size: 1.5rem; font-weight: bold; color: #2f855a;">{{ $checkedCount }}</div>
+                                            <div style="font-size: 0.75rem; color: #718096; text-transform: uppercase;">Completed</div>
+                                        </div>
+                                        <div>
+                                            <div style="font-size: 1.5rem; font-weight: bold; color: #c05621;">{{ $totalCount - $checkedCount }}</div>
+                                            <div style="font-size: 0.75rem; color: #718096; text-transform: uppercase;">Pending</div>
+                                        </div>
+                                    </div>
+
+                                    {{-- Progress Bar --}}
+                                    @php $percent = $totalCount > 0 ? round(($checkedCount / $totalCount) * 100) : 0; @endphp
+                                    <div style="margin-top: 1rem;">
+                                        <div style="display: flex; justify-content: space-between; margin-bottom: 0.25rem;">
+                                            <small style="color: #718096;">Completion</small>
+                                            <small style="color: #718096;">{{ $percent }}%</small>
+                                        </div>
+                                        <div style="background: #e2e8f0; border-radius: 9999px; height: 8px;">
+                                            <div style="background: #48bb78; height: 8px; border-radius: 9999px; width: {{ $percent }}%;"></div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {{-- Document List --}}
+                                <ul style="list-style: none; padding: 0; margin: 0;">
+                                    @foreach($documents as $doc)
+                                        <li style="padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 0.25rem; margin-bottom: 0.5rem; background: white; display: flex; justify-content: space-between; align-items: center;">
+                                            
+                                            <div style="display: flex; align-items: center; gap: 0.75rem; flex: 1;">
+                                                {{-- Check status icon --}}
+                                                @if(!empty($doc['checked']))
+                                                    <span style="color: #38a169; font-size: 1.1rem;" title="Completed">
+                                                        <i class="fas fa-check-circle"></i>
+                                                    </span>
+                                                @else
+                                                    <span style="color: #cbd5e0; font-size: 1.1rem;" title="Pending">
+                                                        <i class="fas fa-circle"></i>
+                                                    </span>
+                                                @endif
+
+                                                {{-- Document title --}}
+                                                <span style="{{ !empty($doc['checked']) ? 'text-decoration: line-through; color: #a0aec0;' : 'color: #2d3748;' }}">
+                                                    {{ $doc['title'] ?? 'Untitled Document' }}
+                                                </span>
+                                            </div>
+
+                                            {{-- File info and download link --}}
+                                            <div style="display: flex; align-items: center; gap: 0.75rem; flex-shrink: 0;">
+                                                @if(!empty($doc['link']))
+                                                    {{-- External link (Google Drive, etc.) --}}
+                                                    @if(!empty($doc['link_label']))
+                                                        <span style="font-size: 0.75rem; color: #718096;">
+                                                            {{ $doc['link_label'] }}
+                                                        </span>
+                                                    @endif
+                                                    <a href="{{ $doc['link'] }}"
+                                                    target="_blank"
+                                                    style="display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.3rem 0.75rem; background: #ebf8ff; color: #2b6cb0; border: 1px solid #bee3f8; border-radius: 0.25rem; font-size: 0.8rem; text-decoration: none;"
+                                                    title="Open link">
+                                                        <i class="fas fa-external-link-alt"></i> Open
+                                                    </a>
+                                                    @if(!empty($doc['link_added_by']))
+                                                        <span style="font-size: 0.7rem; color: #a0aec0;">
+                                                            by {{ $doc['link_added_by'] }} on {{ $doc['link_added_at'] ?? '' }}
+                                                        </span>
+                                                    @endif
+                                                @elseif(!empty($doc['file_path']) && !empty($doc['file_name']))
+                                                    {{-- Uploaded file --}}
+                                                    <span style="font-size: 0.75rem; color: #718096;">
+                                                        {{ $doc['file_name'] }}
+                                                        @if(!empty($doc['file_size']))
+                                                            ({{ $doc['file_size'] }})
+                                                        @endif
+                                                    </span>
+                                                    <a href="{{ url('/case/' . $case->id . '/documents/' . $doc['id'] . '/download') }}"
+                                                    target="_blank"
+                                                    style="display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.3rem 0.75rem; background: #ebf8ff; color: #2b6cb0; border: 1px solid #bee3f8; border-radius: 0.25rem; font-size: 0.8rem; text-decoration: none;"
+                                                    title="View/Download {{ $doc['file_name'] }}">
+                                                        <i class="fas fa-download"></i> View
+                                                    </a>
+                                                @else
+                                                    <span style="font-size: 0.75rem; color: #cbd5e0; font-style: italic;">No file attached</span>
+                                                @endif
+                                            </div>
+
+                                        </li>
+                                    @endforeach
+                                </ul>
+
+                            @else
+                                <div style="text-align: center; padding: 2rem; color: #a0aec0;">
+                                    <i class="fas fa-file-alt" style="font-size: 2rem; margin-bottom: 0.75rem; display: block;"></i>
+                                    <p style="margin: 0;">No documents in checklist for this case.</p>
+                                </div>
+                            @endif
+                        </div>
 
                         <!-- Document History Tab -->
                         <div id="doc-history-{{ $case->id }}" class="tab-content">
