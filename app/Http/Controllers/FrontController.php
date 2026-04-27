@@ -47,7 +47,7 @@ class FrontController extends Controller
             $misDisposedCases    = 0;
             $misDisposedCasesList = collect(); // ← ADD THIS
 
-            $totalCases = CaseFile::where('po_office', $provinceName)->count();
+            $totalCases = $activeCases + $disposedCases;
         } else {
             // Regional roles: system-wide counts, no scoping
             $activeCases         = CaseFile::where('overall_status', 'Active')->count();
