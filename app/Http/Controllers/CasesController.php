@@ -127,7 +127,7 @@ class CasesController extends Controller
                         // Ã¢Å“Â¨ Filter by current document location, not origin
                         if ($user->isProvince()) {
                             $query->whereHas('documentTracking', function ($q) use ($user) {
-                                $q->where('current_role', $user->role);
+                                $q->where('current_role', $user->role)
                                 ->where('status', 'Received');
                             });
                         }
