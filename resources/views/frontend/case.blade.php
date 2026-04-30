@@ -3121,7 +3121,6 @@ $(document).ready(function() {
                 // Review & Drafting Stage
                 'po_pct': { type: 'date', readonly: true }, // ✅ COMPUTED
                 'aging_po_pct': { type: 'number', readonly: true }, // ✅ COMPUTED
-                'status_po_pct': { type: 'text', readonly: true }, // ✅ COMPUTED - Changed from select to text
                 'date_received_from_po': { type: 'date' },
                 'reviewer_drafter': { type: 'text' },
                 'date_received_by_reviewer': { type: 'date' },

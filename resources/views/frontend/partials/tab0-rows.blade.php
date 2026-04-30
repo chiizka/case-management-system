@@ -158,7 +158,7 @@
         <td class="editable-cell" data-field="pct_96_days">
             {{ $case->pct_96_days ? $case->pct_96_days->format('Y-m-d') : '-' }}
         </td>
-        <td class="{{ ($case->case_folder_forwarded_to_ro && $case->po_pct) ? 'readonly-cell' : 'editable-cell' }}" 
+        <td class="editable-cell" 
             data-field="status_po_pct" 
             data-type="select">
             {{ $case->status_po_pct ?? '-' }}
