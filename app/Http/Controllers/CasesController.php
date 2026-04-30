@@ -64,7 +64,7 @@ class CasesController extends Controller
         if ($user->isProvince()) {
             $query->whereHas('documentTracking', function ($q) use ($user) {
                 $q->where('current_role', $user->role)
-                ->where('status', 'Received');  // ← this is the only change
+                ->where('status', 'Received');  
             });
         }
         // Admin, MALSU, case_management see all active cases in Tab 0
@@ -108,9 +108,9 @@ class CasesController extends Controller
             // Ã¢Å“Â¨ Create a reusable query filter function
             $applyProvinceFilter = function($query) use ($user) {
                 if ($user->isProvince()) {
-                    $provinceName = $user->getProvinceName();
-                    $query->whereHas('case', function($q) use ($provinceName) {
-                        $q->where('po_office', $provinceName);
+                    $query->whereHas('documentTracking', function ($q) use ($user) {
+                        $q->where('current_role', $user->role)
+                        ->where('status', 'Received'); // ← ADD THIS
                     });
                 }
             };
@@ -128,6 +128,7 @@ class CasesController extends Controller
                         if ($user->isProvince()) {
                             $query->whereHas('documentTracking', function ($q) use ($user) {
                                 $q->where('current_role', $user->role);
+                                ->where('status', 'Received');
                             });
                         }
                     })
@@ -1733,16 +1734,14 @@ protected function getProvinceNameFromRole($role)
 public function loadCaseManagementTab(Request $request)
 {
     if (!Auth::user()->isCaseManagement() && !Auth::user()->isAdmin()) {
-        return response()->json([
-            'success' => false,
-            'error' => 'Access denied.'
-        ], 403);
+        return response()->json(['success' => false, 'error' => 'Access denied.'], 403);
     }
 
     try {
         $cases = CaseFile::whereNotIn('overall_status', ['Completed', 'Disposed', 'Appealed'])
             ->whereHas('documentTracking', function ($q) {
-                $q->where('current_role', User::ROLE_CASE_MANAGEMENT);
+                $q->where('current_role', User::ROLE_CASE_MANAGEMENT)
+                  ->where('status', 'Received'); // ← ADD THIS
             })
             ->orderBy('created_at', 'desc')
             ->get();
@@ -1751,16 +1750,13 @@ public function loadCaseManagementTab(Request $request)
 
         return response()->json([
             'success' => true,
-            'html'  => $html,
-            'count' => $cases->count()
+            'html'    => $html,
+            'count'   => $cases->count()
         ]);
 
     } catch (\Exception $e) {
         Log::error('Error loading case management tab: ' . $e->getMessage());
-        return response()->json([
-            'success' => false,
-            'error'   => 'Failed to load data.'
-        ], 500);
+        return response()->json(['success' => false, 'error' => 'Failed to load data.'], 500);
     }
 }
 
