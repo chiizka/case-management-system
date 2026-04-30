@@ -45,9 +45,11 @@ class FrontController extends Controller
             $disposedCases       = (clone $receivedByProvince)->where('overall_status', 'Disposed')->count();
             $actualDisposedCases = 0;
             $misDisposedCases    = 0;
-            $misDisposedCasesList = collect(); // ← ADD THIS
+            $misDisposedCasesList = collect();
 
-            $totalCases = $activeCases + $disposedCases;
+            // Fix: count ALL cases from this province, regardless of where the
+            // document currently is — transfer shouldn't reduce the total.
+            $totalCases = CaseFile::where('po_office', $provinceName)->count();
         } else {
             // Regional roles: system-wide counts, no scoping
             $activeCases         = CaseFile::where('overall_status', 'Active')->count();
