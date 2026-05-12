@@ -314,7 +314,7 @@
 <!-- End of Main Content -->
 
 {{-- ===================================================================== --}}
-{{--            MIS DISPOSED CASES MODAL                                   --}}
+{{--            MIS DISPOSED CASES MODALLL                                --}}
 {{-- ===================================================================== --}}
 
 <div class="modal fade" id="misDisposedModal" tabindex="-1" role="dialog" aria-labelledby="misDisposedModalLabel" aria-hidden="true">
@@ -331,7 +331,6 @@
             </div>
             <div class="modal-body">
                 <p class="text-muted mb-3" style="font-size: 0.85rem;">
-                    <i class="fas fa-info-circle mr-1"></i>
                     Active cases where a <strong>Date Signed (MIS)</strong> has been recorded.
                 </p>
 
