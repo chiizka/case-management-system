@@ -85,25 +85,25 @@
         <td class="editable-cell" data-field="date_of_nr" data-type="date">
             {{ $case->date_of_nr ? \Carbon\Carbon::parse($case->date_of_nr)->format('Y-m-d') : '-' }}
         </td>
-        {{-- <td class="readonly-cell" data-field="lapse_20_day_period">
-            {{ $case->lapse_20_day_period ? $case->lapse_20_day_period->format('Y-m-d') : '-' }}
-        </td> --}}
+        <td class="readonly-cell" data-field="lapse_20_day_period">
+            {{ $case->lapse_20_day_period ? \Carbon\Carbon::parse($case->lapse_20_day_period)->format('Y-m-d') : '-' }}
+        </td>
 
         {{-- Docketing Stage --}}
-        {{-- <td class="readonly-cell" data-field="pct_for_docketing">
-            {{ $case->pct_for_docketing ? $case->pct_for_docketing->format('Y-m-d') : '-' }}
+        <td class="readonly-cell" data-field="pct_for_docketing">
+            {{ $case->pct_for_docketing ? \Carbon\Carbon::parse($case->pct_for_docketing)->format('Y-m-d') : '-' }}
         </td>
         <td class="editable-cell" data-field="date_scheduled_docketed" data-type="date">
             {{ $case->date_scheduled_docketed ? \Carbon\Carbon::parse($case->date_scheduled_docketed)->format('Y-m-d') : '-' }}
         </td>
         <td class="readonly-cell" data-field="aging_docket">{{ $case->aging_docket ?? '-' }}</td>
-        <td class="readonly-cell" data-field="status_docket">{{ $case->status_docket ?? '-' }}</td> --}}
+        <td class="readonly-cell" data-field="status_docket">{{ $case->status_docket ?? '-' }}</td>
         <td class="editable-cell" data-field="hearing_officer_mis" title="{{ $case->hearing_officer_mis ?? '' }}">
             {{ $case->hearing_officer_mis ? Str::limit($case->hearing_officer_mis, 20) : '-' }}
         </td>
 
         {{-- Hearing Process Stage --}}
-        {{-- <td class="editable-cell" data-field="date_1st_mc_actual" data-type="date">
+        <td class="editable-cell" data-field="date_1st_mc_actual" data-type="date">
             {{ $case->date_1st_mc_actual ? \Carbon\Carbon::parse($case->date_1st_mc_actual)->format('Y-m-d') : '-' }}
         </td>
         <td class="readonly-cell" data-field="first_mc_pct">{{ $case->first_mc_pct ?? '-' }}</td>
@@ -116,18 +116,18 @@
         <td class="editable-cell" data-field="case_folder_forwarded_to_ro" data-type="date">
             {{ $case->case_folder_forwarded_to_ro ? \Carbon\Carbon::parse($case->case_folder_forwarded_to_ro)->format('Y-m-d') : '-' }}
         </td>
-        <td class="editable-cell" data-field="draft_order_from_po_type">{{ $case->draft_order_from_po_type ?? '-' }}</td>
+        {{-- <td class="editable-cell" data-field="draft_order_from_po_type">{{ $case->draft_order_from_po_type ?? '-' }}</td>
         <td class="editable-cell" data-field="applicable_draft_order">{{ $case->applicable_draft_order ?? '-' }}</td>
         <td class="editable-cell" data-field="complete_case_folder">{{ $case->complete_case_folder ?? '-' }}</td>
         <td class="editable-cell" data-field="twg_ali">{{ $case->twg_ali ?? '-' }}</td> --}}
 
         {{-- Review & Drafting Stage --}}
-        {{-- <td class="readonly-cell" data-field="po_pct">
-            {{ $case->po_pct ? $case->po_pct->format('Y-m-d') : '-' }}
+        <td class="readonly-cell" data-field="po_pct">
+            {{ $case->po_pct ? \Carbon\Carbon::parse($case->po_pct)->format('Y-m-d') : '-' }}
         </td>
         <td class="readonly-cell" data-field="aging_po_pct">{{ $case->aging_po_pct ?? '-' }}</td>
         <td class="readonly-cell" data-field="status_po_pct">{{ $case->status_po_pct ?? '-' }}</td>
-        <td class="editable-cell" data-field="date_received_from_po" data-type="date">
+        {{-- <td class="editable-cell" data-field="date_received_from_po" data-type="date">
             {{ $case->date_received_from_po ? \Carbon\Carbon::parse($case->date_received_from_po)->format('Y-m-d') : '-' }}
         </td>
         <td class="editable-cell" data-field="reviewer_drafter" title="{{ $case->reviewer_drafter ?? '' }}">
@@ -155,14 +155,10 @@
         <td class="editable-cell" data-field="status_finalization">{{ $case->status_finalization ?? '-' }}</td> --}}
 
         {{-- Orders & Disposition Stage --}}
-        <td class="editable-cell" data-field="pct_96_days">
-            {{ $case->pct_96_days ? $case->pct_96_days->format('Y-m-d') : '-' }}
+        <td class="readonly-cell" data-field="pct_96_days">
+            {{ $case->pct_96_days ? \Carbon\Carbon::parse($case->pct_96_days)->format('Y-m-d') : '-' }}
         </td>
-        <td class="editable-cell" 
-            data-field="status_po_pct" 
-            data-type="select">
-            {{ $case->status_po_pct ?? '-' }}
-        </td>
+        <td class="editable-cell" data-field="status_pct">{{ $case->status_pct ?? '-' }}</td>
         <td class="editable-cell" data-field="date_signed_mis" data-type="date">
             {{ $case->date_signed_mis ? \Carbon\Carbon::parse($case->date_signed_mis)->format('Y-m-d') : '-' }}
         </td>

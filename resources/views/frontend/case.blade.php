@@ -535,117 +535,48 @@ td.actions-cell.expanded {
                         <thead>
                             <tr>
                                 <th>Actions</th>
-                                <!-- Core Information -->
+                                {{-- Core Information --}}
                                 <th>No.</th>
                                 <th>Inspection ID</th>
                                 <th>Case No.</th>
                                 <th>Establishment Name</th>
-                                {{-- <th>Establishment Address</th> --}}
                                 <th>Mode</th>
-                                <th>PO </th>
+                                <th>PO</th>
                                 <th>Type of Industry</th>
-                                {{-- <th>Overall Status</th> --}}
-                                
-                                <!-- Inspection Stage -->
+                        
+                                {{-- Inspection Stage --}}
                                 <th>Date of Inspection</th>
                                 <th>Name of Inspector</th>
                                 <th>Authority No.</th>
                                 <th>Date of NR</th>
-                                {{-- <th>Lapse 20 Day Period</th> --}}
-                                
-                                <!-- Docketing Stage -->
-                                {{-- <th>PCT for Docketing</th>
-                                <th>Date Scheduled Docketed</th>
-                                <th>Aging Docket</th>
-                                <th>Status Docket</th> --}}
+                                <th>Lapse 20 Day Correction Period</th>
+                        
+                                {{-- Docketing Stage --}}
+                                <th>PCT for Docketing</th>
+                                <th>Date Scheduled/Docketed</th>
+                                <th>Aging (Docket)</th>
+                                <th>Status (Docket)</th>
                                 <th>Hearing Officer (MIS)</th>
-                                
-                                {{-- <!-- Hearing Process Stage -->
-                                <th>Date 1st MC (Actual)</th>
-                                <th>First MC PCT</th>
-                                <th>Status 1st MC</th>
-                                <th>Date 2nd/Last MC</th>
-                                <th>Second/Last MC PCT</th>
-                                <th>Status 2nd MC</th>
+                        
+                                {{-- Hearing Process Stage --}}
+                                <th>Date of 1st MC (Actual)</th>
+                                <th>1st MC PCT</th>
+                                <th>Status (1st MC)</th>
+                                <th>Date of 2nd/Last MC (Actual)</th>
+                                <th>2nd/Last MC PCT</th>
+                                <th>Status (2nd MC)</th>
                                 <th>Case Folder Forwarded to RO</th>
-                                <th>Draft Order from PO Type</th>
-                                <th>Applicable Draft Order</th>
-                                <th>Complete Case Folder</th>
-                                <th>TWG ALI</th>
-                                
-                                <!-- Review & Drafting Stage -->
+                        
+                                {{-- Review & Drafting --}}
                                 <th>PO PCT</th>
-                                <th>Aging PO PCT</th>
-                                <th>Status PO PCT</th>
-                                <th>Date Received from PO</th>
-                                <th>Reviewer/Drafter</th>
-                                <th>Date Received by Reviewer</th>
-                                <th>Date Returned from Drafter</th>
-                                <th>Aging 10 Days TSSD</th>
-                                <th>Status Reviewer/Drafter</th>
-                                <th>Draft Order TSSD Reviewer</th>
-                                <th>Final Review Date Received</th>
-                                <th>Date Received Drafter Finalization</th>
-                                <th>Date Returned Case Mgmt Signature</th>
-                                <th>Aging 2 Days Finalization</th>
-                                <th>Status Finalization</th> --}}
-                                
-                                <!-- Orders & Disposition Stage -->
-                                <th>PCT(96 days from the date of NR)</th>
+                                <th>Aging (PO PCT)</th>
                                 <th>Status (PO PCT)</th>
+                        
+                                {{-- Orders & Disposition --}}
+                                <th>PCT (96 days from NR)</th>
+                                <th>Status (PCT)</th>
                                 <th>Date Signed (MIS)</th>
-                                {{-- <th>Reference Date PCT</th>
-                                <th>Aging PCT</th>
-                                <th>Disposition (MIS)</th>
-                                <th>Disposition (Actual)</th>
-                                <th>Findings to Comply</th>
-                                <th>Compliance Order Monetary Award</th>
-                                <th>OSH Penalty</th>
-                                <th>Affected Male</th>
-                                <th>Affected Female</th>
-                                <th>Date of Order (Actual)</th>
-                                <th>Released Date (Actual)</th>
-                                
-                                <!-- Compliance & Awards Stage -->
-                                <th>First Order Dismissal CNPC</th>
-                                <th>Tavable Less Than 10 Workers</th>
-                                <th>Scanned Order First</th>
-                                <th>With Deposited Monetary Claims</th>
-                                <th>Amount Deposited</th>
-                                <th>With Order Payment Notice</th>
-                                <th>Status All Employees Received</th>
-                                <th>Status Case After First Order</th>
-                                <th>Date Notice Finality Dismissed</th>
-                                <th>Released Date Notice Finality</th>
-                                <th>Scanned Notice Finality</th>
-                                <th>Updated Ticked in MIS</th>
-                                
-                                <!-- Appeals & Resolution Stage (2nd Order) -->
-                                <th>Second Order Drafter</th>
-                                <th>Date Received by Drafter CT CNPC</th>
-                                <th>Date Returned Case Mgmt CT CNPC</th>
-                                <th>Review CT CNPC</th>
-                                <th>Date Received Drafter Finalization 2nd</th>
-                                <th>Date Returned Case Mgmt Signature 2nd</th>
-                                <th>Date Order 2nd CNPC</th>
-                                <th>Released Date 2nd CNPC</th>
-                                <th>Scanned Order 2nd CNPC</th>
-                                
-                                <!-- Appeals & Resolution Stage (MALSU) -->
-                                <th>Date Forwarded MALSU</th>
-                                <th>Scanned Indorsement MALSU</th>
-                                <th>Motion Reconsideration Date</th>
-                                <th>Date Received MALSU</th>
-                                <th>Date Resolution MR</th>
-                                <th>Released Date Resolution MR</th>
-                                <th>Scanned Resolution MR</th>
-                                <th>Date Appeal Received Records</th>
-                                <th>Date Indorsed Office Secretary</th>
-                                
-                                <!-- Additional Information -->
-                                <th>Logbook Page Number</th>
-                                <th>Remarks/Notes</th> --}}
-                                
+                        
                                 <th>Created At</th>
                             </tr>
                         </thead>
@@ -3157,6 +3088,14 @@ $(document).ready(function() {
                 'pct_96_days': { type: 'date', readonly: true }, // ✅ COMPUTED
                 'date_signed_mis': { type: 'date' },
                 'status_po_pct': {
+                    type: 'select',
+                    options: [
+                        { value: '', text: 'Select' },
+                        { value: 'Within', text: 'Within' },
+                        { value: 'Beyond', text: 'Beyond' }
+                    ]
+                },
+                'status_pct': {
                     type: 'select',
                     options: [
                         { value: '', text: 'Select' },
