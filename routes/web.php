@@ -151,8 +151,9 @@ Route::middleware('auth')->group(function () {
         Route::get('/documents/{id}/history', [DocumentTrackingController::class, 'history'])->name('documents.history');
     });
 
-        // Notifications
+    // Notifications
     Route::get('/notifications/pending', [App\Http\Controllers\NotificationController::class, 'getPending'])->name('notifications.pending');
+    Route::get('/notifications/beyond', [App\Http\Controllers\NotificationController::class, 'getBeyond'])->name('notifications.beyond');
     Route::post('/notifications/mark-seen', [App\Http\Controllers\NotificationController::class, 'markSeen'])->name('notifications.markSeen');
         // ❌ REMOVED: duplicate import-csv route that was here
 });

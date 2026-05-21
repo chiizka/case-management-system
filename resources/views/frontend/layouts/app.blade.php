@@ -108,7 +108,7 @@
                     <span>Cases Overview</span>
                 </a>
             </li>
-                        <hr class="sidebar-divider">
+            <hr class="sidebar-divider">
             @endif
 
             <!-- Audit Logs - Only for Admin -->
@@ -177,14 +177,7 @@
                     <i class="fa fa-bars"></i>
                 </button>
                 {{-- <form class="d-none d-sm-inline-block form-inline mr-auto ml-md-3 my-2 my-md-0 mw-100 navbar-search">
-                    <div class="input-group">
-                        <input type="text" class="form-control bg-light border-0 small" placeholder="Search for..." aria-label="Search" aria-describedby="basic-addon2">
-                        <div class="input-group-append">
-                            <button class="btn btn-primary" type="button">
-                                <i class="fas fa-search fa-sm"></i>
-                            </button>
-                        </div>
-                    </div>
+                    ...
                 </form> --}}
                 <ul class="navbar-nav ml-auto">
                     <li class="nav-item dropdown no-arrow d-sm-none">
@@ -204,35 +197,41 @@
                             </form>
                         </div>
                     </li>
-                    <!-- Notification Bell -->
+
+                    <!-- ================================================ -->
+                    <!-- NOTIFICATION BELL — Beyond Deadline Cases         -->
+                    <!-- ================================================ -->
                     <li class="nav-item dropdown no-arrow mx-1" id="notificationDropdown">
                         <a class="nav-link dropdown-toggle" href="#" id="notifToggle" role="button"
-                        data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                           data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                             <i class="fas fa-bell fa-fw"></i>
                             <span class="badge badge-danger badge-counter d-none" id="notifBadge"></span>
                         </a>
 
                         <div class="dropdown-list dropdown-menu dropdown-menu-right shadow animated--grow-in"
-                            aria-labelledby="notifToggle" style="min-width: 340px; max-width: 380px;">
+                             aria-labelledby="notifToggle"
+                             style="min-width: 360px; max-width: 400px; max-height: 480px; overflow-y: auto;">
 
                             <h6 class="dropdown-header d-flex justify-content-between align-items-center">
-                                <span>Pending Documents</span>
-                                <span class="badge badge-pill badge-warning" id="notifHeaderCount"></span>
+                                <span><i class="fas fa-exclamation-triangle text-danger mr-1"></i> Beyond Deadline Cases</span>
+                                <span class="badge badge-pill badge-danger" id="notifHeaderCount" style="display:none;"></span>
                             </h6>
 
-                            <!-- Items injected here by JS -->
+                            <!-- Items injected by JS -->
                             <div id="notifItems">
                                 <div class="dropdown-item text-center text-muted py-3" id="notifEmpty">
-                                    <i class="fas fa-check-circle text-success mr-1"></i> No pending documents
+                                    <i class="fas fa-check-circle text-success mr-1"></i> No cases beyond deadline
                                 </div>
                             </div>
 
-                            <a class="dropdown-item text-center small text-gray-500 py-2"
-                            href="{{ route('documents.tracking') }}">
-                                <i class="fas fa-map-marker-alt mr-1"></i> Go to Document Tracking
+                            <a class="dropdown-item text-center small text-gray-500 py-2 border-top"
+                               href="{{ route('case.index') }}">
+                                <i class="fas fa-folder-open mr-1"></i> Go to Active Cases
                             </a>
                         </div>
                     </li>
+                    <!-- ================================================ -->
+
                     <div class="topbar-divider d-none d-sm-block"></div>
                     <li class="nav-item dropdown no-arrow">
                         <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -280,7 +279,7 @@
                     </div>
                 </div>
             </div>
-            
+
     <!-- ============================================ -->
     <!-- CRITICAL: Load Core JavaScript Libraries FIRST -->
     <!-- ============================================ -->
@@ -308,18 +307,20 @@
     <!-- Page-Specific Scripts Load Here -->
     <!-- ============================================ -->
     @stack('scripts')
+
+    <!-- ============================================ -->
+    <!-- NOTIFICATION BELL SCRIPT                     -->
+    <!-- ============================================ -->
     <script>
     (function () {
-        // ─── Config ───────────────────────────────────────────────────
-        const POLL_INTERVAL_MS = 60000; // poll every 60 seconds
-        const trackingUrl      = "{{ route('documents.tracking') }}";
-        const pendingUrl       = "{{ route('notifications.pending') }}";
+        const POLL_INTERVAL_MS = 60000;
+        const caseIndexUrl     = "{{ route('case.index') }}";
+        const pendingUrl       =  "{{ route('notifications.beyond') }}";
         const markSeenUrl      = "{{ route('notifications.markSeen') }}";
         const csrfToken        = "{{ csrf_token() }}";
 
         let lastCount = 0;
 
-        // ─── Fetch pending notifications ──────────────────────────────
         function fetchNotifications() {
             $.ajax({
                 url: pendingUrl,
@@ -335,102 +336,104 @@
             });
         }
 
-        // ─── Render bell badge + dropdown items ───────────────────────
         function renderNotifications(count, items) {
-            const $badge        = $('#notifBadge');
-            const $headerCount  = $('#notifHeaderCount');
-            const $itemsBox     = $('#notifItems');
-            const $empty        = $('#notifEmpty');
+            const $badge       = $('#notifBadge');
+            const $headerCount = $('#notifHeaderCount');
+            const $itemsBox    = $('#notifItems');
+            const $empty       = $('#notifEmpty');
 
-            // Badge
+            // Update badge
             if (count > 0) {
-                $badge.text(count > 9 ? '9+' : count).removeClass('d-none');
-                $headerCount.text(count + ' pending').show();
+                $badge.text(count > 99 ? '99+' : count).removeClass('d-none');
+                $headerCount.text(count + (count === 1 ? ' case' : ' cases')).show();
             } else {
                 $badge.addClass('d-none').text('');
-                $headerCount.text('').hide();
+                $headerCount.hide().text('');
             }
 
-            // Pulse the bell once when count increases
+            // Shake bell when count increases
             if (count > lastCount && lastCount !== null) {
                 $('#notifToggle .fa-bell')
-                    .addClass('text-warning')
-                    .css('animation', 'bell-shake 0.5s ease');
-                setTimeout(() => {
+                    .addClass('text-danger')
+                    .css('animation', 'bell-shake 0.6s ease');
+                setTimeout(function () {
                     $('#notifToggle .fa-bell')
-                        .removeClass('text-warning')
+                        .removeClass('text-danger')
                         .css('animation', '');
-                }, 600);
+                }, 700);
             }
             lastCount = count;
 
-            // Items
+            // Rebuild items list
+            $itemsBox.find('.notif-item').remove();
+
             if (items.length === 0) {
                 $empty.show();
-                $itemsBox.find('.notif-item').remove();
                 return;
             }
 
             $empty.hide();
-            $itemsBox.find('.notif-item').remove();
 
             items.forEach(function (item) {
-                const html = `
-                    <a class="dropdown-item d-flex align-items-start notif-item py-2"
-                    href="${trackingUrl}"
-                    style="white-space: normal; border-bottom: 1px solid #f0f0f0;">
-                        <div class="mr-3 mt-1">
-                            <div class="icon-circle bg-warning" style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:50%;">
-                                <i class="fas fa-file-alt text-white" style="font-size:0.85rem;"></i>
-                            </div>
-                        </div>
-                        <div style="flex:1; min-width:0;">
-                            <div class="font-weight-bold text-dark"
-                                style="font-size:0.82rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"
-                                title="${item.establishment}">
-                                ${item.establishment}
-                            </div>
-                            <div class="small text-gray-600">
-                                Case: <strong>${item.case_no}</strong>
-                            </div>
-                            <div class="small text-muted">
-                                From: ${item.transferred_by}
-                            </div>
-                            <div class="small text-muted">
-                                <i class="fas fa-clock mr-1"></i>${item.transferred_at}
-                            </div>
-                        </div>
-                    </a>
-                `;
+                // Red pill badge for each Beyond field
+                const pills = item.beyond_fields.map(function (label) {
+                    return '<span class="badge badge-danger mr-1" style="font-size:0.7rem;">' + label + '</span>';
+                }).join('');
+
+                const html =
+                    '<a class="dropdown-item d-flex align-items-start notif-item py-2" ' +
+                       'href="' + caseIndexUrl + '" ' +
+                       'style="white-space:normal; border-bottom:1px solid #f3f3f3; text-decoration:none;">' +
+                        '<div class="mr-3 mt-1 flex-shrink-0">' +
+                            '<div style="width:36px;height:36px;display:flex;align-items:center;' +
+                                        'justify-content:center;border-radius:50%;background:#e74a3b;">' +
+                                '<i class="fas fa-exclamation text-white" style="font-size:0.85rem;"></i>' +
+                            '</div>' +
+                        '</div>' +
+                        '<div style="flex:1; min-width:0;">' +
+                            '<div class="font-weight-bold text-dark" ' +
+                                 'style="font-size:0.82rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" ' +
+                                 'title="' + item.establishment + '">' +
+                                item.establishment +
+                            '</div>' +
+                            '<div class="small text-gray-600">' +
+                                'Case: <strong>' + item.case_no + '</strong>' +
+                                ' &nbsp;|&nbsp; <span class="text-muted">' + item.po_office + '</span>' +
+                            '</div>' +
+                            '<div class="mt-1">' + pills + '</div>' +
+                            '<div class="small text-muted mt-1">' +
+                                '<i class="fas fa-clock mr-1"></i>Updated ' + item.updated_at +
+                            '</div>' +
+                        '</div>' +
+                    '</a>';
+
                 $itemsBox.append(html);
             });
         }
 
-        // ─── Mark seen when dropdown opens ────────────────────────────
+        // Reset badge when user opens the dropdown
         $(document).on('shown.bs.dropdown', '#notificationDropdown', function () {
             $.post(markSeenUrl, { _token: csrfToken });
         });
 
-        // ─── Bell shake animation ──────────────────────────────────────
-        $('<style>')
-            .text(`
-                @keyframes bell-shake {
-                    0%,100% { transform: rotate(0deg); }
-                    20%      { transform: rotate(-15deg); }
-                    40%      { transform: rotate(15deg); }
-                    60%      { transform: rotate(-10deg); }
-                    80%      { transform: rotate(10deg); }
-                }
-            `)
-            .appendTo('head');
+        // Bell shake keyframe
+        $('<style>').text(
+            '@keyframes bell-shake {' +
+            '  0%,100% { transform: rotate(0deg); }' +
+            '  20%     { transform: rotate(-18deg); }' +
+            '  40%     { transform: rotate(18deg); }' +
+            '  60%     { transform: rotate(-10deg); }' +
+            '  80%     { transform: rotate(10deg); }' +
+            '}'
+        ).appendTo('head');
 
-        // ─── Init ─────────────────────────────────────────────────────
+        // Init
         fetchNotifications();
         setInterval(fetchNotifications, POLL_INTERVAL_MS);
 
     })();
     </script>
-        
+
 </body>
 
 </html>
