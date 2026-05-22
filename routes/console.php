@@ -10,3 +10,6 @@ Artisan::command('inspire', function () {
 
 // Clean up expired sessions daily
 Schedule::command('session:gc')->daily();
+
+// Send Beyond deadline case notifications every day at 7AM
+Schedule::command('notify:beyond-cases')->dailyAt('07:00');
