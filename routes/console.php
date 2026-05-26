@@ -12,4 +12,4 @@ Artisan::command('inspire', function () {
 Schedule::command('session:gc')->daily();
 
 // Send Beyond deadline case notifications every day at 7AM
-Schedule::command('notify:beyond-cases')->dailyAt('07:00');
+Schedule::command('notify:beyond-cases')->weekdaysAt('07:00');
