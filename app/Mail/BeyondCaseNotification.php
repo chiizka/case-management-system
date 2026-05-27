@@ -11,23 +11,26 @@ class BeyondCaseNotification extends Mailable
     use Queueable, SerializesModels;
 
     public $recipientName;
-    public $cases;         // collection of beyond cases for this recipient
+    public $beyondCases;
+    public $upcomingCases;
     public $reportDate;
 
-    public function __construct($recipientName, $cases, $reportDate)
+    public function __construct($recipientName, $beyondCases, $upcomingCases, $reportDate)
     {
         $this->recipientName = $recipientName;
-        $this->cases         = $cases;
+        $this->beyondCases   = $beyondCases;
+        $this->upcomingCases = $upcomingCases;
         $this->reportDate    = $reportDate;
     }
 
     public function build()
     {
         return $this->markdown('emails.beyond-case-notification')
-                    ->subject('Beyond Deadline Cases — ' . $this->reportDate)
+                    ->subject('Case Deadline Report — ' . $this->reportDate)
                     ->with([
                         'recipientName' => $this->recipientName,
-                        'cases'         => $this->cases,
+                        'beyondCases'   => $this->beyondCases,
+                        'upcomingCases' => $this->upcomingCases,
                         'reportDate'    => $this->reportDate,
                     ]);
     }
