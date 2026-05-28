@@ -49,7 +49,9 @@ class FrontController extends Controller
 
             // Fix: count ALL cases from this province, regardless of where the
             // document currently is — transfer shouldn't reduce the total.
-            $totalCases = CaseFile::where('po_office', $provinceName)->count();
+            $totalCases = (clone $receivedByProvince)
+            ->whereIn('overall_status', ['Active', 'Disposed', 'Completed'])
+            ->count();
         } else {
             // Regional roles: system-wide counts, no scoping
             $activeCases         = CaseFile::where('overall_status', 'Active')->count();
