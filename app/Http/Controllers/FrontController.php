@@ -35,28 +35,34 @@ class FrontController extends Controller
         if ($isProvince) {
             $provinceName = $user->getProvinceName();
 
+            // Base query: cases received by this province
             $receivedByProvince = CaseFile::where('po_office', $provinceName)
                 ->whereHas('documentTracking', function ($q) use ($userRole) {
                     $q->where('current_role', $userRole)
                     ->where('status', 'Received');
                 });
 
-            $activeCases         = (clone $receivedByProvince)->where('overall_status', 'Active')->count();
-            $disposedCases       = (clone $receivedByProvince)->where('overall_status', 'Disposed')->count();
-            $actualDisposedCases = 0;
-            $misDisposedCases    = 0;
+            $activeCases = (clone $receivedByProvince)
+                ->where('overall_status', 'Active')
+                ->count();
+
+            // Disposed: scope only by po_office, NOT document tracking
+            // because archived cases may no longer have active tracking
+            $disposedCases = CaseFile::where('po_office', $provinceName)
+                ->where('overall_status', 'Disposed')
+                ->count();
+
+            $actualDisposedCases  = 0;
+            $misDisposedCases     = 0;
             $misDisposedCasesList = collect();
 
-            // Fix: count ALL cases from this province, regardless of where the
-            // document currently is — transfer shouldn't reduce the total.
-            $totalCases = (clone $receivedByProvince)
-            ->whereIn('overall_status', ['Active', 'Disposed', 'Completed'])
-            ->count();
+            // Total = active (received) + all disposed from this province
+            $totalCases = $activeCases + $disposedCases;
         } else {
-            // Regional roles: system-wide counts, no scoping
+                    // Regional roles: system-wide counts, no scoping
             $activeCases         = CaseFile::where('overall_status', 'Active')->count();
+            $actualDisposedCases = CaseFile::where('overall_status', 'Completed')->count(); // Regional completions
             $disposedCases       = CaseFile::where('overall_status', 'Disposed')->count();
-           $actualDisposedCases = CaseFile::where('overall_status', 'Completed')->count();
             $misDisposedCases = CaseFile::where('overall_status', 'Active')
                 ->whereNotNull('date_signed_mis')
                 ->whereMonth('date_signed_mis', Carbon::now()->month)

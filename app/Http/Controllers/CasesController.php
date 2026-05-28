@@ -551,7 +551,36 @@ public function destroy($id)
             
             // Check if request explicitly wants to complete the case (from Complete button)
             $forceComplete = $request->input('force_complete', false);
+            $dispose       = $request->input('dispose', false);
             
+            if ($dispose) {
+                $oldStage = $case->current_stage;
+
+                $case->update(['overall_status' => 'Disposed']);
+
+                ActivityLogger::logAction(
+                    'ARCHIVE',
+                    'Case',
+                    $case->inspection_id,
+                    "Case {$case->inspection_id} - {$case->establishment_name} disposed by province",
+                    [
+                        'establishment' => $case->establishment_name,
+                        'previous_stage' => $oldStage,
+                        'new_status' => 'Disposed',
+                        'action_type' => 'Province Dispose'
+                    ]
+                );
+
+                DB::commit();
+
+                return response()->json([
+                    'success'    => true,
+                    'message'    => 'Case marked as disposed.',
+                    'case_id'    => $case->id,
+                    'new_status' => 'Disposed'
+                ]);
+            }
+
             if ($forceComplete) {
                 Log::info("Force completing case {$id}");
                 

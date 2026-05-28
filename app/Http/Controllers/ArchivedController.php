@@ -27,8 +27,8 @@ class ArchivedController extends Controller
                 'province' => $provinceName
             ]);
             
-            $query = CaseFile::with('appeal') // ← Add this relationship
-                ->where('overall_status', 'Disposed')
+            $query = CaseFile::with('appeal')
+                ->whereIn('overall_status', ['Completed', 'Disposed', 'Appealed'])
                 ->where('po_office', $provinceName);
             
         } else {
