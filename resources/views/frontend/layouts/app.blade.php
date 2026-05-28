@@ -43,6 +43,62 @@
             width: 6.5rem !important;
             background: linear-gradient(180deg, #4e73df 10%, #224abe 100%) !important;
         }
+
+        /* Fix sidebar - make it fixed and non-scrollable with main content */
+        .sidebar {
+            position: fixed !important;
+            top: 0;
+            left: 0;
+            height: 100vh !important;
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+
+        /* Push content to the right to account for fixed sidebar */
+        #content-wrapper {
+            margin-left: 224px;
+            transition: margin-left 0.3s;
+        }
+
+        /* When sidebar is toggled/collapsed */
+        body.sidebar-toggled #content-wrapper {
+            margin-left: 6.5rem;
+        }
+
+        /* Hide scrollbar on sidebar but keep it scrollable if items overflow */
+        .sidebar::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .sidebar::-webkit-scrollbar-thumb {
+            background: rgba(255,255,255,0.2);
+            border-radius: 4px;
+        }
+
+        /* Fix topbar */
+        .topbar {
+            position: fixed !important;
+            top: 0;
+            right: 0;
+            left: 224px;
+            z-index: 1040;
+            transition: left 0.3s;
+        }
+
+        /* Adjust left when sidebar is collapsed */
+        body.sidebar-toggled .topbar {
+            left: 6.5rem;
+        }
+
+        /* Push content down so it doesn't hide behind the fixed topbar */
+        #content-wrapper .container-fluid {
+            padding-top: 1.5rem;
+        }
+
+        /* Add top offset to content-wrapper to account for topbar height (~70px) */
+        #content-wrapper {
+            padding-top: 70px;
+        }
     </style>
 </head>
 

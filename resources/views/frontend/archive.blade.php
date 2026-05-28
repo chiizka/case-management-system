@@ -242,25 +242,133 @@
     .ml-2 {
         margin-left: 0.5rem;
     }
-.text-warning {
-    color: #f39c12;
-}
+    .text-warning {
+        color: #f39c12;
+    }
 
-/* Appeal tab - only highlight when active */
-.tab[data-tab^="appeal-details"].active {
-    border-bottom: 2px solid #f39c12;
-    color: #f39c12;
-    background-color: #fffbf0; /* Very subtle background */
-}
+    /* Appeal tab - only highlight when active */
+    .tab[data-tab^="appeal-details"].active {
+        border-bottom: 2px solid #f39c12;
+        color: #f39c12;
+        background-color: #fffbf0; /* Very subtle background */
+    }
+
+    /* Regional / Provincial badges */
+    .disposition-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        padding: 0.2rem 0.65rem;
+        border-radius: 12px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        margin-left: 0.5rem;
+        vertical-align: middle;
+    }
+    .badge-regional {
+        background: #dbeafe;
+        color: #1e40af;
+        border: 1px solid #bfdbfe;
+    }
+    .badge-provincial {
+        background: #dcfce7;
+        color: #166534;
+        border: 1px solid #bbf7d0;
+    }
+
+    /* Filter button */
+    .filter-btn {
+        padding: 0.5rem 1rem;
+        border: 1px solid #d1d5db;
+        border-radius: 0.25rem;
+        background: #fff;
+        cursor: pointer;
+        font-size: 0.875rem;
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+    }
+    .filter-btn:hover { background: #f3f4f6; }
+    .filter-btn.active-filter {
+        background: #eff6ff;
+        border-color: #3b82f6;
+        color: #1d4ed8;
+        font-weight: 600;
+    }
+
+    /* Dropdown for filter */
+    .filter-dropdown {
+        position: relative;
+        display: inline-block;
+    }
+    .filter-menu {
+        display: none;
+        position: absolute;
+        top: calc(100% + 4px);
+        left: 0;
+        background: white;
+        border: 1px solid #d1d5db;
+        border-radius: 0.375rem;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        z-index: 100;
+        min-width: 180px;
+        overflow: hidden;
+    }
+    .filter-menu.open { display: block; }
+    .filter-option {
+        padding: 0.5rem 1rem;
+        cursor: pointer;
+        font-size: 0.875rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        white-space: nowrap;
+    }
+    .filter-option:hover { background: #f3f4f6; }
+    .filter-option.selected {
+        background: #eff6ff;
+        color: #1d4ed8;
+        font-weight: 600;
+    }
+    .filter-option .dot {
+        width: 10px; height: 10px;
+        border-radius: 50%;
+        flex-shrink: 0;
+    }
+    .dot-all { background: #6b7280; }
+    .dot-regional { background: #3b82f6; }
+    .dot-provincial { background: #22c55e; }
 </style>
 
 <div class="container p-4 bg-gray-100">
     <h1 class="text-2xl font-bold mb-4">DOLE Archived Cases</h1>
     
     <!-- Search and Filter -->
-    <div class="mb-4 flex gap-4">
-        <input type="text" id="searchInput" placeholder="Search by Case No. or Establishment Name" 
-               class="p-2 border rounded w-full max-w-md">
+    <div class="mb-4 flex gap-4" style="align-items: center; flex-wrap: wrap;">
+        <input type="text" id="searchInput" placeholder="Search by Case No. or Establishment Name"
+            class="p-2 border rounded w-full max-w-md">
+
+        @if(Auth::user()->isAdmin() || Auth::user()->isMalsu() || Auth::user()->isCaseManagement())
+        <div class="filter-dropdown" id="dispositionFilterDropdown">
+            <button class="filter-btn" id="dispositionFilterBtn" onclick="toggleFilterMenu()">
+                <i class="fas fa-filter" style="font-size:0.8rem;"></i>
+                <span id="filterBtnLabel">All Cases</span>
+                <i class="fas fa-chevron-down" style="font-size:0.7rem; margin-left:0.2rem;"></i>
+            </button>
+            <div class="filter-menu" id="dispositionFilterMenu">
+                <div class="filter-option selected" data-filter="all" onclick="applyDispositionFilter('all', this)">
+                    <span class="dot dot-all"></span> All Cases
+                </div>
+                <div class="filter-option" data-filter="regional" onclick="applyDispositionFilter('regional', this)">
+                    <span class="dot dot-regional"></span> Regional Only
+                </div>
+                <div class="filter-option" data-filter="provincial" onclick="applyDispositionFilter('provincial', this)">
+                    <span class="dot dot-provincial"></span> Provincial Only
+                </div>
+            </div>
+        </div>
+        @endif
+
         <button class="bg-blue-600 text-white px-4 py-2 rounded hover-bg-blue-700" onclick="exportSelected()">
             Export Selected
         </button>
@@ -270,13 +378,33 @@
     <div id="caseList" class="space-y-4">
         @if($archivedCases->count() > 0)
             @foreach($archivedCases as $case)
-                <div class="bg-white shadow rounded" data-case-id="{{ $case->id }}">
+                <div class="bg-white shadow rounded" 
+                data-case-id="{{ $case->id }}"
+                data-disposition="{{ $case->overall_status === 'Disposed' ? 'provincial' : 'regional' }}"
+                data-province="{{ $case->po_office ?? '' }}">
                     <div class="accordion-header p-4 flex justify-between items-center cursor-pointer">
                         <div>
                             <span class="font-bold">Inspection ID:</span> {{ $case->inspection_id }}<br>
                             <span class="font-bold">Case No.:</span> {{ $case->case_no ?? 'N/A' }}<br>
                             <span class="font-bold">Establishment:</span> {{ $case->establishment_name }}<br>
                             <span class="font-bold">Date Archived:</span> {{ $case->updated_at->format('Y-m-d') }}<br>
+
+                            {{-- Regional / Provincial Badge --}}
+                            @php
+                                $isProvincial = $case->overall_status === 'Disposed';
+                            @endphp
+                            @if($isProvincial)
+                                <span class="disposition-badge badge-provincial" title="Disposed at Province: {{ $case->po_office }}">
+                                    <i class="fas fa-map-marker-alt" style="font-size:0.7rem;"></i>
+                                    Provincial &mdash; {{ $case->po_office }}
+                                </span>
+                            @else
+                                <span class="disposition-badge badge-regional" title="Disposed at Regional Office">
+                                    <i class="fas fa-building" style="font-size:0.7rem;"></i>
+                                    Regional
+                                </span>
+                            @endif
+                            <br>
                             
                             {{-- Status with Appeal Badge --}}
                             <span class="font-bold">Status:</span> 
@@ -903,14 +1031,7 @@ function displayDocumentHistory(history, container) {
 }
 
 // Basic Search Functionality
-document.getElementById('searchInput').addEventListener('input', (e) => {
-    const searchTerm = e.target.value.toLowerCase();
-    const cases = document.querySelectorAll('#caseList > div');
-    cases.forEach(caseItem => {
-        const text = caseItem.textContent.toLowerCase();
-        caseItem.style.display = text.includes(searchTerm) ? '' : 'none';
-    });
-});
+document.getElementById('searchInput').addEventListener('input', applyFilters);
 
 // Export Selected Function
 function exportSelected() {
@@ -1153,6 +1274,61 @@ $('#appealForm').on('submit', function(e) {
         }
     });
 });
+
+// Disposition filter (Regional / Provincial) - admin, malsu, case_management only
+let activeDispositionFilter = 'all';
+
+function toggleFilterMenu() {
+    const menu = document.getElementById('dispositionFilterMenu');
+    menu.classList.toggle('open');
+}
+
+// Close dropdown when clicking outside
+document.addEventListener('click', function(e) {
+    const dropdown = document.getElementById('dispositionFilterDropdown');
+    if (dropdown && !dropdown.contains(e.target)) {
+        document.getElementById('dispositionFilterMenu').classList.remove('open');
+    }
+});
+
+function applyDispositionFilter(filter, clickedEl) {
+    activeDispositionFilter = filter;
+
+    // Update selected state
+    document.querySelectorAll('#dispositionFilterMenu .filter-option').forEach(opt => {
+        opt.classList.remove('selected');
+    });
+    clickedEl.classList.add('selected');
+
+    // Update button label
+    const labels = { all: 'All Cases', regional: 'Regional Only', provincial: 'Provincial Only' };
+    document.getElementById('filterBtnLabel').textContent = labels[filter];
+
+    // Toggle active style on button
+    const btn = document.getElementById('dispositionFilterBtn');
+    btn.classList.toggle('active-filter', filter !== 'all');
+
+    // Close menu
+    document.getElementById('dispositionFilterMenu').classList.remove('open');
+
+    // Apply filter combined with current search
+    applyFilters();
+}
+
+function applyFilters() {
+    const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+    const cases = document.querySelectorAll('#caseList > div[data-case-id]');
+
+    cases.forEach(caseItem => {
+        const text = caseItem.textContent.toLowerCase();
+        const disposition = caseItem.dataset.disposition || 'regional';
+
+        const matchesSearch = !searchTerm || text.includes(searchTerm);
+        const matchesFilter = activeDispositionFilter === 'all' || disposition === activeDispositionFilter;
+
+        caseItem.style.display = (matchesSearch && matchesFilter) ? '' : 'none';
+    });
+}
 </script>
 
 @stop

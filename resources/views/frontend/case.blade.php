@@ -2401,7 +2401,8 @@ $(document).on('click', '.complete-case-btn', function(e) {
     
     caseToProgress = {
         id: caseId,
-        button: button
+        button: button,
+        action: 'complete'  // ← add this
     };
     
     // Set modal styling for Complete
@@ -2486,9 +2487,9 @@ $('#confirmStageBtn').off('click').on('click', function() {
     }
     
     const button = $(this);
-    const isForceComplete = caseToProgress.button && caseToProgress.button.hasClass('complete-case-btn');
+    const isForceComplete = caseToProgress.action === 'complete';
     const isDispose = caseToProgress.action === 'dispose';
-    
+        
     console.log('Is Force Complete:', isForceComplete);
     console.log('Is Dispose:', isDispose);
     console.log('Button classes:', caseToProgress.button.attr('class'));

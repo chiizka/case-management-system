@@ -550,8 +550,8 @@ public function destroy($id)
             ]);
             
             // Check if request explicitly wants to complete the case (from Complete button)
-            $forceComplete = $request->input('force_complete', false);
-            $dispose       = $request->input('dispose', false);
+            $forceComplete = filter_var($request->input('force_complete', false), FILTER_VALIDATE_BOOLEAN);
+            $dispose       = filter_var($request->input('dispose', false), FILTER_VALIDATE_BOOLEAN);
             
             if ($dispose) {
                 $oldStage = $case->current_stage;

@@ -28,7 +28,7 @@ class ArchivedController extends Controller
             ]);
             
             $query = CaseFile::with('appeal')
-                ->whereIn('overall_status', ['Completed', 'Disposed', 'Appealed'])
+                ->where('overall_status', 'Disposed')
                 ->where('po_office', $provinceName);
             
         } else {
