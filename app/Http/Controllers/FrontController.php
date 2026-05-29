@@ -43,21 +43,43 @@ class FrontController extends Controller
                 });
 
             $activeCases = (clone $receivedByProvince)
-                ->where('overall_status', 'Active')
-                ->count();
+        ->where('overall_status', 'Active')
+        ->count();
 
-            // Disposed: scope only by po_office, NOT document tracking
-            // because archived cases may no longer have active tracking
-            $disposedCases = CaseFile::where('po_office', $provinceName)
-                ->where('overall_status', 'Disposed')
-                ->count();
+    $disposedCases = CaseFile::where('po_office', $provinceName)
+        ->where('overall_status', 'Disposed')
+        ->count();
 
-            $actualDisposedCases  = 0;
-            $misDisposedCases     = 0;
-            $misDisposedCasesList = collect();
+    $actualDisposedCases  = 0;
+    $misDisposedCases     = 0;
+    $misDisposedCasesList = collect();
 
-            // Total = active (received) + all disposed from this province
-            $totalCases = $activeCases + $disposedCases;
+    // ── Total Cases Handled ───────────────────────────────────────────────
+    // Unique cases ever RECEIVED by this province (not just pending)
+    // Source 1: currently sitting at this province and received
+    $currentlyReceivedIds = \App\Models\DocumentTracking::where('current_role', $userRole)
+        ->where('status', 'Received')
+        ->pluck('case_id')
+        ->unique();
+
+    // Source 2: previously received by this province (in history)
+$historicalTrackingIds = \App\Models\DocumentTrackingHistory::where('to_role', $userRole)
+    ->whereNotNull('received_by_user_id')
+    ->whereNotNull('received_at')
+    ->pluck('document_tracking_id')
+    ->unique();
+
+$historicallyReceivedIds = \App\Models\DocumentTracking::whereIn('id', $historicalTrackingIds)
+    ->pluck('case_id')
+    ->unique();
+
+
+    // Merge all three sources, deduplicate by case ID
+$totalCases = collect()
+    ->merge($currentlyReceivedIds)
+    ->merge($historicallyReceivedIds)
+    ->unique()
+    ->count();
         } else {
                     // Regional roles: system-wide counts, no scoping
             $activeCases         = CaseFile::where('overall_status', 'Active')->count();
@@ -94,7 +116,10 @@ class FrontController extends Controller
             $activeByRole = [];
             foreach ($rolesForBreakdown as $role) {
                 $activeByRole[$role] = CaseFile::where('overall_status', 'Active')
-                    ->whereHas('documentTracking', fn($q) => $q->where('current_role', $role))
+                    ->whereHas('documentTracking', fn($q) => $q
+                        ->where('current_role', $role)
+                        ->where('status', 'Received')  // must be received, not just pending
+                    )
                     ->count();
             }
         }
