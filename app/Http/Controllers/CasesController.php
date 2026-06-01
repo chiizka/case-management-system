@@ -1163,7 +1163,7 @@ public function importCsv(Request $request)
                 
                 // Create case record
                 try {
-                    CaseFile::create([
+                    $case = CaseFile::create([
                         'inspection_id' => $inspectionId,
                         'po_office' => $fieldOffice,
                         'establishment_name' => $establishmentName,
@@ -1183,6 +1183,11 @@ public function importCsv(Request $request)
                         'current_stage' => '1: Inspections',
                         'overall_status' => 'Active',
                     ]);
+
+                    $case->computeFields();
+                    $case->saveQuietly();
+                    $this->createInitialDocumentTracking($case, Auth::user());
+
                     $successCount++;
                 } catch (\Exception $e) {
                     $errors[] = "Row {$rowNumber}: " . $e->getMessage();
