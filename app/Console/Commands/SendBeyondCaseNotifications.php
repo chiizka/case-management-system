@@ -28,16 +28,19 @@ class SendBeyondCaseNotifications extends Command
     {
         $reportDate = Carbon::now()->format('F d, Y');
         $today      = Carbon::today();
-        $in5Days    = Carbon::today()->addDays(5);
         $sentCount  = 0;
 
-        // ── Base query: active cases that are received ────────────────────────
-        $baseQuery = CaseFile::whereNotIn('overall_status', ['Completed', 'Disposed', 'Appealed'])
+        // ── Base query ────────────────────────────────────────────────────
+        // Only Active cases that are currently Received at some role
+        $baseQuery = CaseFile::where('overall_status', 'Active')
             ->whereHas('documentTracking', function ($q) {
                 $q->where('status', 'Received');
             });
 
-        // ── 1. Fetch Beyond cases ─────────────────────────────────────────────
+        // ══════════════════════════════════════════════════════════════════
+        // 1. BEYOND CASES
+        //    Any case where at least one status field = 'Beyond'
+        // ══════════════════════════════════════════════════════════════════
         $allBeyondCases = (clone $baseQuery)
             ->where(function ($q) {
                 $q->where('status_docket',  'Beyond')
@@ -46,46 +49,98 @@ class SendBeyondCaseNotifications extends Command
                   ->orWhere('status_po_pct', 'Beyond')
                   ->orWhere('status_pct',    'Beyond');
             })
+            ->with('documentTracking')
             ->get([
                 'id', 'case_no', 'inspection_id', 'establishment_name', 'po_office',
                 'status_docket', 'status_1st_mc', 'status_2nd_mc',
                 'status_po_pct', 'status_pct',
             ]);
 
-        // ── 2. Fetch Upcoming cases (deadline within 5 days, not yet Beyond) ──
-        // We check each PCT deadline date against today + 5 days
-        $allUpcomingCases = (clone $baseQuery)
-            ->where(function ($q) use ($today, $in5Days) {
-                // aging_docket between -5 and 0 = deadline within 5 days, not yet beyond
-                $q->orWhere(function ($q2) {
-                    $q2->whereBetween('aging_docket', [-5, 0]);
-                })
-                // aging_po_pct between -5 and 0
-                ->orWhere(function ($q2) {
-                    $q2->whereBetween('aging_po_pct', [-5, 0]);
-                })
-                // pct_96_days within 5 days from today and not yet Beyond
-                ->orWhere(function ($q2) use ($today, $in5Days) {
-                    $q2->whereBetween('pct_96_days', [$today, $in5Days])
-                    ->where(function ($q3) {
-                        $q3->where('status_pct', '!=', 'Beyond')
-                            ->orWhereNull('status_pct');
-                    });
-                });
-            })
-            ->get([
-                'id', 'case_no', 'inspection_id', 'establishment_name', 'po_office',
-                'aging_docket', 'aging_po_pct', 'pct_96_days',
-                'pct_for_docketing', 'po_pct',
-                'status_docket', 'status_po_pct', 'status_pct',
-            ]);
+        // ══════════════════════════════════════════════════════════════════
+        // 2. UPCOMING CASES (within 5 days of going Beyond)
+        //
+        //  Date-based deadlines (aging stored as integer days):
+        //    aging_docket   in [-5, 0]  → 0–5 days before pct_for_docketing
+        //    aging_po_pct   in [-5, 0]  → 0–5 days before po_pct
+        //    pct_96_days    date between today and today+5
+        //
+        //  Integer PCT thresholds (days elapsed, not dates):
+        //    first_mc_pct        Beyond at > 15 → upcoming: [11, 15]
+        //    second_last_mc_pct  Beyond at > 30 → upcoming: [26, 30]
+        //
+        //  Important: exclude cases already Beyond for that field
+        // ══════════════════════════════════════════════════════════════════
+        $in5Days = Carbon::today()->addDays(5);
 
+        $allUpcomingCases = (clone $baseQuery)
+        ->where(function ($q) use ($today, $in5Days) {
+
+            // Docket: negative aging = days remaining before deadline
+            $q->orWhere(function ($q2) {
+                $q2->whereBetween('aging_docket', [-5, 0])
+                ->where(function ($q3) {
+                    $q3->where('status_docket', '!=', 'Beyond')
+                        ->orWhereNull('status_docket');
+                });
+            });
+
+            // PO PCT: negative aging = days remaining before deadline
+            $q->orWhere(function ($q2) {
+                $q2->whereBetween('aging_po_pct', [-5, 0])
+                ->where(function ($q3) {
+                    $q3->where('status_po_pct', '!=', 'Beyond')
+                        ->orWhereNull('status_po_pct');
+                });
+            });
+
+            // PCT 96 days: date within next 5 days, not yet Beyond
+            $q->orWhere(function ($q2) use ($today, $in5Days) {
+                $q2->whereBetween('pct_96_days', [$today, $in5Days])
+                ->where(function ($q3) {
+                    $q3->where('status_pct', '!=', 'Beyond')
+                        ->orWhereNull('status_pct');
+                });
+            });
+
+            // 1st MC: negative = days remaining before Beyond (e.g. -4 = 4 days left)
+            $q->orWhere(function ($q2) {
+                $q2->whereBetween('first_mc_pct', [-5, 0])
+                ->where(function ($q3) {
+                    $q3->where('status_1st_mc', '!=', 'Beyond')
+                        ->orWhereNull('status_1st_mc');
+                });
+            });
+
+            // 2nd MC: negative = days remaining before Beyond (e.g. -4 = 4 days left)
+            $q->orWhere(function ($q2) {
+                $q2->whereBetween('second_last_mc_pct', [-5, 0])
+                ->where(function ($q3) {
+                    $q3->where('status_2nd_mc', '!=', 'Beyond')
+                        ->orWhereNull('status_2nd_mc');
+                });
+            });
+        })
+        ->with('documentTracking')
+        ->get([
+            'id', 'case_no', 'inspection_id', 'establishment_name', 'po_office',
+            // Date-based deadline fields
+            'aging_docket',       'pct_for_docketing',   'status_docket',
+            'aging_po_pct',       'po_pct',              'status_po_pct',
+            'pct_96_days',                               'status_pct',
+            // Integer PCT fields for 1st and 2nd MC
+            'first_mc_pct',       'lapse_20_day_period',  'status_1st_mc',
+            'second_last_mc_pct', 'date_1st_mc_actual',   'status_2nd_mc',
+        ]);
         // Skip entirely if nothing to report
         if ($allBeyondCases->isEmpty() && $allUpcomingCases->isEmpty()) {
             $this->info('No Beyond or Upcoming cases found. No emails sent.');
             return 0;
         }
 
+        // ══════════════════════════════════════════════════════════════════
+        // FORMAT: Beyond cases
+        // Lists all Beyond fields for each case
+        // ══════════════════════════════════════════════════════════════════
         $fieldLabels = [
             'status_docket'  => 'Docket',
             'status_1st_mc'  => '1st MC',
@@ -94,7 +149,6 @@ class SendBeyondCaseNotifications extends Command
             'status_pct'     => 'PCT (96 days)',
         ];
 
-        // ── Format Beyond cases ───────────────────────────────────────────────
         $formatBeyond = function ($collection) use ($fieldLabels) {
             return $collection->map(function ($case) use ($fieldLabels) {
                 $beyondFields = [];
@@ -112,36 +166,79 @@ class SendBeyondCaseNotifications extends Command
             })->values()->toArray();
         };
 
-        // ── Format Upcoming cases ─────────────────────────────────────────────
+        // ══════════════════════════════════════════════════════════════════
+        // FORMAT: Upcoming cases
+        // Builds a human-readable summary per field type
+        // ══════════════════════════════════════════════════════════════════
         $formatUpcoming = function ($collection) use ($today) {
             return $collection->map(function ($case) use ($today) {
                 $upcomingFields = [];
 
-                // aging_docket: negative = days remaining before pct_for_docketing deadline
-                if ($case->aging_docket !== null && $case->aging_docket >= -5 && $case->aging_docket <= 0) {
+                // -- Docket (date-based, aging is negative days remaining) --
+                if ($case->aging_docket !== null
+                    && $case->aging_docket >= -5
+                    && $case->aging_docket <= 0
+                    && $case->status_docket !== 'Beyond'
+                ) {
                     $daysLeft = abs($case->aging_docket);
                     $deadline = $case->pct_for_docketing
-                        ? \Carbon\Carbon::parse($case->pct_for_docketing)->format('M d, Y')
+                        ? Carbon::parse($case->pct_for_docketing)->format('M d, Y')
                         : 'N/A';
                     $upcomingFields[] = "Docket (due {$deadline} — {$daysLeft} day(s) left)";
                 }
 
-                // aging_po_pct: negative = days remaining before po_pct deadline
-                if ($case->aging_po_pct !== null && $case->aging_po_pct >= -5 && $case->aging_po_pct <= 0) {
+                // -- PO PCT (date-based, aging is negative days remaining) --
+                if ($case->aging_po_pct !== null
+                    && $case->aging_po_pct >= -5
+                    && $case->aging_po_pct <= 0
+                    && $case->status_po_pct !== 'Beyond'
+                ) {
                     $daysLeft = abs($case->aging_po_pct);
                     $deadline = $case->po_pct
-                        ? \Carbon\Carbon::parse($case->po_pct)->format('M d, Y')
+                        ? Carbon::parse($case->po_pct)->format('M d, Y')
                         : 'N/A';
                     $upcomingFields[] = "PO PCT (due {$deadline} — {$daysLeft} day(s) left)";
                 }
 
-                // pct_96_days: compare date directly since there's no aging field for it
+                // -- PCT 96 days (date-based, compare pct_96_days to today) --
                 if ($case->pct_96_days && $case->status_pct !== 'Beyond') {
-                    $deadline = \Carbon\Carbon::parse($case->pct_96_days);
-                    $daysLeft = $today->diffInDays($deadline, false);
+                    $deadline = Carbon::parse($case->pct_96_days);
+                    $daysLeft = (int) $today->diffInDays($deadline, false);
                     if ($daysLeft >= 0 && $daysLeft <= 5) {
-                        $upcomingFields[] = "PCT 96 days (due " . $deadline->format('M d, Y') . " — {$daysLeft} day(s) left)";
+                        $upcomingFields[] = "PCT 96 days (due {$deadline->format('M d, Y')} — {$daysLeft} day(s) left)";
                     }
+                }
+
+                // -- 1st MC PCT (integer elapsed days, threshold = 15) --
+                // first_mc_pct = days from lapse_20_day_period to date_1st_mc_actual
+                // Beyond when > 15 → upcoming when 11–15 (4 to 0 days left)
+                // 1st MC upcoming
+                if ($case->first_mc_pct !== null
+                    && $case->first_mc_pct >= -5
+                    && $case->first_mc_pct <= 0
+                    && $case->status_1st_mc !== 'Beyond'
+                ) {
+                    $daysLeft = abs($case->first_mc_pct);
+                    $deadline = $case->lapse_20_day_period
+                        ? Carbon::parse($case->lapse_20_day_period)->addDays(15)->format('M d, Y')
+                        : 'N/A';
+                    $upcomingFields[] = "1st MC (due {$deadline} — {$daysLeft} day(s) left)";
+                }
+
+
+                // -- 2nd MC PCT (integer elapsed days, threshold = 30) --
+                // second_last_mc_pct = days from date_1st_mc_actual to date_2nd_last_mc
+                // 2nd MC upcoming
+                if ($case->second_last_mc_pct !== null
+                    && $case->second_last_mc_pct >= -5
+                    && $case->second_last_mc_pct <= 0
+                    && $case->status_2nd_mc !== 'Beyond'
+                ) {
+                    $daysLeft = abs($case->second_last_mc_pct);
+                    $deadline = $case->date_1st_mc_actual
+                        ? Carbon::parse($case->date_1st_mc_actual)->addDays(30)->format('M d, Y')
+                        : 'N/A';
+                    $upcomingFields[] = "2nd MC (due {$deadline} — {$daysLeft} day(s) left)";
                 }
 
                 return [
@@ -150,13 +247,18 @@ class SendBeyondCaseNotifications extends Command
                     'po_office'        => $case->po_office ?? '-',
                     'upcoming_summary' => implode('; ', $upcomingFields),
                 ];
-            })->filter(function ($case) {
-                return !empty($case['upcoming_summary']);
-            })->values()->toArray();
+
+            // Only keep rows that actually have something upcoming
+            })->filter(fn($c) => !empty($c['upcoming_summary']))
+              ->values()
+              ->toArray();
         };
 
-        // ── Helper: send email to one user ────────────────────────────────────
+        // ── Send helper ───────────────────────────────────────────────────
         $sendEmail = function ($user, $beyondCases, $upcomingCases) use ($reportDate, &$sentCount) {
+            if (empty($beyondCases) && empty($upcomingCases)) {
+                return; // nothing to report for this user
+            }
             try {
                 Mail::to($user->email)
                     ->send(new BeyondCaseNotification(
@@ -166,14 +268,16 @@ class SendBeyondCaseNotifications extends Command
                         $reportDate
                     ));
                 $sentCount++;
-                $this->info("✓ Sent to {$user->role}: {$user->email}");
+                $this->info("✓ Sent to [{$user->role}] {$user->email}");
             } catch (\Exception $e) {
                 Log::error("Failed to send notification to {$user->email}: " . $e->getMessage());
                 $this->error("✗ Failed: {$user->email} — " . $e->getMessage());
             }
         };
 
-        // ── 3. Send to ADMIN — all cases ──────────────────────────────────────
+        // ══════════════════════════════════════════════════════════════════
+        // SEND: Admin — receives ALL cases, no location filter
+        // ══════════════════════════════════════════════════════════════════
         $allBeyondFormatted   = $formatBeyond($allBeyondCases);
         $allUpcomingFormatted = $formatUpcoming($allUpcomingCases);
 
@@ -181,15 +285,31 @@ class SendBeyondCaseNotifications extends Command
             $sendEmail($admin, $allBeyondFormatted, $allUpcomingFormatted);
         }
 
-        // ── 4. Send to CASE MANAGEMENT — all cases ────────────────────────────
+        // ══════════════════════════════════════════════════════════════════
+        // SEND: Case Management — receives ALL cases, no location filter
+        // ══════════════════════════════════════════════════════════════════
         foreach (User::where('role', User::ROLE_CASE_MANAGEMENT)->get() as $cm) {
             $sendEmail($cm, $allBeyondFormatted, $allUpcomingFormatted);
         }
 
-        // ── 5. Send to PROVINCE users — their province only ───────────────────
+        // ══════════════════════════════════════════════════════════════════
+        // SEND: Province roles — only cases currently active AT their role
+        //   Checks: documentTracking.current_role === role
+        //           documentTracking.status === 'Received'
+        // ══════════════════════════════════════════════════════════════════
         foreach ($this->provinceRoleToOffice as $role => $officeName) {
-            $provinceBeyond   = $allBeyondCases->where('po_office', $officeName);
-            $provinceUpcoming = $allUpcomingCases->where('po_office', $officeName);
+
+            $provinceBeyond = $allBeyondCases->filter(
+                fn($case) => $case->documentTracking
+                    && $case->documentTracking->current_role === $role
+                    && $case->documentTracking->status === 'Received'
+            );
+
+            $provinceUpcoming = $allUpcomingCases->filter(
+                fn($case) => $case->documentTracking
+                    && $case->documentTracking->current_role === $role
+                    && $case->documentTracking->status === 'Received'
+            );
 
             if ($provinceBeyond->isEmpty() && $provinceUpcoming->isEmpty()) {
                 $this->info("Nothing to report for {$officeName}, skipping.");
