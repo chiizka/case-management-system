@@ -34,6 +34,7 @@ class FrontController extends Controller
 
         if ($isProvince) {
             $provinceName = $user->getProvinceName();
+            $caseManagementActiveCases = 0; 
 
             // Base query: cases received by this province
             $receivedByProvince = CaseFile::where('po_office', $provinceName)
@@ -81,9 +82,9 @@ $totalCases = collect()
     ->unique()
     ->count();
         } else {
-                    // Regional roles: system-wide counts, no scoping
+            // Regional roles: system-wide counts, no scoping
             $activeCases         = CaseFile::where('overall_status', 'Active')->count();
-            $actualDisposedCases = CaseFile::where('overall_status', 'Completed')->count(); // Regional completions
+            $actualDisposedCases = CaseFile::where('overall_status', 'Completed')->count();
             $disposedCases       = CaseFile::where('overall_status', 'Disposed')->count();
             $misDisposedCases = CaseFile::where('overall_status', 'Active')
                 ->whereNotNull('date_signed_mis')
@@ -99,6 +100,14 @@ $totalCases = collect()
                 ->orderBy('po_office')
                 ->get();
             $totalCases          = CaseFile::count();
+
+            // ── NEW: Active cases currently at Case Management ──
+            $caseManagementActiveCases = CaseFile::where('overall_status', 'Active')
+                ->whereHas('documentTracking', fn($q) => $q
+                    ->where('current_role', 'case_management')
+                    ->where('status', 'Received')
+                )
+                ->count();
         }
 
         // ── Active Cases Modal Breakdown ──────────────────────────────────────
@@ -269,6 +278,7 @@ $totalCases = collect()
             'documentsInTransitPercent',
             'documentsPendingPercent',
             'documentsReceivedPercent',
+            'caseManagementActiveCases',
             'activeByRole',
             'isProvince'
         ));

@@ -2,7 +2,6 @@
 @section('content')
 
 <div id="content">
-    <!-- Begin Page Content -->
     <div class="container-fluid">
 
         <!-- Page Heading -->
@@ -23,15 +22,12 @@
 
             <!-- PROVINCIAL VIEW: Total Handled, Active, Disposed -->
 
-            <!-- Total Cases Handled -->
             <div class="col-xl-4 col-md-6 mb-4">
                 <div class="card border-left-secondary shadow h-100 py-2">
                     <div class="card-body">
                         <div class="row no-gutters align-items-center">
                             <div class="col mr-2">
-                                <div class="text-xs font-weight-bold text-secondary text-uppercase mb-1">
-                                    Total Cases Handled
-                                </div>
+                                <div class="text-xs font-weight-bold text-secondary text-uppercase mb-1">Total Cases Handled</div>
                                 <div class="h5 mb-0 font-weight-bold text-gray-800">{{ $totalCases }}</div>
                                 <div class="mt-1">
                                     <span class="badge" style="font-size: 0.65rem; padding: 0.25rem 0.5rem; background-color: #e67e22; color: white;">
@@ -39,26 +35,19 @@
                                     </span>
                                 </div>
                             </div>
-                            <div class="col-auto">
-                                <i class="fas fa-folder-open fa-2x text-gray-300"></i>
-                            </div>
+                            <div class="col-auto"><i class="fas fa-folder-open fa-2x text-gray-300"></i></div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Active Cases -->
             <div class="col-xl-4 col-md-6 mb-4">
                 <div class="card border-left-success shadow h-100 py-2 clickable-card"
-                     data-toggle="modal"
-                     data-target="#activeCasesModal"
-                     style="cursor: pointer;">
+                     data-toggle="modal" data-target="#activeCasesModal" style="cursor: pointer;">
                     <div class="card-body">
                         <div class="row no-gutters align-items-center">
                             <div class="col mr-2">
-                                <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
-                                    Active Cases
-                                </div>
+                                <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Active Cases</div>
                                 <div class="h5 mb-0 font-weight-bold text-gray-800">{{ $activeCases }}</div>
                                 <div class="mt-1">
                                     <span class="badge" style="font-size: 0.65rem; padding: 0.25rem 0.5rem; background-color: #e67e22; color: white;">
@@ -66,23 +55,18 @@
                                     </span>
                                 </div>
                             </div>
-                            <div class="col-auto">
-                                <i class="fas fa-clipboard-list fa-2x text-gray-300"></i>
-                            </div>
+                            <div class="col-auto"><i class="fas fa-clipboard-list fa-2x text-gray-300"></i></div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Disposed Cases (Provincial) -->
             <div class="col-xl-4 col-md-6 mb-4">
                 <div class="card shadow h-100 py-2" style="border-left: 4px solid #e67e22;">
                     <div class="card-body">
                         <div class="row no-gutters align-items-center">
                             <div class="col mr-2">
-                                <div class="text-xs font-weight-bold text-uppercase mb-1" style="color: #e67e22;">
-                                    Disposed Cases
-                                </div>
+                                <div class="text-xs font-weight-bold text-uppercase mb-1" style="color: #e67e22;">Disposed Cases</div>
                                 <div class="h5 mb-0 font-weight-bold text-gray-800">{{ $disposedCases }}</div>
                                 <div class="mt-1">
                                     <span class="badge" style="font-size: 0.65rem; padding: 0.25rem 0.5rem; background-color: #e67e22; color: white;">
@@ -90,9 +74,7 @@
                                     </span>
                                 </div>
                             </div>
-                            <div class="col-auto">
-                                <i class="fas fa-landmark fa-2x text-gray-300"></i>
-                            </div>
+                            <div class="col-auto"><i class="fas fa-landmark fa-2x text-gray-300"></i></div>
                         </div>
                     </div>
                 </div>
@@ -100,39 +82,55 @@
 
         @else
 
-            <!-- REGIONAL/ADMIN VIEW: Active, Disposed Actual, MIS Disposed, Disposed Provincial -->
+            {{-- REGIONAL/ADMIN VIEW --}}
+            @php $hasCMCard = in_array(Auth::user()->role, ['case_management', 'admin']); @endphp
 
-            <!-- Active Cases Card - clickable to open modal -->
-            <div class="col-xl-3 col-md-6 mb-4">
+            <!-- Active Cases (All) -->
+            <div class="{{ $hasCMCard ? 'col-xl' : 'col-xl-3' }} col-md-6 mb-4">
                 <div class="card border-left-success shadow h-100 py-2 clickable-card"
-                     data-toggle="modal"
-                     data-target="#activeCasesModal"
-                     style="cursor: pointer;">
+                     data-toggle="modal" data-target="#activeCasesModal" style="cursor: pointer;">
                     <div class="card-body">
                         <div class="row no-gutters align-items-center">
                             <div class="col mr-2">
-                                <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
-                                    Active Cases
-                                </div>
+                                <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Active Cases</div>
                                 <div class="h5 mb-0 font-weight-bold text-gray-800">{{ $activeCases }}</div>
+                                <small class="text-muted" style="font-size: 0.7rem; line-height: 1.4;">
+                                    <i class="fas fa-globe-asia mr-1"></i>All offices, region-wide
+                                </small>
                             </div>
-                            <div class="col-auto">
-                                <i class="fas fa-clipboard-list fa-2x text-gray-300"></i>
-                            </div>
+                            <div class="col-auto"><i class="fas fa-clipboard-list fa-2x text-gray-300"></i></div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Disposed Cases (Actual) - Regional -->
-            <div class="col-xl-3 col-md-6 mb-4">
+            @if($hasCMCard)
+            <!-- Active Cases (Case Management) -->
+            <div class="col-xl col-md-6 mb-4">
+                <div class="card border-left-warning shadow h-100 py-2">
+                    <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Active Cases (Case Management)</div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800">{{ $caseManagementActiveCases }}</div>
+                                <small class="text-muted" style="font-size: 0.7rem; line-height: 1.4;">
+                                    <i class="fas fa-folder-open mr-1"></i>Currently at Case Management
+                                </small>
+                            </div>
+                            <div class="col-auto"><i class="fas fa-briefcase fa-2x text-gray-300"></i></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            @endif
+
+            <!-- Disposed Cases (Actual) -->
+            <div class="{{ $hasCMCard ? 'col-xl' : 'col-xl-3' }} col-md-6 mb-4">
                 <div class="card border-left-primary shadow h-100 py-2">
                     <div class="card-body">
                         <div class="row no-gutters align-items-center">
                             <div class="col mr-2">
-                                <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
-                                    Disposed Cases (Actual)
-                                </div>
+                                <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Disposed Cases (Actual)</div>
                                 <div class="h5 mb-0 font-weight-bold text-gray-800">{{ $actualDisposedCases }}</div>
                                 <div class="mt-1">
                                     <span class="badge badge-primary" style="font-size: 0.65rem; padding: 0.25rem 0.5rem;">
@@ -140,26 +138,20 @@
                                     </span>
                                 </div>
                             </div>
-                            <div class="col-auto">
-                                <i class="fas fa-gavel fa-2x text-gray-300"></i>
-                            </div>
+                            <div class="col-auto"><i class="fas fa-gavel fa-2x text-gray-300"></i></div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- MIS Disposed Cases - Regional (clickable) -->
-            <div class="col-xl-3 col-md-6 mb-4">
+            <!-- MIS Disposed Cases -->
+            <div class="{{ $hasCMCard ? 'col-xl' : 'col-xl-3' }} col-md-6 mb-4">
                 <div class="card border-left-info shadow h-100 py-2 clickable-card"
-                     data-toggle="modal"
-                     data-target="#misDisposedModal"
-                     style="cursor: pointer;">
+                     data-toggle="modal" data-target="#misDisposedModal" style="cursor: pointer;">
                     <div class="card-body">
                         <div class="row no-gutters align-items-center">
                             <div class="col mr-2">
-                                <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
-                                    MIS Disposed Cases
-                                </div>
+                                <div class="text-xs font-weight-bold text-info text-uppercase mb-1">MIS Disposed Cases</div>
                                 <div class="h5 mb-0 font-weight-bold text-gray-800">{{ $misDisposedCases }}</div>
                                 <div class="mt-1">
                                     <span class="badge badge-info" style="font-size: 0.65rem; padding: 0.25rem 0.5rem;">
@@ -167,23 +159,19 @@
                                     </span>
                                 </div>
                             </div>
-                            <div class="col-auto">
-                                <i class="fas fa-database fa-2x text-gray-300"></i>
-                            </div>
+                            <div class="col-auto"><i class="fas fa-database fa-2x text-gray-300"></i></div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Disposed Cases - Provincial -->
-            <div class="col-xl-3 col-md-6 mb-4">
+            <!-- Disposed Cases (Provincial) -->
+            <div class="{{ $hasCMCard ? 'col-xl' : 'col-xl-3' }} col-md-6 mb-4">
                 <div class="card shadow h-100 py-2" style="border-left: 4px solid #e67e22;">
                     <div class="card-body">
                         <div class="row no-gutters align-items-center">
                             <div class="col mr-2">
-                                <div class="text-xs font-weight-bold text-uppercase mb-1" style="color: #e67e22;">
-                                    Disposed Cases (Provincial)
-                                </div>
+                                <div class="text-xs font-weight-bold text-uppercase mb-1" style="color: #e67e22;">Disposed Cases (Provincial)</div>
                                 <div class="h5 mb-0 font-weight-bold text-gray-800">{{ $disposedCases }}</div>
                                 <div class="mt-1">
                                     <span class="badge" style="font-size: 0.65rem; padding: 0.25rem 0.5rem; background-color: #e67e22; color: white;">
@@ -191,9 +179,7 @@
                                     </span>
                                 </div>
                             </div>
-                            <div class="col-auto">
-                                <i class="fas fa-landmark fa-2x text-gray-300"></i>
-                            </div>
+                            <div class="col-auto"><i class="fas fa-landmark fa-2x text-gray-300"></i></div>
                         </div>
                     </div>
                 </div>
@@ -202,6 +188,7 @@
         @endif
 
         </div>
+        {{-- End Statistics Cards Row --}}
 
         <!-- Content Row - Charts -->
         <div class="row">
@@ -218,8 +205,7 @@
                                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                 <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
                             </a>
-                            <div class="dropdown-menu dropdown-menu-right shadow animated--fade-in"
-                                aria-labelledby="dropdownMenuLink">
+                            <div class="dropdown-menu dropdown-menu-right shadow animated--fade-in" aria-labelledby="dropdownMenuLink">
                                 <div class="dropdown-header">Filter:</div>
                                 <a class="dropdown-item" href="#">This Month</a>
                                 <a class="dropdown-item" href="#">This Year</a>
@@ -258,7 +244,6 @@
                                         </p>
                                     </div>
                                 </div>
-
                                 <div class="row text-sm mb-2" style="font-size: 0.75rem;">
                                     <div class="col-6">
                                         <small class="text-muted d-block">From:</small>
@@ -277,7 +262,6 @@
                                         @endif
                                     </div>
                                 </div>
-
                                 <div class="d-flex justify-content-between align-items-center">
                                     <small class="text-muted">{{ $doc->transferred_at ? $doc->transferred_at->format('M d, Y') : 'N/A' }}</small>
                                     <button class="btn btn-sm btn-success receive-doc-btn"
@@ -306,7 +290,9 @@
                     </div>
                 </div>
             </div>
+
         </div>
+        {{-- End Charts Row --}}
 
     </div>
     <!-- /.container-fluid -->
@@ -314,9 +300,8 @@
 <!-- End of Main Content -->
 
 {{-- ===================================================================== --}}
-{{--            MIS DISPOSED CASES MODALLL                                --}}
+{{--  MIS DISPOSED CASES MODAL                                             --}}
 {{-- ===================================================================== --}}
-
 <div class="modal fade" id="misDisposedModal" tabindex="-1" role="dialog" aria-labelledby="misDisposedModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg" role="document">
         <div class="modal-content">
@@ -326,14 +311,13 @@
                     <span class="badge badge-light ml-2" style="font-size: 0.85rem;">{{ $misDisposedCases }}</span>
                 </h5>
                 <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">×</span>
+                    <span aria-hidden="true">&times;</span>
                 </button>
             </div>
             <div class="modal-body">
                 <p class="text-muted mb-3" style="font-size: 0.85rem;">
                     Active cases where a <strong>Date Signed (MIS)</strong> has been recorded.
                 </p>
-
                 @if($misDisposedCasesList->count() > 0)
                     <div class="table-responsive">
                         <table class="table table-bordered table-hover table-sm">
@@ -385,9 +369,8 @@
 </div>
 
 {{-- ===================================================================== --}}
-{{--            ACTIVE CASES DISTRIBUTION MODAL                            --}}
+{{--  ACTIVE CASES DISTRIBUTION MODAL                                      --}}
 {{-- ===================================================================== --}}
-
 <div class="modal fade" id="activeCasesModal" tabindex="-1" role="dialog" aria-labelledby="activeCasesModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg" role="document">
         <div class="modal-content">
@@ -401,10 +384,9 @@
                     @endif
                 </h5>
                 <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">×</span>
+                    <span aria-hidden="true">&times;</span>
                 </button>
             </div>
-
             <div class="modal-body">
                 <!-- Total summary -->
                 <div class="text-center mb-4 pb-3 border-bottom">
@@ -415,30 +397,19 @@
                             Total Active Cases
                         @endif
                     </h4>
-                    <h2 class="display-4 font-weight-bold text-dark mb-0">
-                        {{ $activeCases }}
-                    </h2>
+                    <h2 class="display-4 font-weight-bold text-dark mb-0">{{ $activeCases }}</h2>
                 </div>
 
                 @if($isProvince)
-                    {{-- ── Province view: simple single-office breakdown ── --}}
                     <div class="text-center py-3">
                         <div class="card border-left-success shadow-sm mx-auto" style="max-width: 320px;">
                             <div class="card-body py-4">
                                 <i class="fas fa-map-marker-alt fa-3x text-success mb-3 d-block"></i>
-                                <h5 class="font-weight-bold text-dark mb-1">
-                                    {{ Auth::user()->getProvinceName() }} Provincial Office
-                                </h5>
-                                <p class="text-muted mb-3" style="font-size: 0.85rem;">
-                                    Cases currently active in your office
-                                </p>
-                                <h2 class="display-4 font-weight-bold text-success mb-0">
-                                    {{ $activeCases }}
-                                </h2>
+                                <h5 class="font-weight-bold text-dark mb-1">{{ Auth::user()->getProvinceName() }} Provincial Office</h5>
+                                <p class="text-muted mb-3" style="font-size: 0.85rem;">Cases currently active in your office</p>
+                                <h2 class="display-4 font-weight-bold text-success mb-0">{{ $activeCases }}</h2>
                                 <small class="text-muted">active cases</small>
-
                                 <hr class="my-3">
-
                                 <div class="row text-center">
                                     <div class="col-6">
                                         <div class="font-weight-bold text-primary">{{ $totalCases }}</div>
@@ -452,11 +423,8 @@
                             </div>
                         </div>
                     </div>
-
                 @else
-                    {{-- ── Admin / regional view: full breakdown ── --}}
                     <div class="row">
-
                         <!-- Central Offices -->
                         <div class="col-md-6 mb-4">
                             <h6 class="font-weight-bold text-muted mb-3 text-uppercase">
@@ -481,7 +449,6 @@
                                 </div>
                             </div>
                         </div>
-
                         <!-- Provincial Offices -->
                         <div class="col-md-6 mb-4">
                             <h6 class="font-weight-bold text-muted mb-3 text-uppercase">
@@ -514,11 +481,9 @@
                                 </div>
                             </div>
                         </div>
-
                     </div>
                 @endif
             </div>
-
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
                 <a href="{{ route('documents.tracking') }}" class="btn btn-primary">
@@ -535,7 +500,6 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
 <script>
 
-// Cases Trend Area Chart
 var ctx = document.getElementById("casesAreaChart");
 if (ctx) {
     new Chart(ctx, {
@@ -589,12 +553,10 @@ if (ctx) {
     });
 }
 
-// Receive document
 $(document).ready(function() {
 
     $(document).on('click', '.receive-doc-btn', function(e) {
         e.preventDefault();
-
         const docId  = $(this).data('doc-id');
         const caseNo = $(this).data('case-no');
 
@@ -646,13 +608,11 @@ $(document).ready(function() {
         }
     });
 
-    // Hover effect for clickable card
     $('.clickable-card').hover(
         function() { $(this).addClass('shadow-lg').css('transform', 'translateY(-5px)'); },
         function() { $(this).removeClass('shadow-lg').css('transform', 'translateY(0)'); }
     );
 
-    // Subtle badge animation on modal open
     $('#activeCasesModal').on('show.bs.modal', function () {
         $(this).find('.badge-pill').each(function(i) {
             $(this).css({ opacity: 0 }).delay(i * 80).animate({ opacity: 1 }, 400);
