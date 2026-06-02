@@ -52,6 +52,87 @@
             height: 100vh !important;
             overflow-y: auto;
             overflow-x: hidden;
+            display: flex !important;
+            flex-direction: column !important;
+        }
+
+        /* Spacer to push profile/logout to bottom */
+        .sidebar-spacer {
+            flex: 1;
+        }
+
+        /* Profile + Logout section at sidebar bottom */
+        .sidebar-user {
+            padding: 1rem 0.75rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.15);
+            background: rgba(0, 0, 0, 0.1);
+        }
+
+        /* Avatar + name — clickable profile link */
+        .sidebar-user .user-profile-link {
+            display: flex;
+            align-items: center;
+            color: rgba(255, 255, 255, 0.85);
+            text-decoration: none;
+            border-radius: 6px;
+            padding: 0.3rem 0.4rem;
+            transition: background 0.2s, color 0.2s;
+            flex: 1;
+            min-width: 0;
+        }
+
+        .sidebar-user .user-profile-link:hover {
+            background: rgba(255, 255, 255, 0.15);
+            color: #fff;
+            text-decoration: none;
+        }
+
+        .sidebar-user .user-avatar {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            border: 2px solid rgba(255,255,255,0.4);
+            margin-right: 0.65rem;
+            flex-shrink: 0;
+        }
+
+        .sidebar-user .user-name {
+            font-weight: 700;
+            font-size: 0.82rem;
+            color: inherit;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* Logout icon button */
+        .sidebar-user .user-logout-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: rgba(255, 255, 255, 0.6);
+            text-decoration: none;
+            width: 34px;
+            height: 34px;
+            border-radius: 6px;
+            flex-shrink: 0;
+            transition: background 0.2s, color 0.2s;
+            font-size: 0.9rem;
+        }
+
+        .sidebar-user .user-logout-btn:hover {
+            background: rgba(231, 74, 59, 0.3);
+            color: #ff8a80;
+            text-decoration: none;
+        }
+
+        /* Collapsed sidebar — hide name, keep avatar and logout icon */
+        .sidebar.toggled .sidebar-user .user-name {
+            display: none;
+        }
+
+        .sidebar.toggled .sidebar-user .user-avatar {
+            margin-right: 0;
         }
 
         /* Push content to the right to account for fixed sidebar */
@@ -75,29 +156,13 @@
             border-radius: 4px;
         }
 
-        /* Fix topbar */
-        .topbar {
-            position: fixed !important;
-            top: 0;
-            right: 0;
-            left: 224px;
-            z-index: 1040;
-            transition: left 0.3s;
-        }
-
-        /* Adjust left when sidebar is collapsed */
-        body.sidebar-toggled .topbar {
-            left: 6.5rem;
-        }
-
-        /* Push content down so it doesn't hide behind the fixed topbar */
-        #content-wrapper .container-fluid {
+        /* Content starts at top — no topbar offset needed */
+        #content-wrapper {
             padding-top: 1.5rem;
         }
 
-        /* Add top offset to content-wrapper to account for topbar height (~70px) */
-        #content-wrapper {
-            padding-top: 70px;
+        #content-wrapper .container-fluid {
+            padding-top: 0;
         }
     </style>
 </head>
@@ -128,16 +193,10 @@
                     <span>Users</span>
                 </a>
             </li>
-            {{-- <li class="nav-item">
-                <a class="nav-link" href="cards.html">
-                    <i class="fas fa-fw fa-user-tag"></i>
-                    <span>Roles</span>
-                </a>
-            </li> --}}
             <hr class="sidebar-divider">
             @endif
 
-            <!-- Cases Section - Available for Admin, Province, MALSU, Case Management, Records -->
+            <!-- Cases Section -->
             @if(Auth::user()->isAdmin() || Auth::user()->isProvince() || Auth::user()->isMalsu() || Auth::user()->isCaseManagement() || Auth::user()->isRecords())
             <div class="sidebar-heading">Cases</div>
             <li class="nav-item">
@@ -178,139 +237,40 @@
             <hr class="sidebar-divider">
             @endif
 
-            {{-- <div class="sidebar-heading">Addons</div>
-            
-            <!-- Pages - Available for All -->
-            <li class="nav-item">
-                <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapsePages" aria-expanded="true" aria-controls="collapsePages">
-                    <i class="fas fa-fw fa-folder"></i>
-                    <span>Pages</span>
-                </a>
-                <div id="collapsePages" class="collapse" aria-labelledby="headingPages" data-parent="#accordionSidebar">
-                    <div class="bg-white py-2 collapse-inner rounded">
-                        <h6 class="collapse-header">Login Screens:</h6>
-                        <a class="collapse-item" href="login.html">Login</a>
-                        <a class="collapse-item" href="register.html">Register</a>
-                        <a class="collapse-item" href="forgot-password.html">Forgot Password</a>
-                        <div class="collapse-divider"></div>
-                        <h6 class="collapse-header">Other Pages:</h6>
-                        <a class="collapse-item" href="404.html">404 Page</a>
-                        <a class="collapse-item" href="blank.html">Blank Page</a>
-                    </div>
-                </div>
-            </li>
-
-            <!-- Charts - Only for Admin -->
-            @if(Auth::user()->isAdmin())
-            <li class="nav-item">
-                <a class="nav-link" href="charts.html">
-                    <i class="fas fa-fw fa-chart-area"></i>
-                    <span>Charts</span></a>
-            </li>
-            @endif
-
-            <!-- Tables - Available for Admin and Case Management -->
-            @if(Auth::user()->isAdmin() || Auth::user()->isCaseManagement())
-            <li class="nav-item">
-                <a class="nav-link" href="tables.html">
-                    <i class="fas fa-fw fa-table"></i>
-                    <span>Tables</span></a>
-            </li>
-            @endif --}}
-
-            {{-- <hr class="sidebar-divider d-none d-md-block"> --}}
+            <!-- Sidebar toggle button -->
             <div class="text-center d-none d-md-inline">
                 <button class="rounded-circle border-0" id="sidebarToggle"></button>
+            </div>
+
+            <!-- Spacer pushes user section to bottom -->
+            <div class="sidebar-spacer"></div>
+
+            <!-- Profile + Logout pinned to sidebar bottom -->
+            <div class="sidebar-user">
+                <div class="d-flex align-items-center justify-content-between">
+                    <!-- Avatar + name → links to profile -->
+                    <a href="{{ route('profile.index') }}" class="user-profile-link" title="View Profile">
+                        <img class="user-avatar" src="{{ asset('img/undraw_profile.svg') }}" alt="Profile">
+                        <span class="user-name">{{ Auth::user() ? Auth::user()->fname . ' ' . Auth::user()->lname : 'Guest' }}</span>
+                    </a>
+                    <!-- Logout icon only -->
+                    <a href="#" class="user-logout-btn" data-toggle="modal" data-target="#logoutModal" title="Logout">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </a>
+                </div>
             </div>
         </ul>
         <!-- End of Sidebar -->
 
         <!-- Content Wrapper -->
         <div id="content-wrapper" class="d-flex flex-column">
-            <!-- Topbar -->
-            <nav class="navbar navbar-expand navbar-light bg-white topbar mb-4 static-top shadow">
-                <button id="sidebarToggleTop" class="btn btn-link d-md-none rounded-circle mr-3">
+
+            <!-- Mobile sidebar toggle (visible on small screens only) -->
+            <div class="d-md-none px-3 py-2">
+                <button id="sidebarToggleTop" class="btn btn-link rounded-circle">
                     <i class="fa fa-bars"></i>
                 </button>
-                {{-- <form class="d-none d-sm-inline-block form-inline mr-auto ml-md-3 my-2 my-md-0 mw-100 navbar-search">
-                    ...
-                </form> --}}
-                <ul class="navbar-nav ml-auto">
-                    <li class="nav-item dropdown no-arrow d-sm-none">
-                        <a class="nav-link dropdown-toggle" href="#" id="searchDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                            <i class="fas fa-search fa-fw"></i>
-                        </a>
-                        <div class="dropdown-menu dropdown-menu-right p-3 shadow animated--grow-in" aria-labelledby="searchDropdown">
-                            <form class="form-inline mr-auto w-100 navbar-search">
-                                <div class="input-group">
-                                    <input type="text" class="form-control bg-light border-0 small" placeholder="Search for..." aria-label="Search" aria-describedby="basic-addon2">
-                                    <div class="input-group-append">
-                                        <button class="btn btn-primary" type="button">
-                                            <i class="fas fa-search fa-sm"></i>
-                                        </button>
-                                    </div>
-                                </div>
-                            </form>
-                        </div>
-                    </li>
-
-                    <!-- ================================================ -->
-                    <!-- NOTIFICATION BELL — Beyond Deadline Cases         -->
-                    <!-- ================================================ -->
-                    <li class="nav-item dropdown no-arrow mx-1" id="notificationDropdown">
-                        <a class="nav-link dropdown-toggle" href="#" id="notifToggle" role="button"
-                           data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                            <i class="fas fa-bell fa-fw"></i>
-                            <span class="badge badge-danger badge-counter d-none" id="notifBadge"></span>
-                        </a>
-
-                        <div class="dropdown-list dropdown-menu dropdown-menu-right shadow animated--grow-in"
-                             aria-labelledby="notifToggle"
-                             style="min-width: 360px; max-width: 400px; max-height: 480px; overflow-y: auto;">
-
-                            <h6 class="dropdown-header d-flex justify-content-between align-items-center">
-                                <span><i class="fas fa-exclamation-triangle text-danger mr-1"></i> Beyond Deadline Cases</span>
-                                <span class="badge badge-pill badge-danger" id="notifHeaderCount" style="display:none;"></span>
-                            </h6>
-
-                            <!-- Items injected by JS -->
-                            <div id="notifItems">
-                                <div class="dropdown-item text-center text-muted py-3" id="notifEmpty">
-                                    <i class="fas fa-check-circle text-success mr-1"></i> No cases beyond deadline
-                                </div>
-                            </div>
-
-                            <a class="dropdown-item text-center small text-gray-500 py-2 border-top"
-                               href="{{ route('case.index') }}">
-                                <i class="fas fa-folder-open mr-1"></i> Go to Active Cases
-                            </a>
-                        </div>
-                    </li>
-                    <!-- ================================================ -->
-
-                    <div class="topbar-divider d-none d-sm-block"></div>
-                    <li class="nav-item dropdown no-arrow">
-                        <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                            <span class="mr-2 d-none d-lg-inline text-gray-600 small">
-                                {{ Auth::user() ? Auth::user()->fname . ' ' . Auth::user()->lname : 'Guest' }}
-                            </span>
-                            <img class="img-profile rounded-circle" src="{{ asset('img/undraw_profile.svg') }}">
-                        </a>
-                        <div class="dropdown-menu dropdown-menu-right shadow animated--grow-in" aria-labelledby="userDropdown">
-                            <a class="dropdown-item" href="{{ route('profile.index') }}">
-                                <i class="fas fa-user fa-sm fa-fw mr-2 text-gray-400"></i>
-                                Profile
-                            </a>
-                            <div class="dropdown-divider"></div>
-                            <a class="dropdown-item" href="#" data-toggle="modal" data-target="#logoutModal">
-                                <i class="fas fa-sign-out-alt fa-sm fa-fw mr-2 text-gray-400"></i>
-                                Logout
-                            </a>
-                        </div>
-                    </li>
-                </ul>
-            </nav>
-            <!-- End of Topbar -->
+            </div>
 
             @yield('content')
 
@@ -335,6 +295,10 @@
                     </div>
                 </div>
             </div>
+        </div>
+        <!-- End of Content Wrapper -->
+    </div>
+    <!-- End of Page Wrapper -->
 
     <!-- ============================================ -->
     <!-- CRITICAL: Load Core JavaScript Libraries FIRST -->
@@ -352,7 +316,7 @@
     <!-- SB Admin 2 -->
     <script src="{{ asset('js/sb-admin-2.min.js') }}"></script>
 
-    <!-- DataTables - ONLY if used on multiple pages -->
+    <!-- DataTables -->
     <script src="{{ asset('vendor/datatables/jquery.dataTables.min.js') }}"></script>
     <script src="{{ asset('vendor/datatables/dataTables.bootstrap4.min.js') }}"></script>
 
@@ -364,9 +328,10 @@
     <!-- ============================================ -->
     @stack('scripts')
 
-    <!-- ============================================ -->
-    <!-- NOTIFICATION BELL SCRIPT                     -->
-    <!-- ============================================ -->
+    {{-- ============================================
+    NOTIFICATION BELL SCRIPT — commented out for now
+    ================================================
+
     <script>
     (function () {
         const POLL_INTERVAL_MS = 60000;
@@ -398,7 +363,6 @@
             const $itemsBox    = $('#notifItems');
             const $empty       = $('#notifEmpty');
 
-            // Update badge
             if (count > 0) {
                 $badge.text(count > 99 ? '99+' : count).removeClass('d-none');
                 $headerCount.text(count + (count === 1 ? ' case' : ' cases')).show();
@@ -407,7 +371,6 @@
                 $headerCount.hide().text('');
             }
 
-            // Shake bell when count increases
             if (count > lastCount && lastCount !== null) {
                 $('#notifToggle .fa-bell')
                     .addClass('text-danger')
@@ -420,7 +383,6 @@
             }
             lastCount = count;
 
-            // Rebuild items list
             $itemsBox.find('.notif-item').remove();
 
             if (items.length === 0) {
@@ -431,7 +393,6 @@
             $empty.hide();
 
             items.forEach(function (item) {
-                // Red pill badge for each Beyond field
                 const pills = item.beyond_fields.map(function (label) {
                     return '<span class="badge badge-danger mr-1" style="font-size:0.7rem;">' + label + '</span>';
                 }).join('');
@@ -467,12 +428,10 @@
             });
         }
 
-        // Reset badge when user opens the dropdown
         $(document).on('shown.bs.dropdown', '#notificationDropdown', function () {
             $.post(markSeenUrl, { _token: csrfToken });
         });
 
-        // Bell shake keyframe
         $('<style>').text(
             '@keyframes bell-shake {' +
             '  0%,100% { transform: rotate(0deg); }' +
@@ -483,12 +442,12 @@
             '}'
         ).appendTo('head');
 
-        // Init
         fetchNotifications();
         setInterval(fetchNotifications, POLL_INTERVAL_MS);
 
     })();
     </script>
+    ============================================ --}}
 
 </body>
 
