@@ -23,7 +23,7 @@
     background-color: #f8f9fc !important;
     box-shadow: 0 2px 5px rgba(0,0,0,0.15);
     white-space: nowrap;
-    font-weight: 600;
+    font-weight: 750;
     padding: 0.75rem 0.7rem;
 }
 
