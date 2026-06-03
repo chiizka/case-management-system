@@ -1,11 +1,12 @@
 @extends('frontend.layouts.app')
 @section('content')
 
-<div id="content">
-    <div class="container-fluid">
+<!-- Added the custom responsive-dashboard-wrapper class to handle mobile vs desktop views gracefully -->
+<div id="content" class="d-flex flex-column flex-grow-1 responsive-dashboard-wrapper">
+    <div class="container-fluid d-flex flex-column flex-grow-1 responsive-container-wrapper">
 
         <!-- Page Heading -->
-        <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <div class="d-sm-flex align-items-center justify-content-between mb-4 flex-shrink-0">
             <h1 class="h3 mb-0 text-gray-800">Dashboard</h1>
             @if($isProvince)
                 <span class="badge badge-primary px-3 py-2" style="font-size: 0.85rem;">
@@ -16,7 +17,7 @@
         </div>
 
         <!-- Content Row - Statistics Cards -->
-        <div class="row">
+        <div class="row flex-shrink-0">
 
         @if($isProvince)
 
@@ -191,12 +192,12 @@
         {{-- End Statistics Cards Row --}}
 
         <!-- Content Row - Charts -->
-        <div class="row">
+        <div class="row align-items-stretch flex-grow-1 bottom-content-row" style="min-height: 0;">
 
             <!-- Cases Trend Chart -->
-            <div class="col-xl-8 col-lg-7">
-                <div class="card shadow mb-4" style="height: 500px;">
-                    <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+            <div class="col-xl-8 col-lg-7 d-flex flex-column pb-4 chart-column-wrapper">
+                <div class="card shadow h-100 d-flex flex-column" style="min-height: 0;">
+                    <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between flex-shrink-0">
                         <h6 class="m-0 font-weight-bold text-primary">
                             {{ $isProvince ? Auth::user()->getProvinceName() . ' — Cases Overview (Last 6 Months)' : 'Cases Overview (Last 6 Months)' }}
                         </h6>
@@ -214,79 +215,37 @@
                             </div>
                         </div>
                     </div>
-                    <div class="card-body" style="height: calc(100% - 60px);">
-                        <div class="chart-area" style="height: 100%;">
+                    <div class="card-body d-flex flex-column flex-grow-1 card-chart-body" style="min-height: 0; padding: 1.25rem;">
+                        <div class="chart-area flex-grow-1" style="position: relative; width: 100%; height: 100%;">
                             <canvas id="casesAreaChart"></canvas>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Pending Documents Widget -->
-            <div class="col-xl-4 col-lg-5">
-                <div class="card shadow mb-4" style="height: 500px; display: flex; flex-direction: column;">
-                    <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-                        <h6 class="m-0 font-weight-bold text-warning">
-                            <i class="fas fa-clock"></i> Pending Documents
+            <!-- Deadline Alerts Widget -->
+            <div class="col-xl-4 col-lg-5 d-flex flex-column pb-4 alerts-column-wrapper">
+                <div class="card shadow h-100 d-flex flex-column" style="min-height: 0;">
+                    <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between flex-shrink-0">
+                        <h6 class="m-0 font-weight-bold text-danger">
+                            <i class="fas fa-exclamation-triangle"></i> Deadline Alerts
                         </h6>
-                        @if($totalPendingDocs > 0)
-                            <span class="badge badge-warning badge-pill">{{ $totalPendingDocs }}</span>
-                        @endif
+                        <span class="badge badge-danger badge-pill d-none" id="widgetNotifBadge">0</span>
                     </div>
-                    <div class="card-body" style="flex: 1; overflow-y: auto; overflow-x: hidden;">
-                        @forelse($pendingDocuments as $doc)
-                            <div class="border-left-warning shadow-sm p-3 mb-3" style="border-left: 4px solid #f6c23e !important;">
-                                <div class="d-flex justify-content-between align-items-start mb-2">
-                                    <div>
-                                        <h6 class="font-weight-bold text-primary mb-1">{{ $doc->case->case_no ?? 'N/A' }}</h6>
-                                        <p class="text-sm text-gray-800 mb-1" style="font-size: 0.85rem;">
-                                            {{ Str::limit($doc->case->establishment_name ?? 'N/A', 35) }}
-                                        </p>
-                                    </div>
-                                </div>
-                                <div class="row text-sm mb-2" style="font-size: 0.75rem;">
-                                    <div class="col-6">
-                                        <small class="text-muted d-block">From:</small>
-                                        <strong>{{ $doc->transferredBy ? $doc->transferredBy->fname : 'System' }}</strong>
-                                    </div>
-                                    <div class="col-6 text-right">
-                                        <small class="text-muted d-block">Waiting:</small>
-                                        @if($doc->transferred_at)
-                                            @php
-                                                $days = floor($doc->transferred_at->diffInDays(now()));
-                                                $badgeClass = $days > 7 ? 'danger' : ($days > 3 ? 'warning' : 'success');
-                                            @endphp
-                                            <span class="badge badge-{{ $badgeClass }}">{{ $days }} days</span>
-                                        @else
-                                            <span class="badge badge-secondary">N/A</span>
-                                        @endif
-                                    </div>
-                                </div>
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <small class="text-muted">{{ $doc->transferred_at ? $doc->transferred_at->format('M d, Y') : 'N/A' }}</small>
-                                    <button class="btn btn-sm btn-success receive-doc-btn"
-                                            data-doc-id="{{ $doc->id }}"
-                                            data-case-no="{{ $doc->case->case_no ?? 'N/A' }}"
-                                            style="font-size: 0.75rem; padding: 0.25rem 0.75rem;">
-                                        <i class="fas fa-check"></i> Receive
-                                    </button>
-                                </div>
-                            </div>
-                        @empty
-                            <div class="text-center text-muted py-4">
-                                <i class="fas fa-check-circle fa-3x mb-3 d-block text-success"></i>
-                                <p class="mb-0">No pending documents</p>
-                                <small>All caught up!</small>
-                            </div>
-                        @endforelse
+                    
+                    <!-- Dynamic Items container -->
+                    <div class="card-body alerts-card-scrollable" id="widgetNotifItems" style="overflow-y: auto; overflow-x: hidden; padding: 1.25rem;">
+                        <div class="text-center text-muted py-4 my-auto" id="widgetNotifEmpty">
+                            <i class="fas fa-check-circle fa-3x mb-3 d-block text-success"></i>
+                            <p class="mb-0">No cases beyond deadline</p>
+                            <small>All caught up!</small>
+                        </div>
+                    </div>
 
-                        @if($totalPendingDocs > 5)
-                            <div class="text-center mt-3">
-                                <a href="{{ route('documents.tracking') }}" class="btn btn-sm btn-outline-primary">
-                                    View All {{ $totalPendingDocs }} Documents <i class="fas fa-arrow-right"></i>
-                                </a>
-                            </div>
-                        @endif
+                    <div class="card-footer text-center bg-white border-top py-2 flex-shrink-0">
+                        <a href="{{ route('case.index') }}" class="btn btn-sm btn-link text-primary font-weight-bold" style="font-size: 0.8rem; text-decoration: none;">
+                            <i class="fas fa-folder-open mr-1"></i> Go to Active Cases
+                        </a>
                     </div>
                 </div>
             </div>
@@ -388,7 +347,6 @@
                 </button>
             </div>
             <div class="modal-body">
-                <!-- Total summary -->
                 <div class="text-center mb-4 pb-3 border-bottom">
                     <h4 class="font-weight-bold text-primary mb-1">
                         @if($isProvince)
@@ -424,8 +382,7 @@
                         </div>
                     </div>
                 @else
-                    <div class="row">
-                        <!-- Central Offices -->
+                    <div class="row align-items-stretch">
                         <div class="col-md-6 mb-4">
                             <h6 class="font-weight-bold text-muted mb-3 text-uppercase">
                                 <i class="fas fa-building mr-2"></i> Central Offices
@@ -449,7 +406,6 @@
                                 </div>
                             </div>
                         </div>
-                        <!-- Provincial Offices -->
                         <div class="col-md-6 mb-4">
                             <h6 class="font-weight-bold text-muted mb-3 text-uppercase">
                                 <i class="fas fa-map-marker-alt mr-2"></i> Provincial Offices
@@ -499,7 +455,7 @@
 @push('scripts')
 <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
 <script>
-
+// Chart initialization
 var ctx = document.getElementById("casesAreaChart");
 if (ctx) {
     new Chart(ctx, {
@@ -554,60 +510,7 @@ if (ctx) {
 }
 
 $(document).ready(function() {
-
-    $(document).on('click', '.receive-doc-btn', function(e) {
-        e.preventDefault();
-        const docId  = $(this).data('doc-id');
-        const caseNo = $(this).data('case-no');
-
-        const doReceive = () => {
-            const button = $(`.receive-doc-btn[data-doc-id="${docId}"]`);
-            const orig   = button.html();
-            button.html('<i class="fas fa-spinner fa-spin"></i> Receiving...').prop('disabled', true);
-
-            $.ajax({
-                url: '/documents/' + docId + '/receive',
-                method: 'POST',
-                headers: {
-                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'),
-                    'Accept': 'application/json'
-                },
-                success: function(response) {
-                    if (typeof Swal !== 'undefined') {
-                        Swal.fire({ icon: 'success', title: 'Success!', text: response.message || 'Document received!', timer: 2000, showConfirmButton: false })
-                            .then(() => location.reload());
-                    } else {
-                        alert(response.message || 'Document received!');
-                        location.reload();
-                    }
-                },
-                error: function(xhr) {
-                    button.html(orig).prop('disabled', false);
-                    const msg = xhr.responseJSON?.message || 'Failed to receive document.';
-                    if (typeof Swal !== 'undefined') {
-                        Swal.fire({ icon: 'error', title: 'Error!', text: msg });
-                    } else {
-                        alert(msg);
-                    }
-                }
-            });
-        };
-
-        if (typeof Swal !== 'undefined') {
-            Swal.fire({
-                title: 'Receive Document?',
-                text: 'Case: ' + caseNo,
-                icon: 'question',
-                showCancelButton: true,
-                confirmButtonColor: '#3085d6',
-                cancelButtonColor: '#d33',
-                confirmButtonText: 'Yes, receive it!'
-            }).then(result => { if (result.isConfirmed) doReceive(); });
-        } else {
-            if (confirm('Receive document for case: ' + caseNo + '?')) doReceive();
-        }
-    });
-
+    // Card Hover Interactions
     $('.clickable-card').hover(
         function() { $(this).addClass('shadow-lg').css('transform', 'translateY(-5px)'); },
         function() { $(this).removeClass('shadow-lg').css('transform', 'translateY(0)'); }
@@ -620,6 +523,80 @@ $(document).ready(function() {
     });
 });
 
+// =====================================================================
+// DEADLINE ALERTS LIVE WIDGET POLLING LOGIC
+// =====================================================================
+(function () {
+    const POLL_INTERVAL_MS = 60000;
+    const caseIndexUrl     = "{{ route('case.index') }}";
+    const pendingUrl       = "{{ route('notifications.beyond') }}";
+    const csrfToken        = $('meta[name="csrf-token"]').attr('content');
+
+    function fetchDeadlineAlerts() {
+        $.ajax({
+            url: pendingUrl,
+            method: 'GET',
+            headers: { 'X-CSRF-TOKEN': csrfToken },
+            success: function (response) {
+                if (!response.success) return;
+                renderWidgetAlerts(response.count, response.items);
+            },
+            error: function () {
+                // Silently bypass connection hiccups
+            }
+        });
+    }
+
+    function renderWidgetAlerts(count, items) {
+        const $badge    = $('#widgetNotifBadge');
+        const $itemsBox = $('#widgetNotifItems');
+        const $empty    = $('#widgetNotifEmpty');
+
+        // Update Header Counter Badge
+        if (count > 0) {
+            $badge.text(count).removeClass('d-none');
+            $empty.hide();
+        } else {
+            $badge.addClass('d-none').text('0');
+            $itemsBox.find('.widget-notif-item').remove();
+            $empty.show();
+            return;
+        }
+
+        // Rebuild alert UI elements inside panel container
+        $itemsBox.find('.widget-notif-item').remove();
+
+        items.forEach(function (item) {
+            const pills = item.beyond_fields.map(function (label) {
+                return '<span class="badge badge-danger mr-1" style="font-size:0.65rem; padding: 0.2rem 0.4rem;">' + label + '</span>';
+            }).join('');
+
+            const html =
+                '<div class="widget-notif-item border-left-danger shadow-sm p-3 mb-3" style="border-left: 4px solid #e74a3b !important; background-color: #fdfefe;">' +
+                    '<div class="d-flex justify-content-between align-items-start mb-1">' +
+                        '<div>' +
+                            '<h6 class="font-weight-bold text-dark mb-1" style="font-size:0.85rem; line-height: 1.2;">' + item.establishment + '</h6>' +
+                            '<div style="font-size: 0.75rem; color: #5a5c69;">' +
+                                'Case No: <strong class="text-primary">' + item.case_no + '</strong>' +
+                            '</div>' +
+                        '</div>' +
+                    '</div>' +
+                    '<div class="d-flex justify-content-between align-items-center mt-2">' +
+                        '<div class="flex-wrap d-flex">' + pills + '</div>' +
+                        '<span class="badge badge-light text-muted border px-2 py-1" style="font-size:0.65rem;">' +
+                            '<i class="fas fa-map-marker-alt text-orange mr-1"></i>' + item.po_office +
+                        '</span>' +
+                    '</div>' +
+                '</div>';
+
+            $itemsBox.append(html);
+        });
+    }
+
+    // Init Core execution routines
+    fetchDeadlineAlerts();
+    setInterval(fetchDeadlineAlerts, POLL_INTERVAL_MS);
+})();
 </script>
 
 <style>
@@ -633,5 +610,62 @@ $(document).ready(function() {
 .clickable-card:active {
     transform: translateY(-2px);
 }
+.text-orange {
+    color: #e67e22;
+}
+
+/* ========================================================================= */
+/* RESPONSIVE LAYOUT CONTROLLER CRITICAL FIX FOR SMARTPHONES                 */
+/* ========================================================================= */
+
+/* Large Desktop screens (Min-width 992px) -> Keep layout locked cleanly */
+@media (min-width: 992px) {
+    .responsive-dashboard-wrapper {
+        height: calc(100vh - 1.5rem) !important;
+        overflow: hidden !important;
+    }
+    .responsive-container-wrapper {
+        height: 100% !important;
+        overflow: hidden !important;
+    }
+    .bottom-content-row {
+        height: 100% !important;
+    }
+    .chart-column-wrapper, .alerts-column-wrapper {
+        height: 100% !important;
+    }
+    .card-chart-body {
+        height: calc(100% - 60px) !important;
+    }
+    .alerts-card-scrollable {
+        flex: 1 1 auto !important;
+    }
+}
+
+/* Mobile Screens (Max-width 991.98px) -> Unlock flow to scroll normally */
+@media (max-width: 991.98px) {
+    .responsive-dashboard-wrapper {
+        height: auto !important;
+        overflow: visible !important;
+    }
+    .responsive-container-wrapper {
+        height: auto !important;
+        overflow: visible !important;
+    }
+    .bottom-content-row {
+        height: auto !important;
+    }
+    .chart-column-wrapper, .alerts-column-wrapper {
+        height: auto !important;
+    }
+    .card-chart-body {
+        height: 380px !important; /* Fixed height for the chart area on phone screens */
+    }
+    .alerts-card-scrollable {
+        max-height: 420px !important; /* Limits the alert widget box size on phone screens */
+        overflow-y: auto !important;   /* Keeps scrolling inside the widget active */
+    }
+}
+/* ========================================================================= */
 </style>
 @endpush
