@@ -132,7 +132,12 @@
                         <td class="editable-cell" data-field="no">{{ $case->no ?? '-' }}</td>
                         <td class="editable-cell" data-field="inspection_id">{{ $case->inspection_id ?? '-' }}</td>
                         <td class="editable-cell" data-field="case_no" style="background-color: #fff3cd !important;">{{ $case->case_no ?? '-' }}</td>
-                        <td class="editable-cell wrap-cell" data-field="establishment_name" style="background-color: #d1ecf1 !important;">{{ $case->establishment_name ?? '-' }}</td>
+                        <td class="editable-cell wrap-cell" data-field="establishment_name" style="background-color: #d1ecf1 !important;">
+                            <span>{{ $case->establishment_name ?? '-' }}</span>
+                            @if($case->establishment_address)
+                                <br><small class="text-muted" style="font-weight: normal; font-size: 0.75rem;">{{ $case->establishment_address }}</small>
+                            @endif
+                        </td>
                         <td class="editable-cell" data-field="mode">{{ $case->mode ?? '-' }}</td>
                         <td class="readonly-cell" data-field="po_office" style="background-color: #d4edda !important;">{{ $case->po_office ?? '-' }}</td>
                         <td class="editable-cell" data-field="type_of_industry">{{ $case->type_of_industry ?? '-' }}</td>
