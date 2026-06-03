@@ -539,7 +539,11 @@ $(document).ready(function() {
             headers: { 'X-CSRF-TOKEN': csrfToken },
             success: function (response) {
                 if (!response.success) return;
-                renderWidgetAlerts(response.count, response.items);
+                renderWidgetAlerts(
+                    response.count,
+                    response.beyond_cases  || [],
+                    response.nearing_cases || []
+                );
             },
             error: function () {
                 // Silently bypass connection hiccups
@@ -547,50 +551,71 @@ $(document).ready(function() {
         });
     }
 
-    function renderWidgetAlerts(count, items) {
+    function renderWidgetAlerts(count, beyondCases, nearingCases) {
         const $badge    = $('#widgetNotifBadge');
         const $itemsBox = $('#widgetNotifItems');
         const $empty    = $('#widgetNotifEmpty');
 
-        // Update Header Counter Badge
-        if (count > 0) {
-            $badge.text(count).removeClass('d-none');
-            $empty.hide();
-        } else {
+        if (count === 0) {
             $badge.addClass('d-none').text('0');
-            $itemsBox.find('.widget-notif-item').remove();
+            $itemsBox.find('.widget-section').remove();
             $empty.show();
             return;
         }
 
-        // Rebuild alert UI elements inside panel container
-        $itemsBox.find('.widget-notif-item').remove();
+        $badge.text(count).removeClass('d-none');
+        $empty.hide();
+        $itemsBox.find('.widget-section').remove();
 
-        items.forEach(function (item) {
-            const pills = item.beyond_fields.map(function (label) {
-                return '<span class="badge badge-danger mr-1" style="font-size:0.65rem; padding: 0.2rem 0.4rem;">' + label + '</span>';
-            }).join('');
+        // ── SECTION 1: BEYOND ──────────────────────────────────────────────
+        if (beyondCases.length > 0) {
+            let beyondHtml = `
+                <div class="widget-section mb-3">
+                    <div class="d-flex align-items-center mb-2">
+                        <span style="width:12px;height:12px;border-radius:50%;background:#e74a3b;display:inline-block;margin-right:6px;flex-shrink:0;"></span>
+                        <strong style="font-size:0.8rem;color:#e74a3b;">Beyond Deadline (${beyondCases.length} case/s)</strong>
+                    </div>`;
 
-            const html =
-                '<div class="widget-notif-item border-left-danger shadow-sm p-3 mb-3" style="border-left: 4px solid #e74a3b !important; background-color: #fdfefe;">' +
-                    '<div class="d-flex justify-content-between align-items-start mb-1">' +
-                        '<div>' +
-                            '<h6 class="font-weight-bold text-dark mb-1" style="font-size:0.85rem; line-height: 1.2;">' + item.establishment + '</h6>' +
-                            '<div style="font-size: 0.75rem; color: #5a5c69;">' +
-                                'Case No: <strong class="text-primary">' + item.case_no + '</strong>' +
-                            '</div>' +
-                        '</div>' +
-                    '</div>' +
-                    '<div class="d-flex justify-content-between align-items-center mt-2">' +
-                        '<div class="flex-wrap d-flex">' + pills + '</div>' +
-                        '<span class="badge badge-light text-muted border px-2 py-1" style="font-size:0.65rem;">' +
-                            '<i class="fas fa-map-marker-alt text-orange mr-1"></i>' + item.po_office +
-                        '</span>' +
-                    '</div>' +
-                '</div>';
+            beyondCases.forEach(function(item) {
+                beyondHtml += `
+                    <div class="border-left-danger p-2 mb-2 rounded-sm" style="border-left:3px solid #e74a3b !important;background:#fff5f5;">
+                        <div style="font-size:0.8rem;font-weight:700;color:#2d3748;">${item.establishment}</div>
+                        <div style="font-size:0.72rem;color:#718096;">Case No: <strong class="text-primary">${item.case_no}</strong> &bull; ${item.po_office}</div>
+                        <div class="mt-1">
+                            ${item.beyond_fields.map(f => `<span class="badge badge-danger mr-1" style="font-size:0.62rem;">${f}</span>`).join('')}
+                        </div>
+                    </div>`;
+            });
 
-            $itemsBox.append(html);
-        });
+            beyondHtml += `</div>`;
+            $itemsBox.append(beyondHtml);
+        }
+
+        // ── SECTION 2: NEARING ─────────────────────────────────────────────
+        if (nearingCases.length > 0) {
+            let nearingHtml = `
+                <div class="widget-section mb-3">
+                    <div class="d-flex align-items-center mb-2">
+                        <span style="width:12px;height:12px;border-radius:50%;background:#f6c23e;display:inline-block;margin-right:6px;flex-shrink:0;"></span>
+                        <strong style="font-size:0.8rem;color:#d4a017;">Upcoming Deadlines — Within 10 Days (${nearingCases.length} case/s)</strong>
+                    </div>`;
+
+            nearingCases.forEach(function(item) {
+                const fieldText = item.nearing_fields
+                    .map(f => `${f.label} (due ${f.due_date} — ${f.days_left} day/s left)`)
+                    .join('; ');
+
+                nearingHtml += `
+                    <div class="border-left-warning p-2 mb-2 rounded-sm" style="border-left:3px solid #f6c23e !important;background:#fffdf0;">
+                        <div style="font-size:0.8rem;font-weight:700;color:#2d3748;">${item.establishment}</div>
+                        <div style="font-size:0.72rem;color:#718096;">Case No: <strong class="text-primary">${item.case_no}</strong> &bull; ${item.po_office}</div>
+                        <div style="font-size:0.72rem;color:#856404;margin-top:3px;">${fieldText}</div>
+                    </div>`;
+            });
+
+            nearingHtml += `</div>`;
+            $itemsBox.append(nearingHtml);
+        }
     }
 
     // Init Core execution routines
