@@ -2623,6 +2623,56 @@ $(document).ready(function() {
         startEditing($(this));
     });
 
+    $(document).on('dblclick', '.editable-cell small.address-subtext', function(e) {
+        e.stopPropagation(); // prevent the parent cell's dblclick from firing too
+        const $cell = $(this).closest('.editable-cell');
+        if ($cell.find('input.address-inline-input').length) return;
+
+        const currentAddress = $(this).text().trim();
+        const $input = $('<input type="text" class="form-control form-control-sm address-inline-input">')
+            .val(currentAddress)
+            .css({ 'width': '100%', 'margin-top': '4px', 'border': '2px solid #4CAF50', 'box-shadow': '0 0 5px rgba(76,175,80,0.5)' });
+
+        $(this).replaceWith($input);
+        $input.focus().select();
+
+        const saveAddress = () => {
+            const newAddress = $input.val().trim();
+            const $row = $cell.closest('tr');
+            const recordId = $row.data('id');
+            const nameText = $cell.find('span').first().text().trim();
+
+            $input.replaceWith(`<small class="text-muted address-subtext" style="font-weight:normal;font-size:0.75rem;">${newAddress || currentAddress}</small>`);
+
+            if (newAddress === currentAddress) return;
+
+            $.ajax({
+                url: '/case/' + recordId + '/inline-update',
+                method: 'PUT',
+                headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
+                data: { establishment_address: newAddress },
+                success: function(response) {
+                    if (response.success) {
+                        showToast('Success', 'Address updated', 'success');
+                    } else {
+                        $cell.find('.address-subtext').text(currentAddress);
+                        showToast('Error', response.message || 'Update failed', 'error');
+                    }
+                },
+                error: function() {
+                    $cell.find('.address-subtext').text(currentAddress);
+                    showToast('Error', 'Failed to update address', 'error');
+                }
+            });
+        };
+
+        $input.on('keydown', function(e) {
+            if (e.key === 'Enter') { e.preventDefault(); saveAddress(); }
+            else if (e.key === 'Escape') { e.preventDefault(); $input.replaceWith(`<small class="text-muted address-subtext" style="font-weight:normal;font-size:0.75rem;">${currentAddress}</small>`); }
+        });
+        $input.on('blur', function() { setTimeout(saveAddress, 200); });
+    });
+
     // Function to start editing a cell
     function startEditing($cell) {
         // Don't edit if already in edit mode
@@ -2633,7 +2683,9 @@ $(document).ready(function() {
         currentEditingCell = $cell[0];
         const field = $cell.data('field');
         const fieldType = $cell.data('type') || 'text';
-        const currentValue = $cell.text().trim();
+        const currentValue = $cell.find('span').length 
+        ? $cell.find('span').first().text().trim() 
+        : $cell.text().trim();
         
         // Store original value
         originalValue = currentValue === '-' ? '' : currentValue;
@@ -2780,16 +2832,23 @@ $(document).ready(function() {
             },
             success: function(response) {
                 if (response.success) {
-                    // ✅ NEW: Update ALL cells in the row with fresh data from backend
                     updateRowWithComputedFields($row, response.data, fieldType);
-                    
-                    // Highlight the cell that was just edited
+
+                    // Restore address subtext if this was the establishment_name cell
+                    if (field === 'establishment_name') {
+                        const address = response.data.establishment_address || '';
+                        const addressHtml = address
+                            ? `<br><small class="text-muted address-subtext" style="font-weight:normal;font-size:0.75rem;">${address}</small>`
+                            : '';
+                        $cell.html(`<span>${response.data.establishment_name || '-'}</span>${addressHtml}`);
+                        $cell.attr('data-address', address);
+                    }
+
                     $cell.addClass('bg-success text-white');
                     setTimeout(() => {
                         $cell.removeClass('bg-success text-white');
                     }, 1000);
-                    
-                    // Show toast notification
+
                     showToast('Success', 'Updated successfully', 'success');
                 } else {
                     // Restore original value on error
@@ -2894,6 +2953,16 @@ $(document).ready(function() {
 
     // Function to restore cell display
     function restoreCellDisplay($cell, value, fieldType) {
+        // Special case: establishment_name needs to keep address subtext
+        if ($cell.data('field') === 'establishment_name') {
+            const address = $cell.data('address') || '';
+            const addressHtml = address
+                ? `<br><small class="text-muted address-subtext" style="font-weight:normal;font-size:0.75rem;">${address}</small>`
+                : '';
+            $cell.html(`<span>${value || '-'}</span>${addressHtml}`);
+            return;
+        }
+
         let displayValue = value || '-';
         
         // Format based on type
@@ -2921,7 +2990,16 @@ $(document).ready(function() {
             $cell.attr('title', value);
         }
         
-        $cell.html(displayValue);
+        // This is at the END of restoreCellDisplay, the final html assignment
+        if ($cell.data('field') === 'establishment_name') {
+            // Don't overwrite address subtext on cancel — just update the name span
+            $cell.find('span').first().text(displayValue);
+            if (!$cell.find('small.address-subtext').length) {
+                $cell.html(displayValue); // fallback if no subtext exists
+            }
+        } else {
+            $cell.html(displayValue);
+        }
     }
 
     // Toast notification function
@@ -3261,7 +3339,13 @@ $(document).ready(function() {
         row.find('.editable-cell:not(.readonly-cell)').each(function() {
             const cell = $(this);
             const field = cell.data('field');
-            originalData[field] = cell.text().trim();
+
+            if (field === 'establishment_name') {
+                originalData['establishment_name'] = cell.find('span').first().text().trim();
+                originalData['establishment_address'] = cell.data('address') || '';
+            } else {
+                originalData[field] = cell.text().trim();
+            }
 
             const input = createInput(field, cell, config);
             cell.html(input);
@@ -3300,7 +3384,13 @@ $(document).ready(function() {
 
     function createInput(field, cell, config) {
         const fieldConfig = config.fields[field];
-        const currentValue = cell.text().trim() === '-' ? '' : cell.text().trim();
+        const currentValue = (() => {
+            if (field === 'establishment_name') {
+                const nameText = cell.find('span').first().text().trim();
+                return nameText === '-' ? '' : nameText;
+            }
+            return cell.text().trim() === '-' ? '' : cell.text().trim();
+        })();
         
         if (fieldConfig && fieldConfig.type === 'select') {
             let selectHtml = `<select class="form-control form-control-sm edit-input" data-field="${field}">`;
@@ -3320,7 +3410,21 @@ $(document).ready(function() {
         } else {
             let inputValue = currentValue;
             if (field === 'establishment_name') {
-                inputValue = cell.attr('title') || currentValue;
+                const addressValue = cell.data('address') || '';
+                return `
+                    <input type="text" 
+                        class="form-control form-control-sm edit-input" 
+                        value="${inputValue}" 
+                        data-field="establishment_name"
+                        placeholder="Establishment name"
+                        style="margin-bottom: 3px;">
+                    <input type="text" 
+                        class="form-control form-control-sm edit-input address-edit-input" 
+                        value="${addressValue}" 
+                        data-field="establishment_address"
+                        placeholder="Address"
+                        style="font-size: 0.75rem; padding: 2px 6px; height: auto; color: #6c757d;">
+                `;
             }
             return `<input type="text" class="form-control form-control-sm edit-input" value="${inputValue}" data-field="${field}">`;
         }
@@ -3454,13 +3558,19 @@ $(document).ready(function() {
                 const displayText = (displayValue === 'Y' || displayValue === '1') ? 'Yes' : 'No';
                 displayValue = `<span class="badge badge-${badgeClass}">${displayText}</span>`;
             }
-            
-            if (field === 'establishment_name' && displayValue !== '-') {
-                if (displayValue.length > 25) {
-                    displayValue = displayValue.substring(0, 25) + '...';
-                }
+
+            if (field === 'establishment_name') {
+                const address = responseData.establishment_address || '';
+                const addressHtml = address 
+                    ? `<br><small class="text-muted address-subtext" style="font-weight:normal;font-size:0.75rem;">${address}</small>` 
+                    : '';
+                cell.html(`<span>${displayValue !== '-' ? displayValue : '-'}</span>${addressHtml}`);
+                cell.attr('data-address', address);
+                cell.removeClass('edit-mode');
+                return;
             }
-            
+
+            // For all other fields: write the display value and clear edit mode
             cell.html(displayValue);
             cell.removeClass('edit-mode');
         });
@@ -3499,9 +3609,15 @@ $(document).ready(function() {
                 displayValue = displayValue.split(': ')[1];
             }
 
-            if (field === 'establishment_name' && displayValue.length > 25) {
-                cell.attr('title', displayValue);
-                displayValue = displayValue.substring(0, 25) + '...';
+            if (field === 'establishment_name') {
+                const originalAddress = originalData['establishment_address'] || '';
+                const addressHtml = originalAddress 
+                    ? `<br><small class="text-muted address-subtext" style="font-weight:normal;font-size:0.75rem;">${originalAddress}</small>` 
+                    : '';
+                cell.html(`<span>${displayValue || '-'}</span>${addressHtml}`);
+                cell.attr('data-address', originalAddress);
+                cell.removeClass('edit-mode');
+                return;
             }
 
             cell.html(displayValue);
