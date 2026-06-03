@@ -30,7 +30,6 @@
 /* ==================== STICKY LEFT COLUMNS ==================== */
 
 /* 1. No. Column */
-/* 1. No. Column */
 .table:not(.cm-table) th:nth-child(2),
 .table:not(.cm-table) td:nth-child(2) {
     position: sticky;
@@ -62,14 +61,14 @@
     position: sticky;
     left: 185px;
     z-index: 35;
-     background-color: #fff3cd !important;
+    background-color: #fff3cd !important;
     box-shadow: 3px 0 8px rgba(0,0,0,0.1);
     width: 100px;
     min-width: 100px;
     max-width: 100px;
 }
 
-/* 4. Establishment Name Column */
+/* 4. Establishment Name Column (UPDATED: Added explicit font-weight overrides) */
 .table:not(.cm-table) th:nth-child(5),
 .table:not(.cm-table) td:nth-child(5) {
     position: sticky;
@@ -82,6 +81,7 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    font-weight: bold !important; /* Forces bold tracking across headers and table bodies */
 }
 
 /* PO column (7th column) */
@@ -101,16 +101,15 @@
 
 .compact-table th,
 .compact-table td {
-    padding: 0.45rem 0.7rem;     /* ← Shorter vertical padding */
+    padding: 0.45rem 0.7rem;
     vertical-align: middle;
     border-right: 1px solid #dee2e6;
-    min-height: 38px;            /* ← Allow rows to grow for wrapped text */
+    min-height: 38px;
     height: auto;
     line-height: 1.4;
 }
 
 /* ==================== WRAP COLUMNS ==================== */
-/* Allow long text columns to wrap instead of truncating */
 .wrap-cell {
     white-space: normal !important;
     word-break: break-word;
@@ -121,7 +120,7 @@
     line-height: 1.4;
 }
 
-/* ==================== ACTIONS CELL - TIGHT ONE LINE BUTTONS ==================== */
+/* ==================== ACTIONS CELL ==================== */
 .actions-cell {
     padding: 0.4rem 0.6rem !important;
     white-space: nowrap;
@@ -142,19 +141,17 @@
     max-width: 380px !important;
 }
 
-/* This is the main fix */
 .action-buttons-container {
     display: flex !important;
     align-items: center;
     gap: 6px;
     flex-wrap: nowrap;
-    width: fit-content !important;     /* Only as wide as the buttons */
+    width: fit-content !important;
     max-width: 100%;
     margin: 0 !important;
     padding: 0 !important;
 }
 
-/* Extra strong rule for when it's expanded */
 .actions-cell.expanded .action-buttons-container {
     width: 100% !important;
     justify-content: flex-start !important;
@@ -202,7 +199,6 @@
     display: none;
 }
 
-/* Edit mode: action cell stays collapsed-width but shows save/cancel in toggle area */
 .actions-cell.edit-mode-cell {
     width: 68px !important;
     min-width: 68px !important;
@@ -302,7 +298,6 @@
 }
 
 /* ==================== FIX FOR DATATABLES OVERRIDE ==================== */
-/* This targets the exact class you saw in inspect element */
 .actions-cell.expanded.sorting_1 {
     width: auto !important;
     min-width: 320px !important;
@@ -311,21 +306,18 @@
     white-space: nowrap !important;
 }
 
-/* Make sure the container takes full available width inside the cell */
 .actions-cell.expanded .action-buttons-container {
     width: 100% !important;
     justify-content: flex-start !important;
     gap: 6px !important;
 }
 
-/* Force the action buttons to stay tight and left-aligned */
 .actions-cell.expanded .action-buttons {
     display: flex !important;
     gap: 6px !important;
     flex-wrap: nowrap !important;
 }
 
-/* Remove any extra margin or padding DataTables might add */
 td.actions-cell.expanded {
     box-sizing: border-box !important;
     overflow: hidden !important;
@@ -350,7 +342,6 @@ td.actions-cell.expanded {
 #dataTableTabsContent .card-body {
     padding-bottom: 0 !important;
 }
-
 
 #content-wrapper {
     min-height: unset !important;
@@ -432,6 +423,7 @@ td.actions-cell.expanded {
     max-width: 100px;
 }
 
+/* 4. CM xTable Establishment Name Column (UPDATED: Added explicit font-weight overrides) */
 .cm-table th:nth-child(5),
 .cm-table td:nth-child(5) {
     position: sticky;
@@ -444,6 +436,7 @@ td.actions-cell.expanded {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    font-weight: bold !important; /* Forces bold tracking inside Case Management context */
 }
 
 .cm-table th:nth-child(7),
