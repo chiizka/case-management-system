@@ -1,11 +1,9 @@
 @extends('frontend.layouts.app')
 @section('content')
 
-<!-- Added the custom responsive-dashboard-wrapper class to handle mobile vs desktop views gracefully -->
 <div id="content" class="d-flex flex-column flex-grow-1 responsive-dashboard-wrapper">
     <div class="container-fluid d-flex flex-column flex-grow-1 responsive-container-wrapper">
 
-        <!-- Page Heading -->
         <div class="d-sm-flex align-items-center justify-content-between mb-4 flex-shrink-0">
             <h1 class="h3 mb-0 text-gray-800">Dashboard</h1>
             @if($isProvince)
@@ -16,12 +14,9 @@
             @endif
         </div>
 
-        <!-- Content Row - Statistics Cards -->
         <div class="row flex-shrink-0">
 
         @if($isProvince)
-
-            <!-- PROVINCIAL VIEW: Total Handled, Active, Disposed -->
 
             <div class="col-xl-4 col-md-6 mb-4">
                 <div class="card border-left-secondary shadow h-100 py-2">
@@ -86,7 +81,6 @@
             {{-- REGIONAL/ADMIN VIEW --}}
             @php $hasCMCard = in_array(Auth::user()->role, ['case_management', 'admin']); @endphp
 
-            <!-- Active Cases (All) -->
             <div class="{{ $hasCMCard ? 'col-xl' : 'col-xl-3' }} col-md-6 mb-4">
                 <div class="card border-left-success shadow h-100 py-2 clickable-card"
                      data-toggle="modal" data-target="#activeCasesModal" style="cursor: pointer;">
@@ -106,7 +100,6 @@
             </div>
 
             @if($hasCMCard)
-            <!-- Active Cases (Case Management) -->
             <div class="col-xl col-md-6 mb-4">
                 <div class="card border-left-warning shadow h-100 py-2">
                     <div class="card-body">
@@ -125,7 +118,6 @@
             </div>
             @endif
 
-            <!-- Disposed Cases (Actual) -->
             <div class="{{ $hasCMCard ? 'col-xl' : 'col-xl-3' }} col-md-6 mb-4">
                 <div class="card border-left-primary shadow h-100 py-2">
                     <div class="card-body">
@@ -145,7 +137,6 @@
                 </div>
             </div>
 
-            <!-- MIS Disposed Cases -->
             <div class="{{ $hasCMCard ? 'col-xl' : 'col-xl-3' }} col-md-6 mb-4">
                 <div class="card border-left-info shadow h-100 py-2 clickable-card"
                      data-toggle="modal" data-target="#misDisposedModal" style="cursor: pointer;">
@@ -166,7 +157,6 @@
                 </div>
             </div>
 
-            <!-- Disposed Cases (Provincial) -->
             <div class="{{ $hasCMCard ? 'col-xl' : 'col-xl-3' }} col-md-6 mb-4">
                 <div class="card shadow h-100 py-2" style="border-left: 4px solid #e67e22;">
                     <div class="card-body">
@@ -191,39 +181,139 @@
         </div>
         {{-- End Statistics Cards Row --}}
 
-        <!-- Content Row - Charts -->
         <div class="row align-items-stretch flex-grow-1 bottom-content-row" style="min-height: 0;">
 
-            <!-- Cases Trend Chart -->
             <div class="col-xl-8 col-lg-7 d-flex flex-column pb-4 chart-column-wrapper">
-                <div class="card shadow h-100 d-flex flex-column" style="min-height: 0;">
-                    <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between flex-shrink-0">
-                        <h6 class="m-0 font-weight-bold text-primary">
-                            {{ $isProvince ? Auth::user()->getProvinceName() . ' — Cases Overview (Last 6 Months)' : 'Cases Overview (Last 6 Months)' }}
-                        </h6>
-                        <div class="dropdown no-arrow">
-                            <a class="dropdown-toggle" href="#" role="button" id="dropdownMenuLink"
-                                data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
-                            </a>
-                            <div class="dropdown-menu dropdown-menu-right shadow animated--fade-in" aria-labelledby="dropdownMenuLink">
-                                <div class="dropdown-header">Filter:</div>
-                                <a class="dropdown-item" href="#">This Month</a>
-                                <a class="dropdown-item" href="#">This Year</a>
-                                <div class="dropdown-divider"></div>
-                                <a class="dropdown-item" href="#">All Time</a>
+
+                @if($isProvince)
+                    {{-- PROVINCIAL VIEW: Cases Overview Chart --}}
+                    <div class="card shadow h-100 d-flex flex-column" style="min-height: 0;">
+                        <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between flex-shrink-0">
+                            <h6 class="m-0 font-weight-bold text-primary">
+                                {{ Auth::user()->getProvinceName() }} — Cases Overview (Last 6 Months)
+                            </h6>
+                            <div class="dropdown no-arrow">
+                                <a class="dropdown-toggle" href="#" role="button" id="dropdownMenuLink"
+                                    data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                    <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
+                                </a>
+                                <div class="dropdown-menu dropdown-menu-right shadow animated--fade-in" aria-labelledby="dropdownMenuLink">
+                                    <div class="dropdown-header">Filter:</div>
+                                    <a class="dropdown-item" href="#">This Month</a>
+                                    <a class="dropdown-item" href="#">This Year</a>
+                                    <div class="dropdown-divider"></div>
+                                    <a class="dropdown-item" href="#">All Time</a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-body d-flex flex-column flex-grow-1 card-chart-body" style="min-height: 0; padding: 1.25rem;">
+                            <div class="chart-area flex-grow-1" style="position: relative; width: 100%; height: 100%;">
+                                <canvas id="casesAreaChart"></canvas>
                             </div>
                         </div>
                     </div>
-                    <div class="card-body d-flex flex-column flex-grow-1 card-chart-body" style="min-height: 0; padding: 1.25rem;">
-                        <div class="chart-area flex-grow-1" style="position: relative; width: 100%; height: 100%;">
-                            <canvas id="casesAreaChart"></canvas>
+
+                @elseif(in_array(Auth::user()->role, ['case_management', 'admin']))
+                    {{-- ADMIN / CASE MANAGEMENT VIEW: Province Breakdown Table --}}
+                    <div class="card shadow h-100 d-flex flex-column" style="min-height: 0;">
+                        <div class="card-header py-3 d-flex align-items-center justify-content-between flex-shrink-0">
+                            <h6 class="m-0 font-weight-bold text-primary">Cases by Province</h6>
+                            <span class="badge badge-secondary badge-pill">Active caseload</span>
+                        </div>
+                        <div class="card-body d-flex flex-column" style="min-height: 0; padding: 0;">
+                            <div class="table-responsive province-table-wrapper" style="flex: 1 1 0; min-height: 0;">
+                                @php $maxProvince = $byProvince->max('total') ?: 1; @endphp
+                                <table class="table mb-0" style="font-size: 0.8rem;">
+                                    <thead style="background: #f8f9fc;">
+                                        <tr>
+                                            <th class="pl-4 py-2" style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: .05em; color: #6e707e; font-weight: 600; border-bottom: 2px solid #e3e6f0;">Province</th>
+                                            <th class="text-center py-2" style="width:80px; font-size: 0.7rem; text-transform: uppercase; letter-spacing: .05em; color: #6e707e; font-weight: 600; border-bottom: 2px solid #e3e6f0;">Active</th>
+                                            <th class="text-center py-2" style="width:90px; font-size: 0.7rem; text-transform: uppercase; letter-spacing: .05em; color: #6e707e; font-weight: 600; border-bottom: 2px solid #e3e6f0;">Disposed<br><span style="font-weight:400;">this month</span></th>
+                                            <th class="text-center py-2" style="width:100px; font-size: 0.7rem; text-transform: uppercase; letter-spacing: .05em; color: #e74a3b; font-weight: 600; border-bottom: 2px solid #e3e6f0;"><i class="fas fa-exclamation-circle mr-1"></i>Beyond</th>
+                                            <th class="py-2 pr-4" style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: .05em; color: #6e707e; font-weight: 600; border-bottom: 2px solid #e3e6f0;">Caseload</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach($byProvince as $prov)
+                                        @php
+                                            $barPct      = round(($prov['total'] / $maxProvince) * 100);
+                                            $barColor    = $prov['active'] > 10 ? '#e74a3b' : ($prov['active'] > 5 ? '#f6c23e' : '#1cc88a');
+                                            $badge       = $prov['active'] > 10 ? 'danger' : ($prov['active'] > 5 ? 'warning' : 'success');
+
+                                            $beyondCount = \App\Models\CaseFile::where('po_office', $prov['name'])
+                                                ->where('overall_status', 'Active')
+                                                ->whereNotNull('pct_96_days')
+                                                ->whereDate('pct_96_days', '<', now())
+                                                ->distinct()
+                                                ->count('id');
+                                        @endphp
+                                        <tr style="border-bottom: 1px solid #f0f0f0; transition: background .15s;">
+                                            <td class="pl-4 align-middle" style="padding-top: 0.55rem; padding-bottom: 0.55rem;">
+                                                <div class="font-weight-bold text-dark" style="font-size: 0.9rem;">{{ $prov['name'] }}</div>
+                                                <div class="text-muted" style="font-size: 0.72rem;">{{ $prov['total'] }} cases total</div>
+                                            </td>
+                                            <td class="text-center align-middle">
+                                                <span class="badge badge-{{ $badge }}" style="font-size: 0.8rem; padding: .35em .65em; border-radius: 50px;">
+                                                    {{ $prov['active'] }}
+                                                </span>
+                                            </td>
+                                            <td class="text-center align-middle" style="color: #858796; font-size: 0.85rem;">
+                                                @if($prov['disposed'] > 0)
+                                                    <span class="font-weight-bold text-success">{{ $prov['disposed'] }}</span>
+                                                @else
+                                                    <span class="text-muted">—</span>
+                                                @endif
+                                            </td>
+                                            <td class="text-center align-middle">
+                                                @if($beyondCount > 0)
+                                                    <span style="display:inline-flex; align-items:center; gap:4px; background:#fff5f5; color:#e74a3b; border:1px solid #f5c6cb; border-radius:50px; padding:.3em .75em; font-size:0.8rem; font-weight:700;">
+                                                        <i class="fas fa-exclamation-circle" style="font-size:0.7rem;"></i>{{ $beyondCount }}
+                                                    </span>
+                                                @else
+                                                    <span class="text-muted" style="font-size:0.85rem;">—</span>
+                                                @endif
+                                            </td>
+                                            <td class="align-middle pr-4" style="min-width: 160px;">
+                                                <div style="height: 10px; border-radius: 5px; background: #eaecf4; overflow: hidden;">
+                                                    <div style="width: {{ $barPct }}%; height: 100%; border-radius: 5px; background: {{ $barColor }}; transition: width .6s ease;"></div>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
-                </div>
+
+                @else
+                    {{-- OTHER REGIONAL ROLES: fallback chart --}}
+                    <div class="card shadow h-100 d-flex flex-column" style="min-height: 0;">
+                        <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between flex-shrink-0">
+                            <h6 class="m-0 font-weight-bold text-primary">Cases Overview (Last 6 Months)</h6>
+                            <div class="dropdown no-arrow">
+                                <a class="dropdown-toggle" href="#" role="button" data-toggle="dropdown">
+                                    <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
+                                </a>
+                                <div class="dropdown-menu dropdown-menu-right shadow animated--fade-in">
+                                    <div class="dropdown-header">Filter:</div>
+                                    <a class="dropdown-item" href="#">This Month</a>
+                                    <a class="dropdown-item" href="#">This Year</a>
+                                    <div class="dropdown-divider"></div>
+                                    <a class="dropdown-item" href="#">All Time</a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-body d-flex flex-column flex-grow-1 card-chart-body" style="min-height: 0; padding: 1.25rem;">
+                            <div class="chart-area flex-grow-1" style="position: relative; width: 100%; height: 100%;">
+                                <canvas id="casesAreaChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                @endif
+
             </div>
 
-            <!-- Deadline Alerts Widget -->
             <div class="col-xl-4 col-lg-5 d-flex flex-column pb-4 alerts-column-wrapper">
                 <div class="card shadow h-100 d-flex flex-column" style="min-height: 0;">
                     <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between flex-shrink-0">
@@ -233,7 +323,6 @@
                         <span class="badge badge-danger badge-pill d-none" id="widgetNotifBadge">0</span>
                     </div>
                     
-                    <!-- Dynamic Items container -->
                     <div class="card-body alerts-card-scrollable" id="widgetNotifItems" style="overflow-y: auto; overflow-x: hidden; padding: 1.25rem;">
                         <div class="text-center text-muted py-4 my-auto" id="widgetNotifEmpty">
                             <i class="fas fa-check-circle fa-3x mb-3 d-block text-success"></i>
@@ -254,9 +343,7 @@
         {{-- End Charts Row --}}
 
     </div>
-    <!-- /.container-fluid -->
 </div>
-<!-- End of Main Content -->
 
 {{-- ===================================================================== --}}
 {{--  MIS DISPOSED CASES MODAL                                             --}}
@@ -510,7 +597,6 @@ if (ctx) {
 }
 
 $(document).ready(function() {
-    // Card Hover Interactions
     $('.clickable-card').hover(
         function() { $(this).addClass('shadow-lg').css('transform', 'translateY(-5px)'); },
         function() { $(this).removeClass('shadow-lg').css('transform', 'translateY(0)'); }
@@ -567,7 +653,6 @@ $(document).ready(function() {
         $empty.hide();
         $itemsBox.find('.widget-section').remove();
 
-        // ── SECTION 1: BEYOND ──────────────────────────────────────────────
         if (beyondCases.length > 0) {
             let beyondHtml = `
                 <div class="widget-section mb-3">
@@ -591,7 +676,6 @@ $(document).ready(function() {
             $itemsBox.append(beyondHtml);
         }
 
-        // ── SECTION 2: NEARING ─────────────────────────────────────────────
         if (nearingCases.length > 0) {
             let nearingHtml = `
                 <div class="widget-section mb-3">
@@ -618,7 +702,6 @@ $(document).ready(function() {
         }
     }
 
-    // Init Core execution routines
     fetchDeadlineAlerts();
     setInterval(fetchDeadlineAlerts, POLL_INTERVAL_MS);
 })();
@@ -643,7 +726,6 @@ $(document).ready(function() {
 /* RESPONSIVE LAYOUT CONTROLLER CRITICAL FIX FOR SMARTPHONES                 */
 /* ========================================================================= */
 
-/* Large Desktop screens (Min-width 992px) -> Keep layout locked cleanly */
 @media (min-width: 992px) {
     .responsive-dashboard-wrapper {
         height: calc(100vh - 1.5rem) !important;
@@ -690,6 +772,44 @@ $(document).ready(function() {
         max-height: 420px !important; /* Limits the alert widget box size on phone screens */
         overflow-y: auto !important;   /* Keeps scrolling inside the widget active */
     }
+
+    /* ========================================================================= */
+    /* FIXED MOBILITY OVERRIDES FOR PROVINCE BREAKDOWN CARD                      */
+    /* ========================================================================= */
+    
+    /* Target the column block layout explicitly to enforce render bounding boxes */
+    .chart-column-wrapper {
+        display: block !important;
+        height: auto !important;
+    }
+
+    /* Force the card element to display its content elements sequentially */
+    .chart-column-wrapper .card {
+        display: flex !important;
+        flex-direction: column !important;
+        height: auto !important;
+        min-height: 350px !important; /* Prevents the body box from flatlining */
+    }
+
+    /* Release raw flex constraint mapping from desktop presets */
+    .chart-column-wrapper .card-body {
+        display: block !important;
+        height: auto !important;
+        flex: none !important; 
+        padding: 0 !important;
+    }
+
+    /* Define fixed vertical scrolling viewport for mobile devices */
+    .province-table-wrapper {
+        display: block !important;
+        width: 100% !important;
+        height: 350px !important;      /* Explicitly forces rendering boundaries */
+        max-height: 350px !important;
+        overflow-y: auto !important;    /* Enables vertical scroll behavior */
+        overflow-x: auto !important;    /* Enables responsive swipe column shift */
+        -webkit-overflow-scrolling: touch; 
+    }
+    /* ========================================================================= */
 }
 /* ========================================================================= */
 </style>

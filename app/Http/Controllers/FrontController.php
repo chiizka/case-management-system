@@ -9,6 +9,7 @@ use App\Models\DocumentTracking;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use App\Http\Controllers\AnalyticsController;
 
 class FrontController extends Controller
 {
@@ -16,76 +17,60 @@ class FrontController extends Controller
     {
         $user       = Auth::user();
         $isProvince = $user->isProvince();
-        $userRole   = $user->role; // e.g. 'province_albay'
-
-        // ─────────────────────────────────────────────────────────────────────
-        // For province users, all counts follow the same rule:
-        //
-        //   - Case must have originated from their province (po_office)
-        //   - The document must have been RECEIVED by their office
-        //     (documentTracking.status = 'Received')
-        //   - Active Cases:  overall_status = Active  + received
-        //   - Disposed Cases: overall_status = Disposed + received
-        //   - Total Cases:  Active + Disposed (both received) — no raw count
-        //   - Closed Cases: overall_status = Completed + received
-        //
-        // For non-province users: no scoping, see everything system-wide.
-        // ─────────────────────────────────────────────────────────────────────
+        $userRole   = $user->role;
 
         if ($isProvince) {
-            $provinceName = $user->getProvinceName();
-            $caseManagementActiveCases = 0; 
+            $provinceName              = $user->getProvinceName();
+            $caseManagementActiveCases = 0;
+            $byProvince                = collect(); // ← always defined
 
             // Base query: cases received by this province
             $receivedByProvince = CaseFile::where('po_office', $provinceName)
                 ->whereHas('documentTracking', function ($q) use ($userRole) {
                     $q->where('current_role', $userRole)
-                    ->where('status', 'Received');
+                      ->where('status', 'Received');
                 });
 
             $activeCases = (clone $receivedByProvince)
-        ->where('overall_status', 'Active')
-        ->count();
+                ->where('overall_status', 'Active')
+                ->count();
 
-    $disposedCases = CaseFile::where('po_office', $provinceName)
-        ->where('overall_status', 'Disposed')
-        ->count();
+            $disposedCases = CaseFile::where('po_office', $provinceName)
+                ->where('overall_status', 'Disposed')
+                ->count();
 
-    $actualDisposedCases  = 0;
-    $misDisposedCases     = 0;
-    $misDisposedCasesList = collect();
+            $actualDisposedCases  = 0;
+            $misDisposedCases     = 0;
+            $misDisposedCasesList = collect();
 
-    // ── Total Cases Handled ───────────────────────────────────────────────
-    // Unique cases ever RECEIVED by this province (not just pending)
-    // Source 1: currently sitting at this province and received
-    $currentlyReceivedIds = \App\Models\DocumentTracking::where('current_role', $userRole)
-        ->where('status', 'Received')
-        ->pluck('case_id')
-        ->unique();
+            // ── Total Cases Handled ───────────────────────────────────────────
+            $currentlyReceivedIds = \App\Models\DocumentTracking::where('current_role', $userRole)
+                ->where('status', 'Received')
+                ->pluck('case_id')
+                ->unique();
 
-    // Source 2: previously received by this province (in history)
-$historicalTrackingIds = \App\Models\DocumentTrackingHistory::where('to_role', $userRole)
-    ->whereNotNull('received_by_user_id')
-    ->whereNotNull('received_at')
-    ->pluck('document_tracking_id')
-    ->unique();
+            $historicalTrackingIds = \App\Models\DocumentTrackingHistory::where('to_role', $userRole)
+                ->whereNotNull('received_by_user_id')
+                ->whereNotNull('received_at')
+                ->pluck('document_tracking_id')
+                ->unique();
 
-$historicallyReceivedIds = \App\Models\DocumentTracking::whereIn('id', $historicalTrackingIds)
-    ->pluck('case_id')
-    ->unique();
+            $historicallyReceivedIds = \App\Models\DocumentTracking::whereIn('id', $historicalTrackingIds)
+                ->pluck('case_id')
+                ->unique();
 
+            $totalCases = collect()
+                ->merge($currentlyReceivedIds)
+                ->merge($historicallyReceivedIds)
+                ->unique()
+                ->count();
 
-    // Merge all three sources, deduplicate by case ID
-$totalCases = collect()
-    ->merge($currentlyReceivedIds)
-    ->merge($historicallyReceivedIds)
-    ->unique()
-    ->count();
         } else {
             // Regional roles: system-wide counts, no scoping
             $activeCases         = CaseFile::where('overall_status', 'Active')->count();
             $actualDisposedCases = CaseFile::where('overall_status', 'Completed')->count();
             $disposedCases       = CaseFile::where('overall_status', 'Disposed')->count();
+
             $misDisposedCases = CaseFile::where('overall_status', 'Active')
                 ->whereNotNull('date_signed_mis')
                 ->whereMonth('date_signed_mis', Carbon::now()->month)
@@ -99,15 +84,23 @@ $totalCases = collect()
                 ->select('case_no', 'po_office', 'inspection_id', 'establishment_name', 'pct_96_days', 'date_signed_mis', 'date_scheduled_docketed')
                 ->orderBy('po_office')
                 ->get();
-            $totalCases          = CaseFile::count();
 
-            // ── NEW: Active cases currently at Case Management ──
+            $totalCases = CaseFile::count();
+
             $caseManagementActiveCases = CaseFile::where('overall_status', 'Active')
                 ->whereHas('documentTracking', fn($q) => $q
                     ->where('current_role', 'case_management')
                     ->where('status', 'Received')
                 )
                 ->count();
+
+            // ── Province Breakdown for admin/case_management dashboard panel ──
+            $byProvince = collect();
+            if (in_array($userRole, ['case_management', 'admin'])) {
+                $monthStart = Carbon::now()->startOfMonth();
+                $monthEnd   = Carbon::now()->endOfMonth();
+                $byProvince = AnalyticsController::getByProvince($monthStart, $monthEnd);
+            }
         }
 
         // ── Active Cases Modal Breakdown ──────────────────────────────────────
@@ -127,7 +120,7 @@ $totalCases = collect()
                 $activeByRole[$role] = CaseFile::where('overall_status', 'Active')
                     ->whereHas('documentTracking', fn($q) => $q
                         ->where('current_role', $role)
-                        ->where('status', 'Received')  // must be received, not just pending
+                        ->where('status', 'Received')
                     )
                     ->count();
             }
@@ -156,7 +149,6 @@ $totalCases = collect()
             $monthLabels[] = $date->format('M Y');
 
             if ($isProvince) {
-                // Only received cases from this province per month
                 $monthlyData[] = CaseFile::where('po_office', $user->getProvinceName())
                     ->whereHas('documentTracking', function ($q) use ($userRole) {
                         $q->where('current_role', $userRole)
@@ -280,6 +272,7 @@ $totalCases = collect()
             'documentsReceivedPercent',
             'caseManagementActiveCases',
             'activeByRole',
+            'byProvince',    // ← added
             'isProvince'
         ));
     }

@@ -190,4 +190,46 @@ class AnalyticsController extends Controller
             'isProvince'
         ));
     }
+
+    /**
+     * Province breakdown used by both AnalyticsController and FrontController.
+     */
+    public static function getByProvince(Carbon $monthStart, Carbon $monthEnd): \Illuminate\Support\Collection
+    {
+    $archived = ['Completed', 'Disposed', 'Appealed'];
+
+    $provinceRoleMap = [
+        'Albay'           => 'province_albay',
+        'Camarines Sur'   => 'province_camarines_sur',
+        'Camarines Norte' => 'province_camarines_norte',
+        'Catanduanes'     => 'province_catanduanes',
+        'Masbate'         => 'province_masbate',
+        'Sorsogon'        => 'province_sorsogon',
+    ];
+
+    return collect($provinceRoleMap)->map(function ($role, $prov) use ($archived, $monthStart, $monthEnd) {
+        $total = CaseFile::where('po_office', $prov)->count();
+
+        $active = CaseFile::whereNotIn('overall_status', $archived)
+            ->whereHas('documentTracking', fn($q) => $q
+                ->where('current_role', $role)
+                ->where('status', 'Received'))
+            ->count();
+
+        $disposed = CaseFile::where('po_office', $prov)
+            ->whereIn('overall_status', $archived)
+            ->where(fn($q) => $q
+                ->where(fn($q2) => $q2
+                    ->whereNotNull('date_of_order_actual')
+                    ->whereDate('date_of_order_actual', '>=', $monthStart)
+                    ->whereDate('date_of_order_actual', '<=', $monthEnd))
+                ->orWhere(fn($q2) => $q2
+                    ->whereNull('date_of_order_actual')
+                    ->whereDate('updated_at', '>=', $monthStart)
+                    ->whereDate('updated_at', '<=', $monthEnd))
+            )->count();
+
+        return ['name' => $prov, 'total' => $total, 'active' => $active, 'disposed' => $disposed];
+    });
+}
 }
