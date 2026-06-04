@@ -22,7 +22,8 @@ class FrontController extends Controller
         if ($isProvince) {
             $provinceName              = $user->getProvinceName();
             $caseManagementActiveCases = 0;
-            $byProvince                = collect(); // ← always defined
+            $byProvince                = collect();
+            $provincePendingDocs       = [];
 
             // Base query: cases received by this province
             $receivedByProvince = CaseFile::where('po_office', $provinceName)
@@ -106,9 +107,54 @@ class FrontController extends Controller
         // ── Active Cases Modal Breakdown ──────────────────────────────────────
         if ($isProvince) {
             $activeByRole = [
-                $userRole => $activeCases,
+                $userRole => [
+                    'received' => $activeCases,
+                    'pending'  => CaseFile::where('overall_status', 'Active')
+                        ->whereHas('documentTracking', fn($q) => $q
+                            ->where('current_role', $userRole)
+                            ->where('status', 'Pending Receipt')
+                        )
+                        ->count(),
+                ],
             ];
         } else {
+            // Regional roles: system-wide counts, no scoping
+            $activeCases         = CaseFile::where('overall_status', 'Active')->count();
+            $actualDisposedCases = CaseFile::where('overall_status', 'Completed')->count();
+            $disposedCases       = CaseFile::where('overall_status', 'Disposed')->count();
+
+            $misDisposedCases = CaseFile::where('overall_status', 'Active')
+                ->whereNotNull('date_signed_mis')
+                ->whereMonth('date_signed_mis', Carbon::now()->month)
+                ->whereYear('date_signed_mis', Carbon::now()->year)
+                ->count();
+
+            $misDisposedCasesList = CaseFile::where('overall_status', 'Active')
+                ->whereNotNull('date_signed_mis')
+                ->whereMonth('date_signed_mis', Carbon::now()->month)
+                ->whereYear('date_signed_mis', Carbon::now()->year)
+                ->select('case_no', 'po_office', 'inspection_id', 'establishment_name', 'pct_96_days', 'date_signed_mis', 'date_scheduled_docketed')
+                ->orderBy('po_office')
+                ->get();
+
+            $totalCases = CaseFile::count();
+
+            $caseManagementActiveCases = CaseFile::where('overall_status', 'Active')
+                ->whereHas('documentTracking', fn($q) => $q
+                    ->where('current_role', 'case_management')
+                    ->where('status', 'Received')
+                )
+                ->count();
+
+            // ── Province Breakdown for admin/case_management dashboard panel ──
+            $byProvince = collect();
+            if (in_array($userRole, ['case_management', 'admin'])) {
+                $monthStart = Carbon::now()->startOfMonth();
+                $monthEnd   = Carbon::now()->endOfMonth();
+                $byProvince = AnalyticsController::getByProvince($monthStart, $monthEnd);
+            }
+
+            // ── Active Cases Modal Breakdown (received + pending per role) ────
             $rolesForBreakdown = [
                 'admin', 'malsu', 'case_management', 'records',
                 'province_albay', 'province_camarines_sur', 'province_camarines_norte',
@@ -117,12 +163,36 @@ class FrontController extends Controller
 
             $activeByRole = [];
             foreach ($rolesForBreakdown as $role) {
-                $activeByRole[$role] = CaseFile::where('overall_status', 'Active')
-                    ->whereHas('documentTracking', fn($q) => $q
-                        ->where('current_role', $role)
-                        ->where('status', 'Received')
-                    )
-                    ->count();
+                $activeByRole[$role] = [
+                    'received' => CaseFile::where('overall_status', 'Active')
+                        ->whereHas('documentTracking', fn($q) => $q
+                            ->where('current_role', $role)
+                            ->where('status', 'Received')
+                        )
+                        ->count(),
+                    'pending' => CaseFile::where('overall_status', 'Active')
+                        ->whereHas('documentTracking', fn($q) => $q
+                            ->where('current_role', $role)
+                            ->where('status', 'Pending Receipt')
+                        )
+                        ->count(),
+                ];
+            }
+
+            // ── Pending Documents per Province (full doc data for modal) ──────
+            $provinceRoleKeys = [
+                'province_albay', 'province_camarines_sur', 'province_camarines_norte',
+                'province_catanduanes', 'province_masbate', 'province_sorsogon',
+            ];
+
+            $provincePendingDocs = [];
+            foreach ($provinceRoleKeys as $role) {
+                $provincePendingDocs[$role] = \App\Models\DocumentTracking::with(['case', 'transferredBy'])
+                    ->active()
+                    ->where('current_role', $role)
+                    ->where('status', 'Pending Receipt')
+                    ->orderBy('transferred_at', 'desc')
+                    ->get(['id', 'case_id', 'transferred_by_user_id', 'transferred_at', 'transfer_notes']);
             }
         }
 
@@ -272,7 +342,8 @@ class FrontController extends Controller
             'documentsReceivedPercent',
             'caseManagementActiveCases',
             'activeByRole',
-            'byProvince',    // ← added
+            'provincePendingDocs',
+            'byProvince',
             'isProvince'
         ));
     }

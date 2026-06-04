@@ -445,7 +445,7 @@
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
-            <div class="modal-body">
+            <div class="modal-body" style="max-height:65vh; overflow-y:auto; padding:1.25rem;">
                 <div class="text-center mb-4 pb-3 border-bottom">
                     <h4 class="font-weight-bold text-primary mb-1">
                         @if($isProvince)
@@ -481,60 +481,165 @@
                         </div>
                     </div>
                 @else
-                    <div class="row align-items-stretch">
+                    <div class="row">
+                        {{-- Central Offices --}}
                         <div class="col-md-6 mb-4">
-                            <h6 class="font-weight-bold text-muted mb-3 text-uppercase">
-                                <i class="fas fa-building mr-2"></i> Central Offices
+                            <h6 class="font-weight-bold text-muted mb-3 text-uppercase" style="font-size:0.7rem; letter-spacing:.08em;">
+                                <i class="fas fa-building mr-1"></i> Central Offices
                             </h6>
-                            <div class="list-group list-group-flush shadow-sm">
-                                <div class="list-group-item d-flex justify-content-between align-items-center">
-                                    <div><i class="fas fa-user-shield text-primary mr-2"></i> Admin</div>
-                                    <span class="badge badge-primary badge-pill font-weight-bold">{{ $activeByRole['admin'] ?? 0 }}</span>
+                            <div class="list-group list-group-flush shadow-sm rounded">
+
+                                @php
+                                $centralRoles = [
+                                    'admin'           => ['label' => 'Admin',           'icon' => 'fa-user-shield',   'color' => '#4e73df'],
+                                    'malsu'           => ['label' => 'MALSU',           'icon' => 'fa-balance-scale',  'color' => '#e74a3b'],
+                                    'case_management' => ['label' => 'Case Management', 'icon' => 'fa-folder-open',    'color' => '#36b9cc'],
+                                    'records'         => ['label' => 'Records',         'icon' => 'fa-file-alt',       'color' => '#1cc88a'],
+                                ];
+                                @endphp
+
+                                @foreach($centralRoles as $roleKey => $meta)
+                                @php
+                                    $received = $activeByRole[$roleKey]['received'] ?? 0;
+                                    $pending  = $activeByRole[$roleKey]['pending']  ?? 0;
+                                @endphp
+                                <div class="list-group-item px-3 py-2" style="border-left: 3px solid {{ $meta['color'] }};">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div style="font-size:0.85rem;">
+                                            <i class="fas {{ $meta['icon'] }} mr-2" style="color:{{ $meta['color'] }};width:14px;"></i>
+                                            <span class="font-weight-semibold text-dark">{{ $meta['label'] }}</span>
+                                        </div>
+                                        <div class="d-flex align-items-center" style="gap:6px;">
+                                            <span title="Received / Active" style="
+                                                background:{{ $meta['color'] }};
+                                                color:#fff;
+                                                font-size:0.78rem;
+                                                font-weight:700;
+                                                border-radius:50px;
+                                                padding:.25em .65em;
+                                                min-width:28px;
+                                                text-align:center;
+                                                display:inline-block;">
+                                                {{ $received }}
+                                            </span>
+                                            @if($pending > 0)
+                                            <span title="Pending Receipt — not yet acknowledged" style="
+                                                background:#fff3cd;
+                                                color:#856404;
+                                                border:1px solid #ffc107;
+                                                font-size:0.72rem;
+                                                font-weight:600;
+                                                border-radius:50px;
+                                                padding:.2em .55em;
+                                                min-width:24px;
+                                                text-align:center;
+                                                display:inline-flex;
+                                                align-items:center;
+                                                gap:3px;">
+                                                <i class="fas fa-clock" style="font-size:0.6rem;"></i>{{ $pending }}
+                                            </span>
+                                            @endif
+                                        </div>
+                                    </div>
+                                    @if($pending > 0)
+                                    <div style="font-size:0.68rem; color:#856404; margin-top:3px; padding-left:22px;">
+                                        <i class="fas fa-hourglass-half mr-1"></i>{{ $pending }} awaiting receipt
+                                    </div>
+                                    @endif
                                 </div>
-                                <div class="list-group-item d-flex justify-content-between align-items-center">
-                                    <div><i class="fas fa-balance-scale text-danger mr-2"></i> MALSU</div>
-                                    <span class="badge badge-danger badge-pill font-weight-bold">{{ $activeByRole['malsu'] ?? 0 }}</span>
-                                </div>
-                                <div class="list-group-item d-flex justify-content-between align-items-center">
-                                    <div><i class="fas fa-folder-open text-info mr-2"></i> Case Management</div>
-                                    <span class="badge badge-info badge-pill font-weight-bold">{{ $activeByRole['case_management'] ?? 0 }}</span>
-                                </div>
-                                <div class="list-group-item d-flex justify-content-between align-items-center">
-                                    <div><i class="fas fa-file-alt text-success mr-2"></i> Records</div>
-                                    <span class="badge badge-success badge-pill font-weight-bold">{{ $activeByRole['records'] ?? 0 }}</span>
-                                </div>
+                                @endforeach
+
                             </div>
                         </div>
+
+                        {{-- Provincial Offices --}}
                         <div class="col-md-6 mb-4">
-                            <h6 class="font-weight-bold text-muted mb-3 text-uppercase">
-                                <i class="fas fa-map-marker-alt mr-2"></i> Provincial Offices
+                            <h6 class="font-weight-bold text-muted mb-3 text-uppercase" style="font-size:0.7rem; letter-spacing:.08em;">
+                                <i class="fas fa-map-marker-alt mr-1"></i> Provincial Offices
                             </h6>
-                            <div class="list-group list-group-flush shadow-sm">
-                                <div class="list-group-item d-flex justify-content-between align-items-center">
-                                    <span>Albay</span>
-                                    <span class="badge badge-primary badge-pill font-weight-bold">{{ $activeByRole['province_albay'] ?? 0 }}</span>
+                            <div class="list-group list-group-flush shadow-sm rounded">
+
+                                @php
+                                $provinceRoles = [
+                                    'province_albay'           => 'Albay',
+                                    'province_camarines_sur'   => 'Camarines Sur',
+                                    'province_camarines_norte' => 'Camarines Norte',
+                                    'province_catanduanes'     => 'Catanduanes',
+                                    'province_masbate'         => 'Masbate',
+                                    'province_sorsogon'        => 'Sorsogon',
+                                ];
+                                @endphp
+
+                                @foreach($provinceRoles as $roleKey => $provinceName)
+                                @php
+                                    $received    = $activeByRole[$roleKey]['received'] ?? 0;
+                                    $pending     = $activeByRole[$roleKey]['pending']  ?? 0;
+                                    $pendingDocs = $provincePendingDocs[$roleKey] ?? collect();
+                                    $modalId     = 'pendingDocsModal_' . $roleKey;
+                                @endphp
+                                <div class="list-group-item px-3 py-2" style="border-left: 3px solid #e67e22;">
+
+                                    {{-- Main row: name + badges --}}
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div style="font-size:0.85rem;">
+                                            <i class="fas fa-map-marker-alt mr-2" style="color:#e67e22;width:14px;"></i>
+                                            <span class="font-weight-semibold text-dark">{{ $provinceName }}</span>
+                                        </div>
+                                        <div class="d-flex align-items-center" style="gap:6px;">
+                                            {{-- Received badge --}}
+                                            <span title="Received & Active" style="
+                                                background:#e67e22;color:#fff;font-size:0.78rem;font-weight:700;
+                                                border-radius:50px;padding:.25em .65em;min-width:28px;
+                                                text-align:center;display:inline-block;">
+                                                {{ $received }}
+                                            </span>
+                                            {{-- Pending badge --}}
+                                            @if($pending > 0)
+                                            <span title="Pending Receipt" style="
+                                                background:#fff3cd;color:#856404;border:1px solid #ffc107;
+                                                font-size:0.72rem;font-weight:600;border-radius:50px;
+                                                padding:.2em .55em;min-width:24px;text-align:center;
+                                                display:inline-flex;align-items:center;gap:3px;">
+                                                <i class="fas fa-clock" style="font-size:0.6rem;"></i>{{ $pending }}
+                                            </span>
+                                            @endif
+                                        </div>
+                                    </div>
+                                    {{-- Pending Receipt mini-card --}}
+                                    @if(true)
+                                    <div class="mt-2 rounded p-2 pending-docs-trigger"
+                                        style="background:#fffbf0;border:1px solid #ffe08a;cursor:pointer;transition:background .15s;"
+                                        onmouseover="this.style.background='#fff3cd'"
+                                        onmouseout="this.style.background='#fffbf0'"
+                                        onclick="openPendingModal('{{ $modalId }}')">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div style="font-size:0.72rem;color:#856404;font-weight:600;">
+                                                <i class="fas fa-inbox mr-1"></i>
+                                                {{ $pendingDocs->count() }} document{{ $pendingDocs->count() > 1 ? 's' : '' }} pending receipt
+                                            </div>
+                                            <i class="fas fa-chevron-right" style="font-size:0.65rem;color:#856404;"></i>
+                                        </div>
+                                        <div style="font-size:0.67rem;color:#a07000;margin-top:2px;">
+                                            Click to view cases awaiting acknowledgment
+                                        </div>
+                                    </div>
+                                    @endif
                                 </div>
-                                <div class="list-group-item d-flex justify-content-between align-items-center">
-                                    <span>Camarines Sur</span>
-                                    <span class="badge badge-primary badge-pill font-weight-bold">{{ $activeByRole['province_camarines_sur'] ?? 0 }}</span>
-                                </div>
-                                <div class="list-group-item d-flex justify-content-between align-items-center">
-                                    <span>Camarines Norte</span>
-                                    <span class="badge badge-primary badge-pill font-weight-bold">{{ $activeByRole['province_camarines_norte'] ?? 0 }}</span>
-                                </div>
-                                <div class="list-group-item d-flex justify-content-between align-items-center">
-                                    <span>Catanduanes</span>
-                                    <span class="badge badge-primary badge-pill font-weight-bold">{{ $activeByRole['province_catanduanes'] ?? 0 }}</span>
-                                </div>
-                                <div class="list-group-item d-flex justify-content-between align-items-center">
-                                    <span>Masbate</span>
-                                    <span class="badge badge-primary badge-pill font-weight-bold">{{ $activeByRole['province_masbate'] ?? 0 }}</span>
-                                </div>
-                                <div class="list-group-item d-flex justify-content-between align-items-center">
-                                    <span>Sorsogon</span>
-                                    <span class="badge badge-primary badge-pill font-weight-bold">{{ $activeByRole['province_sorsogon'] ?? 0 }}</span>
-                                </div>
+                                @endforeach
+
                             </div>
+                        </div>
+                    </div>
+
+                    {{-- Legend --}}
+                    <div class="d-flex align-items-center justify-content-end mt-1" style="gap:14px;">
+                        <div style="font-size:0.72rem; color:#6e707e; display:flex; align-items:center; gap:5px;">
+                            <span style="width:10px;height:10px;border-radius:50%;background:#4e73df;display:inline-block;"></span>
+                            Received &amp; Active
+                        </div>
+                        <div style="font-size:0.72rem; color:#856404; display:flex; align-items:center; gap:5px;">
+                            <span style="width:10px;height:10px;border-radius:50%;background:#ffc107;display:inline-block;border:1px solid #ffc107;"></span>
+                            Pending Receipt
                         </div>
                     </div>
                 @endif
@@ -549,6 +654,128 @@
     </div>
 </div>
 
+{{-- ================================================================= --}}
+{{--  PER-PROVINCE PENDING DOCUMENTS MODALS                            --}}
+{{-- ================================================================= --}}
+@if(!$isProvince)
+@php
+$provinceRolesForModal = [
+    'province_albay'           => 'Albay',
+    'province_camarines_sur'   => 'Camarines Sur',
+    'province_camarines_norte' => 'Camarines Norte',
+    'province_catanduanes'     => 'Catanduanes',
+    'province_masbate'         => 'Masbate',
+    'province_sorsogon'        => 'Sorsogon',
+];
+@endphp
+
+@foreach($provinceRolesForModal as $roleKey => $provinceName)
+@php $pendingDocs = $provincePendingDocs[$roleKey] ?? collect(); @endphp
+@if($pendingDocs->count() > 0)
+
+<div class="modal fade" id="pendingDocsModal_{{ $roleKey }}" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-md" role="document">
+        <div class="modal-content" style="border-top:4px solid #f6c23e;">
+
+            <div class="modal-header" style="background:#fffbf0;border-bottom:1px solid #ffe08a;">
+                <div>
+                    <h5 class="modal-title mb-0" style="color:#856404;font-size:0.95rem;">
+                        <i class="fas fa-inbox mr-2"></i>
+                        Pending Documents — {{ $provinceName }}
+                    </h5>
+                    <small style="color:#a07000;font-size:0.72rem;">
+                        Cases transferred but not yet acknowledged by the provincial office
+                    </small>
+                </div>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close" style="color:#856404;">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+
+            <div class="modal-body p-0">
+                @foreach($pendingDocs as $doc)
+                @php $case = $doc->case; @endphp
+                <div class="px-4 py-3" style="border-bottom:1px solid #f5f0e8;">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div style="flex:1;">
+                            {{-- Case No + Status --}}
+                            <div class="d-flex align-items-center mb-1" style="gap:6px;">
+                                <span class="font-weight-bold text-primary" style="font-size:0.85rem;">
+                                    {{ $case->case_no ?? $case->inspection_id ?? 'N/A' }}
+                                </span>
+                                <span style="
+                                    background:#fff3cd;color:#856404;border:1px solid #ffc107;
+                                    font-size:0.65rem;font-weight:600;border-radius:50px;
+                                    padding:.15em .5em;">
+                                    <i class="fas fa-clock mr-1" style="font-size:0.55rem;"></i>Pending Receipt
+                                </span>
+                            </div>
+
+                            {{-- Establishment --}}
+                            <div style="font-size:0.82rem;color:#2d3748;font-weight:600;margin-bottom:2px;">
+                                {{ $case->establishment_name ?? 'Unknown Establishment' }}
+                            </div>
+
+                            {{-- Stage + Industry --}}
+                            <div style="font-size:0.72rem;color:#718096;">
+                                @if($case->current_stage)
+                                    <i class="fas fa-layer-group mr-1"></i>{{ $case->current_stage }}
+                                @endif
+                                @if($case->type_of_industry)
+                                    &bull; {{ $case->type_of_industry }}
+                                @endif
+                            </div>
+                        </div>
+
+                        {{-- Transfer info --}}
+                        <div class="text-right ml-3" style="flex-shrink:0;">
+                            <div style="font-size:0.7rem;color:#718096;">
+                                <i class="fas fa-paper-plane mr-1"></i>
+                                @if($doc->transferredBy)
+                                    {{ $doc->transferredBy->fname }} {{ $doc->transferredBy->lname }}
+                                @else
+                                    System
+                                @endif
+                            </div>
+                            <div style="font-size:0.68rem;color:#a0aec0;margin-top:2px;">
+                                {{ $doc->transferred_at ? $doc->transferred_at->diffForHumans() : 'N/A' }}
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Notes if any --}}
+                    @if($doc->transfer_notes)
+                    <div class="mt-2 px-2 py-1 rounded" style="background:#f8f4e8;font-size:0.7rem;color:#856404;border-left:2px solid #ffc107;">
+                        <i class="fas fa-sticky-note mr-1"></i>{{ $doc->transfer_notes }}
+                    </div>
+                    @endif
+                </div>
+                @endforeach
+            </div>
+
+            <div class="modal-footer" style="background:#fafafa;border-top:1px solid #f0e8d0;padding:.6rem 1rem;">
+                <span style="font-size:0.72rem;color:#a07000;margin-right:auto;">
+                    <i class="fas fa-info-circle mr-1"></i>
+                    {{ $pendingDocs->count() }} case{{ $pendingDocs->count() > 1 ? 's' : '' }} awaiting receipt
+                </span>
+                <button type="button" class="btn btn-sm btn-light" data-dismiss="modal"
+                        style="font-size:0.78rem;border:1px solid #ddd;">
+                    Close
+                </button>
+                <a href="{{ route('documents.tracking') }}"
+                   class="btn btn-sm"
+                   style="background:#f6c23e;color:#856404;font-weight:600;font-size:0.78rem;border:1px solid #f0b429;">
+                    <i class="fas fa-external-link-alt mr-1"></i> Go to Document Tracking
+                </a>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+@endif
+@endforeach
+@endif
 @endsection
 
 @push('scripts')
@@ -621,6 +848,23 @@ $(document).ready(function() {
     });
 });
 
+// =====================================================================
+// MODAL CHAIN: close activeCasesModal then open the province pending modal
+// =====================================================================
+function openPendingModal(modalId) {
+    var $active = $('#activeCasesModal');
+    var $target = $('#' + modalId);
+
+    if ($active.hasClass('show')) {
+        // Wait for activeCasesModal to fully close before opening the next
+        $active.one('hidden.bs.modal', function () {
+            $target.modal('show');
+        });
+        $active.modal('hide');
+    } else {
+        $target.modal('show');
+    }
+}
 // =====================================================================
 // DEADLINE ALERTS LIVE WIDGET POLLING LOGIC
 // =====================================================================
