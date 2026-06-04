@@ -66,46 +66,16 @@ class FrontController extends Controller
                 ->unique()
                 ->count();
 
-        } else {
-            // Regional roles: system-wide counts, no scoping
-            $activeCases         = CaseFile::where('overall_status', 'Active')->count();
-            $actualDisposedCases = CaseFile::where('overall_status', 'Completed')->count();
-            $disposedCases       = CaseFile::where('overall_status', 'Disposed')->count();
-
-            $misDisposedCases = CaseFile::where('overall_status', 'Active')
-                ->whereNotNull('date_signed_mis')
-                ->whereMonth('date_signed_mis', Carbon::now()->month)
-                ->whereYear('date_signed_mis', Carbon::now()->year)
-                ->count();
-
-            $misDisposedCasesList = CaseFile::where('overall_status', 'Active')
-                ->whereNotNull('date_signed_mis')
-                ->whereMonth('date_signed_mis', Carbon::now()->month)
-                ->whereYear('date_signed_mis', Carbon::now()->year)
-                ->select('case_no', 'po_office', 'inspection_id', 'establishment_name', 'pct_96_days', 'date_signed_mis', 'date_scheduled_docketed')
-                ->orderBy('po_office')
+            // ── Province: pending docs for THIS user ──────────────────────────
+            $myPendingDocs = \App\Models\DocumentTracking::with(['case', 'transferredBy'])
+                ->active()
+                ->where('current_role', $userRole)
+                ->where('status', 'Pending Receipt')
+                ->orderBy('transferred_at', 'desc')
                 ->get();
+            $myPendingCount = $myPendingDocs->count();
 
-            $totalCases = CaseFile::count();
-
-            $caseManagementActiveCases = CaseFile::where('overall_status', 'Active')
-                ->whereHas('documentTracking', fn($q) => $q
-                    ->where('current_role', 'case_management')
-                    ->where('status', 'Received')
-                )
-                ->count();
-
-            // ── Province Breakdown for admin/case_management dashboard panel ──
-            $byProvince = collect();
-            if (in_array($userRole, ['case_management', 'admin'])) {
-                $monthStart = Carbon::now()->startOfMonth();
-                $monthEnd   = Carbon::now()->endOfMonth();
-                $byProvince = AnalyticsController::getByProvince($monthStart, $monthEnd);
-            }
-        }
-
-        // ── Active Cases Modal Breakdown ──────────────────────────────────────
-        if ($isProvince) {
+            // ── Province: activeByRole (just this province) ───────────────────
             $activeByRole = [
                 $userRole => [
                     'received' => $activeCases,
@@ -117,11 +87,13 @@ class FrontController extends Controller
                         ->count(),
                 ],
             ];
+
         } else {
-            // Regional roles: system-wide counts, no scoping
+            // ── Regional roles: system-wide counts ───────────────────────────
             $activeCases         = CaseFile::where('overall_status', 'Active')->count();
             $actualDisposedCases = CaseFile::where('overall_status', 'Completed')->count();
             $disposedCases       = CaseFile::where('overall_status', 'Disposed')->count();
+            $totalCases          = CaseFile::count();
 
             $misDisposedCases = CaseFile::where('overall_status', 'Active')
                 ->whereNotNull('date_signed_mis')
@@ -137,8 +109,6 @@ class FrontController extends Controller
                 ->orderBy('po_office')
                 ->get();
 
-            $totalCases = CaseFile::count();
-
             $caseManagementActiveCases = CaseFile::where('overall_status', 'Active')
                 ->whereHas('documentTracking', fn($q) => $q
                     ->where('current_role', 'case_management')
@@ -146,7 +116,7 @@ class FrontController extends Controller
                 )
                 ->count();
 
-            // ── Province Breakdown for admin/case_management dashboard panel ──
+            // ── Province Breakdown for admin/case_management panel ────────────
             $byProvince = collect();
             if (in_array($userRole, ['case_management', 'admin'])) {
                 $monthStart = Carbon::now()->startOfMonth();
@@ -179,7 +149,7 @@ class FrontController extends Controller
                 ];
             }
 
-            // ── Pending Documents per Province (full doc data for modal) ──────
+            // ── Pending Documents per Province (for admin modal) ──────────────
             $provinceRoleKeys = [
                 'province_albay', 'province_camarines_sur', 'province_camarines_norte',
                 'province_catanduanes', 'province_masbate', 'province_sorsogon',
@@ -194,9 +164,13 @@ class FrontController extends Controller
                     ->orderBy('transferred_at', 'desc')
                     ->get(['id', 'case_id', 'transferred_by_user_id', 'transferred_at', 'transfer_notes']);
             }
+
+            // ── Regional users have no personal pending docs card ─────────────
+            $myPendingDocs  = collect();
+            $myPendingCount = 0;
         }
 
-        // ── Pending Documents for THIS user's role ────────────────────────────
+        // ── Pending Documents for THIS user's role (navbar bell) ─────────────
         $pendingDocuments = DocumentTracking::where('current_role', $userRole)
             ->where('status', 'Pending Receipt')
             ->whereNull('received_by_user_id')
@@ -300,7 +274,7 @@ class FrontController extends Controller
             ->limit(10)
             ->get();
 
-        // ── Document Tracking Stats (global) ──────────────────────────────────
+        // ── Document Tracking Stats (global) ─────────────────────────────────
         $documentsInTransit = DocumentTracking::where('status', 'in_transit')->count();
         $documentsPending   = DocumentTracking::where('status', 'pending')->count();
         $documentsReceived  = DocumentTracking::where('status', 'received')->count();
@@ -343,6 +317,8 @@ class FrontController extends Controller
             'caseManagementActiveCases',
             'activeByRole',
             'provincePendingDocs',
+            'myPendingDocs',
+            'myPendingCount',
             'byProvince',
             'isProvince'
         ));
