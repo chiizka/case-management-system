@@ -102,6 +102,99 @@
                     </div>
                 </div>
             </div>
+
+        @elseif($isMalsu)
+            {{-- MALSU VIEW: 4 cards --}}
+            
+            {{-- 1. Active Cases (Region-wide) --}}
+            <div class="col-xl-3 col-md-6 mb-4">
+                <div class="card border-left-success shadow h-100 py-2 clickable-card"
+                    data-toggle="modal" data-target="#activeCasesModal" style="cursor:pointer;">
+                    <div class="card-body py-2">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs font-weight-bold text-success text-uppercase mb-1" style="font-size:0.65rem;">Active Cases (Region-wide)</div>
+                                <div class="h6 mb-0 font-weight-bold text-gray-800">{{ $activeCases }}</div>
+                                <div class="mt-1">
+                                    <span class="badge badge-success" style="font-size:0.6rem;padding:0.2rem 0.4rem;">
+                                        <i class="fas fa-globe-asia mr-1"></i>All offices
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="col-auto"><i class="fas fa-clipboard-list fa-lg text-gray-300"></i></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {{-- 2. Active Cases at MALSU --}}
+            <div class="col-xl-3 col-md-6 mb-4">
+                <div class="card shadow h-100 py-2" style="border-left:4px solid #764ba2;">
+                    <div class="card-body py-2">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs font-weight-bold text-uppercase mb-1" style="font-size:0.65rem;color:#764ba2;">Active Cases (MALSU)</div>
+                                <div class="h6 mb-0 font-weight-bold text-gray-800">{{ $malsuActiveCases }}</div>
+                                <div class="mt-1">
+                                    <span class="badge" style="font-size:0.6rem;padding:0.2rem 0.4rem;background-color:#764ba2;color:white;">
+                                        <i class="fas fa-balance-scale mr-1"></i>Currently at MALSU
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="col-auto"><i class="fas fa-balance-scale fa-lg text-gray-300"></i></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {{-- 3. Disposed/Completed at MALSU --}}
+            <div class="col-xl-3 col-md-6 mb-4">
+                <div class="card border-left-primary shadow h-100 py-2">
+                    <div class="card-body py-2">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs font-weight-bold text-primary text-uppercase mb-1" style="font-size:0.65rem;">Disposed Cases (MALSU)</div>
+                                <div class="h6 mb-0 font-weight-bold text-gray-800">{{ $malsuDisposedCases }}</div>
+                                <div class="mt-1">
+                                    <span class="badge badge-primary" style="font-size:0.6rem;padding:0.2rem 0.4rem;">
+                                        <i class="fas fa-gavel mr-1"></i>Closed at MALSU
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="col-auto"><i class="fas fa-gavel fa-lg text-gray-300"></i></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {{-- 4. Pending Documents for MALSU --}}
+            <div class="col-xl-3 col-md-6 mb-4">
+                <div class="card shadow h-100 py-2 clickable-card"
+                    style="border-left:4px solid #f6c23e;cursor:pointer;"
+                    data-toggle="modal" data-target="#myPendingDocsModal">
+                    <div class="card-body py-2">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs font-weight-bold text-uppercase mb-1" style="font-size:0.65rem;color:#d4a017;">Pending Documents</div>
+                                <div class="h6 mb-0 font-weight-bold text-gray-800">{{ $myPendingCount }}</div>
+                                <div class="mt-1">
+                                    @if($myPendingCount > 0)
+                                        <small style="color:#856404;font-size:0.65rem;">
+                                            <i class="fas fa-inbox mr-1"></i>Awaiting acknowledgment
+                                        </small>
+                                    @else
+                                        <small class="text-muted" style="font-size:0.65rem;">
+                                            <i class="fas fa-check-circle mr-1 text-success"></i>All received
+                                        </small>
+                                    @endif
+                                </div>
+                            </div>
+                            <div class="col-auto"><i class="fas fa-inbox fa-lg" style="color:#f6c23e;opacity:0.6;"></i></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
         @else
             {{-- REGIONAL/ADMIN VIEW --}}
             @php $hasCMCard = in_array(Auth::user()->role, ['case_management', 'admin']); @endphp
@@ -451,6 +544,106 @@
     </div>
 </div>
 
+@if($isMalsu)
+<div class="modal fade" id="myPendingDocsModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-md" role="document">
+        <div class="modal-content" style="border-top:4px solid #f6c23e;">
+
+            <div class="modal-header" style="background:#fffbf0;border-bottom:1px solid #ffe08a;">
+                <div>
+                    <h5 class="modal-title mb-0" style="color:#856404;font-size:0.95rem;">
+                        <i class="fas fa-inbox mr-2"></i>
+                        Pending Documents — MALSU
+                    </h5>
+                    <small style="color:#a07000;font-size:0.72rem;">
+                        Cases transferred to MALSU awaiting acknowledgment
+                    </small>
+                </div>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close" style="color:#856404;">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+
+            <div class="modal-body p-0" style="max-height:60vh;overflow-y:auto;">
+                @if($myPendingDocs->count() > 0)
+                    @foreach($myPendingDocs as $doc)
+                    @php $case = $doc->case; @endphp
+                    <div class="px-4 py-3" style="border-bottom:1px solid #f5f0e8;">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div style="flex:1;">
+                                <div class="d-flex align-items-center mb-1" style="gap:6px;">
+                                    <span class="font-weight-bold text-primary" style="font-size:0.85rem;">
+                                        {{ $case->case_no ?? $case->inspection_id ?? 'N/A' }}
+                                    </span>
+                                    <span style="background:#fff3cd;color:#856404;border:1px solid #ffc107;
+                                                 font-size:0.65rem;font-weight:600;border-radius:50px;
+                                                 padding:.15em .5em;">
+                                        <i class="fas fa-clock mr-1" style="font-size:0.55rem;"></i>Pending Receipt
+                                    </span>
+                                </div>
+                                <div style="font-size:0.82rem;color:#2d3748;font-weight:600;margin-bottom:2px;">
+                                    {{ $case->establishment_name ?? 'Unknown Establishment' }}
+                                </div>
+                                <div style="font-size:0.72rem;color:#718096;">
+                                    @if($case->current_stage)
+                                        <i class="fas fa-layer-group mr-1"></i>{{ $case->current_stage }}
+                                    @endif
+                                    @if($case->po_office)
+                                        &bull; {{ $case->po_office }}
+                                    @endif
+                                </div>
+                            </div>
+                            <div class="text-right ml-3" style="flex-shrink:0;">
+                                <div style="font-size:0.7rem;color:#718096;">
+                                    <i class="fas fa-paper-plane mr-1"></i>
+                                    @if($doc->transferredBy)
+                                        {{ $doc->transferredBy->fname }} {{ $doc->transferredBy->lname }}
+                                    @else
+                                        System
+                                    @endif
+                                </div>
+                                <div style="font-size:0.68rem;color:#a0aec0;margin-top:2px;">
+                                    {{ $doc->transferred_at ? $doc->transferred_at->diffForHumans() : 'N/A' }}
+                                </div>
+                            </div>
+                        </div>
+                        @if($doc->transfer_notes)
+                        <div class="mt-2 px-2 py-1 rounded"
+                             style="background:#f8f4e8;font-size:0.7rem;color:#856404;border-left:2px solid #ffc107;">
+                            <i class="fas fa-sticky-note mr-1"></i>{{ $doc->transfer_notes }}
+                        </div>
+                        @endif
+                    </div>
+                    @endforeach
+                @else
+                    <div class="text-center text-muted py-5">
+                        <i class="fas fa-check-circle fa-3x mb-3 d-block text-success"></i>
+                        <p class="mb-0 font-weight-bold">All caught up!</p>
+                        <small>No documents pending receipt.</small>
+                    </div>
+                @endif
+            </div>
+
+            <div class="modal-footer" style="background:#fafafa;border-top:1px solid #f0e8d0;padding:.6rem 1rem;">
+                <span style="font-size:0.72rem;color:#a07000;margin-right:auto;">
+                    <i class="fas fa-info-circle mr-1"></i>
+                    {{ $myPendingCount }} document{{ $myPendingCount !== 1 ? 's' : '' }} awaiting receipt
+                </span>
+                <button type="button" class="btn btn-sm btn-light" data-dismiss="modal"
+                        style="font-size:0.78rem;border:1px solid #ddd;">
+                    Close
+                </button>
+                <a href="{{ route('documents.tracking') }}"
+                   class="btn btn-sm"
+                   style="background:#f6c23e;color:#856404;font-weight:600;font-size:0.78rem;border:1px solid #f0b429;">
+                    <i class="fas fa-external-link-alt mr-1"></i> Go to Document Tracking
+                </a>
+            </div>
+
+        </div>
+    </div>
+</div>
+@endif
 {{-- ===================================================================== --}}
 {{--  ACTIVE CASES DISTRIBUTION MODAL                                      --}}
 {{-- ===================================================================== --}}

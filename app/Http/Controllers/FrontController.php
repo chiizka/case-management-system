@@ -18,6 +18,9 @@ class FrontController extends Controller
         $user       = Auth::user();
         $isProvince = $user->isProvince();
         $userRole   = $user->role;
+        $isMalsu            = false;
+        $malsuActiveCases   = 0;
+        $malsuDisposedCases = 0;
 
         if ($isProvince) {
             $provinceName              = $user->getProvinceName();
@@ -88,8 +91,84 @@ class FrontController extends Controller
                 ],
             ];
 
+        } elseif ($user->role === 'malsu') {
+            $isMalsu = true;
+
+            $activeCases = CaseFile::where('overall_status', 'Active')->count();
+
+            $malsuActiveCases = CaseFile::where('overall_status', 'Active')
+                ->whereHas('documentTracking', fn($q) => $q
+                    ->where('current_role', 'malsu')
+                    ->where('status', 'Received')
+                )
+                ->count();
+
+            $malsuDisposedCases = CaseFile::whereIn('overall_status', ['Completed', 'Disposed', 'Dismissed'])
+                ->whereHas('documentTracking', fn($q) => $q
+                    ->where('current_role', 'malsu')
+                )
+                ->count();
+
+            $myPendingDocs = \App\Models\DocumentTracking::with(['case', 'transferredBy'])
+                ->where('current_role', 'malsu')
+                ->where('status', 'Pending Receipt')
+                ->orderBy('transferred_at', 'desc')
+                ->get();
+            $myPendingCount = $myPendingDocs->count();
+
+            // ── Same breakdown as admin/case_management ───────────────────────
+            $rolesForBreakdown = [
+                'admin', 'malsu', 'case_management', 'records',
+                'province_albay', 'province_camarines_sur', 'province_camarines_norte',
+                'province_catanduanes', 'province_masbate', 'province_sorsogon',
+            ];
+
+            $activeByRole = [];
+            foreach ($rolesForBreakdown as $role) {
+                $activeByRole[$role] = [
+                    'received' => CaseFile::where('overall_status', 'Active')
+                        ->whereHas('documentTracking', fn($q) => $q
+                            ->where('current_role', $role)
+                            ->where('status', 'Received')
+                        )
+                        ->count(),
+                    'pending' => CaseFile::where('overall_status', 'Active')
+                        ->whereHas('documentTracking', fn($q) => $q
+                            ->where('current_role', $role)
+                            ->where('status', 'Pending Receipt')
+                        )
+                        ->count(),
+                ];
+            }
+
+            $provinceRoleKeys = [
+                'province_albay', 'province_camarines_sur', 'province_camarines_norte',
+                'province_catanduanes', 'province_masbate', 'province_sorsogon',
+            ];
+
+            $provincePendingDocs = [];
+            foreach ($provinceRoleKeys as $role) {
+                $provincePendingDocs[$role] = \App\Models\DocumentTracking::with(['case', 'transferredBy'])
+                    ->active()
+                    ->where('current_role', $role)
+                    ->where('status', 'Pending Receipt')
+                    ->orderBy('transferred_at', 'desc')
+                    ->get(['id', 'case_id', 'transferred_by_user_id', 'transferred_at', 'transfer_notes']);
+            }
+
+            $totalCases                = CaseFile::count();
+            $actualDisposedCases       = 0;
+            $disposedCases             = 0;
+            $misDisposedCases          = 0;
+            $misDisposedCasesList      = collect();
+            $caseManagementActiveCases = 0;
+            $byProvince                = collect();
+
         } else {
             // ── Regional roles: system-wide counts ───────────────────────────
+            $isMalsu             = false;
+            $malsuActiveCases    = 0;
+            $malsuDisposedCases  = 0;
             $activeCases         = CaseFile::where('overall_status', 'Active')->count();
             $actualDisposedCases = CaseFile::where('overall_status', 'Completed')->count();
             $disposedCases       = CaseFile::where('overall_status', 'Disposed')->count();
@@ -320,7 +399,10 @@ class FrontController extends Controller
             'myPendingDocs',
             'myPendingCount',
             'byProvince',
-            'isProvince'
+            'isProvince',
+            'isMalsu',
+            'malsuActiveCases',
+            'malsuDisposedCases',
         ));
     }
 
