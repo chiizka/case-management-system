@@ -70,6 +70,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/case/load-tab/0', [CasesController::class, 'loadTab0']);
         Route::get('/case/load-tab/{tabNumber}', [CasesController::class, 'loadTabData'])->name('case.loadTab');
         Route::get('/case/load-case-management-tab', [CasesController::class, 'loadCaseManagementTab'])->name('case.loadCaseManagementTab');
+                Route::get('/case/load-malsu-tab', [CasesController::class, 'loadMalsuTab'])->name('case.loadMalsuTab');
         Route::get('/case/{id}/document-history', [CasesController::class, 'getDocumentHistory'])->name('case.documentHistory');
         Route::get('/case/{id}/documents', [CasesController::class, 'getDocuments'])->name('case.documents');
         Route::post('/case/{id}/documents', [CasesController::class, 'saveDocuments'])->name('case.documents.save');

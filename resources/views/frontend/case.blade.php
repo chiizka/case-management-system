@@ -451,22 +451,33 @@ td.actions-cell.expanded {
     <div class="container-fluid">
 
     <!-- Tab Navigation -->
-    @if(Auth::user()->isCaseManagement())
+    @if(Auth::user()->isCaseManagement() || Auth::user()->isMalsu())
         <ul class="nav nav-tabs mb-0" id="dataTableTabs" role="tablist">
+            @if(!Auth::user()->isMalsu())
             <li class="nav-item">
-                <a class="nav-link active" id="tab0-tab"
-                data-toggle="tab" href="#tab0"
+                <a class="nav-link {{ Auth::user()->isCaseManagement() ? 'active' : '' }}" 
+                id="tab0-tab" data-toggle="tab" href="#tab0"
                 role="tab" aria-controls="tab0" aria-selected="true">
                     <i class="fas fa-folder-open mr-1"></i> All Active Cases
                 </a>
             </li>
+            @endif
+            @if(Auth::user()->isCaseManagement())
             <li class="nav-item">
-                <a class="nav-link" id="tabCM-tab"
-                data-toggle="tab" href="#tabCM"
+                <a class="nav-link" id="tabCM-tab" data-toggle="tab" href="#tabCM"
                 role="tab" aria-controls="tabCM" aria-selected="false">
                     <i class="fas fa-briefcase mr-1"></i> My Cases
                 </a>
             </li>
+            @endif
+            @if(Auth::user()->isMalsu())
+            <li class="nav-item">
+                <a class="nav-link active" id="tabMALSU-tab" data-toggle="tab" href="#tabMALSU"
+                role="tab" aria-controls="tabMALSU" aria-selected="true">
+                    <i class="fas fa-briefcase mr-1"></i> My Cases
+                </a>
+            </li>
+            @endif
         </ul>
     @endif
 
@@ -474,6 +485,7 @@ td.actions-cell.expanded {
         <div class="tab-content mt-1" id="dataTableTabsContent">
     
     <!-- Tab 0: All Active Cases (Enhanced with corrected columns) -->
+    @if(!Auth::user()->isMalsu())
     <div class="tab-pane fade show active" id="tab0" role="tabpanel" aria-labelledby="tab0-tab">
         <div class="card shadow mb-4">
             <div class="card-body">
@@ -581,6 +593,7 @@ td.actions-cell.expanded {
             </div>
         </div>
     </div>
+    @endif
 
     <!-- Tab 1: Inspection (LAZY LOAD) -->
     <div class="tab-pane fade" id="tab1" role="tabpanel" aria-labelledby="tab1-tab">
@@ -700,6 +713,23 @@ td.actions-cell.expanded {
                                 </div>
                                 <p class="text-muted">Loading cases assigned to Case Management...</p>
                                 <small class="text-muted">This may take a moment for the first load</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            @endif
+
+            @if(Auth::user()->isMalsu() || Auth::user()->isAdmin())
+                <div class="tab-pane fade {{ Auth::user()->isMalsu() ? 'show active' : '' }}" 
+                    id="tabMALSU" role="tabpanel" aria-labelledby="tabMALSU-tab">
+                    <div class="card shadow mb-4">
+                        <div class="card-body">
+                            <div class="tab-loading text-center" style="padding: 3rem;">
+                                <div class="spinner-border text-primary mb-3" role="status"
+                                    style="width: 3rem; height: 3rem;">
+                                    <span class="sr-only">Loading...</span>
+                                </div>
+                                <p class="text-muted">Loading cases assigned to MALSU...</p>
                             </div>
                         </div>
                     </div>
@@ -1835,6 +1865,93 @@ $(document).on('click', function(e) {
 
         // ── Case Management tab lazy load ──────────────────────────────────────
     var cmTabLoaded = false;
+    var malsuTabLoaded = false;
+
+    $('a[href="#tabMALSU"]').on('shown.bs.tab', function () {
+        if (malsuTabLoaded) {
+            if ($.fn.DataTable.isDataTable('#dataTableMALSU')) {
+                $('#dataTableMALSU').DataTable().columns.adjust().draw(false);
+            }
+            return;
+        }
+
+        const $cardBody = $('#tabMALSU .card-body');
+
+        $cardBody.html(`
+            <div class="tab-loading text-center" style="padding: 3rem;">
+                <div class="spinner-border text-primary mb-3" role="status" style="width: 3rem; height: 3rem;">
+                    <span class="sr-only">Loading...</span>
+                </div>
+                <p class="text-muted">Loading cases assigned to MALSU...</p>
+            </div>
+        `);
+
+        $.ajax({
+            url: '/case/load-malsu-tab',
+            method: 'GET',
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'),
+                'Accept': 'application/json'
+            },
+            success: function (response) {
+                if (response.success) {
+                    $cardBody.html(response.html);
+                    malsuTabLoaded = true;
+
+                    setTimeout(function () {
+                        if ($.fn.DataTable.isDataTable('#dataTableMALSU')) {
+                            $('#dataTableMALSU').DataTable().destroy();
+                        }
+
+                        $('#dataTableMALSU tbody tr td[colspan]').closest('tr').remove();
+
+                        var malsuTable = $('#dataTableMALSU').DataTable({
+                            pageLength: 10,
+                            lengthChange: false,
+                            paging: true,
+                            searching: true,
+                            info: true,
+                            dom: 'tip',
+                            columnDefs: [{ orderable: false, targets: 0 }],
+                            scrollX: true,
+                            scrollY: (window.innerHeight - 280) + 'px',
+                            scrollCollapse: true,
+                            language: {
+                                emptyTable: 'No cases are currently assigned to MALSU.'
+                            },
+                            drawCallback: function() {
+                                $('#dataTableMALSU thead th').css({
+                                    'position': 'sticky',
+                                    'top': 0,
+                                    'z-index': 12
+                                });
+                                $('#dataTableMALSU thead th:nth-child(-n+5)').css({
+                                    'z-index': 13
+                                });
+                            }
+                        });
+
+                        $('#customSearchMALSU').off('keyup input change').on('keyup input change', function () {
+                            malsuTable.search(this.value).draw();
+                        });
+
+                        setTimeout(function() { malsuTable.columns.adjust().draw(false); }, 50);
+                        setTimeout(function() { malsuTable.columns.adjust().draw(false); }, 300);
+
+                    }, 100);
+                } else {
+                    $cardBody.html(`<div class="alert alert-danger">Failed to load MALSU cases. Please try again.</div>`);
+                }
+            },
+            error: function (xhr) {
+                $cardBody.html(`
+                    <div class="alert alert-danger">
+                        <strong>Error:</strong> ${xhr.responseJSON?.error || 'Failed to load data.'}
+                    </div>
+                `);
+            }
+        });
+    });
 
     $('a[href="#tabCM"]').on('shown.bs.tab', function () {
         if (cmTabLoaded) {
@@ -2182,7 +2299,7 @@ loadTab0Data();
         var tabNumber = tabId.replace('tab', '');
 
         // ── Skip the CM tab — it has its own dedicated handler ──
-        if (tabId === 'tabCM') return;
+        if (tabId === 'tabCM' || tabId === 'tabMALSU') return;
 
         console.log('Tab switched to:', target);
         
@@ -2611,6 +2728,11 @@ $(document).ready(function() {
         let currentEditingCell = null;
     let originalValue = null;
 
+
+    if ($('#tabMALSU').hasClass('active')) {
+    $('a[href="#tabMALSU"]').trigger('shown.bs.tab');
+    }
+
     // Double-click to edit cell
     $(document).on('dblclick', '.editable-cell', function(e) {
         e.preventDefault();
@@ -2704,6 +2826,7 @@ $(document).ready(function() {
         else if (tableId === 'dataTable5') tabKey = 'tab5';
         else if (tableId === 'dataTable6') tabKey = 'tab6';
         else if (tableId === 'dataTable7') tabKey = 'tab7';
+        else if (tableId === 'dataTableMALSU') tabKey = 'tab0';
         
         const fieldConfig = tabConfigs[tabKey]?.fields[field];
         
