@@ -1905,7 +1905,7 @@ $(document).on('click', function(e) {
 
                         $('#dataTableMALSU tbody tr td[colspan]').closest('tr').remove();
 
-                        var malsuTable = $('#dataTableMALSU').DataTable({
+                        tables['#dataTableMALSU'] = $('#dataTableMALSU').DataTable({
                             pageLength: 10,
                             lengthChange: false,
                             paging: true,
@@ -1932,16 +1932,14 @@ $(document).on('click', function(e) {
                         });
 
                         $('#customSearchMALSU').off('keyup input change').on('keyup input change', function () {
-                            malsuTable.search(this.value).draw();
+                            tables['#dataTableMALSU'].search(this.value).draw();
                         });
 
-                            setTimeout(function() { malsuTable.columns.adjust().draw(false); }, 50);
-                            setTimeout(function() { malsuTable.columns.adjust().draw(false); }, 300);
-                            setTimeout(function() { malsuTable.columns.adjust().draw(false); }, 600);
-                            
-                            // ← ADD THIS RIGHT HERE, after the three above
+                            setTimeout(function() { tables['#dataTableMALSU'].columns.adjust().draw(false); }, 50);
+                            setTimeout(function() { tables['#dataTableMALSU'].columns.adjust().draw(false); }, 300);
+                            setTimeout(function() { tables['#dataTableMALSU'].columns.adjust().draw(false); }, 600);
                             setTimeout(function() {
-                                malsuTable.columns.adjust().draw(false);
+                                tables['#dataTableMALSU'].columns.adjust().draw(false);
                                 if (tables['#dataTable0']) {
                                     tables['#dataTable0'].draw(false);
                                 }
@@ -3404,6 +3402,9 @@ $(document).ready(function() {
             }
         },
     };
+
+    tabConfigs['tabMALSU'] = tabConfigs['tab0'];
+    tabConfigs['tabCM']    = tabConfigs['tab0'];
 
     // Get current active tab
     function getCurrentTab() {
