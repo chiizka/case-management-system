@@ -136,7 +136,7 @@ class AnalyticsController extends Controller
                             ->whereDate('updated_at', '<=', $monthEnd))
                     )->count();
 
-                return ['name' => $prov, 'total' => $total, 'active' => $active, 'disposed' => $disposed];
+                return ['name' => $prov, 'role' => $role, 'total' => $total, 'active' => $active, 'disposed' => $disposed];
             });
         }
 
@@ -229,7 +229,7 @@ class AnalyticsController extends Controller
                     ->whereDate('updated_at', '<=', $monthEnd))
             )->count();
 
-        return ['name' => $prov, 'total' => $total, 'active' => $active, 'disposed' => $disposed];
+        return ['name' => $prov, 'role' => $role, 'total' => $total, 'active' => $active, 'disposed' => $disposed];
     });
 }
 }

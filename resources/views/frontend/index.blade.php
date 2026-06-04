@@ -229,7 +229,7 @@
                                             <th class="pl-4 py-2" style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: .05em; color: #6e707e; font-weight: 600; border-bottom: 2px solid #e3e6f0;">Province</th>
                                             <th class="text-center py-2" style="width:80px; font-size: 0.7rem; text-transform: uppercase; letter-spacing: .05em; color: #6e707e; font-weight: 600; border-bottom: 2px solid #e3e6f0;">Active</th>
                                             <th class="text-center py-2" style="width:90px; font-size: 0.7rem; text-transform: uppercase; letter-spacing: .05em; color: #6e707e; font-weight: 600; border-bottom: 2px solid #e3e6f0;">Disposed<br><span style="font-weight:400;">this month</span></th>
-                                            <th class="text-center py-2" style="width:100px; font-size: 0.7rem; text-transform: uppercase; letter-spacing: .05em; color: #e74a3b; font-weight: 600; border-bottom: 2px solid #e3e6f0;"><i class="fas fa-exclamation-circle mr-1"></i>Beyond</th>
+                                            <th class="text-center py-2" style="width:110px; font-size: 0.7rem; text-transform: uppercase; letter-spacing: .05em; color: #e74a3b; font-weight: 600; border-bottom: 2px solid #e3e6f0;"><i class="fas fa-exclamation-circle mr-1"></i>Beyond PCT</th>
                                             <th class="py-2 pr-4" style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: .05em; color: #6e707e; font-weight: 600; border-bottom: 2px solid #e3e6f0;">Caseload</th>
                                         </tr>
                                     </thead>
@@ -239,13 +239,25 @@
                                             $barPct      = round(($prov['total'] / $maxProvince) * 100);
                                             $barColor    = $prov['active'] > 10 ? '#e74a3b' : ($prov['active'] > 5 ? '#f6c23e' : '#1cc88a');
                                             $badge       = $prov['active'] > 10 ? 'danger' : ($prov['active'] > 5 ? 'warning' : 'success');
+                                            $provinceRole = $prov['role']; // already available from AnalyticsController::getByProvince()
 
-                                            $beyondCount = \App\Models\CaseFile::where('po_office', $prov['name'])
-                                                ->where('overall_status', 'Active')
-                                                ->whereNotNull('pct_96_days')
-                                                ->whereDate('pct_96_days', '<', now())
-                                                ->distinct()
-                                                ->count('id');
+                                        $beyondCases = \App\Models\CaseFile::where('po_office', $prov['name'])
+                                            ->where('overall_status', 'Active')
+                                            ->whereNotIn('overall_status', ['Completed', 'Disposed', 'Appealed', 'Dismissed'])
+                                            ->whereHas('documentTracking', function ($q) use ($provinceRole) {
+                                                $q->where('current_role', $provinceRole)
+                                                ->where('status', 'Received');
+                                            })
+                                            ->where(function ($q) {
+                                                $q->where('status_pct', 'Beyond PCT')
+                                                ->orWhere('status_po_pct', 'Beyond')
+                                                ->orWhere('status_1st_mc', 'Beyond')
+                                                ->orWhere('status_2nd_mc', 'Beyond')
+                                                ->orWhere('status_docket', 'Beyond');
+                                            })
+                                            ->count();
+
+                                        $beyondCount = $beyondCases;
                                         @endphp
                                         <tr style="border-bottom: 1px solid #f0f0f0; transition: background .15s;">
                                             <td class="pl-4 align-middle" style="padding-top: 0.55rem; padding-bottom: 0.55rem;">
