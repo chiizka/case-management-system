@@ -1920,12 +1920,12 @@ $(document).on('click', function(e) {
                                 emptyTable: 'No cases are currently assigned to MALSU.'
                             },
                             drawCallback: function() {
-                                $('#dataTableMALSU thead th').css({
+                                $('.sticky-table thead th, #dataTableCM thead th, #dataTableMALSU thead th').css({
                                     'position': 'sticky',
                                     'top': 0,
                                     'z-index': 12
                                 });
-                                $('#dataTableMALSU thead th:nth-child(-n+5)').css({
+                                $('.sticky-table thead th:nth-child(-n+5), #dataTableCM thead th:nth-child(-n+5), #dataTableMALSU thead th:nth-child(-n+5)').css({
                                     'z-index': 13
                                 });
                             }
@@ -1935,8 +1935,17 @@ $(document).on('click', function(e) {
                             malsuTable.search(this.value).draw();
                         });
 
-                        setTimeout(function() { malsuTable.columns.adjust().draw(false); }, 50);
-                        setTimeout(function() { malsuTable.columns.adjust().draw(false); }, 300);
+                            setTimeout(function() { malsuTable.columns.adjust().draw(false); }, 50);
+                            setTimeout(function() { malsuTable.columns.adjust().draw(false); }, 300);
+                            setTimeout(function() { malsuTable.columns.adjust().draw(false); }, 600);
+                            
+                            // ← ADD THIS RIGHT HERE, after the three above
+                            setTimeout(function() {
+                                malsuTable.columns.adjust().draw(false);
+                                if (tables['#dataTable0']) {
+                                    tables['#dataTable0'].draw(false);
+                                }
+                            }, 200);
 
                     }, 100);
                 } else {
@@ -2826,7 +2835,6 @@ $(document).ready(function() {
         else if (tableId === 'dataTable5') tabKey = 'tab5';
         else if (tableId === 'dataTable6') tabKey = 'tab6';
         else if (tableId === 'dataTable7') tabKey = 'tab7';
-        else if (tableId === 'dataTableMALSU') tabKey = 'tab0';
         
         const fieldConfig = tabConfigs[tabKey]?.fields[field];
         

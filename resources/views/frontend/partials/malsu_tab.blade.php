@@ -3,7 +3,7 @@
     Shows cases currently located at the case_management role.
 --}}
 
-<div class="alert alert-success alert-dismissible fade" role="alert" id=" success-alert-tabMALSU" style="display: none;">
+<div class="alert alert-success alert-dismissible fade" role="alert" id="success-alert-tabMALSU" style="display: none;">
     <span id="success-message-tabMALSU"></span>
     <button type="button" class="close" onclick="hideAlert(' success-alert-tabMALSU')">
         <span aria-hidden="true">&times;</span>
