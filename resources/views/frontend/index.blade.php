@@ -18,86 +18,90 @@
 
         @if($isProvince)
 
+            {{-- 1. Total Cases Handled --}}
             <div class="col-xl-3 col-md-6 mb-4">
-                <div class="card border-left-secondary shadow h-100 py-2">
-                    <div class="card-body py-2">
+                <div class="card border-left-secondary shadow h-100 py-3">
+                    <div class="card-body">
                         <div class="row no-gutters align-items-center">
                             <div class="col mr-2">
-                                <div class="text-xs font-weight-bold text-secondary text-uppercase mb-1" style="font-size:0.65rem;">Total Cases Handled</div>
-                                <div class="h6 mb-0 font-weight-bold text-gray-800">{{ $totalCases }}</div>
+                                <div class="text-xs font-weight-bold text-secondary text-uppercase mb-1">Total Cases Handled</div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800">{{ $totalCases }}</div>
                                 <div class="mt-1">
-                                    <span class="badge" style="font-size:0.6rem;padding:0.2rem 0.4rem;background-color:#e67e22;color:white;">
+                                    <span class="badge" style="font-size:0.7rem;padding:0.25rem 0.5rem;background-color:#e67e22;color:white;">
                                         <i class="fas fa-map-marker-alt mr-1"></i>{{ Auth::user()->getProvinceName() }}
                                     </span>
                                 </div>
                             </div>
-                            <div class="col-auto"><i class="fas fa-folder-open fa-lg text-gray-300"></i></div>
+                            <div class="col-auto"><i class="fas fa-folder-open fa-2x text-gray-300"></i></div>
                         </div>
                     </div>
                 </div>
             </div>
 
+            {{-- 2. Active Cases --}}
             <div class="col-xl-3 col-md-6 mb-4">
-                <div class="card border-left-success shadow h-100 py-2 clickable-card"
+                <div class="card border-left-success shadow h-100 py-3 clickable-card"
                     data-toggle="modal" data-target="#activeCasesModal" style="cursor:pointer;">
-                    <div class="card-body py-2">
+                    <div class="card-body">
                         <div class="row no-gutters align-items-center">
                             <div class="col mr-2">
-                                <div class="text-xs font-weight-bold text-success text-uppercase mb-1" style="font-size:0.65rem;">Active Cases</div>
-                                <div class="h6 mb-0 font-weight-bold text-gray-800">{{ $activeCases }}</div>
+                                <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Active Cases</div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800">{{ $activeCases }}</div>
                                 <div class="mt-1">
-                                    <span class="badge" style="font-size:0.6rem;padding:0.2rem 0.4rem;background-color:#e67e22;color:white;">
+                                    <span class="badge" style="font-size:0.7rem;padding:0.25rem 0.5rem;background-color:#e67e22;color:white;">
                                         <i class="fas fa-map-marker-alt mr-1"></i>{{ Auth::user()->getProvinceName() }}
                                     </span>
                                 </div>
                             </div>
-                            <div class="col-auto"><i class="fas fa-clipboard-list fa-lg text-gray-300"></i></div>
+                            <div class="col-auto"><i class="fas fa-clipboard-list fa-2x text-gray-300"></i></div>
                         </div>
                     </div>
                 </div>
             </div>
 
+            {{-- 3. Pending Documents --}}
             <div class="col-xl-3 col-md-6 mb-4">
-                <div class="card shadow h-100 py-2 clickable-card"
+                <div class="card shadow h-100 py-3 clickable-card"
                     style="border-left:4px solid #f6c23e;cursor:pointer;"
                     data-toggle="modal" data-target="#myPendingDocsModal">
-                    <div class="card-body py-2">
+                    <div class="card-body">
                         <div class="row no-gutters align-items-center">
                             <div class="col mr-2">
-                                <div class="text-xs font-weight-bold text-uppercase mb-1" style="font-size:0.65rem;color:#d4a017;">Pending Documents</div>
-                                <div class="h6 mb-0 font-weight-bold text-gray-800">{{ $myPendingCount }}</div>
+                                <div class="text-xs font-weight-bold text-uppercase mb-1" style="color:#d4a017;">Pending Documents</div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800">{{ $myPendingCount }}</div>
                                 <div class="mt-1">
                                     @if($myPendingCount > 0)
-                                        <small style="color:#856404;font-size:0.65rem;">
+                                        <small style="color:#856404;font-size:0.75rem;">
                                             <i class="fas fa-inbox mr-1"></i>Awaiting acknowledgment
                                         </small>
                                     @else
-                                        <small class="text-muted" style="font-size:0.65rem;">
+                                        <small class="text-muted" style="font-size:0.75rem;">
                                             <i class="fas fa-check-circle mr-1 text-success"></i>All received
                                         </small>
                                     @endif
                                 </div>
                             </div>
-                            <div class="col-auto"><i class="fas fa-inbox fa-lg" style="color:#f6c23e;opacity:0.6;"></i></div>
+                            <div class="col-auto"><i class="fas fa-inbox fa-2x" style="color:#f6c23e;opacity:0.6;"></i></div>
                         </div>
                     </div>
                 </div>
             </div>
 
+            {{-- 4. Disposed Cases --}}
             <div class="col-xl-3 col-md-6 mb-4">
-                <div class="card shadow h-100 py-2" style="border-left:4px solid #e67e22;">
-                    <div class="card-body py-2">
+                <div class="card shadow h-100 py-3" style="border-left:4px solid #e67e22;">
+                    <div class="card-body">
                         <div class="row no-gutters align-items-center">
                             <div class="col mr-2">
-                                <div class="text-xs font-weight-bold text-uppercase mb-1" style="font-size:0.65rem;color:#e67e22;">Disposed Cases</div>
-                                <div class="h6 mb-0 font-weight-bold text-gray-800">{{ $disposedCases }}</div>
+                                <div class="text-xs font-weight-bold text-uppercase mb-1" style="color:#e67e22;">Disposed Cases</div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800">{{ $disposedCases }}</div>
                                 <div class="mt-1">
-                                    <span class="badge" style="font-size:0.6rem;padding:0.2rem 0.4rem;background-color:#e67e22;color:white;">
+                                    <span class="badge" style="font-size:0.7rem;padding:0.25rem 0.5rem;background-color:#e67e22;color:white;">
                                         <i class="fas fa-map-marker-alt mr-1"></i>{{ Auth::user()->getProvinceName() }}
                                     </span>
                                 </div>
                             </div>
-                            <div class="col-auto"><i class="fas fa-landmark fa-lg text-gray-300"></i></div>
+                            <div class="col-auto"><i class="fas fa-landmark fa-2x text-gray-300"></i></div>
                         </div>
                     </div>
                 </div>
@@ -108,20 +112,20 @@
             
             {{-- 1. Active Cases (Region-wide) --}}
             <div class="col-xl-3 col-md-6 mb-4">
-                <div class="card border-left-success shadow h-100 py-2 clickable-card"
+                <div class="card border-left-success shadow h-100 py-3 clickable-card"
                     data-toggle="modal" data-target="#activeCasesModal" style="cursor:pointer;">
-                    <div class="card-body py-2">
+                    <div class="card-body">
                         <div class="row no-gutters align-items-center">
                             <div class="col mr-2">
-                                <div class="text-xs font-weight-bold text-success text-uppercase mb-1" style="font-size:0.65rem;">Active Cases (Region-wide)</div>
-                                <div class="h6 mb-0 font-weight-bold text-gray-800">{{ $activeCases }}</div>
+                                <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Active Cases (Region-wide)</div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800">{{ $activeCases }}</div>
                                 <div class="mt-1">
-                                    <span class="badge badge-success" style="font-size:0.6rem;padding:0.2rem 0.4rem;">
+                                    <span class="badge badge-success" style="font-size:0.7rem;padding:0.25rem 0.5rem;">
                                         <i class="fas fa-globe-asia mr-1"></i>All offices
                                     </span>
                                 </div>
                             </div>
-                            <div class="col-auto"><i class="fas fa-clipboard-list fa-lg text-gray-300"></i></div>
+                            <div class="col-auto"><i class="fas fa-clipboard-list fa-2x text-gray-300"></i></div>
                         </div>
                     </div>
                 </div>
@@ -129,67 +133,67 @@
 
             {{-- 2. Active Cases at MALSU --}}
             <div class="col-xl-3 col-md-6 mb-4">
-                <div class="card shadow h-100 py-2" style="border-left:4px solid #764ba2;">
-                    <div class="card-body py-2">
+                <div class="card shadow h-100 py-3" style="border-left:4px solid #764ba2;">
+                    <div class="card-body">
                         <div class="row no-gutters align-items-center">
                             <div class="col mr-2">
-                                <div class="text-xs font-weight-bold text-uppercase mb-1" style="font-size:0.65rem;color:#764ba2;">Active Cases (MALSU)</div>
-                                <div class="h6 mb-0 font-weight-bold text-gray-800">{{ $malsuActiveCases }}</div>
+                                <div class="text-xs font-weight-bold text-uppercase mb-1" style="color:#764ba2;">Active Cases (MALSU)</div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800">{{ $malsuActiveCases }}</div>
                                 <div class="mt-1">
-                                    <span class="badge" style="font-size:0.6rem;padding:0.2rem 0.4rem;background-color:#764ba2;color:white;">
+                                    <span class="badge" style="font-size:0.7rem;padding:0.25rem 0.5rem;background-color:#764ba2;color:white;">
                                         <i class="fas fa-balance-scale mr-1"></i>Currently at MALSU
                                     </span>
                                 </div>
                             </div>
-                            <div class="col-auto"><i class="fas fa-balance-scale fa-lg text-gray-300"></i></div>
+                            <div class="col-auto"><i class="fas fa-balance-scale fa-2x text-gray-300"></i></div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            {{-- 3. Disposed/Completed at MALSU --}}
+            {{-- 3. Disposed Cases at MALSU --}}
             <div class="col-xl-3 col-md-6 mb-4">
-                <div class="card border-left-primary shadow h-100 py-2">
-                    <div class="card-body py-2">
+                <div class="card border-left-primary shadow h-100 py-3">
+                    <div class="card-body">
                         <div class="row no-gutters align-items-center">
                             <div class="col mr-2">
-                                <div class="text-xs font-weight-bold text-primary text-uppercase mb-1" style="font-size:0.65rem;">Disposed Cases (MALSU)</div>
-                                <div class="h6 mb-0 font-weight-bold text-gray-800">{{ $malsuDisposedCases }}</div>
+                                <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Disposed Cases (MALSU)</div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800">{{ $malsuDisposedCases }}</div>
                                 <div class="mt-1">
-                                    <span class="badge badge-primary" style="font-size:0.6rem;padding:0.2rem 0.4rem;">
+                                    <span class="badge badge-primary" style="font-size:0.7rem;padding:0.25rem 0.5rem;">
                                         <i class="fas fa-gavel mr-1"></i>Closed at MALSU
                                     </span>
                                 </div>
                             </div>
-                            <div class="col-auto"><i class="fas fa-gavel fa-lg text-gray-300"></i></div>
+                            <div class="col-auto"><i class="fas fa-gavel fa-2x text-gray-300"></i></div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            {{-- 4. Pending Documents for MALSU --}}
+            {{-- 4. Pending Documents --}}
             <div class="col-xl-3 col-md-6 mb-4">
-                <div class="card shadow h-100 py-2 clickable-card"
+                <div class="card shadow h-100 py-3 clickable-card"
                     style="border-left:4px solid #f6c23e;cursor:pointer;"
                     data-toggle="modal" data-target="#myPendingDocsModal">
-                    <div class="card-body py-2">
+                    <div class="card-body">
                         <div class="row no-gutters align-items-center">
                             <div class="col mr-2">
-                                <div class="text-xs font-weight-bold text-uppercase mb-1" style="font-size:0.65rem;color:#d4a017;">Pending Documents</div>
-                                <div class="h6 mb-0 font-weight-bold text-gray-800">{{ $myPendingCount }}</div>
+                                <div class="text-xs font-weight-bold text-uppercase mb-1" style="color:#d4a017;">Pending Documents</div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800">{{ $myPendingCount }}</div>
                                 <div class="mt-1">
                                     @if($myPendingCount > 0)
-                                        <small style="color:#856404;font-size:0.65rem;">
+                                        <small style="color:#856404;font-size:0.75rem;">
                                             <i class="fas fa-inbox mr-1"></i>Awaiting acknowledgment
                                         </small>
                                     @else
-                                        <small class="text-muted" style="font-size:0.65rem;">
+                                        <small class="text-muted" style="font-size:0.75rem;">
                                             <i class="fas fa-check-circle mr-1 text-success"></i>All received
                                         </small>
                                     @endif
                                 </div>
                             </div>
-                            <div class="col-auto"><i class="fas fa-inbox fa-lg" style="color:#f6c23e;opacity:0.6;"></i></div>
+                            <div class="col-auto"><i class="fas fa-inbox fa-2x" style="color:#f6c23e;opacity:0.6;"></i></div>
                         </div>
                     </div>
                 </div>
