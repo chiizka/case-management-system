@@ -1579,27 +1579,22 @@ $(document).on('click', '.action-toggle-btn', function(e) {
     const $table = $row.closest('table');
     const dt = $table.DataTable();
 
-    const isExpanding = $cell.hasClass('collapsed');
-
-    // Toggle classes
     $cell.toggleClass('collapsed expanded');
+
+    const isNowExpanded = $cell.hasClass('expanded');
     $btn.find('i')
-        .toggleClass('fa-chevron-right fa-chevron-left');
+        .removeClass('fa-chevron-right fa-chevron-left')
+        .addClass(isNowExpanded ? 'fa-chevron-left' : 'fa-chevron-right');
 
     setTimeout(() => {
-        const $container = $table.closest('.table-container');
-        const savedScrollTop = $container.scrollTop();
-        const savedScrollLeft = $container.scrollLeft();
-
         dt.columns.adjust().draw(false);
         $table.css('table-layout', 'auto');
         dt.columns.adjust().draw(false);
         $table.css('table-layout', 'fixed');
 
-        // Restore scroll position after DataTables redraws
-        $container.scrollTop(savedScrollTop);
-        $container.scrollLeft(savedScrollLeft + 1);
-        $container.scrollLeft(savedScrollLeft);
+        const $container = $table.closest('.table-container');
+        $container.scrollLeft($container.scrollLeft() + 1);
+        $container.scrollLeft($container.scrollLeft() - 1);
     }, 20);
 });
 
@@ -1612,8 +1607,10 @@ $(document).on('click', '.edit-row-btn-case', function(e) {
 
     if ($cell.hasClass('collapsed')) {
         $cell.removeClass('collapsed').addClass('expanded');
+
+        // ✅ Explicitly set correct icon
         $cell.find('.action-toggle-btn i')
-            .removeClass('fa-chevron-right')
+            .removeClass('fa-chevron-right fa-chevron-left')
             .addClass('fa-chevron-left');
 
         setTimeout(() => {
@@ -1646,13 +1643,15 @@ $(document).on('click', function(e) {
         const dt = $table.DataTable();
 
         $cell.removeClass('expanded').addClass('collapsed');
-        $cell.find('i').removeClass('fa-chevron-left').addClass('fa-chevron-right');
+
+        // ✅ Explicitly set to chevron-right, don't toggle
+        $cell.find('.action-toggle-btn i')
+            .removeClass('fa-chevron-right fa-chevron-left')
+            .addClass('fa-chevron-right');
 
         setTimeout(() => {
             dt.columns.adjust();
             dt.draw(false);
-            const containerWidth = $table.closest('.table-container').width();
-            $table.find('thead').css('width', containerWidth + 'px');
         }, 30);
     });
 });
