@@ -184,8 +184,6 @@
             @endif
         </div>
 
-
-
         <!-- Alert Messages -->
         <div class="alert alert-success alert-dismissible fade" role="alert" id="success-alert" style="display: none;">
             <span id="success-message"></span>
@@ -201,13 +199,17 @@
             </button>
         </div>
 
-        <!-- Tabs -->
+        <!-- ============================================================ -->
+        <!-- TAB NAV — ALL tab links live here, in the correct <ul>       -->
+        <!-- ============================================================ -->
         <ul class="nav nav-tabs mb-3" id="documentTabs" role="tablist">
+
             <li class="nav-item">
                 <a class="nav-link" id="my-docs-tab" data-toggle="tab" href="#myDocs" role="tab">
                     <i class="fas fa-folder"></i> My Documents
                 </a>
             </li>
+
             <li class="nav-item">
                 <a class="nav-link active" id="pending-tab" data-toggle="tab" href="#pending" role="tab">
                     <i class="fas fa-clock"></i> Pending Receipts
@@ -216,6 +218,7 @@
                     @endif
                 </a>
             </li>
+
             @if(Auth::user()->isAdmin())
             <li class="nav-item">
                 <a class="nav-link" id="all-docs-tab" data-toggle="tab" href="#allDocs" role="tab">
@@ -223,10 +226,41 @@
                 </a>
             </li>
             @endif
-        </ul>
 
+            @if(Auth::user()->role === 'case_management' || Auth::user()->isAdmin())
+            <li class="nav-item">
+                <a class="nav-link" id="malsu-pipeline-tab" data-toggle="tab" href="#malsuPipeline" role="tab">
+                    <i class="fas fa-arrow-right-arrow-left"></i> Forwarded to MALSU
+                    @if($forwardedToMalsu->where('current_role','malsu')->where('status','Pending Receipt')->count() > 0)
+                        <span class="badge badge-danger ml-1">
+                            {{ $forwardedToMalsu->where('current_role','malsu')->where('status','Pending Receipt')->count() }}
+                        </span>
+                    @endif
+                </a>
+            </li>
+            @endif
+
+            @if(Auth::user()->role === 'malsu' || Auth::user()->isAdmin())
+            <li class="nav-item">
+                <a class="nav-link" id="cm-pipeline-tab" data-toggle="tab" href="#cmPipeline" role="tab">
+                    <i class="fas fa-arrow-right-arrow-left"></i> Forwarded to Case Management
+                    @if($forwardedToCaseManagement->where('current_role','case_management')->where('status','Pending Receipt')->count() > 0)
+                        <span class="badge badge-danger ml-1">
+                            {{ $forwardedToCaseManagement->where('current_role','case_management')->where('status','Pending Receipt')->count() }}
+                        </span>
+                    @endif
+                </a>
+            </li>
+            @endif
+
+        </ul>
+        <!-- END TAB NAV -->
+
+        <!-- ============================================================ -->
+        <!-- TAB CONTENT — ALL tab panes live here                        -->
+        <!-- ============================================================ -->
         <div class="tab-content" id="documentTabsContent">
-            
+
             <!-- Pending Receipts Tab -->
             <div class="tab-pane fade show active" id="pending" role="tabpanel">
                 <div class="card shadow mb-4">
@@ -390,7 +424,7 @@
                 </div>
             </div>
 
-            <!-- All Documents Tab (Admin Only) - FILTERS REMOVED -->
+            <!-- All Documents Tab (Admin Only) -->
             @if(Auth::user()->isAdmin())
             <div class="tab-pane fade" id="allDocs" role="tabpanel">
                 <div class="card shadow mb-4">
@@ -468,8 +502,308 @@
                 </div>
             </div>
             @endif
+            {{-- ↑ @endif closes the Admin-only allDocs pane HERE, before the new panes --}}
+
+            {{-- ===== FORWARDED TO MALSU TAB (Case Management & Admin) ===== --}}
+            @if(Auth::user()->role === 'case_management' || Auth::user()->isAdmin())
+            <div class="tab-pane fade" id="malsuPipeline" role="tabpanel">
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                        <h6 class="m-0 font-weight-bold text-primary">
+                            <i class="fas fa-gavel"></i> Forwarded to MALSU
+                        </h6>
+                        <span class="badge badge-primary badge-pill">
+                            {{ $forwardedToMalsu->count() }} case(s)
+                        </span>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover tracking-table" id="malsuPipelineTable">
+                                <thead>
+                                    <tr>
+                                        <th>Case No.</th>
+                                        <th>Establishment</th>
+                                        <th>Current Location</th>
+                                        <th>Status</th>
+                                        <th>Transferred By</th>
+                                        <th>Transferred At</th>
+                                        <th>Received By</th>
+                                        <th>Notes</th>
+                                        <th>Transfer History</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @forelse($forwardedToMalsu as $doc)
+                                    @php
+                                        $isReturned = $doc->transfer_notes && 
+                                                    str_contains($doc->transfer_notes, '[RETURNED]');
+                                        $rowClass   = $isReturned ? 'table-danger' : '';
+                                        
+                                        $senderRole  = optional($doc->transferredBy)->role;
+                                        $showReturn  = $doc->current_role === Auth::user()->role
+                                                    && $doc->status === 'Received'
+                                                    && $senderRole === 'malsu';
+                                    @endphp
+                                    <tr class="{{ $rowClass }}">
+                                        <td class="font-weight-bold text-primary">
+                                            {{ $doc->case->case_no ?? 'N/A' }}
+                                        </td>
+                                        <td>
+                                            <div class="text-truncate" style="max-width: 180px;" 
+                                                title="{{ $doc->case->establishment_name ?? '' }}">
+                                                {{ $doc->case->establishment_name ?? 'N/A' }}
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span class="role-badge role-{{ $doc->current_role }}">
+                                                {{ $doc->getRoleDisplayName() }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            @if($isReturned)
+                                                <span class="status-badge" 
+                                                    style="background:#e74a3b;color:white;">
+                                                    Returned
+                                                </span>
+                                            @elseif($doc->status === 'Received')
+                                                <span class="status-badge status-received">
+                                                    Received
+                                                </span>
+                                            @else
+                                                <span class="status-badge status-pending">
+                                                    Pending Receipt
+                                                </span>
+                                            @endif
+                                        </td>
+                                        <td>
+                                            {{ optional($doc->transferredBy)->fname }} 
+                                            {{ optional($doc->transferredBy)->lname ?? 'System' }}
+                                        </td>
+                                        <td>
+                                            {{ $doc->transferred_at 
+                                                ? $doc->transferred_at->format('M d, Y h:i A') 
+                                                : 'N/A' }}
+                                        </td>
+                                        <td>
+                                            {{ optional($doc->receivedBy)->fname }} 
+                                            {{ optional($doc->receivedBy)->lname ?? '—' }}
+                                        </td>
+                                        <td>
+                                            @if($doc->transfer_notes)
+                                                <span class="{{ $isReturned ? 'text-danger font-weight-bold' : 'text-muted' }}"
+                                                    style="font-size:0.8rem;">
+                                                    {{ $doc->transfer_notes }}
+                                                </span>
+                                            @else
+                                                <span class="text-muted">—</span>
+                                            @endif
+                                        </td>
+                                        <td>
+                                            @php
+                                                $relevantHistory = $doc->history->filter(function($h) {
+                                                    return (
+                                                        ($h->from_role === 'case_management' && $h->to_role === 'malsu') ||
+                                                        ($h->from_role === 'malsu' && $h->to_role === 'case_management') ||
+                                                        ($h->from_role === 'case_management' && $h->to_role === 'case_management') ||
+                                                        ($h->from_role === 'malsu' && $h->to_role === 'malsu')
+                                                    );
+                                                });
+                                            @endphp
+                                            @if($relevantHistory->count() > 0)
+                                                <button class="btn btn-info btn-sm view-pipeline-history-btn"
+                                                        data-doc-id="{{ $doc->id }}"
+                                                        data-case-no="{{ $doc->case->case_no ?? 'N/A' }}"
+                                                        data-establishment="{{ $doc->case->establishment_name ?? 'N/A' }}"
+                                                        title="View Transfer History">
+                                                    <i class="fas fa-history"></i>
+                                                    {{ $relevantHistory->count() }} transfer(s)
+                                                </button>
+                                            @else
+                                                <span class="text-muted small">No history yet</span>
+                                            @endif
+                                        </td>
+                                        <td>
+                                            @if($showReturn)
+                                                <button class="btn btn-danger btn-sm return-doc-btn"
+                                                        data-doc-id="{{ $doc->id }}"
+                                                        data-case-no="{{ $doc->case->case_no ?? 'N/A' }}"
+                                                        data-target-role="malsu"
+                                                        title="Return to MALSU">
+                                                    <i class="fas fa-undo"></i> Return
+                                                </button>
+                                            @else
+                                                <span class="text-muted small">—</span>
+                                            @endif
+                                        </td>
+                                    </tr>
+                                    @empty
+                                    <tr>
+                                        <td colspan="10" class="text-center text-muted py-4">
+                                            <i class="fas fa-gavel fa-2x mb-2 d-block"></i>
+                                            No cases forwarded to MALSU yet.
+                                        </td>
+                                    </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            @endif
+
+            {{-- ===== FORWARDED TO CASE MANAGEMENT TAB (MALSU & Admin) ===== --}}
+            @if(Auth::user()->role === 'malsu' || Auth::user()->isAdmin())
+            <div class="tab-pane fade" id="cmPipeline" role="tabpanel">
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                        <h6 class="m-0 font-weight-bold text-primary">
+                            <i class="fas fa-briefcase"></i> Forwarded to Case Management
+                        </h6>
+                        <span class="badge badge-primary badge-pill">
+                            {{ $forwardedToCaseManagement->count() }} case(s)
+                        </span>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover tracking-table" id="cmPipelineTable">
+                                <thead>
+                                    <tr>
+                                        <th>Case No.</th>
+                                        <th>Establishment</th>
+                                        <th>Current Location</th>
+                                        <th>Status</th>
+                                        <th>Transferred By</th>
+                                        <th>Transferred At</th>
+                                        <th>Received By</th>
+                                        <th>Notes</th>
+                                        <th>Transfer History</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @forelse($forwardedToCaseManagement as $doc)
+                                    @php
+                                        $isReturned = $doc->transfer_notes && 
+                                                    str_contains($doc->transfer_notes, '[RETURNED]');
+                                        $rowClass   = $isReturned ? 'table-danger' : '';
+
+                                        $senderRole = optional($doc->transferredBy)->role;
+                                        $showReturn = $doc->current_role === Auth::user()->role
+                                                && $doc->status === 'Received'
+                                                && $senderRole === 'case_management';
+                                    @endphp
+                                    <tr class="{{ $rowClass }}">
+                                        <td class="font-weight-bold text-primary">
+                                            {{ $doc->case->case_no ?? 'N/A' }}
+                                        </td>
+                                        <td>
+                                            <div class="text-truncate" style="max-width: 180px;"
+                                                title="{{ $doc->case->establishment_name ?? '' }}">
+                                                {{ $doc->case->establishment_name ?? 'N/A' }}
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span class="role-badge role-{{ $doc->current_role }}">
+                                                {{ $doc->getRoleDisplayName() }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            @if($isReturned)
+                                                <span class="status-badge" 
+                                                    style="background:#e74a3b;color:white;">
+                                                    Returned
+                                                </span>
+                                            @elseif($doc->status === 'Received')
+                                                <span class="status-badge status-received">
+                                                    Received
+                                                </span>
+                                            @else
+                                                <span class="status-badge status-pending">
+                                                    Pending Receipt
+                                                </span>
+                                            @endif
+                                        </td>
+                                        <td>
+                                            {{ optional($doc->transferredBy)->fname }}
+                                            {{ optional($doc->transferredBy)->lname ?? 'System' }}
+                                        </td>
+                                        <td>
+                                            {{ $doc->transferred_at 
+                                                ? $doc->transferred_at->format('M d, Y h:i A') 
+                                                : 'N/A' }}
+                                        </td>
+                                        <td>
+                                            {{ optional($doc->receivedBy)->fname }}
+                                            {{ optional($doc->receivedBy)->lname ?? '—' }}
+                                        </td>
+                                        <td>
+                                            @if($doc->transfer_notes)
+                                                <span class="{{ $isReturned ? 'text-danger font-weight-bold' : 'text-muted' }}"
+                                                    style="font-size:0.8rem;">
+                                                    {{ $doc->transfer_notes }}
+                                                </span>
+                                            @else
+                                                <span class="text-muted">—</span>
+                                            @endif
+                                        </td>
+                                        <td>
+                                            @php
+                                                $relevantHistory = $doc->history->filter(function($h) {
+                                                    return (
+                                                        ($h->from_role === 'malsu' && $h->to_role === 'case_management') ||
+                                                        ($h->from_role === 'case_management' && $h->to_role === 'malsu') ||
+                                                        ($h->from_role === 'malsu' && $h->to_role === 'malsu') ||
+                                                        ($h->from_role === 'case_management' && $h->to_role === 'case_management')
+                                                    );
+                                                });
+                                            @endphp
+                                            @if($relevantHistory->count() > 0)
+                                                <button class="btn btn-info btn-sm view-pipeline-history-btn"
+                                                        data-doc-id="{{ $doc->id }}"
+                                                        data-case-no="{{ $doc->case->case_no ?? 'N/A' }}"
+                                                        data-establishment="{{ $doc->case->establishment_name ?? 'N/A' }}"
+                                                        title="View Transfer History">
+                                                    <i class="fas fa-history"></i>
+                                                    {{ $relevantHistory->count() }} transfer(s)
+                                                </button>
+                                            @else
+                                                <span class="text-muted small">No history yet</span>
+                                            @endif
+                                        </td>
+                                        <td>
+                                            @if($showReturn)
+                                                <button class="btn btn-danger btn-sm return-doc-btn"
+                                                        data-doc-id="{{ $doc->id }}"
+                                                        data-case-no="{{ $doc->case->case_no ?? 'N/A' }}"
+                                                        data-target-role="case_management"
+                                                        title="Return to Case Management">
+                                                    <i class="fas fa-undo"></i> Return
+                                                </button>
+                                            @else
+                                                <span class="text-muted small">—</span>
+                                            @endif
+                                        </td>
+                                    </tr>
+                                    @empty
+                                    <tr>
+                                        <td colspan="10" class="text-center text-muted py-4">
+                                            <i class="fas fa-briefcase fa-2x mb-2 d-block"></i>
+                                            No cases forwarded to Case Management yet.
+                                        </td>
+                                    </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            @endif
 
         </div>
+        <!-- END TAB CONTENT -->
 
     </div>
 </div>
@@ -610,6 +944,72 @@
     </div>
 </div>
 
+<!-- Return Document Modal -->
+<div class="modal fade" id="returnDocModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-undo"></i> Return Document
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to <strong>return</strong> this document?</p>
+                <p class="mb-1">
+                    <strong>Case:</strong> 
+                    <span id="returnCaseNo" class="text-primary"></span>
+                </p>
+                <small class="text-muted">
+                    The document will be sent back and marked as 
+                    <span class="text-danger font-weight-bold">Returned</span>.
+                </small>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                    Cancel
+                </button>
+                <button type="button" class="btn btn-danger" id="confirmReturnBtn">
+                    <i class="fas fa-undo"></i> Confirm Return
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Pipeline History Modal -->
+<div class="modal fade" id="pipelineHistoryModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-history"></i> MALSU ↔ Case Management Transfer History
+                </h5>
+                <button type="button" class="close" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <strong>Case:</strong> <span id="pipelineCaseNo"></span><br>
+                    <strong>Establishment:</strong> <span id="pipelineEstablishment"></span>
+                </div>
+                <hr>
+                <div class="timeline" id="pipelineHistoryTimeline">
+                    <div class="text-center py-4">
+                        <div class="spinner-border text-primary" role="status"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 @endsection
 @push('scripts')
 <script>
@@ -622,15 +1022,12 @@ $(document).ready(function() {
     $('#transferForm').on('submit', function(e) {
         e.preventDefault();
         
-        // Get form data manually
         const formData = {
             case_id: $('#transfer_case_id').val(),
             target_role: $('#target_role').val(),   
             transfer_notes: $('#transfer_notes').val(),
             _token: $('meta[name="csrf-token"]').attr('content')
         };
-
-        console.log('Submitting:', formData);
 
         $.ajax({
             url: '/documents/transfer',
@@ -645,7 +1042,6 @@ $(document).ready(function() {
                 setTimeout(() => location.reload(), 1500);
             },
             error: function(xhr) {
-                console.error('Error:', xhr);
                 let errorMsg = 'Failed to transfer document.';
                 if (xhr.responseJSON?.message) {
                     errorMsg = xhr.responseJSON.message;
@@ -663,11 +1059,8 @@ $(document).ready(function() {
         const caseId = $(this).data('case-id');
         const caseNo = $(this).data('case-no');
         
-        console.log('Locking case:', caseId);
-        
         isTransferLocked = true;
         
-        // Set the value and make it readonly
         $('#transfer_case_id').val(caseId).prop('readonly', true)
             .css({
                 'background-color': '#e9ecef',
@@ -682,7 +1075,6 @@ $(document).ready(function() {
 
     // Regular transfer button
     $('[data-target="#transferModal"]').on('click', function() {
-        console.log('Opening fresh modal');
         isTransferLocked = false;
         $('#transfer_case_id').val('').prop('readonly', false)
             .css({
@@ -730,86 +1122,93 @@ $(document).ready(function() {
     // View history
     $(document).on('click', '.view-history-btn', function() {
         const docId = $(this).data('doc-id');
-        
+
         $('#historyModal').modal('show');
         $('#historyTimeline').html('<div class="text-center py-4"><div class="spinner-border text-primary"></div></div>');
-        
+
         $.ajax({
             url: '/documents/' + docId + '/history',
             method: 'GET',
             success: function(response) {
                 $('#historyCaseNo').text(response.case_no);
                 $('#historyEstablishment').text(response.establishment);
-                
+
+                if (!response.history || !response.history.length) {
+                    $('#historyTimeline').html('<div class="alert alert-info">No history available.</div>');
+                    return;
+                }
+
                 let html = '';
-                
-                response.history.forEach((item) => {
-                    const roleClass = (item.role || '').toLowerCase().replace(/ /g, '_');
 
-                    // Detect case creation entry to show cleaner layout
-                    const isLikelyCreation =
-                        item.transferred_by === item.received_by &&
-                        Math.abs(new Date(item.transferred_at) - new Date(item.received_at)) < 10000 &&
-                        (item.notes || '').toLowerCase().includes('case created by');
+                response.history.forEach((item, index) => {
+                    const isReturned  = (item.notes || '').includes('[RETURNED]');
+                    const isCurrent   = item.is_current;
+                    const isPending   = item.received_by === 'Awaiting Receipt' || item.received_by === 'Pending';
 
-                    let contentHtml = '';
+                    // Status badge colour
+                    let badgeColor = 'primary';
+                    let statusLabel = item.status;
+                    if (isReturned)        { badgeColor = 'danger';  statusLabel = 'Returned'; }
+                    else if (isCurrent && item.status === 'Received') { badgeColor = 'success'; }
+                    else if (isCurrent && isPending)                  { badgeColor = 'warning'; statusLabel = 'Pending Receipt'; }
+                    else if (!isCurrent)   { badgeColor = 'secondary'; }
 
-                    if (isLikelyCreation) {
-                        // Clean layout for case creation (no "Transferred By")
-                        contentHtml = `
-                            <div class="row">
-                                <div class="col-md-12">
-                                    <small class="text-muted">Created & Initially Received By:</small><br>
-                                    <strong class="text-success">${item.received_by}</strong><br>
-                                    <small class="text-muted">${item.received_at}</small>
-                                </div>
-                            </div>
-                        `;
+                    // Direction arrow: "From → To" or just "Current Location"
+                    let directionHtml = '';
+                    if (item.from_role_name && item.role) {
+                        directionHtml = `
+                            <span class="text-muted small">
+                                <strong>${item.from_role_name}</strong>
+                                <i class="fas fa-arrow-right mx-1"></i>
+                                <strong>${item.role}</strong>
+                            </span>`;
                     } else {
-                        // Normal transfer layout
-                        contentHtml = `
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <small class="text-muted">Transferred By:</small><br>
-                                    <strong>${item.transferred_by}</strong><br>
-                                    <small class="text-muted">${item.transferred_at}</small>
-                                </div>
-                                <div class="col-md-6">
-                                    <small class="text-muted">Received By:</small><br>
-                                    <strong class="${item.received_by === 'Pending' || item.received_by === 'Awaiting Receipt' ? 'text-warning' : 'text-success'}">
-                                        ${item.received_by}
-                                    </strong><br>
-                                    <small class="text-muted">${item.received_at}</small>
-                                </div>
-                            </div>
-                        `;
+                        directionHtml = `<span class="text-muted small"><strong>${item.role}</strong></span>`;
                     }
+
+                    // Card border highlight
+                    const cardClass = isReturned ? 'border-danger' : (isCurrent ? 'border-primary' : '');
+
+                    // Receiver display
+                    const receiverClass = isPending ? 'text-warning' : 'text-success';
+
+                    // Notes — strip [RETURNED] prefix for display
+                    const displayNotes = (item.notes || '').replace('[RETURNED]', '').trim();
 
                     html += `
                         <div class="timeline-item">
-                            <div class="card mb-0">
+                            <div class="card mb-0 ${cardClass}">
                                 <div class="card-body py-3">
-                                    <div class="d-flex justify-content-between mb-2">
+                                    <div class="d-flex justify-content-between align-items-start mb-2">
                                         <div>
-                                            <span class="role-badge role-${roleClass}">${item.role}</span>
-                                            ${item.from_role ? '<small class="text-muted ml-2">from ' + item.from_role + '</small>' : ''}
+                                            <span class="badge badge-${badgeColor}">${statusLabel}</span>
+                                            <div class="mt-1">${directionHtml}</div>
                                         </div>
-                                        <small class="text-muted">${item.time_ago}</small>
+                                        <small class="text-muted text-right">${item.time_ago}</small>
                                     </div>
-                                    
-                                    ${contentHtml}
-                                    
-                                    ${item.notes ? '<hr class="my-2"><small class="text-muted">Notes: ' + item.notes + '</small>' : ''}
+                                    <div class="row mt-2">
+                                        <div class="col-md-6">
+                                            <small class="text-muted">Transferred By:</small><br>
+                                            <strong>${item.transferred_by}</strong><br>
+                                            <small class="text-muted">${item.transferred_at}</small>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <small class="text-muted">Received By:</small><br>
+                                            <strong class="${receiverClass}">${item.received_by}</strong><br>
+                                            <small class="text-muted">${item.received_at}</small>
+                                        </div>
+                                    </div>
+                                    ${displayNotes ? `<hr class="my-2"><small class="${isReturned ? 'text-danger font-weight-bold' : 'text-muted'}"><i class="fas fa-sticky-note mr-1"></i>${displayNotes}</small>` : ''}
                                 </div>
                             </div>
                         </div>
                     `;
                 });
-                
-                $('#historyTimeline').html(html || '<div class="alert alert-info">No history available</div>');
+
+                $('#historyTimeline').html(html);
             },
             error: function() {
-                $('#historyTimeline').html('<div class="alert alert-danger">Failed to load history</div>');
+                $('#historyTimeline').html('<div class="alert alert-danger">Failed to load history.</div>');
             }
         });
     });
@@ -841,5 +1240,136 @@ function showAlert(message, type) {
 function hideAlert(alertId) {
     $('#' + alertId).removeClass('show').addClass('fade');
 }
+
+// ── Return document ──────────────────────────────────────────
+let docToReturn = null;
+
+$(document).on('click', '.return-doc-btn', function() {
+    docToReturn = $(this).data('doc-id');
+    $('#returnCaseNo').text($(this).data('case-no'));
+    $('#returnDocModal').modal('show');
+});
+
+$('#confirmReturnBtn').on('click', function() {
+    if (!docToReturn) return;
+
+    const btn = $(this);
+    btn.html('<i class="fas fa-spinner fa-spin"></i> Returning...').prop('disabled', true);
+
+    $.ajax({
+        url: '/documents/' + docToReturn + '/return',
+        method: 'POST',
+        headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
+        success: function(response) {
+            $('#returnDocModal').modal('hide');
+            showAlert(response.message, 'success');
+            setTimeout(() => location.reload(), 1500);
+        },
+        error: function(xhr) {
+            btn.html('<i class="fas fa-undo"></i> Confirm Return').prop('disabled', false);
+            showAlert(
+                xhr.responseJSON?.message || 'Failed to return document.',
+                'danger'
+            );
+            $('#returnDocModal').modal('hide');
+        }
+    });
+});
+
+$('#returnDocModal').on('hidden.bs.modal', function() {
+    docToReturn = null;
+    $('#confirmReturnBtn')
+        .html('<i class="fas fa-undo"></i> Confirm Return')
+        .prop('disabled', false);
+});
+
+// ── Pipeline history modal ────────────────────────────────────
+$(document).on('click', '.view-pipeline-history-btn', function() {
+    const docId         = $(this).data('doc-id');
+    const caseNo        = $(this).data('case-no');
+    const establishment = $(this).data('establishment');
+
+    $('#pipelineCaseNo').text(caseNo);
+    $('#pipelineEstablishment').text(establishment);
+    $('#pipelineHistoryTimeline').html(
+        '<div class="text-center py-4"><div class="spinner-border text-primary"></div></div>'
+    );
+    $('#pipelineHistoryModal').modal('show');
+
+    $.ajax({
+        url: '/documents/' + docId + '/history',
+        method: 'GET',
+        success: function(response) {
+            const relevant = response.history.filter(item =>
+                (item.from_role === 'case_management' || item.from_role === 'malsu' ||
+                 item.to_role   === 'case_management' || item.to_role   === 'malsu')
+            );
+
+            if (!relevant.length) {
+                $('#pipelineHistoryTimeline').html(
+                    '<div class="alert alert-info">No relevant transfer history.</div>'
+                );
+                return;
+            }
+
+            let html = '';
+            relevant.forEach(item => {
+                const isReturned = (item.notes || '').includes('[RETURNED]');
+                const cardBorder = isReturned ? 'border-danger' : '';
+                const badgeColor = isReturned ? 'danger'
+                                 : item.status === 'Received' ? 'success' : 'warning';
+                const statusText = isReturned ? 'Returned'
+                                 : (item.status || 'Pending');
+
+                html += `
+                <div class="timeline-item">
+                    <div class="card mb-0 ${cardBorder}">
+                        <div class="card-body py-3">
+                            <div class="d-flex justify-content-between mb-2">
+                                <div>
+                                    <span class="badge badge-${badgeColor}">${statusText}</span>
+                                    ${item.from_role
+                                        ? `<small class="text-muted ml-2">
+                                               from <strong>${item.from_role.replace('_',' ')}</strong>
+                                               → <strong>${(item.role || item.to_role || '').replace('_',' ')}</strong>
+                                           </small>`
+                                        : ''}
+                                </div>
+                                <small class="text-muted">${item.time_ago}</small>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <small class="text-muted">Transferred By:</small><br>
+                                    <strong>${item.transferred_by}</strong><br>
+                                    <small class="text-muted">${item.transferred_at}</small>
+                                </div>
+                                <div class="col-md-6">
+                                    <small class="text-muted">Received By:</small><br>
+                                    <strong class="${item.received_by === 'Pending' || item.received_by === 'Awaiting Receipt' ? 'text-warning' : 'text-success'}">
+                                        ${item.received_by}
+                                    </strong><br>
+                                    <small class="text-muted">${item.received_at}</small>
+                                </div>
+                            </div>
+                            ${item.notes
+                                ? `<hr class="my-2">
+                                   <small class="${isReturned ? 'text-danger font-weight-bold' : 'text-muted'}">
+                                       <i class="fas fa-sticky-note"></i> ${item.notes}
+                                   </small>`
+                                : ''}
+                        </div>
+                    </div>
+                </div>`;
+            });
+
+            $('#pipelineHistoryTimeline').html(html);
+        },
+        error: function() {
+            $('#pipelineHistoryTimeline').html(
+                '<div class="alert alert-danger">Failed to load history.</div>'
+            );
+        }
+    });
+});
 </script>
 @endpush

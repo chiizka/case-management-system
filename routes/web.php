@@ -150,6 +150,9 @@ Route::middleware('auth')->group(function () {
         Route::post('/documents/transfer', [DocumentTrackingController::class, 'transfer'])->name('documents.transfer');
         Route::post('/documents/{id}/receive', [DocumentTrackingController::class, 'receive'])->name('documents.receive');
         Route::get('/documents/{id}/history', [DocumentTrackingController::class, 'history'])->name('documents.history');
+        Route::post('/documents/{id}/return', [DocumentTrackingController::class, 'returnDocument'])
+        ->name('documents.return')
+        ->middleware('role:case_management,malsu,admin');
     });
 
     // Notifications
