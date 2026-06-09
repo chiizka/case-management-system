@@ -323,11 +323,17 @@
                                     @forelse($pendingDocuments as $doc)
                                     <tr>
                                         <td class="font-weight-bold text-primary">{{ $doc->case->case_no ?? 'N/A' }}</td>
-                                        <td>
-                                            <div class="text-truncate" style="max-width: 200px;" title="{{ $doc->case->establishment_name ?? 'N/A' }}">
-                                                {{ $doc->case->establishment_name ?? 'N/A' }}
-                                            </div>
-                                        </td>
+                                            <td>
+                                                <div class="text-truncate" style="max-width: 200px;" 
+                                                    title="{{ $doc->case->establishment_name ?? 'N/A' }}">
+                                                    {{ $doc->case->establishment_name ?? 'N/A' }}
+                                                </div>
+                                                @if(Auth::user()->isMalsu() && $doc->case_tag === 'For Execution')
+                                                    <span class="badge badge-danger mt-1" style="font-size: 0.7rem;">
+                                                        <i class="fas fa-bolt mr-1"></i> FOR EXECUTION
+                                                    </span>
+                                                @endif
+                                            </td>
                                         <td>
                                             @if($doc->transferredBy)
                                                 {{ $doc->transferredBy->fname }} {{ $doc->transferredBy->lname }}
@@ -404,11 +410,17 @@
                                     @forelse($myDocuments as $doc)
                                     <tr>
                                         <td class="font-weight-bold text-primary">{{ $doc->case->case_no ?? 'N/A' }}</td>
-                                        <td>
-                                            <div class="text-truncate" style="max-width: 200px;" title="{{ $doc->case->establishment_name ?? 'N/A' }}">
-                                                {{ $doc->case->establishment_name ?? 'N/A' }}
-                                            </div>
-                                        </td>
+                                            <td>
+                                                <div class="text-truncate" style="max-width: 200px;" 
+                                                    title="{{ $doc->case->establishment_name ?? 'N/A' }}">
+                                                    {{ $doc->case->establishment_name ?? 'N/A' }}
+                                                </div>
+                                                @if(Auth::user()->isMalsu() && $doc->case_tag === 'For Execution')
+                                                    <span class="badge badge-danger mt-1" style="font-size: 0.7rem;">
+                                                        <i class="fas fa-bolt mr-1"></i> FOR EXECUTION
+                                                    </span>
+                                                @endif
+                                            </td>
                                         <td>
                                             <span class="role-badge role-{{ $doc->current_role }}">
                                                 {{ $doc->getRoleDisplayName() }}
