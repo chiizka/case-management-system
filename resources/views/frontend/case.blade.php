@@ -1243,7 +1243,8 @@ td.actions-cell.expanded {
 <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
 
 <script>
-
+let caseToProgress = null;
+let caseToDelete = null;
 $(document).ready(function() {
     console.log('jQuery version:', $.fn.jquery);
     console.log('DataTables available:', typeof $.fn.DataTable !== 'undefined');
@@ -2379,8 +2380,6 @@ loadTab0Data();
         }
     });
 
-    let caseToDelete = null;
-
     // Universal delete handler for all record types
     $(document).on('click', '.delete-btn', function(e) {
         e.preventDefault();
@@ -2428,6 +2427,120 @@ loadTab0Data();
         
         $('#deleteCaseInfo').html(infoHtml);
         $('#deleteCaseModal').modal('show');
+    });
+
+    $('#confirmStageBtn').off('click').on('click', function() {
+        console.log('=== CONFIRM STAGE PROGRESSION ===');
+        console.log('caseToProgress:', caseToProgress);
+        
+        if (!caseToProgress || !caseToProgress.id) {
+            console.error('No case selected for progression');
+            showAlert('error', 'No case selected');
+            return;
+        }
+        
+        const button = $(this);
+        const isForceComplete = caseToProgress.action === 'complete';
+        const isDispose       = caseToProgress.action === 'dispose';
+        const isExecute       = caseToProgress.action === 'execute';   // ← ADD
+            
+        console.log('Is Force Complete:', isForceComplete);
+        console.log('Is Dispose:', isDispose);
+        console.log('Is Execute:', isExecute);                         // ← ADD
+        console.log('Button classes:', caseToProgress.button.attr('class'));
+
+        // ── EXECUTE BLOCK MUST BE FIRST ────────────────────────────
+        if (isExecute) {
+            button.prop('disabled', true);
+            button.html('<i class="fas fa-spinner fa-spin"></i> Forwarding...');
+
+            $.ajax({
+                url: `/case/${caseToProgress.id}/execute`,
+                method: 'POST',
+                data: {
+                    _token: '{{ csrf_token() }}',
+                    notes: 'Case forwarded for execution.'
+                },
+                success: function(response) {
+                    $('#stageProgressionModal').modal('hide');
+                    if (response.success) {
+                        showAlert('success', response.message);
+                        $(`tr[data-id="${caseToProgress.id}"]`).fadeOut(400, function() {
+                            $(this).remove();
+                        });
+                    } else {
+                        showAlert('error', response.message || 'Failed to execute case.');
+                    }
+                },
+                error: function(xhr) {
+                    const message = xhr.responseJSON?.message || 'Failed to execute case.';
+                    showAlert('error', message);
+                },
+                complete: function() {
+                    button.prop('disabled', false)
+                        .html('<i class="fas fa-check mr-2"></i>Confirm');
+                }
+            });
+            return; // ← stops here, never reaches /archive
+        }
+        // ── END EXECUTE BLOCK ──────────────────────────────────────
+        
+        button.prop('disabled', true);
+        
+        if (isDispose) {
+            button.html('<i class="fas fa-spinner fa-spin"></i> Disposing...');
+        } else {
+            button.html('<i class="fas fa-spinner fa-spin"></i> Archiving...');
+        }
+        
+        const ajaxData = {
+            _token: '{{ csrf_token() }}',
+            force_complete: isForceComplete,
+            dispose: isDispose
+        };
+        
+        console.log('Sending AJAX with data:', ajaxData);
+        console.log('URL:', `/case/${caseToProgress.id}/archive`);
+        
+        $.ajax({
+            url: `/case/${caseToProgress.id}/archive`,
+            method: 'POST',
+            data: ajaxData,
+            success: function(response) {
+                console.log('=== SUCCESS RESPONSE ===');
+                console.log('Full response:', response);
+                
+                $('#stageProgressionModal').modal('hide');
+                
+                if (response.success) {
+                    showAlert('success', response.message);
+                    
+                    if (response.case_id) {
+                        console.log('Case ID:', response.case_id);
+                        console.log('New Status:', response.new_status);
+                    }
+                    
+                    setTimeout(() => {
+                        console.log('Reloading page...');
+                        location.href = location.href;
+                    }, 1500);
+                } else {
+                    showAlert('error', response.message || 'Failed to process case');
+                }
+            },
+            error: function(xhr) {
+                console.error('=== ERROR RESPONSE ===');
+                console.error('Status:', xhr.status);
+                console.error('Response:', xhr.responseJSON);
+                console.error('Full XHR:', xhr);
+                
+                const message = xhr.responseJSON?.message || 'Failed to process case';
+                showAlert('error', message);
+            },
+            complete: function() {
+                button.prop('disabled', false).html('<i class="fas fa-check mr-2"></i>Confirm');
+            }
+        });
     });
 
     // Confirm delete button
@@ -2496,7 +2609,6 @@ loadTab0Data();
         });
     });
 
-let caseToProgress = null;
 
 
 // Complete case handler (archives case from any stage)
@@ -2592,80 +2704,53 @@ $(document).on('click', '.dispose-case-btn', function(e) {
     $('#stageProgressionModal').modal('show');
 });
 
-$('#confirmStageBtn').off('click').on('click', function() {
-    console.log('=== CONFIRM STAGE PROGRESSION ===');
-    console.log('caseToProgress:', caseToProgress);
-    
-    if (!caseToProgress || !caseToProgress.id) {
-        console.error('No case selected for progression');
-        showAlert('error', 'No case selected');
+// Execute case handler (Case Management → MALSU with For Execution tag)
+$(document).on('click', '.execute-case-btn', function(e) {
+    e.preventDefault();
+    const button = $(this);
+    const caseId = button.data('case-id');
+
+    if (!caseId) {
+        showAlert('error', 'Error: Could not identify case');
         return;
     }
-    
-    const button = $(this);
-    const isForceComplete = caseToProgress.action === 'complete';
-    const isDispose = caseToProgress.action === 'dispose';
-        
-    console.log('Is Force Complete:', isForceComplete);
-    console.log('Is Dispose:', isDispose);
-    console.log('Button classes:', caseToProgress.button.attr('class'));
-    
-    button.prop('disabled', true);
-    
-    if (isDispose) {
-        button.html('<i class="fas fa-spinner fa-spin"></i> Disposing...');
-    } else {
-        button.html('<i class="fas fa-spinner fa-spin"></i> Archiving...');
-    }
-    
-    const ajaxData = {
-        _token: '{{ csrf_token() }}',
-        force_complete: isForceComplete,
-        dispose: isDispose
+
+    const caseNo        = button.data('case-no') || 'N/A';
+    const establishment = button.data('establishment') || 'N/A';
+    const currentStage  = button.data('stage') || 'Unknown';
+
+    caseToProgress = {
+        id:     caseId,
+        button: button,
+        action: 'execute'
     };
-    
-    console.log('Sending AJAX with data:', ajaxData);
-    console.log('URL:', `/case/${caseToProgress.id}/archive`);  // ← UPDATED HERE
-    
-    $.ajax({
-        url: `/case/${caseToProgress.id}/archive`,  // ← UPDATED HERE
-        method: 'POST',
-        data: ajaxData,
-        success: function(response) {
-            console.log('=== SUCCESS RESPONSE ===');
-            console.log('Full response:', response);
-            
-            $('#stageProgressionModal').modal('hide');
-            
-            if (response.success) {
-                showAlert('success', response.message);
-                
-                if (response.case_id) {
-                    console.log('Case ID:', response.case_id);
-                    console.log('New Status:', response.new_status);
-                }
-                
-                setTimeout(() => {
-                    console.log('Reloading page...');
-                    location.href = location.href;
-                }, 1500);
-            } else {
-                showAlert('error', response.message || 'Failed to process case');
-            }
-        },
-        error: function(xhr) {
-            console.error('=== ERROR RESPONSE ===');
-            console.error('Status:', xhr.status);
-            console.error('Response:', xhr.responseJSON);
-            console.error('Full XHR:', xhr);
-            
-            const message = xhr.responseJSON?.message || 'Failed to process case';
-            showAlert('error', message);
-        },
-        complete: function() {
-            button.prop('disabled', false).html('<i class="fas fa-check mr-2"></i>Confirm');
-        }
-    });
+
+    // Style modal for Execute
+    $('#modalHeader')
+        .removeClass('bg-success bg-warning')
+        .addClass('bg-dark text-white');
+    $('#modalTitleText').text('Forward for Execution');
+    $('#modalAlertBox')
+        .removeClass('alert-success alert-warning')
+        .addClass('alert-dark');
+
+    $('#stageProgressionMessage').html(`
+        <strong>Forward this case to MALSU for Execution?</strong><br>
+        <small class="text-muted">The case will be transferred to MALSU and tagged
+        <span class="badge badge-danger"><i class="fas fa-bolt mr-1"></i>FOR EXECUTION</span>.</small>
+    `);
+    $('#stageCaseInfo').text(`${caseNo} - ${establishment}`);
+    $('#stageCurrentStage').text(currentStage);
+    $('#stageNextStage').html(
+        '<span class="badge badge-dark"><i class="fas fa-bolt mr-1"></i>Forwarded to MALSU — For Execution</span>'
+    );
+
+    $('#confirmStageBtn')
+        .removeClass('btn-success btn-warning')
+        .addClass('btn-dark')
+        .html('<i class="fas fa-bolt mr-2"></i>Confirm Execute');
+
+    $('#stageProgressionModal').modal('show');
 });
 
 

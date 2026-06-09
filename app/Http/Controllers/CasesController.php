@@ -21,6 +21,7 @@ use PhpOffice\PhpSpreadsheet\IOFactory;
 use Illuminate\Support\Facades\Storage;
 use PhpOffice\PhpSpreadsheet\Writer\Csv as CsvWriter;
 use App\Models\User;
+use App\Models\DocumentTrackingHistory;
 
 class CasesController extends Controller
 {
@@ -1775,8 +1776,9 @@ public function loadCaseManagementTab(Request $request)
         $cases = CaseFile::whereNotIn('overall_status', ['Completed', 'Disposed', 'Appealed'])
             ->whereHas('documentTracking', function ($q) {
                 $q->where('current_role', User::ROLE_CASE_MANAGEMENT)
-                  ->where('status', 'Received'); // ← ADD THIS
+                ->where('status', 'Received');
             })
+            ->with('documentTracking')   // ← add
             ->orderBy('created_at', 'desc')
             ->get();
 
@@ -1804,8 +1806,9 @@ public function loadMalsuTab(Request $request)
         $cases = CaseFile::whereNotIn('overall_status', ['Completed', 'Disposed', 'Appealed'])
             ->whereHas('documentTracking', function ($q) {
                 $q->where('current_role', User::ROLE_MALSU)
-                  ->where('status', 'Received');
+                  ->whereIn('status', ['Received', 'Pending Receipt']); // ← changed from ->where('status', 'Received')
             })
+            ->with('documentTracking')
             ->orderBy('created_at', 'desc')
             ->get();
 
@@ -1838,7 +1841,7 @@ public function loadTab0()
             });
         }
 
-        $cases = $query->get();
+        $cases = $query->with('documentTracking')->get();  // ← only change
 
         $html = view('frontend.partials.tab0-rows', compact('cases'))->render();
 
@@ -1854,7 +1857,80 @@ public function loadTab0()
 
         return response()->json([
             'success' => false,
-            'error'   => $e->getMessage()  // ← will show in browser console
+            'error'   => $e->getMessage()
+        ], 500);
+    }
+}
+
+/**
+ * Execute: transfer case to MALSU with "For Execution" tag
+ */
+public function executeCase(Request $request, $id)
+{
+    DB::beginTransaction();
+    try {
+        $case = CaseFile::findOrFail($id);
+        $user = Auth::user();
+
+        $tracking = DocumentTracking::where('case_id', $case->id)->first();
+
+        if (!$tracking) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No document tracking record found for this case.'
+            ], 404);
+        }
+
+        // Save current tracking state to history
+        DocumentTrackingHistory::create([
+            'document_tracking_id'   => $tracking->id,
+            'from_role'              => $tracking->current_role,
+            'to_role'                => $tracking->current_role,
+            'transferred_by_user_id' => $tracking->transferred_by_user_id,
+            'transferred_at'         => $tracking->transferred_at,
+            'received_by_user_id'    => $tracking->received_by_user_id,
+            'received_at'            => $tracking->received_at,
+            'notes'                  => $tracking->transfer_notes,
+        ]);
+
+        // Transfer to MALSU with "For Execution" tag
+        $tracking->update([
+            'current_role'           => User::ROLE_MALSU,
+            'status'                 => 'Pending Receipt',
+            'transferred_by_user_id' => $user->id,
+            'transferred_at'         => now(),
+            'received_by_user_id'    => null,
+            'received_at'            => null,
+            'transfer_notes'         => $request->input('notes', 'Case forwarded for execution.'),
+            'case_tag'               => 'For Execution',
+        ]);
+
+        ActivityLogger::logAction(
+            'TRANSFER',
+            'Case',
+            $case->inspection_id,
+            "Case forwarded to MALSU for execution by {$user->fname} {$user->lname}",
+            [
+                'establishment' => $case->establishment_name,
+                'from_role'     => 'case_management',
+                'to_role'       => 'malsu',
+                'case_tag'      => 'For Execution',
+            ]
+        );
+
+        DB::commit();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Case successfully forwarded to MALSU for execution.'
+        ]);
+
+    } catch (\Exception $e) {
+        DB::rollBack();
+        Log::error('Execute case failed: ' . $e->getMessage());
+        return response()->json([
+            'success' => false,
+            'message' => 'Failed to execute case: ' . $e->getMessage()
         ], 500);
     }
 }

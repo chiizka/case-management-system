@@ -132,10 +132,29 @@
                         <td class="editable-cell" data-field="no">{{ $case->no ?? '-' }}</td>
                         <td class="editable-cell" data-field="inspection_id">{{ $case->inspection_id ?? '-' }}</td>
                         <td class="editable-cell" data-field="case_no" style="background-color: #fff3cd !important;">{{ $case->case_no ?? '-' }}</td>
-                        <td class="editable-cell wrap-cell" data-field="establishment_name" data-address="{{ $case->establishment_address ?? '' }}" style="background-color: #d1ecf1 !important;">
+                        <td class="editable-cell wrap-cell" data-field="establishment_name" 
+                            data-address="{{ $case->establishment_address ?? '' }}"
+                            style="background-color: #d1ecf1 !important;">
                             <span>{{ $case->establishment_name ?? '-' }}</span>
                             @if($case->establishment_address)
-                                <br><small class="text-muted address-subtext" style="font-weight: normal; font-size: 0.75rem;">{{ $case->establishment_address }}</small>
+                                <br><small class="text-muted address-subtext" 
+                                        style="font-weight: normal; font-size: 0.75rem;">
+                                    {{ $case->establishment_address }}
+                                </small>
+                            @endif
+                            @if($case->documentTracking && $case->documentTracking->case_tag)
+                                <br>
+                                @php
+                                    $tagColors = [
+                                        'For Execution'              => 'danger',
+                                        'Motion for Reconsideration' => 'warning',
+                                    ];
+                                    $tagColor = $tagColors[$case->documentTracking->case_tag] ?? 'secondary';
+                                @endphp
+                                <span class="badge badge-{{ $tagColor }} mt-1" style="font-size: 0.7rem;">
+                                    <i class="fas fa-bolt mr-1"></i>
+                                    {{ strtoupper($case->documentTracking->case_tag) }}
+                                </span>
                             @endif
                         </td>
                         <td class="editable-cell" data-field="mode">{{ $case->mode ?? '-' }}</td>

@@ -19,7 +19,8 @@ class DocumentTracking extends Model
         'transferred_at',
         'received_by_user_id',
         'received_at',
-        'transfer_notes'
+        'transfer_notes',
+        'case_tag'
     ];
 
     protected $casts = [

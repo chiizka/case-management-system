@@ -77,6 +77,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/case/{caseId}/documents/{documentId}/upload', [CasesController::class, 'uploadDocumentFile'])->name('case.documents.upload');
         Route::get('/case/{caseId}/documents/{documentId}/download', [CasesController::class, 'downloadDocumentFile'])->name('case.documents.download');
         Route::delete('/case/{caseId}/documents/{documentId}/file', [CasesController::class, 'deleteDocumentFile'])->name('case.documents.deleteFile');
+        Route::post('/case/{id}/execute', [CasesController::class, 'executeCase'])->name('case.execute');
 
         // Resource route LAST
         Route::resource('case', CasesController::class);
