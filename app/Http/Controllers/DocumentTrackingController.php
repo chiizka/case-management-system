@@ -19,40 +19,118 @@ class DocumentTrackingController extends Controller
         
         // Get documents based on user role - ONLY ACTIVE CASES
         $myDocuments = DocumentTracking::with(['case', 'transferredBy', 'receivedBy'])
-            ->active() // Use the scope
+            ->active()
             ->where('current_role', $user->role)
             ->where('status', 'Received')
             ->get();
         
         // Get pending documents for user's role - ONLY ACTIVE CASES
         $pendingDocuments = DocumentTracking::with(['case', 'transferredBy'])
-            ->active() // Use the scope
+            ->active()
             ->where('current_role', $user->role)
             ->where('status', 'Pending Receipt')
             ->get();
         
         // All documents (for admin overview) - ONLY ACTIVE CASES
         $allDocuments = DocumentTracking::with(['case', 'transferredBy', 'receivedBy'])
-            ->active() // Use the scope
+            ->active()
             ->get();
         
         $cases = CaseFile::where('overall_status', 'Active')->get();
-        
+
+        // ─────────────────────────────────────────────────────────────────
+        // Cases Forwarded to MALSU (visible to admin + case_management only)
+        // A case enters this list the moment it has EVER been transferred
+        // to malsu (current tracking OR any history record).
+        // It stays here until the case is archived/completed/disposed.
+        // ─────────────────────────────────────────────────────────────────
+        $casesForwardedToMalsu = collect();
+
+        if ($user->isAdmin() || $user->isCaseManagement()) {
+
+            // Collect case IDs that have ever touched 'malsu':
+            // 1) Currently sitting at malsu (pending or received)
+            $currentlyAtMalsu = DocumentTracking::where('current_role', 'malsu')
+                ->pluck('case_id');
+
+            // 2) Previously passed through malsu (recorded in history)
+            $historicallyAtMalsu = DocumentTrackingHistory::where('to_role', 'malsu')
+                ->join('document_tracking', 'document_tracking.id', '=', 'document_tracking_history.document_tracking_id')
+                ->pluck('document_tracking.case_id');
+
+            $allMalsuCaseIds = $currentlyAtMalsu->merge($historicallyAtMalsu)->unique()->values();
+
+            // Load those cases with their tracking + full history, excluding archived
+            $casesForwardedToMalsu = CaseFile::with([
+                'documentTracking.transferredBy',
+                'documentTracking.receivedBy',
+                'documentTracking.history.transferredBy',
+                'documentTracking.history.receivedBy',
+            ])
+            ->whereIn('id', $allMalsuCaseIds)
+            ->whereNotIn('overall_status', ['Completed', 'Disposed', 'Appealed'])
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->map(function ($case) {
+                $tracking = $case->documentTracking;
+                if (!$tracking) return null;
+
+                // Date first forwarded to malsu — check history first (oldest malsu entry),
+                // fall back to current tracking if currently at malsu
+                $firstMalsuHistory = $tracking->history
+                    ->where('to_role', 'malsu')
+                    ->sortBy('transferred_at')
+                    ->first();
+
+                $dateFirstForwarded = null;
+                if ($firstMalsuHistory) {
+                    $dateFirstForwarded = $firstMalsuHistory->transferred_at;
+                } elseif ($tracking->current_role === 'malsu') {
+                    $dateFirstForwarded = $tracking->transferred_at;
+                }
+
+                // Latest transfer note — from most recent history or current tracking
+                $latestNote = $tracking->transfer_notes;
+                if ($tracking->history->isNotEmpty()) {
+                    $latestNote = $tracking->history->first()->notes ?? $latestNote;
+                }
+
+                // All transfer notes concatenated for the wide notes column
+                $allNotes = collect();
+                // Add historical notes (newest to oldest — history() is ordered desc)
+                foreach ($tracking->history as $h) {
+                    if ($h->notes) {
+                        $allNotes->push('[' . ($h->transferred_at ? $h->transferred_at->format('M d, Y') : 'N/A') . '] ' . $h->notes);
+                    }
+                }
+                // Add current tracking note
+                if ($tracking->transfer_notes) {
+                    $allNotes->push('[' . ($tracking->transferred_at ? $tracking->transferred_at->format('M d, Y') : 'N/A') . '] ' . $tracking->transfer_notes);
+                }
+
+                $case->_malsu_date_first_forwarded = $dateFirstForwarded;
+                $case->_malsu_current_location     = $tracking->current_role;
+                $case->_malsu_current_status       = $tracking->status;
+                $case->_malsu_all_notes            = $allNotes->reverse()->implode("\n");
+
+                return $case;
+            })
+            ->filter() // remove any nulls (cases without tracking)
+            ->values();
+        }
+
         // Count documents by role - ONLY ACTIVE CASES
-        // Fixed: Now includes individual province counts
         $roleCounts = [
-            'admin' => DocumentTracking::active()->where('current_role', 'admin')->count(),
-            'malsu' => DocumentTracking::active()->where('current_role', 'malsu')->count(),
-            'case_management' => DocumentTracking::active()->where('current_role', 'case_management')->count(),
-            'records' => DocumentTracking::active()->where('current_role', 'records')->count(),
-            
-            // Individual province counts
-            'province_albay' => DocumentTracking::active()->where('current_role', 'province_albay')->count(),
+            'admin'                  => DocumentTracking::active()->where('current_role', 'admin')->count(),
+            'malsu'                  => DocumentTracking::active()->where('current_role', 'malsu')->count(),
+            'case_management'        => DocumentTracking::active()->where('current_role', 'case_management')->count(),
+            'records'                => DocumentTracking::active()->where('current_role', 'records')->count(),
+            'province_albay'         => DocumentTracking::active()->where('current_role', 'province_albay')->count(),
             'province_camarines_sur' => DocumentTracking::active()->where('current_role', 'province_camarines_sur')->count(),
-            'province_camarines_norte' => DocumentTracking::active()->where('current_role', 'province_camarines_norte')->count(),
-            'province_catanduanes' => DocumentTracking::active()->where('current_role', 'province_catanduanes')->count(),
-            'province_masbate' => DocumentTracking::active()->where('current_role', 'province_masbate')->count(),
-            'province_sorsogon' => DocumentTracking::active()->where('current_role', 'province_sorsogon')->count(),
+            'province_camarines_norte'=> DocumentTracking::active()->where('current_role', 'province_camarines_norte')->count(),
+            'province_catanduanes'   => DocumentTracking::active()->where('current_role', 'province_catanduanes')->count(),
+            'province_masbate'       => DocumentTracking::active()->where('current_role', 'province_masbate')->count(),
+            'province_sorsogon'      => DocumentTracking::active()->where('current_role', 'province_sorsogon')->count(),
         ];
 
         return view('frontend.document-tracking', compact(
@@ -60,59 +138,56 @@ class DocumentTrackingController extends Controller
             'pendingDocuments',
             'allDocuments',
             'cases',
-            'roleCounts'
+            'roleCounts',
+            'casesForwardedToMalsu'  // ← new
         ));
     }
 
     public function transfer(Request $request)
     {
         $request->validate([
-            'case_id' => 'required|exists:cases,id',
-            'target_role' => ['required', 'in:' . implode(',', User::VALID_ROLES)],
+            'case_id'        => 'required|exists:cases,id',
+            'target_role'    => ['required', 'in:' . implode(',', User::VALID_ROLES)],
             'transfer_notes' => 'nullable|string'
         ]);
 
         DB::beginTransaction();
         try {
-            $user = Auth::user();
-            $caseId = $request->case_id;
+            $user     = Auth::user();
+            $caseId   = $request->case_id;
             $targetRole = $request->target_role;
 
-            // Find or create tracking record
             $document = DocumentTracking::firstOrCreate(
                 ['case_id' => $caseId],
                 [
-                    'current_role' => $targetRole,
-                    'status' => 'Pending Receipt',
-                    'transferred_by_user_id' => $user->id,
-                    'transferred_at' => now(),
-                    'transfer_notes' => $request->transfer_notes,
+                    'current_role'          => $targetRole,
+                    'status'                => 'Pending Receipt',
+                    'transferred_by_user_id'=> $user->id,
+                    'transferred_at'        => now(),
+                    'transfer_notes'        => $request->transfer_notes,
                 ]
             );
 
-            // If it already existed → this is a real transfer
             if (!$document->wasRecentlyCreated) {
-                // Save the COMPLETE OLD CYCLE to history
                 DocumentTrackingHistory::create([
-                    'document_tracking_id' => $document->id,
-                    'from_role' => $document->current_role,
-                    'to_role' => $document->current_role,  // Keep it in the same role for the cycle
-                    'transferred_by_user_id' => $document->transferred_by_user_id,  // OLD transfer
-                    'transferred_at' => $document->transferred_at,  // OLD transfer time
-                    'received_by_user_id' => $document->received_by_user_id,
-                    'received_at' => $document->received_at,
-                    'notes' => $document->transfer_notes,  // OLD notes
+                    'document_tracking_id'   => $document->id,
+                    'from_role'              => $document->current_role,
+                    'to_role'                => $document->current_role,
+                    'transferred_by_user_id' => $document->transferred_by_user_id,
+                    'transferred_at'         => $document->transferred_at,
+                    'received_by_user_id'    => $document->received_by_user_id,
+                    'received_at'            => $document->received_at,
+                    'notes'                  => $document->transfer_notes,
                 ]);
 
-                // Now update current tracking with NEW transfer
                 $document->update([
-                    'current_role' => $targetRole,
-                    'status' => 'Pending Receipt',
+                    'current_role'           => $targetRole,
+                    'status'                 => 'Pending Receipt',
                     'transferred_by_user_id' => $user->id,
-                    'transferred_at' => now(),
-                    'transfer_notes' => $request->transfer_notes,
-                    'received_by_user_id' => null,
-                    'received_at' => null,
+                    'transferred_at'         => now(),
+                    'transfer_notes'         => $request->transfer_notes,
+                    'received_by_user_id'    => null,
+                    'received_at'            => null,
                 ]);
             }
 
@@ -133,10 +208,9 @@ class DocumentTrackingController extends Controller
 
     public function receive(Request $request, $id)
     {
-        $user = Auth::user();
+        $user     = Auth::user();
         $document = DocumentTracking::findOrFail($id);
 
-        // Check if user's role matches the document's target role
         if ($document->current_role !== $user->role) {
             return response()->json([
                 'success' => false,
@@ -144,7 +218,6 @@ class DocumentTrackingController extends Controller
             ], 403);
         }
 
-        // Check if already received
         if ($document->status === 'Received') {
             return response()->json([
                 'success' => false,
@@ -154,19 +227,17 @@ class DocumentTrackingController extends Controller
 
         DB::beginTransaction();
         try {
-            // Update document as received
             $document->update([
-                'status' => 'Received',
+                'status'              => 'Received',
                 'received_by_user_id' => $user->id,
-                'received_at' => now()
+                'received_at'         => now()
             ]);
 
-            // Update the latest history record with receiver info
             $latestHistory = $document->history()->latest()->first();
             if ($latestHistory && !$latestHistory->received_by_user_id) {
                 $latestHistory->update([
                     'received_by_user_id' => $user->id,
-                    'received_at' => now()
+                    'received_at'         => now()
                 ]);
             }
 
@@ -187,44 +258,67 @@ class DocumentTrackingController extends Controller
 
     public function history($id)
     {
-        $document = DocumentTracking::with(['case', 'history.transferredBy', 'history.receivedBy', 'transferredBy', 'receivedBy'])->findOrFail($id);
+        $document = DocumentTracking::with([
+            'case',
+            'history.transferredBy',
+            'history.receivedBy',
+            'transferredBy',
+            'receivedBy'
+        ])->findOrFail($id);
         
         $historyData = [];
         
-        // Add current state (ongoing cycle)
         $historyData[] = [
-            'role' => DocumentTracking::ROLE_NAMES[$document->current_role],
-            'status' => $document->status,
-            'transferred_by' => $document->transferredBy ? $document->transferredBy->fname . ' ' . $document->transferredBy->lname : 'System',
-            'transferred_at' => $document->transferred_at ? $document->transferred_at->format('M d, Y h:i A') : 'N/A',
-            'received_by' => $document->receivedBy ? $document->receivedBy->fname . ' ' . $document->receivedBy->lname : 'Awaiting Receipt',
-            'received_at' => $document->received_at ? $document->received_at->format('M d, Y h:i A') : 'Not Yet Received',
-            'notes' => $document->transfer_notes,
-            'time_ago' => $document->transferred_at ? $document->transferred_at->diffForHumans() : 'N/A',
-            'is_current' => true  // Flag to identify current state
+            'role'           => DocumentTracking::ROLE_NAMES[$document->current_role],
+            'status'         => $document->status,
+            'transferred_by' => $document->transferredBy
+                ? $document->transferredBy->fname . ' ' . $document->transferredBy->lname
+                : 'System',
+            'transferred_at' => $document->transferred_at
+                ? $document->transferred_at->format('M d, Y h:i A')
+                : 'N/A',
+            'received_by'    => $document->receivedBy
+                ? $document->receivedBy->fname . ' ' . $document->receivedBy->lname
+                : 'Awaiting Receipt',
+            'received_at'    => $document->received_at
+                ? $document->received_at->format('M d, Y h:i A')
+                : 'Not Yet Received',
+            'notes'          => $document->transfer_notes,
+            'time_ago'       => $document->transferred_at
+                ? $document->transferred_at->diffForHumans()
+                : 'N/A',
+            'is_current'     => true
         ];
 
-        // Add completed historical cycles
         foreach ($document->history as $history) {
             $historyData[] = [
-                'role' => DocumentTracking::ROLE_NAMES[$history->to_role],
-                'status' => 'Completed',
-                'transferred_by' => $history->transferredBy ? $history->transferredBy->fname . ' ' . $history->transferredBy->lname : 'System',
-                'transferred_at' => $history->transferred_at ? $history->transferred_at->format('M d, Y h:i A') : 'N/A',
-                'received_by' => $history->receivedBy ? $history->receivedBy->fname . ' ' . $history->receivedBy->lname : 'Not Received',
-                'received_at' => $history->received_at ? $history->received_at->format('M d, Y h:i A') : 'N/A',
-                'notes' => $history->notes,
-                'time_ago' => $history->transferred_at ? $history->transferred_at->diffForHumans() : 'N/A',
-                'is_current' => false
+                'role'           => DocumentTracking::ROLE_NAMES[$history->to_role],
+                'status'         => 'Completed',
+                'transferred_by' => $history->transferredBy
+                    ? $history->transferredBy->fname . ' ' . $history->transferredBy->lname
+                    : 'System',
+                'transferred_at' => $history->transferred_at
+                    ? $history->transferred_at->format('M d, Y h:i A')
+                    : 'N/A',
+                'received_by'    => $history->receivedBy
+                    ? $history->receivedBy->fname . ' ' . $history->receivedBy->lname
+                    : 'Not Received',
+                'received_at'    => $history->received_at
+                    ? $history->received_at->format('M d, Y h:i A')
+                    : 'N/A',
+                'notes'          => $history->notes,
+                'time_ago'       => $history->transferred_at
+                    ? $history->transferred_at->diffForHumans()
+                    : 'N/A',
+                'is_current'     => false
             ];
         }
 
         return response()->json([
-            'success' => true,
-            'case_no' => $document->case->case_no ?? 'N/A',
+            'success'       => true,
+            'case_no'       => $document->case->case_no ?? 'N/A',
             'establishment' => $document->case->establishment_name ?? 'N/A',
-            'history' => $historyData
+            'history'       => $historyData
         ]);
     }
-    
 }

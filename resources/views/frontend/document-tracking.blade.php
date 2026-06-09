@@ -35,6 +35,7 @@
 .status-received { background: #1cc88a; color: white; }
 .status-pending { background: #f6c23e; color: white; }
 .status-transferred { background: #36b9cc; color: white; }
+.status-pendingreceipt { background: #f6c23e; color: white; }
 
 /* Timeline styling */
 .timeline {
@@ -164,6 +165,51 @@
     color: white;
     transform: scale(1.05);
 }
+
+/* ── Cases Forwarded to MALSU tab ─────────────────────────────── */
+.malsu-tab-header {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    color: white;
+}
+
+/* Notes cell: allow wrapping so wide content is still readable */
+.notes-cell {
+    min-width: 260px;
+    max-width: 380px;
+    white-space: pre-wrap;
+    word-break: break-word;
+    font-size: 0.82rem;
+    line-height: 1.4;
+    color: #555;
+}
+
+/* Location badge inside the malsu tab */
+.location-at-malsu {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    color: white;
+    padding: 0.3rem 0.75rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.location-at-casemgmt {
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    color: white;
+    padding: 0.3rem 0.75rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.location-other {
+    background: #858796;
+    color: white;
+    padding: 0.3rem 0.75rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
 </style>
 
 <div id="content">
@@ -183,8 +229,6 @@
                 </button>
             @endif
         </div>
-
-
 
         <!-- Alert Messages -->
         <div class="alert alert-success alert-dismissible fade" role="alert" id="success-alert" style="display: none;">
@@ -216,6 +260,19 @@
                     @endif
                 </a>
             </li>
+
+            {{-- ── NEW TAB: Cases Forwarded to MALSU (admin + case_management only) ── --}}
+            @if(Auth::user()->isAdmin() || Auth::user()->isCaseManagement())
+            <li class="nav-item">
+                <a class="nav-link" id="malsu-forwarded-tab" data-toggle="tab" href="#malsuForwarded" role="tab">
+                    <i class="fas fa-share-square"></i> Cases Forwarded to MALSU
+                    @if(isset($casesForwardedToMalsu) && $casesForwardedToMalsu->count() > 0)
+                        <span class="badge badge-danger ml-2">{{ $casesForwardedToMalsu->count() }}</span>
+                    @endif
+                </a>
+            </li>
+            @endif
+
             @if(Auth::user()->isAdmin())
             <li class="nav-item">
                 <a class="nav-link" id="all-docs-tab" data-toggle="tab" href="#allDocs" role="tab">
@@ -390,7 +447,115 @@
                 </div>
             </div>
 
-            <!-- All Documents Tab (Admin Only) - FILTERS REMOVED -->
+            {{-- ══════════════════════════════════════════════════════════════════
+                 NEW TAB: Cases Forwarded to MALSU
+                 Visible to: admin, case_management
+                 A case enters once ever forwarded to malsu; stays until archived.
+            ══════════════════════════════════════════════════════════════════ --}}
+            @if(Auth::user()->isAdmin() || Auth::user()->isCaseManagement())
+            <div class="tab-pane fade" id="malsuForwarded" role="tabpanel">
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3 d-flex justify-content-between align-items-center malsu-tab-header">
+                        <h6 class="m-0 font-weight-bold">
+                            <i class="fas fa-share-square mr-1"></i> Cases Forwarded to MALSU
+                        </h6>
+                        <span class="badge badge-light badge-pill">
+                            {{ isset($casesForwardedToMalsu) ? $casesForwardedToMalsu->count() : 0 }} Cases
+                        </span>
+                    </div>
+                    <div class="card-body">
+
+                        {{-- Search row --}}
+                        <div class="mb-3">
+                            <input type="search"
+                                   id="malsuForwardedSearch"
+                                   class="form-control form-control-sm"
+                                   placeholder="Search by case no. or establishment..."
+                                   style="max-width: 320px;">
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="table table-hover tracking-table" id="malsuForwardedTable">
+                                <thead>
+                                    <tr>
+                                        <th style="min-width:100px;">Case No.</th>
+                                        <th style="min-width:200px;">Establishment Name</th>
+                                        <th style="min-width:160px;">Current Location</th>
+                                        <th style="min-width:150px;">Date First Forwarded to MALSU</th>
+                                        <th style="min-width:260px;">Notes (Transfer History)</th>
+                                        <th style="min-width:110px;">Doc. Status</th>
+                                        <th style="min-width:80px;">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="malsuForwardedBody">
+                                    @forelse($casesForwardedToMalsu ?? [] as $case)
+                                    @php
+                                        $loc = $case->_malsu_current_location ?? 'unknown';
+                                        $locClass = $loc === 'malsu'
+                                            ? 'location-at-malsu'
+                                            : ($loc === 'case_management' ? 'location-at-casemgmt' : 'location-other');
+                                        $locLabel = \App\Models\DocumentTracking::ROLE_NAMES[$loc] ?? ucfirst(str_replace('_',' ',$loc));
+
+                                        $docStatus   = $case->_malsu_current_status ?? '-';
+                                        $statusClass = $docStatus === 'Received' ? 'status-received' : 'status-pendingreceipt';
+
+                                        $dateForwarded = $case->_malsu_date_first_forwarded
+                                            ? \Carbon\Carbon::parse($case->_malsu_date_first_forwarded)->format('M d, Y')
+                                            : '-';
+
+                                        $docTrackingId = $case->documentTracking->id ?? null;
+                                    @endphp
+                                    <tr class="malsu-row"
+                                        data-case-no="{{ strtolower($case->case_no ?? '') }}"
+                                        data-establishment="{{ strtolower($case->establishment_name ?? '') }}">
+                                        <td class="font-weight-bold text-primary">
+                                            {{ $case->case_no ?? 'N/A' }}
+                                        </td>
+                                        <td>
+                                            <div title="{{ $case->establishment_name ?? '' }}">
+                                                {{ $case->establishment_name ?? 'N/A' }}
+                                            </div>
+                                            <small class="text-muted">{{ $case->po_office ?? '' }}</small>
+                                        </td>
+                                        <td>
+                                            <span class="{{ $locClass }}">{{ $locLabel }}</span>
+                                        </td>
+                                        <td>
+                                            {{ $dateForwarded }}
+                                        </td>
+                                        <td class="notes-cell">{{ $case->_malsu_all_notes ?: '—' }}</td>
+                                        <td>
+                                            <span class="status-badge {{ $statusClass }}">
+                                                {{ $docStatus }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            @if($docTrackingId)
+                                            <button class="btn btn-info btn-sm view-history-btn"
+                                                    data-doc-id="{{ $docTrackingId }}"
+                                                    title="View Full Transfer History">
+                                                <i class="fas fa-history"></i>
+                                            </button>
+                                            @endif
+                                        </td>
+                                    </tr>
+                                    @empty
+                                    <tr id="malsuEmptyRow">
+                                        <td colspan="7" class="text-center text-muted py-5">
+                                            <i class="fas fa-inbox fa-3x mb-3 d-block"></i>
+                                            No cases have been forwarded to MALSU yet.
+                                        </td>
+                                    </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            @endif
+
+            <!-- All Documents Tab (Admin Only) -->
             @if(Auth::user()->isAdmin())
             <div class="tab-pane fade" id="allDocs" role="tabpanel">
                 <div class="card shadow mb-4">
@@ -470,6 +635,7 @@
             @endif
 
         </div>
+        {{-- end tab-content --}}
 
     </div>
 </div>
@@ -530,7 +696,8 @@
 
                     <div class="form-group">
                         <label class="font-weight-bold">Transfer Notes</label>
-                        <textarea class="form-control" name="transfer_notes" id="transfer_notes" rows="3" placeholder="Optional notes about this transfer..."></textarea>
+                        <textarea class="form-control" name="transfer_notes" id="transfer_notes" rows="3"
+                                  placeholder="Optional notes about this transfer..."></textarea>
                     </div>
 
                     <div class="alert alert-info">
@@ -618,19 +785,41 @@ $(document).ready(function() {
     let docToReceive = null;
     let isTransferLocked = false;
 
+    // ── Live search for Cases Forwarded to MALSU tab ──────────────────
+    $('#malsuForwardedSearch').on('input', function () {
+        const q = $(this).val().toLowerCase().trim();
+        let visibleCount = 0;
+
+        $('#malsuForwardedBody .malsu-row').each(function () {
+            const caseNo       = $(this).data('case-no') || '';
+            const establishment = $(this).data('establishment') || '';
+            const match = !q || caseNo.includes(q) || establishment.includes(q);
+            $(this).toggle(match);
+            if (match) visibleCount++;
+        });
+
+        // Show/hide the "no results" empty row
+        const $empty = $('#malsuForwardedBody #malsuEmptyRow');
+        if (visibleCount === 0 && $empty.length === 0) {
+            $('#malsuForwardedBody').append(
+                '<tr id="malsuNoResults"><td colspan="7" class="text-center text-muted py-4">' +
+                '<i class="fas fa-search fa-2x mb-2 d-block"></i>No matching cases found.</td></tr>'
+            );
+        } else if (visibleCount > 0) {
+            $('#malsuNoResults').remove();
+        }
+    });
+
     // Transfer form submission
     $('#transferForm').on('submit', function(e) {
         e.preventDefault();
         
-        // Get form data manually
         const formData = {
             case_id: $('#transfer_case_id').val(),
             target_role: $('#target_role').val(),   
             transfer_notes: $('#transfer_notes').val(),
             _token: $('meta[name="csrf-token"]').attr('content')
         };
-
-        console.log('Submitting:', formData);
 
         $.ajax({
             url: '/documents/transfer',
@@ -645,7 +834,6 @@ $(document).ready(function() {
                 setTimeout(() => location.reload(), 1500);
             },
             error: function(xhr) {
-                console.error('Error:', xhr);
                 let errorMsg = 'Failed to transfer document.';
                 if (xhr.responseJSON?.message) {
                     errorMsg = xhr.responseJSON.message;
@@ -663,17 +851,10 @@ $(document).ready(function() {
         const caseId = $(this).data('case-id');
         const caseNo = $(this).data('case-no');
         
-        console.log('Locking case:', caseId);
-        
         isTransferLocked = true;
         
-        // Set the value and make it readonly
         $('#transfer_case_id').val(caseId).prop('readonly', true)
-            .css({
-                'background-color': '#e9ecef',
-                'cursor': 'not-allowed',
-                'opacity': '0.6'
-            });
+            .css({ 'background-color': '#e9ecef', 'cursor': 'not-allowed', 'opacity': '0.6' });
         
         $('#case-locked-msg').show();
         $('#transferModal .modal-title').html('<i class="fas fa-exchange-alt"></i> Transfer Document - ' + caseNo);
@@ -682,14 +863,9 @@ $(document).ready(function() {
 
     // Regular transfer button
     $('[data-target="#transferModal"]').on('click', function() {
-        console.log('Opening fresh modal');
         isTransferLocked = false;
         $('#transfer_case_id').val('').prop('readonly', false)
-            .css({
-                'background-color': '',
-                'cursor': '',
-                'opacity': ''
-            });
+            .css({ 'background-color': '', 'cursor': '', 'opacity': '' });
         $('#case-locked-msg').hide();
         $('#transferModal .modal-title').html('<i class="fas fa-exchange-alt"></i> Transfer Document');
     });
@@ -711,9 +887,7 @@ $(document).ready(function() {
         $.ajax({
             url: '/documents/' + docToReceive + '/receive',
             method: 'POST',
-            headers: {
-                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-            },
+            headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
             success: function(response) {
                 $('#receiveModal').modal('hide');
                 showAlert(response.message || 'Document received successfully!', 'success');
@@ -727,7 +901,7 @@ $(document).ready(function() {
         });
     });
 
-    // View history
+    // View history (shared across all tabs)
     $(document).on('click', '.view-history-btn', function() {
         const docId = $(this).data('doc-id');
         
@@ -743,10 +917,9 @@ $(document).ready(function() {
                 
                 let html = '';
                 
-                response.history.forEach((item) => {
+                response.history.forEach(function(item) {
                     const roleClass = (item.role || '').toLowerCase().replace(/ /g, '_');
 
-                    // Detect case creation entry to show cleaner layout
                     const isLikelyCreation =
                         item.transferred_by === item.received_by &&
                         Math.abs(new Date(item.transferred_at) - new Date(item.received_at)) < 10000 &&
@@ -755,7 +928,6 @@ $(document).ready(function() {
                     let contentHtml = '';
 
                     if (isLikelyCreation) {
-                        // Clean layout for case creation (no "Transferred By")
                         contentHtml = `
                             <div class="row">
                                 <div class="col-md-12">
@@ -763,10 +935,8 @@ $(document).ready(function() {
                                     <strong class="text-success">${item.received_by}</strong><br>
                                     <small class="text-muted">${item.received_at}</small>
                                 </div>
-                            </div>
-                        `;
+                            </div>`;
                     } else {
-                        // Normal transfer layout
                         contentHtml = `
                             <div class="row">
                                 <div class="col-md-6">
@@ -781,8 +951,7 @@ $(document).ready(function() {
                                     </strong><br>
                                     <small class="text-muted">${item.received_at}</small>
                                 </div>
-                            </div>
-                        `;
+                            </div>`;
                     }
 
                     html += `
@@ -796,14 +965,11 @@ $(document).ready(function() {
                                         </div>
                                         <small class="text-muted">${item.time_ago}</small>
                                     </div>
-                                    
                                     ${contentHtml}
-                                    
                                     ${item.notes ? '<hr class="my-2"><small class="text-muted">Notes: ' + item.notes + '</small>' : ''}
                                 </div>
                             </div>
-                        </div>
-                    `;
+                        </div>`;
                 });
                 
                 $('#historyTimeline').html(html || '<div class="alert alert-info">No history available</div>');
@@ -817,7 +983,8 @@ $(document).ready(function() {
     // Reset modals on close
     $('#transferModal').on('hidden.bs.modal', function() {
         $('#transferForm')[0].reset();
-        $('#transfer_case_id').prop('readonly', false).css({'background-color': '', 'cursor': '', 'opacity': ''});
+        $('#transfer_case_id').prop('readonly', false)
+            .css({ 'background-color': '', 'cursor': '', 'opacity': '' });
         $('#case-locked-msg').hide();
         isTransferLocked = false;
     });
@@ -829,7 +996,7 @@ $(document).ready(function() {
 });
 
 function showAlert(message, type) {
-    const alertId = type === 'success' ? 'success-alert' : 'error-alert';
+    const alertId   = type === 'success' ? 'success-alert' : 'error-alert';
     const messageId = type === 'success' ? 'success-message' : 'error-message';
     
     $('#' + messageId).text(message);
