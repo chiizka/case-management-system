@@ -119,6 +119,95 @@ class DocumentTrackingController extends Controller
             ->values();
         }
 
+        // ─────────────────────────────────────────────────────────────────
+        // Cases Forwarded to Case Management (visible to admin + malsu only)
+        // A case enters this list when MALSU transfers it to case_management.
+        // Specifically: history must have from_role='malsu' AND
+        // to_role='case_management'. The case stays here until archived.
+        // ─────────────────────────────────────────────────────────────────
+        $casesForwardedToCaseManagement = collect();
+
+        if ($user->isAdmin() || $user->isMalsu()) {
+
+            // 1) Cases where history shows malsu → case_management transfer
+            $historicallySentByCaseIds = DocumentTrackingHistory::where('from_role', 'malsu')
+                ->where('to_role', 'case_management')
+                ->join('document_tracking', 'document_tracking.id', '=', 'document_tracking_history.document_tracking_id')
+                ->pluck('document_tracking.case_id');
+
+            // 2) Cases currently at case_management where the current tracking
+            //    was transferred_by a malsu user (covers the live/not-yet-received cycle)
+            $malsuUserIds = User::where('role', 'malsu')->pluck('id');
+
+            $currentlySentByCaseIds = DocumentTracking::where('current_role', 'case_management')
+                ->whereIn('transferred_by_user_id', $malsuUserIds)
+                ->pluck('case_id');
+
+            $allCmCaseIds = $historicallySentByCaseIds
+                ->merge($currentlySentByCaseIds)
+                ->unique()
+                ->values();
+
+            $casesForwardedToCaseManagement = CaseFile::with([
+                'documentTracking.transferredBy',
+                'documentTracking.receivedBy',
+                'documentTracking.history.transferredBy',
+                'documentTracking.history.receivedBy',
+            ])
+            ->whereIn('id', $allCmCaseIds)
+            ->whereNotIn('overall_status', ['Completed', 'Disposed', 'Appealed'])
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->map(function ($case) {
+                $tracking = $case->documentTracking;
+                if (!$tracking) return null;
+
+                // Date first forwarded to case_management BY malsu
+                // Check history for oldest malsu→case_management entry
+                $firstCmHistory = $tracking->history
+                    ->filter(fn($h) => $h->from_role === 'malsu' && $h->to_role === 'case_management')
+                    ->sortBy('transferred_at')
+                    ->first();
+
+                $dateFirstForwarded = null;
+                if ($firstCmHistory) {
+                    $dateFirstForwarded = $firstCmHistory->transferred_at;
+                } elseif (
+                    $tracking->current_role === 'case_management' &&
+                    optional($tracking->transferredBy)->role === 'malsu'
+                ) {
+                    // Currently at case_management, sent by a malsu user
+                    $dateFirstForwarded = $tracking->transferred_at;
+                }
+
+                // Build concatenated notes from all transfers in history + current
+                $allNotes = collect();
+                foreach ($tracking->history as $h) {
+                    if ($h->notes) {
+                        $allNotes->push(
+                            '[' . ($h->transferred_at ? $h->transferred_at->format('M d, Y') : 'N/A') . '] '
+                            . $h->notes
+                        );
+                    }
+                }
+                if ($tracking->transfer_notes) {
+                    $allNotes->push(
+                        '[' . ($tracking->transferred_at ? $tracking->transferred_at->format('M d, Y') : 'N/A') . '] '
+                        . $tracking->transfer_notes
+                    );
+                }
+
+                $case->_cm_date_first_forwarded = $dateFirstForwarded;
+                $case->_cm_current_location     = $tracking->current_role;
+                $case->_cm_current_status       = $tracking->status;
+                $case->_cm_all_notes            = $allNotes->reverse()->implode("\n");
+
+                return $case;
+            })
+            ->filter()
+            ->values();
+        }
+
         // Count documents by role - ONLY ACTIVE CASES
         $roleCounts = [
             'admin'                  => DocumentTracking::active()->where('current_role', 'admin')->count(),
@@ -139,7 +228,8 @@ class DocumentTrackingController extends Controller
             'allDocuments',
             'cases',
             'roleCounts',
-            'casesForwardedToMalsu'  // ← new
+            'casesForwardedToMalsu',
+            'casesForwardedToCaseManagement'
         ));
     }
 

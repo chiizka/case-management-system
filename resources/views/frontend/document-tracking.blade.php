@@ -261,6 +261,18 @@
                 </a>
             </li>
 
+            {{-- ── NEW TAB: Cases Forwarded to Case Management (admin + malsu only) ── --}}
+            @if(Auth::user()->isAdmin() || Auth::user()->isMalsu())
+            <li class="nav-item">
+                <a class="nav-link" id="cm-forwarded-tab" data-toggle="tab" href="#cmForwarded" role="tab">
+                    <i class="fas fa-share-square"></i> Cases Forwarded to Case Management
+                    @if(isset($casesForwardedToCaseManagement) && $casesForwardedToCaseManagement->count() > 0)
+                        <span class="badge badge-info ml-2">{{ $casesForwardedToCaseManagement->count() }}</span>
+                    @endif
+                </a>
+            </li>
+            @endif
+
             {{-- ── NEW TAB: Cases Forwarded to MALSU (admin + case_management only) ── --}}
             @if(Auth::user()->isAdmin() || Auth::user()->isCaseManagement())
             <li class="nav-item">
@@ -446,6 +458,119 @@
                     </div>
                 </div>
             </div>
+
+            {{-- ══════════════════════════════════════════════════════════════════
+                 NEW TAB: Cases Forwarded to Case Management
+                 Visible to: admin, malsu
+                 A case enters when MALSU transfers it to case_management.
+                 Stays until archived/completed/disposed.
+            ══════════════════════════════════════════════════════════════════ --}}
+            @if(Auth::user()->isAdmin() || Auth::user()->isMalsu())
+            <div class="tab-pane fade" id="cmForwarded" role="tabpanel">
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3 d-flex justify-content-between align-items-center"
+                         style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white;">
+                        <h6 class="m-0 font-weight-bold">
+                            <i class="fas fa-share-square mr-1"></i> Cases Forwarded to Case Management
+                        </h6>
+                        <span class="badge badge-light badge-pill">
+                            {{ isset($casesForwardedToCaseManagement) ? $casesForwardedToCaseManagement->count() : 0 }} Cases
+                        </span>
+                    </div>
+                    <div class="card-body">
+
+                        {{-- Search row --}}
+                        <div class="mb-3">
+                            <input type="search"
+                                   id="cmForwardedSearch"
+                                   class="form-control form-control-sm"
+                                   placeholder="Search by case no. or establishment..."
+                                   style="max-width: 320px;">
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="table table-hover tracking-table" id="cmForwardedTable">
+                                <thead>
+                                    <tr>
+                                        <th style="min-width:100px;">Case No.</th>
+                                        <th style="min-width:200px;">Establishment Name</th>
+                                        <th style="min-width:160px;">Current Location</th>
+                                        <th style="min-width:150px;">Date First Forwarded to Case Management</th>
+                                        <th style="min-width:260px;">Notes (Transfer History)</th>
+                                        <th style="min-width:110px;">Doc. Status</th>
+                                        <th style="min-width:80px;">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="cmForwardedBody">
+                                    @forelse($casesForwardedToCaseManagement ?? [] as $case)
+                                    @php
+                                        $loc = $case->_cm_current_location ?? 'unknown';
+                                        $locClass = $loc === 'case_management'
+                                            ? 'location-at-casemgmt'
+                                            : ($loc === 'malsu' ? 'location-at-malsu' : 'location-other');
+                                        $locLabel = \App\Models\DocumentTracking::ROLE_NAMES[$loc]
+                                            ?? ucfirst(str_replace('_', ' ', $loc));
+
+                                        $docStatus   = $case->_cm_current_status ?? '-';
+                                        $statusClass = $docStatus === 'Received'
+                                            ? 'status-received'
+                                            : 'status-pendingreceipt';
+
+                                        $dateForwarded = $case->_cm_date_first_forwarded
+                                            ? \Carbon\Carbon::parse($case->_cm_date_first_forwarded)->format('M d, Y')
+                                            : '-';
+
+                                        $docTrackingId = $case->documentTracking->id ?? null;
+                                    @endphp
+                                    <tr class="cm-row"
+                                        data-case-no="{{ strtolower($case->case_no ?? '') }}"
+                                        data-establishment="{{ strtolower($case->establishment_name ?? '') }}">
+                                        <td class="font-weight-bold text-primary">
+                                            {{ $case->case_no ?? 'N/A' }}
+                                        </td>
+                                        <td>
+                                            <div title="{{ $case->establishment_name ?? '' }}">
+                                                {{ $case->establishment_name ?? 'N/A' }}
+                                            </div>
+                                            <small class="text-muted">{{ $case->po_office ?? '' }}</small>
+                                        </td>
+                                        <td>
+                                            <span class="{{ $locClass }}">{{ $locLabel }}</span>
+                                        </td>
+                                        <td>
+                                            {{ $dateForwarded }}
+                                        </td>
+                                        <td class="notes-cell">{{ $case->_cm_all_notes ?: '—' }}</td>
+                                        <td>
+                                            <span class="status-badge {{ $statusClass }}">
+                                                {{ $docStatus }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            @if($docTrackingId)
+                                            <button class="btn btn-info btn-sm view-history-btn"
+                                                    data-doc-id="{{ $docTrackingId }}"
+                                                    title="View Full Transfer History">
+                                                <i class="fas fa-history"></i>
+                                            </button>
+                                            @endif
+                                        </td>
+                                    </tr>
+                                    @empty
+                                    <tr id="cmEmptyRow">
+                                        <td colspan="7" class="text-center text-muted py-5">
+                                            <i class="fas fa-inbox fa-3x mb-3 d-block"></i>
+                                            No cases have been forwarded to Case Management by MALSU yet.
+                                        </td>
+                                    </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            @endif
 
             {{-- ══════════════════════════════════════════════════════════════════
                  NEW TAB: Cases Forwarded to MALSU
@@ -784,6 +909,30 @@ $(document).ready(function() {
     
     let docToReceive = null;
     let isTransferLocked = false;
+
+    // ── Live search for Cases Forwarded to Case Management tab ───────
+    $('#cmForwardedSearch').on('input', function () {
+        const q = $(this).val().toLowerCase().trim();
+        let visibleCount = 0;
+
+        $('#cmForwardedBody .cm-row').each(function () {
+            const caseNo        = $(this).data('case-no') || '';
+            const establishment = $(this).data('establishment') || '';
+            const match = !q || caseNo.includes(q) || establishment.includes(q);
+            $(this).toggle(match);
+            if (match) visibleCount++;
+        });
+
+        const $empty = $('#cmForwardedBody #cmEmptyRow');
+        if (visibleCount === 0 && $empty.length === 0) {
+            $('#cmForwardedBody').append(
+                '<tr id="cmNoResults"><td colspan="7" class="text-center text-muted py-4">' +
+                '<i class="fas fa-search fa-2x mb-2 d-block"></i>No matching cases found.</td></tr>'
+            );
+        } else if (visibleCount > 0) {
+            $('#cmNoResults').remove();
+        }
+    });
 
     // ── Live search for Cases Forwarded to MALSU tab ──────────────────
     $('#malsuForwardedSearch').on('input', function () {
