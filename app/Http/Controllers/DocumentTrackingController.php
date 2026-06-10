@@ -121,26 +121,37 @@ class DocumentTrackingController extends Controller
 
         // ─────────────────────────────────────────────────────────────────
         // Cases Forwarded to Case Management (visible to admin + malsu only)
-        // A case enters this list when MALSU transfers it to case_management.
-        // Specifically: history must have from_role='malsu' AND
-        // to_role='case_management'. The case stays here until archived.
+        // A case enters this list the moment MALSU transfers it to
+        // case_management. It stays here permanently until archived —
+        // even if case_management sends it back to malsu or elsewhere.
+        //
+        // HOW transfer() WORKS (key insight):
+        //   When any user transfers a doc, the OLD cycle is written to
+        //   document_tracking_history with transferred_by_user_id = the
+        //   person who originally sent it. So when malsu sends to
+        //   case_management, history permanently records transferred_by
+        //   = malsu user. Even after case_management returns it, that
+        //   history row is never deleted — the case stays visible here.
         // ─────────────────────────────────────────────────────────────────
         $casesForwardedToCaseManagement = collect();
 
         if ($user->isAdmin() || $user->isMalsu()) {
 
-            // 1) Cases where history shows malsu → case_management transfer
-            $historicallySentByCaseIds = DocumentTrackingHistory::where('from_role', 'malsu')
-                ->where('to_role', 'case_management')
+            $malsuUserIds = User::where('role', 'malsu')->pluck('id');
+
+            // 1) PERMANENT: any history row where a malsu user was the sender.
+            //    Once written, this record is never removed — so the case
+            //    stays in this tab forever regardless of where it moves next.
+            //    Table prefix on transferred_by_user_id avoids ambiguity with
+            //    the joined document_tracking table which has the same column.
+            $historicallySentByCaseIds = DocumentTrackingHistory::whereIn('document_tracking_history.transferred_by_user_id', $malsuUserIds)
                 ->join('document_tracking', 'document_tracking.id', '=', 'document_tracking_history.document_tracking_id')
                 ->pluck('document_tracking.case_id');
 
-            // 2) Cases currently at case_management where the current tracking
-            //    was transferred_by a malsu user (covers the live/not-yet-received cycle)
-            $malsuUserIds = User::where('role', 'malsu')->pluck('id');
-
-            $currentlySentByCaseIds = DocumentTracking::where('current_role', 'case_management')
-                ->whereIn('transferred_by_user_id', $malsuUserIds)
+            // 2) LIVE CYCLE: currently being transferred by a malsu user but
+            //    not yet archived to history (pending receipt at case_management).
+            $currentlySentByCaseIds = DocumentTracking::whereIn('transferred_by_user_id', $malsuUserIds)
+                ->where('current_role', 'case_management')
                 ->pluck('case_id');
 
             $allCmCaseIds = $historicallySentByCaseIds
@@ -162,21 +173,26 @@ class DocumentTrackingController extends Controller
                 $tracking = $case->documentTracking;
                 if (!$tracking) return null;
 
-                // Date first forwarded to case_management BY malsu
-                // Check history for oldest malsu→case_management entry
+                // Date first forwarded to case_management BY malsu.
+                // Since from_role/to_role in history both store the LEAVING role
+                // (not the destination), we identify malsu-sent entries by
+                // checking transferred_by_user_id against malsu user IDs instead.
+                $malsuUserIds = User::where('role', 'malsu')->pluck('id');
+
                 $firstCmHistory = $tracking->history
-                    ->filter(fn($h) => $h->from_role === 'malsu' && $h->to_role === 'case_management')
+                    ->filter(fn($h) => $malsuUserIds->contains($h->transferred_by_user_id))
                     ->sortBy('transferred_at')
                     ->first();
 
                 $dateFirstForwarded = null;
                 if ($firstCmHistory) {
+                    // Oldest history row sent by a malsu user
                     $dateFirstForwarded = $firstCmHistory->transferred_at;
                 } elseif (
                     $tracking->current_role === 'case_management' &&
-                    optional($tracking->transferredBy)->role === 'malsu'
+                    $malsuUserIds->contains($tracking->transferred_by_user_id)
                 ) {
-                    // Currently at case_management, sent by a malsu user
+                    // Live cycle: currently at case_management, sent by malsu
                     $dateFirstForwarded = $tracking->transferred_at;
                 }
 
