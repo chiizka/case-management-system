@@ -450,9 +450,9 @@ td.actions-cell.expanded {
     <!-- Begin Page Content -->
     <div class="container-fluid">
 
-    <!-- Tab Navigation -->
-    @if(Auth::user()->isCaseManagement() || Auth::user()->isMalsu())
+    @if(Auth::user()->isCaseManagement() || Auth::user()->isMalsu() || Auth::user()->isAdmin())
         <ul class="nav nav-tabs mb-0" id="dataTableTabs" role="tablist">
+
             @if(!Auth::user()->isMalsu())
             <li class="nav-item">
                 <a class="nav-link {{ Auth::user()->isCaseManagement() ? 'active' : '' }}" 
@@ -462,6 +462,7 @@ td.actions-cell.expanded {
                 </a>
             </li>
             @endif
+
             @if(Auth::user()->isCaseManagement())
             <li class="nav-item">
                 <a class="nav-link" id="tabCM-tab" data-toggle="tab" href="#tabCM"
@@ -470,6 +471,7 @@ td.actions-cell.expanded {
                 </a>
             </li>
             @endif
+
             @if(Auth::user()->isMalsu())
             <li class="nav-item">
                 <a class="nav-link active" id="tabMALSU-tab" data-toggle="tab" href="#tabMALSU"
@@ -478,6 +480,22 @@ td.actions-cell.expanded {
                 </a>
             </li>
             @endif
+
+            @if(Auth::user()->isMalsu() || Auth::user()->isAdmin())
+            <li class="nav-item">
+                <a class="nav-link" id="tabCENA-tab" data-toggle="tab" href="#tabCENA"
+                role="tab" aria-controls="tabCENA" aria-selected="false">
+                    <i class="fas fa-gavel mr-1"></i> CENA
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" id="tabAppealed-tab" data-toggle="tab" href="#tabAppealed"
+                role="tab" aria-controls="tabAppealed" aria-selected="false">
+                    <i class="fas fa-balance-scale mr-1"></i> Appealed Cases
+                </a>
+            </li>
+            @endif
+
         </ul>
     @endif
 
@@ -735,6 +753,32 @@ td.actions-cell.expanded {
                     </div>
                 </div>
             @endif
+
+            @if(Auth::user()->isMalsu() || Auth::user()->isAdmin())
+            <div class="tab-pane fade" id="tabCENA" role="tabpanel" aria-labelledby="tabCENA-tab">
+                <div class="card shadow mb-4">
+                    <div class="card-body">
+                        <div class="text-center py-5 text-muted">
+                            <i class="fas fa-gavel fa-3x mb-3 d-block"></i>
+                            <h5>CENA</h5>
+                            <p>Content coming soon.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-pane fade" id="tabAppealed" role="tabpanel" aria-labelledby="tabAppealed-tab">
+                <div class="card shadow mb-4">
+                    <div class="card-body">
+                        <div class="text-center py-5 text-muted">
+                            <i class="fas fa-balance-scale fa-3x mb-3 d-block"></i>
+                            <h5>Appealed Cases</h5>
+                            <p>Content coming soon.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        @endif
 
         </div>
         <!-- End Tabs Content -->
