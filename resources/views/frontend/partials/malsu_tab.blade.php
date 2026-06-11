@@ -1,11 +1,11 @@
 {{-- 
-    Partial: case_management_tab.blade.php
-    Shows cases currently located at the case_management role.
+    Partial: malsu_tab.blade.php
+    Shows cases currently located at the MALSU role.
 --}}
 
 <div class="alert alert-success alert-dismissible fade" role="alert" id="success-alert-tabMALSU" style="display: none;">
     <span id="success-message-tabMALSU"></span>
-    <button type="button" class="close" onclick="hideAlert(' success-alert-tabMALSU')">
+    <button type="button" class="close" onclick="hideAlert('success-alert-tabMALSU')">
         <span aria-hidden="true">&times;</span>
     </button>
 </div>
@@ -42,36 +42,26 @@
             <tr>
                 <th>Actions</th>
                 <th>No.</th>
-                <th>Inspection ID</th>
-                <th style="background-color: #fff3cd !important;">Case No.</th>
-                <th style="background-color: #d1ecf1 !important;">Establishment Name</th>
-                <th>Mode</th>
-                <th style="background-color: #d4edda !important;">PO</th>
-                <th>Type of Industry</th>
-                <th>Date of Inspection</th>
-                <th>Name of Inspector</th>
-                <th>Authority No.</th>
-                <th>Date of NR</th>
-                <th>Lapse 20 Day Correction Period</th>
-                <th>PCT for Docketing</th>
-                <th>Date Scheduled/Docketed</th>
-                <th>Aging (Docket)</th>
-                <th>Status (Docket)</th>
-                <th>Hearing Officer (MIS)</th>
-                <th>Date of 1st MC (Actual)</th>
-                <th>1st MC PCT</th>
-                <th>Status (1st MC)</th>
-                <th>Date of 2nd/Last MC (Actual)</th>
-                <th>2nd/Last MC PCT</th>
-                <th>Status (2nd MC)</th>
-                <th>Case Folder Forwarded to RO</th>
-                <th>PO PCT</th>
-                <th>Aging (PO PCT)</th>
-                <th>Status (PO PCT)</th>
-                <th>PCT (96 days from NR)</th>
-                <th>Status (PCT)</th>
-                <th>Date Signed (MIS)</th>
-                <th>Created At</th>
+                <th style="background-color: #d1ecf1 !important;">Case Title / Establishment Name</th>
+                <th style="background-color: #fff3cd !important;">Regional Docket No.</th>
+                <th>Sheriff Designate</th>
+                <th>Date of Compliance Order / Resolution</th>
+                <th>Total GLS Monetary Award</th>
+                <th>Total No. of Workers Benefited</th>
+                <th>Amount of Penalty for Double Indemnity</th>
+                <th>Voluntary Compliance</th>
+                <th>Action Taken</th>
+                <th>Total GLS Monetary Award Satisfied</th>
+                <th>Total No. of Workers Satisfied</th>
+                <th>Complied OSHS Violations</th>
+                <th>Total Amount of Penalty for Double Indemnity Collected</th>
+                <th>Total OSHS Penalty / Administrative Fines Collected</th>
+                <th>Total No. of Absorbed Workers</th>
+                <th>Full or Partial</th>
+                <th>Serves Writ of Execution</th>
+                <th>Date Indorsed to PO</th>
+                <th>PO Date Received</th>
+                <th>RO Received Sheriff's Return</th>
             </tr>
         </thead>
         <tbody>
@@ -129,15 +119,12 @@
                             </div>
                         </td>
 
-                        <td class="editable-cell" data-field="no">{{ $case->no ?? '-' }}</td>
-                        <td class="editable-cell" data-field="inspection_id">{{ $case->inspection_id ?? '-' }}</td>
-                        <td class="editable-cell" data-field="case_no" style="background-color: #fff3cd !important;">{{ $case->case_no ?? '-' }}</td>
-                        <td class="editable-cell wrap-cell" data-field="establishment_name" 
-                            data-address="{{ $case->establishment_address ?? '' }}"
-                            style="background-color: #d1ecf1 !important;">
+                        {{-- From cases table --}}
+                        <td class="readonly-cell">{{ $case->no ?? '-' }}</td>
+                        <td class="readonly-cell wrap-cell" style="background-color: #d1ecf1 !important;">
                             <span>{{ $case->establishment_name ?? '-' }}</span>
                             @if($case->establishment_address)
-                                <br><small class="text-muted address-subtext" 
+                                <br><small class="text-muted address-subtext"
                                         style="font-weight: normal; font-size: 0.75rem;">
                                     {{ $case->establishment_address }}
                                 </small>
@@ -157,77 +144,70 @@
                                 </span>
                             @endif
                         </td>
-                        <td class="editable-cell" data-field="mode">{{ $case->mode ?? '-' }}</td>
-                        <td class="readonly-cell" data-field="po_office" style="background-color: #d4edda !important;">{{ $case->po_office ?? '-' }}</td>
-                        <td class="editable-cell" data-field="type_of_industry">{{ $case->type_of_industry ?? '-' }}</td>
 
-                        {{-- Inspection Stage --}}
-                        <td class="editable-cell" data-field="date_of_inspection" data-type="date">
-                            {{ $case->date_of_inspection ? \Carbon\Carbon::parse($case->date_of_inspection)->format('Y-m-d') : '-' }}
+                        {{-- From malsu table --}}
+                        <td class="editable-cell" data-field="regional_docket_number" style="background-color: #fff3cd !important;">
+                            {{ $case->malsu->regional_docket_number ?? '-' }}
                         </td>
-                        <td class="editable-cell" data-field="inspector_name" title="{{ $case->inspector_name ?? '' }}">
-                            {{ $case->inspector_name ? Str::limit($case->inspector_name, 20) : '-' }}
+                        <td class="editable-cell" data-field="sheriff_designate">
+                            {{ $case->malsu->sheriff_designate ?? '-' }}
                         </td>
-                        <td class="editable-cell" data-field="inspector_authority_no">{{ $case->inspector_authority_no ?? '-' }}</td>
-                        <td class="editable-cell" data-field="date_of_nr" data-type="date">
-                            {{ $case->date_of_nr ? \Carbon\Carbon::parse($case->date_of_nr)->format('Y-m-d') : '-' }}
+                        <td class="editable-cell" data-field="date_compliance_order" data-type="date">
+                            {{ $case->malsu?->date_compliance_order ? \Carbon\Carbon::parse($case->malsu->date_compliance_order)->format('Y-m-d') : '-' }}
                         </td>
-                        <td class="readonly-cell" data-field="lapse_20_day_period">
-                            {{ $case->lapse_20_day_period ? \Carbon\Carbon::parse($case->lapse_20_day_period)->format('Y-m-d') : '-' }}
+                        <td class="editable-cell" data-field="total_gls_monetary_award">
+                            {{ $case->malsu->total_gls_monetary_award ?? '-' }}
                         </td>
-
-                        {{-- Docketing Stage --}}
-                        <td class="readonly-cell" data-field="pct_for_docketing">
-                            {{ $case->pct_for_docketing ? \Carbon\Carbon::parse($case->pct_for_docketing)->format('Y-m-d') : '-' }}
+                        <td class="editable-cell" data-field="total_workers_benefited">
+                            {{ $case->malsu->total_workers_benefited ?? '-' }}
                         </td>
-                        <td class="editable-cell" data-field="date_scheduled_docketed" data-type="date">
-                            {{ $case->date_scheduled_docketed ? \Carbon\Carbon::parse($case->date_scheduled_docketed)->format('Y-m-d') : '-' }}
+                        <td class="editable-cell" data-field="amount_penalty_double_indemnity">
+                            {{ $case->malsu->amount_penalty_double_indemnity ?? '-' }}
                         </td>
-                        <td class="readonly-cell" data-field="aging_docket">{{ $case->aging_docket ?? '-' }}</td>
-                        <td class="readonly-cell" data-field="status_docket">{{ $case->status_docket ?? '-' }}</td>
-                        <td class="editable-cell" data-field="hearing_officer_mis" title="{{ $case->hearing_officer_mis ?? '' }}">
-                            {{ $case->hearing_officer_mis ? Str::limit($case->hearing_officer_mis, 20) : '-' }}
+                        <td class="editable-cell" data-field="voluntary_compliance">
+                            {{ $case->malsu->voluntary_compliance ?? '-' }}
                         </td>
-
-                        {{-- Hearing Process Stage --}}
-                        <td class="editable-cell" data-field="date_1st_mc_actual" data-type="date">
-                            {{ $case->date_1st_mc_actual ? \Carbon\Carbon::parse($case->date_1st_mc_actual)->format('Y-m-d') : '-' }}
+                        <td class="editable-cell" data-field="action_taken">
+                            {{ $case->malsu->action_taken ?? '-' }}
                         </td>
-                        <td class="readonly-cell" data-field="first_mc_pct">{{ $case->first_mc_pct ?? '-' }}</td>
-                        <td class="readonly-cell" data-field="status_1st_mc">{{ $case->status_1st_mc ?? '-' }}</td>
-                        <td class="editable-cell" data-field="date_2nd_last_mc" data-type="date">
-                            {{ $case->date_2nd_last_mc ? \Carbon\Carbon::parse($case->date_2nd_last_mc)->format('Y-m-d') : '-' }}
+                        <td class="editable-cell" data-field="total_gls_monetary_satisfied">
+                            {{ $case->malsu->total_gls_monetary_satisfied ?? '-' }}
                         </td>
-                        <td class="readonly-cell" data-field="second_last_mc_pct">{{ $case->second_last_mc_pct ?? '-' }}</td>
-                        <td class="readonly-cell" data-field="status_2nd_mc">{{ $case->status_2nd_mc ?? '-' }}</td>
-                        <td class="editable-cell" data-field="case_folder_forwarded_to_ro" data-type="date">
-                            {{ $case->case_folder_forwarded_to_ro ? \Carbon\Carbon::parse($case->case_folder_forwarded_to_ro)->format('Y-m-d') : '-' }}
+                        <td class="editable-cell" data-field="total_workers_satisfied">
+                            {{ $case->malsu->total_workers_satisfied ?? '-' }}
                         </td>
-
-                        {{-- Review & Drafting --}}
-                        <td class="readonly-cell" data-field="po_pct">
-                            {{ $case->po_pct ? \Carbon\Carbon::parse($case->po_pct)->format('Y-m-d') : '-' }}
+                        <td class="editable-cell" data-field="complied_oshs_violations">
+                            {{ $case->malsu->complied_oshs_violations ?? '-' }}
                         </td>
-                        <td class="readonly-cell" data-field="aging_po_pct">{{ $case->aging_po_pct ?? '-' }}</td>
-                        <td class="readonly-cell" data-field="status_po_pct">{{ $case->status_po_pct ?? '-' }}</td>
-
-                        {{-- Orders & Disposition --}}
-                        <td class="readonly-cell" data-field="pct_96_days">
-                            {{ $case->pct_96_days ? \Carbon\Carbon::parse($case->pct_96_days)->format('Y-m-d') : '-' }}
+                        <td class="editable-cell" data-field="total_penalty_double_indemnity_collected">
+                            {{ $case->malsu->total_penalty_double_indemnity_collected ?? '-' }}
                         </td>
-                        <td class="editable-cell" data-field="status_pct">{{ $case->status_pct ?? '-' }}</td>
-                        <td class="editable-cell" data-field="date_signed_mis" data-type="date">
-                            {{ $case->date_signed_mis ? \Carbon\Carbon::parse($case->date_signed_mis)->format('Y-m-d') : '-' }}
+                        <td class="editable-cell" data-field="total_oshs_penalty_admin_fines_collected">
+                            {{ $case->malsu->total_oshs_penalty_admin_fines_collected ?? '-' }}
                         </td>
-
-                        <td class="non-editable">
-                            {{ $case->created_at ? \Carbon\Carbon::parse($case->created_at)->format('Y-m-d') : '-' }}
+                        <td class="editable-cell" data-field="total_workers_absorbed">
+                            {{ $case->malsu->total_workers_absorbed ?? '-' }}
+                        </td>
+                        <td class="editable-cell" data-field="full_or_partial">
+                            {{ $case->malsu->full_or_partial ?? '-' }}
+                        </td>
+                        <td class="editable-cell" data-field="date_writ_of_execution_served" data-type="date">
+                            {{ $case->malsu?->date_writ_of_execution_served ? \Carbon\Carbon::parse($case->malsu->date_writ_of_execution_served)->format('Y-m-d') : '-' }}
+                        </td>
+                        <td class="editable-cell" data-field="date_indorsed_to_po" data-type="date">
+                            {{ $case->malsu?->date_indorsed_to_po ? \Carbon\Carbon::parse($case->malsu->date_indorsed_to_po)->format('Y-m-d') : '-' }}
+                        </td>
+                        <td class="editable-cell" data-field="po_date_received" data-type="date">
+                            {{ $case->malsu?->po_date_received ? \Carbon\Carbon::parse($case->malsu->po_date_received)->format('Y-m-d') : '-' }}
+                        </td>
+                        <td class="editable-cell" data-field="ro_received_sheriffs_return" data-type="date">
+                            {{ $case->malsu?->ro_received_sheriffs_return ? \Carbon\Carbon::parse($case->malsu->ro_received_sheriffs_return)->format('Y-m-d') : '-' }}
                         </td>
                     </tr>
                 @endforeach
             @else
                 <tr>
-                    <td colspan="32" class="text-center text-muted py-4">
+                    <td colspan="22" class="text-center text-muted py-4">
                         <i class="fas fa-inbox fa-2x mb-2 d-block"></i>
                         No cases are currently assigned to MALSU.
                     </td>

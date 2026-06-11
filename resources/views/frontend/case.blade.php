@@ -2917,6 +2917,8 @@ $(document).ready(function() {
         else if (tableId === 'dataTable5') tabKey = 'tab5';
         else if (tableId === 'dataTable6') tabKey = 'tab6';
         else if (tableId === 'dataTable7') tabKey = 'tab7';
+        else if (tableId === 'dataTableMALSU') tabKey = 'tabMALSU';
+        else if (tableId === 'dataTableCM') tabKey = 'tabCM';
         
         const fieldConfig = tabConfigs[tabKey]?.fields[field];
         
@@ -3012,7 +3014,7 @@ $(document).ready(function() {
         const $table = $cell.closest('table');
         const tableId = $table.attr('id');
         let endpoint = '/case/';
-        
+
         if (tableId === 'dataTable1') endpoint = '/inspection/';
         else if (tableId === 'dataTable2') endpoint = '/docketing/';
         else if (tableId === 'dataTable3') endpoint = '/hearing-process/';
@@ -3020,6 +3022,8 @@ $(document).ready(function() {
         else if (tableId === 'dataTable5') endpoint = '/orders-and-disposition/';
         else if (tableId === 'dataTable6') endpoint = '/compliance-and-awards/';
         else if (tableId === 'dataTable7') endpoint = '/appeals-and-resolution/';
+        else if (tableId === 'dataTableMALSU') endpoint = '/malsu/';
+        else if (tableId === 'dataTableCM') endpoint = '/case/';
         
         // If value hasn't changed, just restore original display
         if (newValue === originalValue) {
@@ -3487,7 +3491,35 @@ $(document).ready(function() {
         },
     };
 
-    tabConfigs['tabMALSU'] = tabConfigs['tab0'];
+    tabConfigs['tabMALSU'] = {
+        name: 'malsu',
+        endpoint: '/malsu/',
+        editBtnClass: '.edit-row-btn-case',
+        saveBtnClass: '.save-btn-case',
+        cancelBtnClass: '.cancel-btn-case',
+        alertPrefix: 'tabMALSU',
+        fields: {
+            'regional_docket_number':                   { type: 'text' },
+            'sheriff_designate':                        { type: 'text' },
+            'date_compliance_order':                    { type: 'date' },
+            'total_gls_monetary_award':                 { type: 'number', step: '0.01' },
+            'total_workers_benefited':                  { type: 'number' },
+            'amount_penalty_double_indemnity':          { type: 'number', step: '0.01' },
+            'voluntary_compliance':                     { type: 'text' },
+            'action_taken':                             { type: 'text' },
+            'total_gls_monetary_satisfied':             { type: 'number', step: '0.01' },
+            'total_workers_satisfied':                  { type: 'number' },
+            'complied_oshs_violations':                 { type: 'text' },
+            'total_penalty_double_indemnity_collected': { type: 'number', step: '0.01' },
+            'total_oshs_penalty_admin_fines_collected': { type: 'number', step: '0.01' },
+            'total_workers_absorbed':                   { type: 'number' },
+            'full_or_partial':                          { type: 'text' },
+            'date_writ_of_execution_served':            { type: 'date' },
+            'date_indorsed_to_po':                      { type: 'date' },
+            'po_date_received':                         { type: 'date' },
+            'ro_received_sheriffs_return':              { type: 'date' },
+        }
+    };
     tabConfigs['tabCM']    = tabConfigs['tab0'];
 
     // Get current active tab
@@ -3518,12 +3550,22 @@ $(document).ready(function() {
         const row = $(this).closest('tr');
         const recordId = row.data('id');
         const config = getTabConfig(currentTab);
-        
+
+        // ── DEBUG LOGS ──
+        console.log('=== SAVE BUTTON CLICKED ===');
+        console.log('currentTab:', currentTab);
+        console.log('config.name:', config.name);
+        console.log('config.endpoint:', config.endpoint);
+        console.log('recordId:', recordId);
+        console.log('Full URL will be:', `${config.endpoint}${recordId}/inline-update`);
+        console.log('===========================');
+        // ── END DEBUG ──
+
         if (!recordId) {
             showAlert(`Invalid ${config.name} ID. Please refresh the page.`, 'danger');
             return;
         }
-        
+
         const updatedData = collectRowData(row, config);
         saveData(recordId, updatedData, row, config);
     });
@@ -3568,13 +3610,14 @@ $(document).ready(function() {
             cell.addClass('edit-mode');
         });
 
-        const buttonSuffix = config.name === 'case' ? '-case' :
-                            config.name === 'docketing' ? '-docketing' :
-                            config.name === 'hearing' ? '-hearing' :
-                            config.name === 'review-and-drafting' ? '-review' :
-                            config.name === 'orders-and-disposition' ? '-orders' :
-                            config.name === 'compliance-and-awards' ? '-compliance' :
-                            config.name === 'appeals-and-resolution' ? '-appeals' : '';
+            const buttonSuffix = config.name === 'case' ? '-case' :
+                                config.name === 'malsu' ? '-case' :
+                                config.name === 'docketing' ? '-docketing' :
+                                config.name === 'hearing' ? '-hearing' :
+                                config.name === 'review-and-drafting' ? '-review' :
+                                config.name === 'orders-and-disposition' ? '-orders' :
+                                config.name === 'compliance-and-awards' ? '-compliance' :
+                                config.name === 'appeals-and-resolution' ? '-appeals' : '';
 
         // ── NEW: Put save/cancel into the actions cell (toggle-btn area), collapse it back ──
         const $actionsCell = row.find('.actions-cell');

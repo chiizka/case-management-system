@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
+use App\Models\Malsu;
 
 class DocumentTrackingController extends Controller
 {
@@ -345,6 +346,13 @@ class DocumentTrackingController extends Controller
                     'received_by_user_id' => $user->id,
                     'received_at'         => now()
                 ]);
+            }
+
+            // ── Auto-create malsu row when MALSU receives a document ──
+            if ($document->current_role === User::ROLE_MALSU) {
+                \App\Models\Malsu::firstOrCreate(
+                    ['case_id' => $document->case_id]
+                );
             }
 
             DB::commit();

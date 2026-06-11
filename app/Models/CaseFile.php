@@ -229,4 +229,9 @@ class CaseFile extends Model
     {
         return $this->hasOne(CaseAppeal::class, 'case_id');
     }
+
+    public function malsu()
+    {
+        return $this->hasOne(\App\Models\Malsu::class, 'case_id');
+    }
 }

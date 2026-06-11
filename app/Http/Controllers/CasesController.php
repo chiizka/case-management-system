@@ -1806,9 +1806,9 @@ public function loadMalsuTab(Request $request)
         $cases = CaseFile::whereNotIn('overall_status', ['Completed', 'Disposed', 'Appealed'])
             ->whereHas('documentTracking', function ($q) {
                 $q->where('current_role', User::ROLE_MALSU)
-                  ->whereIn('status', ['Received', 'Pending Receipt']); // ← changed from ->where('status', 'Received')
+                ->whereIn('status', ['Received']);
             })
-            ->with('documentTracking')
+            ->with(['documentTracking', 'malsu'])
             ->orderBy('created_at', 'desc')
             ->get();
 
