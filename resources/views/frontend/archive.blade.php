@@ -338,6 +338,19 @@
     .dot-all { background: #6b7280; }
     .dot-regional { background: #3b82f6; }
     .dot-provincial { background: #22c55e; }
+
+    .badge-malsu {
+    background: #fff3cd;
+    color: #856404;
+    border: 1px solid #ffc107;
+    }
+    .badge-case-management {
+        background: #dbeafe;
+        color: #1e40af;
+        border: 1px solid #93c5fd;
+    }
+    .dot-case-management { background: #6366f1; }
+    .dot-malsu { background: #f59e0b; }
 </style>
 
 <div class="container p-4 bg-gray-100">
@@ -359,8 +372,11 @@
                 <div class="filter-option selected" data-filter="all" onclick="applyDispositionFilter('all', this)">
                     <span class="dot dot-all"></span> All Cases
                 </div>
-                <div class="filter-option" data-filter="regional" onclick="applyDispositionFilter('regional', this)">
-                    <span class="dot dot-regional"></span> Regional Only
+                <div class="filter-option" data-filter="case-management" onclick="applyDispositionFilter('case-management', this)">
+                    <span class="dot dot-case-management"></span> Case Management Only
+                </div>
+                <div class="filter-option" data-filter="malsu" onclick="applyDispositionFilter('malsu', this)">
+                    <span class="dot dot-malsu"></span> MALSU Only
                 </div>
                 <div class="filter-option" data-filter="provincial" onclick="applyDispositionFilter('provincial', this)">
                     <span class="dot dot-provincial"></span> Provincial Only
@@ -378,9 +394,15 @@
     <div id="caseList" class="space-y-4">
         @if($archivedCases->count() > 0)
             @foreach($archivedCases as $case)
+                @php
+                    $isMalsuCase = $case->overall_status === 'Appealed' || $case->current_stage === '7: Appeals & Resolution';
+                    $isProvincialCase = $case->overall_status === 'Disposed';
+                    $caseOrigin = $isProvincialCase ? 'provincial' : ($isMalsuCase ? 'malsu' : 'case-management');
+                @endphp
                 <div class="bg-white shadow rounded" 
                 data-case-id="{{ $case->id }}"
-                data-disposition="{{ $case->overall_status === 'Disposed' ? 'provincial' : 'regional' }}"
+                data-disposition="{{ $isProvincialCase ? 'provincial' : 'regional' }}"
+                data-origin="{{ $caseOrigin }}"
                 data-province="{{ $case->po_office ?? '' }}">
                     <div class="accordion-header p-4 flex justify-between items-center cursor-pointer">
                         <div>
@@ -393,7 +415,7 @@
                             @php
                                 $isProvincial = $case->overall_status === 'Disposed';
                             @endphp
-                            @if($isProvincial)
+                            @if($isProvincialCase)
                                 <span class="disposition-badge badge-provincial" title="Disposed at Province: {{ $case->po_office }}">
                                     <i class="fas fa-map-marker-alt" style="font-size:0.7rem;"></i>
                                     Provincial &mdash; {{ $case->po_office }}
@@ -403,6 +425,19 @@
                                     <i class="fas fa-building" style="font-size:0.7rem;"></i>
                                     Regional
                                 </span>
+                                @if(Auth::user()->isAdmin() || Auth::user()->isMalsu() || Auth::user()->isCaseManagement())
+                                    @if($isMalsuCase)
+                                        <span class="disposition-badge badge-malsu" title="Handled by MALSU (Appeals & Resolution)">
+                                            <i class="fas fa-gavel" style="font-size:0.7rem;"></i>
+                                            MALSU
+                                        </span>
+                                    @else
+                                        <span class="disposition-badge badge-case-management" title="Handled by Case Management">
+                                            <i class="fas fa-briefcase" style="font-size:0.7rem;"></i>
+                                            Case Management
+                                        </span>
+                                    @endif
+                                @endif
                             @endif
                             <br>
                             
@@ -1301,7 +1336,7 @@ function applyDispositionFilter(filter, clickedEl) {
     clickedEl.classList.add('selected');
 
     // Update button label
-    const labels = { all: 'All Cases', regional: 'Regional Only', provincial: 'Provincial Only' };
+    const labels = { all: 'All Cases', 'case-management': 'Case Management', malsu: 'MALSU Only', provincial: 'Provincial Only' };
     document.getElementById('filterBtnLabel').textContent = labels[filter];
 
     // Toggle active style on button
@@ -1321,10 +1356,14 @@ function applyFilters() {
 
     cases.forEach(caseItem => {
         const text = caseItem.textContent.toLowerCase();
-        const disposition = caseItem.dataset.disposition || 'regional';
+        const origin = caseItem.dataset.origin || 'case-management';
 
         const matchesSearch = !searchTerm || text.includes(searchTerm);
-        const matchesFilter = activeDispositionFilter === 'all' || disposition === activeDispositionFilter;
+        let matchesFilter = true;
+
+        if (activeDispositionFilter !== 'all') {
+            matchesFilter = origin === activeDispositionFilter;
+        }
 
         caseItem.style.display = (matchesSearch && matchesFilter) ? '' : 'none';
     });
