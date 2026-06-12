@@ -475,11 +475,15 @@
                             <div class="tab" data-tab="documents-{{ $case->id }}">Documents</div>
                             <div class="tab" data-tab="doc-history-{{ $case->id }}">Document History</div>
 
-                            {{-- NEW: Appeal Details Tab (only show if appealed) - same style as others --}}
+                            @if($case->malsu)
+                                <div class="tab" data-tab="malsu-{{ $case->id }}">
+                                    <i class="fas fa-gavel" style="font-size:0.75rem; margin-right:4px;"></i> MALSU
+                                </div>
+                            @endif
+
                             @if($case->appeal)
                                 <div class="tab" data-tab="appeal-details-{{ $case->id }}">Appeal Details</div>
                             @endif
-
                         </div>
                         <!-- Overview Tab -->
                         <div id="overview-{{ $case->id }}" class="tab-content active">
@@ -736,6 +740,90 @@
                                 </div>
                             @endif
                         </div>
+
+                        {{-- MALSU Tab --}}
+                        @if($case->malsu)
+                        <div id="malsu-{{ $case->id }}" class="tab-content">
+                            <h3 class="font-bold mb-3" style="font-size: 1.25rem; color: #1f2937;">MALSU Information</h3>
+
+                            <div class="detail-row">
+                                <span class="detail-label">Regional Docket No.:</span>
+                                <span class="detail-value">{{ $case->malsu->regional_docket_number ?? '-' }}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Sheriff Designate:</span>
+                                <span class="detail-value">{{ $case->malsu->sheriff_designate ?? '-' }}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Date of Compliance Order:</span>
+                                <span class="detail-value">{{ $case->malsu->date_compliance_order ? \Carbon\Carbon::parse($case->malsu->date_compliance_order)->format('Y-m-d') : '-' }}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Total GLS Monetary Award:</span>
+                                <span class="detail-value">{{ $case->malsu->total_gls_monetary_award ? '₱ ' . number_format($case->malsu->total_gls_monetary_award, 2) : '-' }}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Total No. of Workers Benefited:</span>
+                                <span class="detail-value">{{ $case->malsu->total_workers_benefited ?? '-' }}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Amount of Penalty for Double Indemnity:</span>
+                                <span class="detail-value">{{ $case->malsu->amount_penalty_double_indemnity ? '₱ ' . number_format($case->malsu->amount_penalty_double_indemnity, 2) : '-' }}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Voluntary Compliance:</span>
+                                <span class="detail-value">{{ $case->malsu->voluntary_compliance ?? '-' }}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Action Taken:</span>
+                                <span class="detail-value">{{ $case->malsu->action_taken ?? '-' }}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Total GLS Monetary Award Satisfied:</span>
+                                <span class="detail-value">{{ $case->malsu->total_gls_monetary_satisfied ? '₱ ' . number_format($case->malsu->total_gls_monetary_satisfied, 2) : '-' }}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Total No. of Workers Satisfied:</span>
+                                <span class="detail-value">{{ $case->malsu->total_workers_satisfied ?? '-' }}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Complied OSHS Violations:</span>
+                                <span class="detail-value">{{ $case->malsu->complied_oshs_violations ?? '-' }}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Total Penalty for Double Indemnity Collected:</span>
+                                <span class="detail-value">{{ $case->malsu->total_penalty_double_indemnity_collected ? '₱ ' . number_format($case->malsu->total_penalty_double_indemnity_collected, 2) : '-' }}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Total OSHS Penalty / Admin Fines Collected:</span>
+                                <span class="detail-value">{{ $case->malsu->total_oshs_penalty_admin_fines_collected ? '₱ ' . number_format($case->malsu->total_oshs_penalty_admin_fines_collected, 2) : '-' }}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Total No. of Absorbed Workers:</span>
+                                <span class="detail-value">{{ $case->malsu->total_workers_absorbed ?? '-' }}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Full or Partial:</span>
+                                <span class="detail-value">{{ $case->malsu->full_or_partial ?? '-' }}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Serves Writ of Execution:</span>
+                                <span class="detail-value">{{ $case->malsu->date_writ_of_execution_served ? \Carbon\Carbon::parse($case->malsu->date_writ_of_execution_served)->format('Y-m-d') : '-' }}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Date Indorsed to PO:</span>
+                                <span class="detail-value">{{ $case->malsu->date_indorsed_to_po ? \Carbon\Carbon::parse($case->malsu->date_indorsed_to_po)->format('Y-m-d') : '-' }}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">PO Date Received:</span>
+                                <span class="detail-value">{{ $case->malsu->po_date_received ? \Carbon\Carbon::parse($case->malsu->po_date_received)->format('Y-m-d') : '-' }}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">RO Received Sheriff's Return:</span>
+                                <span class="detail-value">{{ $case->malsu->ro_received_sheriffs_return ? \Carbon\Carbon::parse($case->malsu->ro_received_sheriffs_return)->format('Y-m-d') : '-' }}</span>
+                            </div>
+                        </div>
+                        @endif
 
                         <!-- Document History Tab -->
                         <div id="doc-history-{{ $case->id }}" class="tab-content">
