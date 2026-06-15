@@ -15,6 +15,7 @@ use App\Http\Controllers\AppealsAndResolutionController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\LogController;
 use App\Http\Controllers\DocumentTrackingController;
+use App\Http\Controllers\LaborRelationController;
 
 
 Route::get('/', [FrontController::class, 'index'])->name('home');
@@ -96,6 +97,10 @@ Route::middleware('auth')->group(function () {
         // Reports
         Route::post('/reports/form1', [App\Http\Controllers\ReportController::class, 'generateForm1'])->name('reports.form1.generate');
         Route::post('/reports/form3', [App\Http\Controllers\ReportController::class, 'generateForm3'])->name('reports.form3.generate');
+    });
+
+    Route::middleware('role:admin,malsu')->group(function () {
+        Route::get('/labor-relation-cases', [LaborRelationController::class, 'index'])->name('labor.index');
     });
 
     // Inspections

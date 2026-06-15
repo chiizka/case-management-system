@@ -234,6 +234,14 @@
                     <span>Archived Cases</span>
                 </a>
             </li>
+            @if(Auth::user()->isMalsu())
+            <li class="nav-item">
+                <a class="nav-link" href="{{ route('labor.index') }}">
+                    <i class="fas fa-fw fa-briefcase"></i>
+                    <span>Labor Relation Cases</span>
+                </a>
+            </li>
+            @endif
             <li class="nav-item">
                 <a class="nav-link" href="{{ route('documents.tracking') }}">
                     <i class="fas fa-fw fa-map-marker-alt"></i>
