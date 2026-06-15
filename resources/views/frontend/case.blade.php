@@ -485,7 +485,7 @@ td.actions-cell.expanded {
             <li class="nav-item">
                 <a class="nav-link" id="tabCENA-tab" data-toggle="tab" href="#tabCENA"
                 role="tab" aria-controls="tabCENA" aria-selected="false">
-                    <i class="fas fa-gavel mr-1"></i> CENA
+                    <i class="fas fa-gavel mr-1"></i> SENA
                 </a>
             </li>
             <li class="nav-item">
