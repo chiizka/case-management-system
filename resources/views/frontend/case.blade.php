@@ -3708,6 +3708,12 @@ $(document).ready(function() {
         }
     };
     tabConfigs['tabCM']    = tabConfigs['tab0'];
+    tabConfigs['tabProv-albay']          = tabConfigs['tab0'];
+    tabConfigs['tabProv-camarines_sur']  = tabConfigs['tab0'];
+    tabConfigs['tabProv-camarines_norte']= tabConfigs['tab0'];
+    tabConfigs['tabProv-catanduanes']    = tabConfigs['tab0'];
+    tabConfigs['tabProv-masbate']        = tabConfigs['tab0'];
+    tabConfigs['tabProv-sorsogon']       = tabConfigs['tab0'];
 
     // Get current active tab
     function getCurrentTab() {
