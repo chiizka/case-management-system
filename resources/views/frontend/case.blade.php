@@ -453,6 +453,15 @@ td.actions-cell.expanded {
     @if(Auth::user()->isCaseManagement() || Auth::user()->isMalsu() || Auth::user()->isAdmin())
         <ul class="nav nav-tabs mb-0" id="dataTableTabs" role="tablist">
 
+            @if(Auth::user()->isCaseManagement())
+            <li class="nav-item">
+                <a class="nav-link" id="tabCM-tab" data-toggle="tab" href="#tabCM"
+                role="tab" aria-controls="tabCM" aria-selected="false">
+                    <i class="fas fa-briefcase mr-1"></i> My Cases
+                </a>
+            </li>
+            @endif
+
             @if(!Auth::user()->isMalsu())
             <li class="nav-item">
                 <a class="nav-link {{ Auth::user()->isCaseManagement() ? 'active' : '' }}" 
@@ -463,13 +472,26 @@ td.actions-cell.expanded {
             </li>
             @endif
 
-            @if(Auth::user()->isCaseManagement())
+            @if(Auth::user()->isCaseManagement() || Auth::user()->isAdmin())
+            @php
+            $provinceTabs = [
+                'albay'          => 'Albay',
+                'camarines_sur'  => 'Cam Sur',
+                'camarines_norte'=> 'Cam Norte',
+                'catanduanes'    => 'Catanduanes',
+                'masbate'        => 'Masbate',
+                'sorsogon'       => 'Sorsogon',
+            ];
+            @endphp
+            @foreach($provinceTabs as $key => $label)
             <li class="nav-item">
-                <a class="nav-link" id="tabCM-tab" data-toggle="tab" href="#tabCM"
-                role="tab" aria-controls="tabCM" aria-selected="false">
-                    <i class="fas fa-briefcase mr-1"></i> My Cases
+                <a class="nav-link" id="tabProv-{{ $key }}-tab"
+                data-toggle="tab" href="#tabProv-{{ $key }}"
+                role="tab" aria-controls="tabProv-{{ $key }}" aria-selected="false">
+                    <i class="fas fa-map-marker-alt mr-1"></i> {{ $label }}
                 </a>
             </li>
+            @endforeach
             @endif
 
             @if(Auth::user()->isMalsu())
@@ -735,6 +757,36 @@ td.actions-cell.expanded {
                         </div>
                     </div>
                 </div>
+            @endif
+
+            @if(Auth::user()->isCaseManagement())
+            @foreach(['albay','camarines_sur','camarines_norte','catanduanes','masbate','sorsogon'] as $provKey)
+            @php
+            $provLabels = [
+                'albay'          => 'Albay',
+                'camarines_sur'  => 'Camarines Sur',
+                'camarines_norte'=> 'Camarines Norte',
+                'catanduanes'    => 'Catanduanes',
+                'masbate'        => 'Masbate',
+                'sorsogon'       => 'Sorsogon',
+            ];
+            @endphp
+            <div class="tab-pane fade" id="tabProv-{{ $provKey }}"
+                role="tabpanel" aria-labelledby="tabProv-{{ $provKey }}-tab">
+                <div class="card shadow mb-4">
+                    <div class="card-body">
+                        <div class="tab-loading text-center" style="padding: 3rem;">
+                            <div class="spinner-border text-primary mb-3" role="status"
+                                style="width: 3rem; height: 3rem;">
+                                <span class="sr-only">Loading...</span>
+                            </div>
+                            <p class="text-muted">Loading {{ $provLabels[$provKey] }} cases...</p>
+                            <small class="text-muted">This may take a moment for the first load</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            @endforeach
             @endif
 
             @if(Auth::user()->isMalsu() || Auth::user()->isAdmin())
@@ -1910,6 +1962,97 @@ $(document).on('click', function(e) {
         // ── Case Management tab lazy load ──────────────────────────────────────
     var cmTabLoaded = false;
     var malsuTabLoaded = false;
+    var provTabLoaded = {};
+
+    // ── Province tabs lazy load ──
+    $('a[id^="tabProv-"]').on('shown.bs.tab', function () {
+        var province = this.id.replace('tabProv-', '').replace('-tab', '');
+        var tableId  = '#dataTableProv-' + province;
+        var searchId = '#customSearchProv-' + province;
+        var $cardBody = $('#tabProv-' + province + ' .card-body');
+
+        if (provTabLoaded[province]) {
+            if ($.fn.DataTable.isDataTable(tableId)) {
+                $(tableId).DataTable().columns.adjust().draw(false);
+            }
+            return;
+        }
+
+        $cardBody.html(`
+            <div class="tab-loading text-center" style="padding: 3rem;">
+                <div class="spinner-border text-primary mb-3" role="status"
+                    style="width: 3rem; height: 3rem;">
+                    <span class="sr-only">Loading...</span>
+                </div>
+                <p class="text-muted">Loading cases...</p>
+            </div>
+        `);
+
+        $.ajax({
+            url: '/case/load-province-tab/' + province,
+            method: 'GET',
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'),
+                'Accept': 'application/json'
+            },
+            success: function (response) {
+                if (response.success) {
+                    $cardBody.html(response.html);
+                    provTabLoaded[province] = true;
+
+                    setTimeout(function () {
+                        if ($.fn.DataTable.isDataTable(tableId)) {
+                            $(tableId).DataTable().destroy();
+                        }
+
+                        $(tableId + ' tbody tr td[colspan]').closest('tr').remove();
+
+                        var provTable = $(tableId).DataTable({
+                            pageLength: 10,
+                            lengthChange: false,
+                            paging: true,
+                            searching: true,
+                            info: true,
+                            dom: 'tip',
+                            columnDefs: [{ orderable: false, targets: 0 }],
+                            scrollX: true,
+                            scrollY: (window.innerHeight - 280) + 'px',
+                            scrollCollapse: true,
+                            language: {
+                                emptyTable: 'No active cases currently at this provincial office.'
+                            },
+                            drawCallback: function () {
+                                $(tableId + ' thead th').css({
+                                    'position': 'sticky',
+                                    'top': 0,
+                                    'z-index': 12
+                                });
+                                $(tableId + ' thead th:nth-child(-n+5)').css('z-index', 13);
+                            }
+                        });
+
+                        $(searchId).off('keyup input change').on('keyup input change', function () {
+                            provTable.search(this.value).draw();
+                        });
+
+                        setTimeout(function () { provTable.columns.adjust().draw(false); }, 50);
+                        setTimeout(function () { provTable.columns.adjust().draw(false); }, 300);
+
+                    }, 100);
+
+                } else {
+                    $cardBody.html('<div class="alert alert-danger">Failed to load data. Please try again.</div>');
+                }
+            },
+            error: function (xhr) {
+                $cardBody.html(`
+                    <div class="alert alert-danger">
+                        <strong>Error:</strong> ${xhr.responseJSON?.error || 'Failed to load data.'}
+                    </div>
+                `);
+            }
+        });
+    });
 
     $('a[href="#tabMALSU"]').on('shown.bs.tab', function () {
         if (malsuTabLoaded) {
@@ -2350,7 +2493,7 @@ loadTab0Data();
         var tabNumber = tabId.replace('tab', '');
 
         // ── Skip the CM tab — it has its own dedicated handler ──
-        if (tabId === 'tabCM' || tabId === 'tabMALSU') return;
+        if (tabId === 'tabCM' || tabId === 'tabMALSU' || tabId.startsWith('tabProv-')) return;
 
         console.log('Tab switched to:', target);
         

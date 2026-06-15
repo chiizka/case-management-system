@@ -1935,4 +1935,62 @@ public function executeCase(Request $request, $id)
     }
 }
 
+public function loadProvinceTab(Request $request, $province)
+{
+    if (!Auth::user()->isCaseManagement() && !Auth::user()->isAdmin()) {
+        return response()->json(['success' => false, 'error' => 'Access denied.'], 403);
+    }
+
+    $provinceRoleMap = [
+        'albay'          => User::ROLE_PROVINCE_ALBAY,
+        'camarines_sur'  => User::ROLE_PROVINCE_CAMARINES_SUR,
+        'camarines_norte'=> User::ROLE_PROVINCE_CAMARINES_NORTE,
+        'catanduanes'    => User::ROLE_PROVINCE_CATANDUANES,
+        'masbate'        => User::ROLE_PROVINCE_MASBATE,
+        'sorsogon'       => User::ROLE_PROVINCE_SORSOGON,
+    ];
+
+    $provinceLabelMap = [
+        'albay'          => 'Albay',
+        'camarines_sur'  => 'Camarines Sur',
+        'camarines_norte'=> 'Camarines Norte',
+        'catanduanes'    => 'Catanduanes',
+        'masbate'        => 'Masbate',
+        'sorsogon'       => 'Sorsogon',
+    ];
+
+    $role = $provinceRoleMap[$province] ?? null;
+
+    if (!$role) {
+        return response()->json(['success' => false, 'error' => 'Invalid province.'], 400);
+    }
+
+    try {
+        $cases = CaseFile::whereNotIn('overall_status', ['Completed', 'Disposed', 'Appealed'])
+            ->whereHas('documentTracking', function ($q) use ($role) {
+                $q->where('current_role', $role)
+                  ->where('status', 'Received');
+            })
+            ->with('documentTracking')
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        $html = view('frontend.partials.province_tab', [
+            'cases'         => $cases,
+            'province'      => $province,
+            'provinceLabel' => $provinceLabelMap[$province],
+        ])->render();
+
+        return response()->json([
+            'success' => true,
+            'html'    => $html,
+            'count'   => $cases->count(),
+        ]);
+
+    } catch (\Exception $e) {
+        Log::error('loadProvinceTab error: ' . $e->getMessage());
+        return response()->json(['success' => false, 'error' => 'Failed to load data.'], 500);
+    }
+}
+
 }

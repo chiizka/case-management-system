@@ -81,7 +81,8 @@ Route::middleware('auth')->group(function () {
         Route::get('/case/{caseId}/documents/{documentId}/download', [CasesController::class, 'downloadDocumentFile'])->name('case.documents.download');
         Route::delete('/case/{caseId}/documents/{documentId}/file', [CasesController::class, 'deleteDocumentFile'])->name('case.documents.deleteFile');
         Route::post('/case/{id}/execute', [CasesController::class, 'executeCase'])->name('case.execute');
-
+        Route::get('/case/load-province-tab/{province}', [CasesController::class, 'loadProvinceTab'])
+        ->name('case.loadProvinceTab');
         // Resource route LAST
         Route::resource('case', CasesController::class);
 
