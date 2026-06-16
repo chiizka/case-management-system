@@ -37,9 +37,23 @@ class SendBeyondCaseNotifications extends Command
                 $q->where('status', 'Received');
             });
 
+        // ── Common select fields ──────────────────────────────────────────
+        $selectFields = [
+            'id', 'case_no', 'inspection_id', 'establishment_name', 'po_office',
+            // Docket
+            'status_docket',      'aging_docket',        'pct_for_docketing',
+            // 1st MC
+            'status_1st_mc',      'first_mc_pct',        'lapse_20_day_period',
+            // 2nd MC
+            'status_2nd_mc',      'second_last_mc_pct',  'date_1st_mc_actual',
+            // PO PCT
+            'status_po_pct',      'aging_po_pct',        'po_pct',
+            // PCT 96 days
+            'status_pct',         'pct_96_days',
+        ];
+
         // ══════════════════════════════════════════════════════════════════
-        // 1. BEYOND CASES
-        //    Any case where at least one status field = 'Beyond'
+        // FETCH ALL BEYOND — we'll filter per recipient below
         // ══════════════════════════════════════════════════════════════════
         $allBeyondCases = (clone $baseQuery)
             ->where(function ($q) {
@@ -50,132 +64,113 @@ class SendBeyondCaseNotifications extends Command
                   ->orWhere('status_pct',    'Beyond');
             })
             ->with('documentTracking')
-            ->get([
-                'id', 'case_no', 'inspection_id', 'establishment_name', 'po_office',
-                'status_docket', 'status_1st_mc', 'status_2nd_mc',
-                'status_po_pct', 'status_pct',
-            ]);
+            ->get($selectFields);
 
         // ══════════════════════════════════════════════════════════════════
-        // 2. UPCOMING CASES (within 5 days of going Beyond)
-        //
-        //  Date-based deadlines (aging stored as integer days):
-        //    aging_docket   in [-5, 0]  → 0–5 days before pct_for_docketing
-        //    aging_po_pct   in [-5, 0]  → 0–5 days before po_pct
-        //    pct_96_days    date between today and today+5
-        //
-        //  Integer PCT thresholds (days elapsed, not dates):
-        //    first_mc_pct        Beyond at > 15 → upcoming: [11, 15]
-        //    second_last_mc_pct  Beyond at > 30 → upcoming: [26, 30]
-        //
-        //  Important: exclude cases already Beyond for that field
+        // FETCH ALL UPCOMING — we'll filter per recipient below
         // ══════════════════════════════════════════════════════════════════
         $in5Days = Carbon::today()->addDays(5);
 
         $allUpcomingCases = (clone $baseQuery)
-        ->where(function ($q) use ($today, $in5Days) {
-
-            // Docket: negative aging = days remaining before deadline
-            $q->orWhere(function ($q2) {
-                $q2->whereBetween('aging_docket', [-5, 0])
-                ->where(function ($q3) {
-                    $q3->where('status_docket', '!=', 'Beyond')
-                        ->orWhereNull('status_docket');
+            ->where(function ($q) use ($today, $in5Days) {
+                $q->orWhere(function ($q2) {
+                    $q2->whereBetween('aging_docket', [-5, 0])
+                       ->where(function ($q3) {
+                           $q3->where('status_docket', '!=', 'Beyond')->orWhereNull('status_docket');
+                       });
                 });
-            });
-
-            // PO PCT: negative aging = days remaining before deadline
-            $q->orWhere(function ($q2) {
-                $q2->whereBetween('aging_po_pct', [-5, 0])
-                ->where(function ($q3) {
-                    $q3->where('status_po_pct', '!=', 'Beyond')
-                        ->orWhereNull('status_po_pct');
+                $q->orWhere(function ($q2) {
+                    $q2->whereBetween('aging_po_pct', [-5, 0])
+                       ->where(function ($q3) {
+                           $q3->where('status_po_pct', '!=', 'Beyond')->orWhereNull('status_po_pct');
+                       });
                 });
-            });
-
-            // PCT 96 days: date within next 5 days, not yet Beyond
-            $q->orWhere(function ($q2) use ($today, $in5Days) {
-                $q2->whereBetween('pct_96_days', [$today, $in5Days])
-                ->where(function ($q3) {
-                    $q3->where('status_pct', '!=', 'Beyond')
-                        ->orWhereNull('status_pct');
+                $q->orWhere(function ($q2) use ($today, $in5Days) {
+                    $q2->whereBetween('pct_96_days', [$today, $in5Days])
+                       ->where(function ($q3) {
+                           $q3->where('status_pct', '!=', 'Beyond')->orWhereNull('status_pct');
+                       });
                 });
-            });
-
-            // 1st MC: negative = days remaining before Beyond (e.g. -4 = 4 days left)
-            $q->orWhere(function ($q2) {
-                $q2->whereBetween('first_mc_pct', [-5, 0])
-                ->where(function ($q3) {
-                    $q3->where('status_1st_mc', '!=', 'Beyond')
-                        ->orWhereNull('status_1st_mc');
+                $q->orWhere(function ($q2) {
+                    $q2->whereBetween('first_mc_pct', [-5, 0])
+                       ->where(function ($q3) {
+                           $q3->where('status_1st_mc', '!=', 'Beyond')->orWhereNull('status_1st_mc');
+                       });
                 });
-            });
-
-            // 2nd MC: negative = days remaining before Beyond (e.g. -4 = 4 days left)
-            $q->orWhere(function ($q2) {
-                $q2->whereBetween('second_last_mc_pct', [-5, 0])
-                ->where(function ($q3) {
-                    $q3->where('status_2nd_mc', '!=', 'Beyond')
-                        ->orWhereNull('status_2nd_mc');
+                $q->orWhere(function ($q2) {
+                    $q2->whereBetween('second_last_mc_pct', [-5, 0])
+                       ->where(function ($q3) {
+                           $q3->where('status_2nd_mc', '!=', 'Beyond')->orWhereNull('status_2nd_mc');
+                       });
                 });
-            });
-        })
-        ->with('documentTracking')
-        ->get([
-            'id', 'case_no', 'inspection_id', 'establishment_name', 'po_office',
-            // Date-based deadline fields
-            'aging_docket',       'pct_for_docketing',   'status_docket',
-            'aging_po_pct',       'po_pct',              'status_po_pct',
-            'pct_96_days',                               'status_pct',
-            // Integer PCT fields for 1st and 2nd MC
-            'first_mc_pct',       'lapse_20_day_period',  'status_1st_mc',
-            'second_last_mc_pct', 'date_1st_mc_actual',   'status_2nd_mc',
-        ]);
-        // Skip entirely if nothing to report
+            })
+            ->with('documentTracking')
+            ->get($selectFields);
+
         if ($allBeyondCases->isEmpty() && $allUpcomingCases->isEmpty()) {
             $this->info('No Beyond or Upcoming cases found. No emails sent.');
             return 0;
         }
 
         // ══════════════════════════════════════════════════════════════════
-        // FORMAT: Beyond cases
-        // Lists all Beyond fields for each case
+        // FORMAT HELPERS
+        // Each formatter accepts a collection and a set of flags controlling
+        // which PCT fields to include in the output.
         // ══════════════════════════════════════════════════════════════════
-        $fieldLabels = [
-            'status_docket'  => 'Docket',
-            'status_1st_mc'  => '1st MC',
-            'status_2nd_mc'  => '2nd MC',
-            'status_po_pct'  => 'PO PCT',
-            'status_pct'     => 'PCT (96 days)',
-        ];
 
-        $formatBeyond = function ($collection) use ($fieldLabels) {
-            return $collection->map(function ($case) use ($fieldLabels) {
+        /**
+         * Build the beyond array for a given collection, respecting field flags.
+         */
+        $formatBeyond = function (
+            $collection,
+            bool $showDocket,
+            bool $show1stMC,
+            bool $show2ndMC,
+            bool $showPoPct,
+            bool $showPct96
+        ) {
+            $labelMap = [];
+            if ($showDocket) $labelMap['status_docket'] = 'Docket';
+            if ($show1stMC)  $labelMap['status_1st_mc'] = '1st MC';
+            if ($show2ndMC)  $labelMap['status_2nd_mc'] = '2nd MC';
+            if ($showPoPct)  $labelMap['status_po_pct'] = 'PO PCT';
+            if ($showPct96)  $labelMap['status_pct']    = 'PCT (96 days)';
+
+            return $collection->map(function ($case) use ($labelMap) {
                 $beyondFields = [];
-                foreach ($fieldLabels as $field => $label) {
+                foreach ($labelMap as $field => $label) {
                     if ($case->$field === 'Beyond') {
                         $beyondFields[] = $label;
                     }
                 }
+                if (empty($beyondFields)) return null;
                 return [
                     'case_no'        => $case->case_no ?? $case->inspection_id ?? 'N/A',
                     'establishment'  => $case->establishment_name ?? 'Unknown',
                     'po_office'      => $case->po_office ?? '-',
                     'beyond_summary' => implode(', ', $beyondFields),
                 ];
-            })->values()->toArray();
+            })->filter()->values()->toArray();
         };
 
-        // ══════════════════════════════════════════════════════════════════
-        // FORMAT: Upcoming cases
-        // Builds a human-readable summary per field type
-        // ══════════════════════════════════════════════════════════════════
-        $formatUpcoming = function ($collection) use ($today) {
-            return $collection->map(function ($case) use ($today) {
+        /**
+         * Build the upcoming array for a given collection, respecting field flags.
+         */
+        $formatUpcoming = function (
+            $collection,
+            bool $showDocket,
+            bool $show1stMC,
+            bool $show2ndMC,
+            bool $showPoPct,
+            bool $showPct96
+        ) use ($today) {
+            return $collection->map(function ($case) use (
+                $today, $showDocket, $show1stMC, $show2ndMC, $showPoPct, $showPct96
+            ) {
                 $upcomingFields = [];
 
-                // -- Docket (date-based, aging is negative days remaining) --
-                if ($case->aging_docket !== null
+                if ($showDocket
+                    && $case->aging_docket !== null
                     && $case->aging_docket >= -5
                     && $case->aging_docket <= 0
                     && $case->status_docket !== 'Beyond'
@@ -187,8 +182,8 @@ class SendBeyondCaseNotifications extends Command
                     $upcomingFields[] = "Docket (due {$deadline} — {$daysLeft} day(s) left)";
                 }
 
-                // -- PO PCT (date-based, aging is negative days remaining) --
-                if ($case->aging_po_pct !== null
+                if ($showPoPct
+                    && $case->aging_po_pct !== null
                     && $case->aging_po_pct >= -5
                     && $case->aging_po_pct <= 0
                     && $case->status_po_pct !== 'Beyond'
@@ -200,8 +195,7 @@ class SendBeyondCaseNotifications extends Command
                     $upcomingFields[] = "PO PCT (due {$deadline} — {$daysLeft} day(s) left)";
                 }
 
-                // -- PCT 96 days (date-based, compare pct_96_days to today) --
-                if ($case->pct_96_days && $case->status_pct !== 'Beyond') {
+                if ($showPct96 && $case->pct_96_days && $case->status_pct !== 'Beyond') {
                     $deadline = Carbon::parse($case->pct_96_days);
                     $daysLeft = (int) $today->diffInDays($deadline, false);
                     if ($daysLeft >= 0 && $daysLeft <= 5) {
@@ -209,11 +203,8 @@ class SendBeyondCaseNotifications extends Command
                     }
                 }
 
-                // -- 1st MC PCT (integer elapsed days, threshold = 15) --
-                // first_mc_pct = days from lapse_20_day_period to date_1st_mc_actual
-                // Beyond when > 15 → upcoming when 11–15 (4 to 0 days left)
-                // 1st MC upcoming
-                if ($case->first_mc_pct !== null
+                if ($show1stMC
+                    && $case->first_mc_pct !== null
                     && $case->first_mc_pct >= -5
                     && $case->first_mc_pct <= 0
                     && $case->status_1st_mc !== 'Beyond'
@@ -225,11 +216,8 @@ class SendBeyondCaseNotifications extends Command
                     $upcomingFields[] = "1st MC (due {$deadline} — {$daysLeft} day(s) left)";
                 }
 
-
-                // -- 2nd MC PCT (integer elapsed days, threshold = 30) --
-                // second_last_mc_pct = days from date_1st_mc_actual to date_2nd_last_mc
-                // 2nd MC upcoming
-                if ($case->second_last_mc_pct !== null
+                if ($show2ndMC
+                    && $case->second_last_mc_pct !== null
                     && $case->second_last_mc_pct >= -5
                     && $case->second_last_mc_pct <= 0
                     && $case->status_2nd_mc !== 'Beyond'
@@ -241,23 +229,20 @@ class SendBeyondCaseNotifications extends Command
                     $upcomingFields[] = "2nd MC (due {$deadline} — {$daysLeft} day(s) left)";
                 }
 
+                if (empty($upcomingFields)) return null;
                 return [
                     'case_no'          => $case->case_no ?? $case->inspection_id ?? 'N/A',
                     'establishment'    => $case->establishment_name ?? 'Unknown',
                     'po_office'        => $case->po_office ?? '-',
                     'upcoming_summary' => implode('; ', $upcomingFields),
                 ];
-
-            // Only keep rows that actually have something upcoming
-            })->filter(fn($c) => !empty($c['upcoming_summary']))
-              ->values()
-              ->toArray();
+            })->filter()->values()->toArray();
         };
 
         // ── Send helper ───────────────────────────────────────────────────
         $sendEmail = function ($user, $beyondCases, $upcomingCases) use ($reportDate, &$sentCount) {
             if (empty($beyondCases) && empty($upcomingCases)) {
-                return; // nothing to report for this user
+                return;
             }
             try {
                 Mail::to($user->email)
@@ -276,29 +261,38 @@ class SendBeyondCaseNotifications extends Command
         };
 
         // ══════════════════════════════════════════════════════════════════
-        // SEND: Admin — receives ALL cases, no location filter
+        // SEND: Admin — all five PCT fields, all cases region-wide
         // ══════════════════════════════════════════════════════════════════
-        $allBeyondFormatted   = $formatBeyond($allBeyondCases);
-        $allUpcomingFormatted = $formatUpcoming($allUpcomingCases);
+        $adminBeyond   = $formatBeyond($allBeyondCases,   true, true, true, true, true);
+        $adminUpcoming = $formatUpcoming($allUpcomingCases, true, true, true, true, true);
 
         foreach (User::where('role', User::ROLE_ADMIN)->get() as $admin) {
-            $sendEmail($admin, $allBeyondFormatted, $allUpcomingFormatted);
+            $sendEmail($admin, $adminBeyond, $adminUpcoming);
         }
 
         // ══════════════════════════════════════════════════════════════════
-        // SEND: Case Management — receives ALL cases, no location filter
+        // SEND: Case Management — Docket, PO PCT, PCT 96 days only
+        //       (no 1st MC, no 2nd MC)
         // ══════════════════════════════════════════════════════════════════
+        $cmBeyond   = $formatBeyond($allBeyondCases,    true, false, false, true, true);
+        $cmUpcoming = $formatUpcoming($allUpcomingCases, true, false, false, true, true);
+
         foreach (User::where('role', User::ROLE_CASE_MANAGEMENT)->get() as $cm) {
-            $sendEmail($cm, $allBeyondFormatted, $allUpcomingFormatted);
+            $sendEmail($cm, $cmBeyond, $cmUpcoming);
         }
 
         // ══════════════════════════════════════════════════════════════════
-        // SEND: Province roles — only cases currently active AT their role
-        //   Checks: documentTracking.current_role === role
-        //           documentTracking.status === 'Received'
+        // SEND: MALSU — no PCT notifications at all, skip entirely
+        // ══════════════════════════════════════════════════════════════════
+        $this->info('MALSU: skipped (no PCT notifications).');
+
+        // ══════════════════════════════════════════════════════════════════
+        // SEND: Province roles — 1st MC and 2nd MC only
+        //       Scoped to cases currently located at their role
         // ══════════════════════════════════════════════════════════════════
         foreach ($this->provinceRoleToOffice as $role => $officeName) {
 
+            // Scope to cases currently at this province
             $provinceBeyond = $allBeyondCases->filter(
                 fn($case) => $case->documentTracking
                     && $case->documentTracking->current_role === $role
@@ -311,13 +305,14 @@ class SendBeyondCaseNotifications extends Command
                     && $case->documentTracking->status === 'Received'
             );
 
-            if ($provinceBeyond->isEmpty() && $provinceUpcoming->isEmpty()) {
+            // Province: only 1st MC and 2nd MC (showDocket=false, showPoPct=false, showPct96=false)
+            $provinceBeyondFormatted   = $formatBeyond($provinceBeyond,   false, true, true, false, false);
+            $provinceUpcomingFormatted = $formatUpcoming($provinceUpcoming, false, true, true, false, false);
+
+            if (empty($provinceBeyondFormatted) && empty($provinceUpcomingFormatted)) {
                 $this->info("Nothing to report for {$officeName}, skipping.");
                 continue;
             }
-
-            $provinceBeyondFormatted   = $formatBeyond($provinceBeyond);
-            $provinceUpcomingFormatted = $formatUpcoming($provinceUpcoming);
 
             foreach (User::where('role', $role)->get() as $provinceUser) {
                 $sendEmail($provinceUser, $provinceBeyondFormatted, $provinceUpcomingFormatted);
