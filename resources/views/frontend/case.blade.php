@@ -464,7 +464,7 @@ td.actions-cell.expanded {
 
             @if(!Auth::user()->isMalsu())
             <li class="nav-item">
-                <a class="nav-link {{ Auth::user()->isCaseManagement() ? 'active' : '' }}" 
+                <a class="nav-link active" 
                 id="tab0-tab" data-toggle="tab" href="#tab0"
                 role="tab" aria-controls="tab0" aria-selected="true">
                     <i class="fas fa-folder-open mr-1"></i> All Active Cases
@@ -472,7 +472,7 @@ td.actions-cell.expanded {
             </li>
             @endif
 
-            @if(Auth::user()->isCaseManagement() || Auth::user()->isAdmin())
+            @if(Auth::user()->isCaseManagement())
             @php
             $provinceTabs = [
                 'albay'          => 'Albay',
@@ -494,10 +494,10 @@ td.actions-cell.expanded {
             @endforeach
             @endif
 
-            @if(Auth::user()->isMalsu())
+            @if(Auth::user()->isMalsu() || Auth::user()->isAdmin())
             <li class="nav-item">
-                <a class="nav-link active" id="tabMALSU-tab" data-toggle="tab" href="#tabMALSU"
-                role="tab" aria-controls="tabMALSU" aria-selected="true">
+                <a class="nav-link" id="tabMALSU-tab" data-toggle="tab" href="#tabMALSU"
+                role="tab" aria-controls="tabMALSU" aria-selected="false">
                     <i class="fas fa-briefcase mr-1"></i> My Cases
                 </a>
             </li>
