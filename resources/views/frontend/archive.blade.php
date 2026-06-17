@@ -463,7 +463,7 @@
                             @if(Auth::user()->isAdmin() || Auth::user()->isMalsu() || Auth::user()->isCaseManagement())
                                 {{-- Hide Appeal button if already appealed --}}
                                 @if($case->overall_status !== 'Appealed')
-                                    <button class="text-red-600 hover-text-red-800 ml-2" data-toggle="modal" data-target="#appealModal" data-case-id="{{ $case->id }}">Appeal Case</button>
+                                    <button class="text-red-600 hover-text-red-800 ml-2" data-toggle="modal" data-target="#appealModal" data-case-id="{{ $case->id }}">Appealed Case</button>
                                 @endif
                             @endif
                         </div>
