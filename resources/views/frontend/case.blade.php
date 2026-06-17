@@ -3705,6 +3705,14 @@ $(document).ready(function() {
             'date_indorsed_to_po':                      { type: 'date' },
             'po_date_received':                         { type: 'date' },
             'ro_received_sheriffs_return':              { type: 'date' },
+            'case_tag': {                          // ← ADD THIS
+                type: 'select',
+                options: [
+                    { value: '',                        text: '— No Tag —' },
+                    { value: 'For Execution',            text: 'For Execution' },
+                    { value: 'Motion for Reconsideration', text: 'Motion for Reconsideration' }
+                ]
+            }
         }
     };
     tabConfigs['tabCM']    = tabConfigs['tab0'];
@@ -3803,23 +3811,28 @@ $(document).ready(function() {
             cell.addClass('edit-mode');
         });
 
-            const buttonSuffix = config.name === 'case' ? '-case' :
-                                config.name === 'malsu' ? '-case' :
-                                config.name === 'docketing' ? '-docketing' :
-                                config.name === 'hearing' ? '-hearing' :
-                                config.name === 'review-and-drafting' ? '-review' :
-                                config.name === 'orders-and-disposition' ? '-orders' :
-                                config.name === 'compliance-and-awards' ? '-compliance' :
-                                config.name === 'appeals-and-resolution' ? '-appeals' : '';
+        // ── ADD THIS: show case_tag select and hide badge in edit mode ──
+        if (config.name === 'malsu') {
+            const $badge  = row.find('.case-tag-badge');
+            const $select = row.find('.case-tag-select');
+            $badge.hide();
+            $select.addClass('edit-input').show();
+        }
+        // ── END ADD ──
 
-        // ── NEW: Put save/cancel into the actions cell (toggle-btn area), collapse it back ──
+        const buttonSuffix = config.name === 'case' ? '-case' :
+                            config.name === 'malsu' ? '-case' :
+                            config.name === 'docketing' ? '-docketing' :
+                            config.name === 'hearing' ? '-hearing' :
+                            config.name === 'review-and-drafting' ? '-review' :
+                            config.name === 'orders-and-disposition' ? '-orders' :
+                            config.name === 'compliance-and-awards' ? '-compliance' :
+                            config.name === 'appeals-and-resolution' ? '-appeals' : '';
+
         const $actionsCell = row.find('.actions-cell');
         $actionsCell.data('was-expanded', $actionsCell.hasClass('expanded'));
-
-        // Force cell to collapsed width
         $actionsCell.removeClass('expanded').addClass('collapsed edit-mode-cell');
 
-        // Replace toggle button with Save + Cancel
         const $container = $actionsCell.find('.action-buttons-container');
         $container.data('original-html', $container.html());
         $container.html(`
@@ -3884,24 +3897,28 @@ $(document).ready(function() {
 
     function collectRowData(row, config) {
         const updatedData = {};
-        
+
         row.find('.edit-input').each(function() {
             const input = $(this);
             const field = input.data('field');
             updatedData[field] = input.val().trim();
         });
-        
+
+        const $caseTagSelect = row.find('.case-tag-select');
+        if ($caseTagSelect.length) {
+            updatedData['case_tag'] = $caseTagSelect.val() || '';
+        }
+
         return updatedData;
     }
 
     function saveData(recordId, data, row, config) {
-    console.log('=== SAVE DATA DEBUG ===');
-    console.log('Record ID:', recordId);
-    console.log('Data being sent:', data);
-    console.log('Endpoint:', `${config.endpoint}${recordId}/inline-update`);
-    console.log('=======================');
+        console.log('=== SAVE DATA DEBUG ===');
+        console.log('Record ID:', recordId);
+        console.log('Data being sent:', data);
+        console.log('Endpoint:', `${config.endpoint}${recordId}/inline-update`);
+        console.log('=======================');
 
-    
         const saveBtn = row.find(`${config.saveBtnClass}`);
         const cancelBtn = row.find(`${config.cancelBtnClass}`);
         const originalSaveContent = saveBtn.html();
@@ -3935,6 +3952,29 @@ $(document).ready(function() {
                 if (response.success) {
                     updateRowDisplay(row, response.data, config);
                     restoreActionButtons(row);
+
+                    // Refresh case_tag badge (MALSU tab only)
+                    if (response.case_tag !== undefined) {
+                        const tagColors = {
+                            'For Execution':              'danger',
+                            'Motion for Reconsideration': 'warning'
+                        };
+                        const tag    = response.case_tag || '';
+                        const color  = tagColors[tag] || 'secondary';
+                        const $badge = row.find('.case-tag-badge');
+
+                        if (tag) {
+                            $badge
+                                .removeClass('badge-danger badge-warning badge-secondary')
+                                .addClass('badge-' + color)
+                                .attr('data-tag', tag)
+                                .html('<i class="fas fa-bolt mr-1"></i>' + tag.toUpperCase())
+                                .show();
+                        } else {
+                            $badge.hide().attr('data-tag', '');
+                        }
+                    }
+
                     showToast('Success', 'Updated successfully', 'success');
                     resetEditState();
                 } else {
@@ -4026,6 +4066,31 @@ $(document).ready(function() {
             cell.html(displayValue);
             cell.removeClass('edit-mode');
         });
+
+        if (config.name === 'malsu') {
+            const $select = row.find('.case-tag-select');
+            const $badge  = row.find('.case-tag-badge');
+            const tag     = $select.val() || '';
+
+            const tagColors = {
+                'For Execution':              'danger',
+                'Motion for Reconsideration': 'warning'
+            };
+
+            $select.removeClass('edit-input').hide();
+
+            if (tag) {
+                const color = tagColors[tag] || 'secondary';
+                $badge
+                    .removeClass('badge-danger badge-warning badge-secondary')
+                    .addClass('badge-' + color)
+                    .attr('data-tag', tag)
+                    .html('<i class="fas fa-bolt mr-1"></i>' + tag.toUpperCase())
+                    .show();
+            } else {
+                $badge.attr('data-tag', '').hide();
+            }
+        }
     }
 
     function restoreButtons(saveBtn, cancelBtn, originalContent) {
@@ -4078,6 +4143,15 @@ $(document).ready(function() {
 
         restoreActionButtons(currentEditingRow);
         resetEditState();
+
+         if (config.name === 'malsu') {
+            const $badge  = currentEditingRow.find('.case-tag-badge');
+            const $select = currentEditingRow.find('.case-tag-select');
+            $select.removeClass('edit-input').hide();
+            if ($badge.attr('data-tag')) {
+                $badge.show();
+            }
+        }
     }
 
     function resetEditState() {

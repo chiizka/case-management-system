@@ -16,13 +16,22 @@ class MalsuController extends Controller
         DB::beginTransaction();
         try {
             $case = CaseFile::findOrFail($caseId);
-
-            // Get or create the malsu record for this case
             $malsu = Malsu::firstOrCreate(['case_id' => $caseId]);
 
-            $updateData = $request->except(['_token', '_method', 'id']);
+            $updateData = $request->except(['_token', '_method', 'id', 'case_tag']);
 
-            $malsu->update($updateData);
+            // Update malsu fields
+            if (!empty($updateData)) {
+                $malsu->update($updateData);
+            }
+
+            // Handle case_tag separately — it belongs to document_tracking
+            if ($request->has('case_tag')) {
+                $tracking = $case->documentTracking;
+                if ($tracking) {
+                    $tracking->update(['case_tag' => $request->input('case_tag') ?: null]);
+                }
+            }
 
             ActivityLogger::logAction(
                 'UPDATE',
@@ -37,7 +46,8 @@ class MalsuController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'MALSU record updated successfully!',
-                'data'    => $malsu
+                'data'    => $malsu,
+                'case_tag' => $case->fresh()->documentTracking?->case_tag
             ]);
 
         } catch (\Exception $e) {

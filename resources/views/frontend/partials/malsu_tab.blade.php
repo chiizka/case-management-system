@@ -129,19 +129,34 @@
                                     {{ $case->establishment_address }}
                                 </small>
                             @endif
-                            @if($case->documentTracking && $case->documentTracking->case_tag)
+                            {{-- Replace the existing @if($case->documentTracking && ...) badge block --}}
+                            @if($case->documentTracking)
                                 <br>
                                 @php
                                     $tagColors = [
                                         'For Execution'              => 'danger',
                                         'Motion for Reconsideration' => 'warning',
                                     ];
-                                    $tagColor = $tagColors[$case->documentTracking->case_tag] ?? 'secondary';
+                                    $currentTag = $case->documentTracking->case_tag ?? '';
+                                    $tagColor   = $tagColors[$currentTag] ?? 'secondary';
                                 @endphp
-                                <span class="badge badge-{{ $tagColor }} mt-1" style="font-size: 0.7rem;">
+
+                                {{-- Display badge (shown in read mode) --}}
+                                <span class="case-tag-badge badge badge-{{ $tagColor }} mt-1"
+                                    style="font-size: 0.7rem; {{ $currentTag ? '' : 'display:none;' }}"
+                                    data-tag="{{ $currentTag }}">
                                     <i class="fas fa-bolt mr-1"></i>
-                                    {{ strtoupper($case->documentTracking->case_tag) }}
+                                    {{ strtoupper($currentTag) }}
                                 </span>
+
+                                {{-- Editable select (shown in edit mode) --}}
+                                <select class="form-control form-control-sm case-tag-select editable-input mt-1"
+                                        data-field="case_tag"
+                                        style="display:none; min-width: 160px;">
+                                    <option value="">— No Tag —</option>
+                                    <option value="For Execution"              {{ $currentTag === 'For Execution'              ? 'selected' : '' }}>For Execution</option>
+                                    <option value="Motion for Reconsideration" {{ $currentTag === 'Motion for Reconsideration' ? 'selected' : '' }}>Motion for Reconsideration</option>
+                                </select>
                             @endif
                         </td>
 
