@@ -505,9 +505,15 @@ td.actions-cell.expanded {
 
             @if(Auth::user()->isMalsu() || Auth::user()->isAdmin())
             <li class="nav-item">
-                <a class="nav-link" id="tabCENA-tab" data-toggle="tab" href="#tabCENA"
-                role="tab" aria-controls="tabCENA" aria-selected="false">
+                <a class="nav-link" id="tabSENA-tab" data-toggle="tab" href="#tabSENA"
+                role="tab" aria-controls="tabSENA" aria-selected="false">
                     <i class="fas fa-gavel mr-1"></i> SENA
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" id="tabResolution-tab" data-toggle="tab" href="#tabResolution"
+                role="tab" aria-controls="tabResolution" aria-selected="false">
+                    <i class="fas fa-check-circle mr-1"></i>For Resolution
                 </a>
             </li>
             <li class="nav-item">
@@ -807,12 +813,24 @@ td.actions-cell.expanded {
             @endif
 
             @if(Auth::user()->isMalsu() || Auth::user()->isAdmin())
-            <div class="tab-pane fade" id="tabCENA" role="tabpanel" aria-labelledby="tabCENA-tab">
+            <div class="tab-pane fade" id="tabSENA" role="tabpanel" aria-labelledby="tabSENA-tab">
                 <div class="card shadow mb-4">
                     <div class="card-body">
                         <div class="text-center py-5 text-muted">
                             <i class="fas fa-gavel fa-3x mb-3 d-block"></i>
                             <h5>CENA</h5>
+                            <p>Content coming soon.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-pane fade" id="tabResolution" role="tabpanel" aria-labelledby="tabResolution-tab">
+                <div class="card shadow mb-4">
+                    <div class="card-body">
+                        <div class="text-center py-5 text-muted">
+                            <i class="fas fa-check-circle fa-3x mb-3 d-block"></i>
+                            <h5>Resolution</h5>
                             <p>Content coming soon.</p>
                         </div>
                     </div>
