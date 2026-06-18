@@ -164,7 +164,7 @@
                         <td class="editable-cell" data-field="regional_docket_number" style="background-color: #fff3cd !important;">
                             {{ $case->malsu->regional_docket_number ?? '-' }}
                         </td>
-                        <td class="editable-cell" data-field="sheriff_designate">
+                        <td class="editable-cell" data-field="sheriff_designate" data-type="select">
                             {{ $case->malsu->sheriff_designate ?? '-' }}
                         </td>
                         <td class="editable-cell" data-field="date_compliance_order" data-type="date">

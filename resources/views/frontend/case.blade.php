@@ -3705,7 +3705,15 @@ $(document).ready(function() {
         alertPrefix: 'tabMALSU',
         fields: {
             'regional_docket_number':                   { type: 'text' },
-            'sheriff_designate':                        { type: 'text' },
+            'sheriff_designate': {
+                type: 'select',
+                options: [
+                    { value: '', text: 'Select Sheriff' },
+                    { value: 'Juan Dela Cruz', text: 'Juan Dela Cruz' },
+                    { value: 'Maria Santos', text: 'Maria Santos' }
+                    // ...more names
+                ]
+            },
             'date_compliance_order':                    { type: 'date' },
             'total_gls_monetary_award':                 { type: 'number', step: '0.01' },
             'total_workers_benefited':                  { type: 'number' },
