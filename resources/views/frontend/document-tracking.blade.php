@@ -248,12 +248,12 @@
         <!-- Tabs -->
         <ul class="nav nav-tabs mb-3" id="documentTabs" role="tablist">
             <li class="nav-item">
-                <a class="nav-link" id="my-docs-tab" data-toggle="tab" href="#myDocs" role="tab">
+                <a class="nav-link active" id="my-docs-tab" data-toggle="tab" href="#myDocs" role="tab">
                     <i class="fas fa-folder"></i> My Documents
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link active" id="pending-tab" data-toggle="tab" href="#pending" role="tab">
+                <a class="nav-link" id="pending-tab" data-toggle="tab" href="#pending" role="tab">
                     <i class="fas fa-clock"></i> Pending Receipts
                     @if($pendingDocuments->count() > 0)
                         <span class="badge badge-warning ml-2">{{ $pendingDocuments->count() }}</span>
@@ -814,7 +814,7 @@
                                 <label class="font-weight-bold">Transfer To Department <span class="text-danger">*</span></label>
                                 <select class="form-control" name="target_role" id="target_role" required>
                                     <option value="">Select Department</option>
-                                    <option value="admin">Admin</option>
+                                    {{-- <option value="admin">Admin</option> --}}
                                     <option value="malsu">MALSU</option>
                                     <option value="case_management">Case Management</option>
                                     <option value="records">Records</option>
