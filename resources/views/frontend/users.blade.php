@@ -71,6 +71,13 @@
                                     <span class="badge badge-primary">Masbate Province</span>
                                 @elseif($user->role === 'province_sorsogon')
                                     <span class="badge badge-primary">Sorsogon Province</span>
+                                @elseif($user->role === 'sheriff_designate')
+                                    <span class="badge badge-dark">
+                                        Sheriff Designate
+                                        @if($user->province)
+                                            &mdash; {{ ucwords(str_replace('_', ' ', $user->province)) }}
+                                        @endif
+                                    </span>
                                 @else
                                     <span class="badge badge-secondary">User</span>
                                 @endif
@@ -175,13 +182,14 @@
 
             <div class="form-group">
                 <label for="role">Role</label>
-                <select class="form-control" id="role" name="role" required>
+                <select class="form-control" id="addRole" name="role" required>
                     <option value="">-- Select Role --</option>
                     <option value="user">User</option>
                     <option value="admin">Admin</option>
                     <option value="malsu">MALSU</option>
                     <option value="case_management">Case Management</option>
                     <option value="records">Records</option>
+                    <option value="sheriff_designate">Sheriff Designate</option>
                     <optgroup label="Province Roles">
                         <option value="province_albay">Albay Province</option>
                         <option value="province_camarines_sur">Camarines Sur Province</option>
@@ -190,6 +198,20 @@
                         <option value="province_masbate">Masbate Province</option>
                         <option value="province_sorsogon">Sorsogon Province</option>
                     </optgroup>
+                </select>
+            </div>
+
+            <!-- Province dropdown — shown only when Sheriff Designate is selected -->
+            <div class="form-group" id="addProvinceGroup" style="display: none;">
+                <label for="addProvince">Assign Province</label>
+                <select class="form-control" id="addProvince" name="province">
+                    <option value="">-- Select Province --</option>
+                    <option value="albay">Albay</option>
+                    <option value="camarines_sur">Camarines Sur</option>
+                    <option value="camarines_norte">Camarines Norte</option>
+                    <option value="catanduanes">Catanduanes</option>
+                    <option value="masbate">Masbate</option>
+                    <option value="sorsogon">Sorsogon</option>
                 </select>
             </div>
         </div>
@@ -239,12 +261,13 @@
 
                     <div class="form-group">
                         <label for="role{{ $user->id }}">Role</label>
-                        <select class="form-control" id="role{{ $user->id }}" name="role" required>
+                        <select class="form-control edit-role-select" id="role{{ $user->id }}" name="role" data-user-id="{{ $user->id }}" required>
                             <option value="user" {{ $user->role === 'user' ? 'selected' : '' }}>User</option>
                             <option value="admin" {{ $user->role === 'admin' ? 'selected' : '' }}>Admin</option>
                             <option value="malsu" {{ $user->role === 'malsu' ? 'selected' : '' }}>MALSU</option>
                             <option value="case_management" {{ $user->role === 'case_management' ? 'selected' : '' }}>Case Management</option>
                             <option value="records" {{ $user->role === 'records' ? 'selected' : '' }}>Records</option>
+                            <option value="sheriff_designate" {{ $user->role === 'sheriff_designate' ? 'selected' : '' }}>Sheriff Designate</option>
                             <optgroup label="Province Roles">
                                 <option value="province_albay" {{ $user->role === 'province_albay' ? 'selected' : '' }}>Albay Province</option>
                                 <option value="province_camarines_sur" {{ $user->role === 'province_camarines_sur' ? 'selected' : '' }}>Camarines Sur Province</option>
@@ -253,6 +276,20 @@
                                 <option value="province_masbate" {{ $user->role === 'province_masbate' ? 'selected' : '' }}>Masbate Province</option>
                                 <option value="province_sorsogon" {{ $user->role === 'province_sorsogon' ? 'selected' : '' }}>Sorsogon Province</option>
                             </optgroup>
+                        </select>
+                    </div>
+
+                    <!-- Province dropdown — shown only when Sheriff Designate is selected -->
+                    <div class="form-group" id="editProvinceGroup{{ $user->id }}" style="{{ $user->role === 'sheriff_designate' ? '' : 'display: none;' }}">
+                        <label for="editProvince{{ $user->id }}">Assign Province</label>
+                        <select class="form-control" id="editProvince{{ $user->id }}" name="province">
+                            <option value="">-- Select Province --</option>
+                            <option value="albay" {{ $user->province === 'albay' ? 'selected' : '' }}>Albay</option>
+                            <option value="camarines_sur" {{ $user->province === 'camarines_sur' ? 'selected' : '' }}>Camarines Sur</option>
+                            <option value="camarines_norte" {{ $user->province === 'camarines_norte' ? 'selected' : '' }}>Camarines Norte</option>
+                            <option value="catanduanes" {{ $user->province === 'catanduanes' ? 'selected' : '' }}>Catanduanes</option>
+                            <option value="masbate" {{ $user->province === 'masbate' ? 'selected' : '' }}>Masbate</option>
+                            <option value="sorsogon" {{ $user->province === 'sorsogon' ? 'selected' : '' }}>Sorsogon</option>
                         </select>
                     </div>
                 </div>
@@ -370,7 +407,31 @@
 @push('scripts')
 <script>
 $(document).ready(function() {
-    // Handle Delete Modal
+
+    // --- ADD MODAL: Show/hide province when sheriff is selected ---
+    $('#addRole').on('change', function() {
+        if ($(this).val() === 'sheriff_designate') {
+            $('#addProvinceGroup').show();
+            $('#addProvince').attr('required', true);
+        } else {
+            $('#addProvinceGroup').hide();
+            $('#addProvince').removeAttr('required').val('');
+        }
+    });
+
+    // --- EDIT MODALS: Show/hide province when sheriff is selected ---
+    $('.edit-role-select').on('change', function() {
+        var userId = $(this).data('user-id');
+        if ($(this).val() === 'sheriff_designate') {
+            $('#editProvinceGroup' + userId).show();
+            $('#editProvince' + userId).attr('required', true);
+        } else {
+            $('#editProvinceGroup' + userId).hide();
+            $('#editProvince' + userId).removeAttr('required').val('');
+        }
+    });
+
+    // --- Handle Delete Modal ---
     $('#deleteUserModal').on('show.bs.modal', function (event) {
         var button = $(event.relatedTarget);
         var userId = button.data('user-id');
@@ -383,7 +444,7 @@ $(document).ready(function() {
         modal.find('#deleteUserForm').attr('action', '{{ route("user.destroy", ":id") }}'.replace(':id', userId));
     });
 
-    // Handle Reset Password Modal
+    // --- Handle Reset Password Modal ---
     $('#resetPasswordModal').on('show.bs.modal', function (event) {
         var button = $(event.relatedTarget);
         var userId = button.data('user-id');
@@ -396,7 +457,7 @@ $(document).ready(function() {
         modal.find('#resetPasswordForm').attr('action', '{{ route("user.reset-password", ":id") }}'.replace(':id', userId));
     });
 
-    // Handle Edit Confirmation Modal
+    // --- Handle Edit Confirmation Modal ---
     var currentEditUserId = null;
     
     $('#confirmEditUserModal').on('show.bs.modal', function (event) {

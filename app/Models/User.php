@@ -16,6 +16,7 @@ class User extends Authenticatable
         'lname',
         'email',
         'role',
+        'province',         // ← ADDED
         'password',
         'two_factor_enabled',
         'otp_code',
@@ -42,6 +43,7 @@ class User extends Authenticatable
     const ROLE_MALSU = 'malsu';
     const ROLE_CASE_MANAGEMENT = 'case_management';
     const ROLE_RECORDS = 'records';
+    const ROLE_SHERIFF_DESIGNATE = 'sheriff_designate';  // ← ADDED
     
     // Province role constants
     const ROLE_PROVINCE_ALBAY = 'province_albay';
@@ -50,6 +52,16 @@ class User extends Authenticatable
     const ROLE_PROVINCE_CATANDUANES = 'province_catanduanes';
     const ROLE_PROVINCE_MASBATE = 'province_masbate';
     const ROLE_PROVINCE_SORSOGON = 'province_sorsogon';
+
+    // Province constants for sheriff
+    const PROVINCES = [
+        'albay'             => 'Albay',
+        'camarines_sur'     => 'Camarines Sur',
+        'camarines_norte'   => 'Camarines Norte',
+        'catanduanes'       => 'Catanduanes',
+        'masbate'           => 'Masbate',
+        'sorsogon'          => 'Sorsogon',
+    ];
 
     // All province roles array
     const PROVINCE_ROLES = [
@@ -68,6 +80,7 @@ class User extends Authenticatable
         self::ROLE_MALSU,
         self::ROLE_CASE_MANAGEMENT,
         self::ROLE_RECORDS,
+        self::ROLE_SHERIFF_DESIGNATE,       // ← ADDED
         self::ROLE_PROVINCE_ALBAY,
         self::ROLE_PROVINCE_CAMARINES_SUR,
         self::ROLE_PROVINCE_CAMARINES_NORTE,
@@ -96,7 +109,6 @@ class User extends Authenticatable
     public function verifyOTP($code)
     {
         if ($this->otp_code === $code && $this->otp_expires_at && $this->otp_expires_at->isFuture()) {
-            // Clear OTP after successful verification
             $this->otp_code = null;
             $this->otp_expires_at = null;
             $this->save();
@@ -137,6 +149,12 @@ class User extends Authenticatable
         return $this->role === self::ROLE_RECORDS;
     }
 
+    // ← ADDED
+    public function isSheriffDesignate()
+    {
+        return $this->role === self::ROLE_SHERIFF_DESIGNATE;
+    }
+
     /**
      * Check if user is from any province
      */
@@ -163,15 +181,27 @@ class User extends Authenticatable
         }
 
         $provinceNames = [
-            self::ROLE_PROVINCE_ALBAY => 'Albay',
-            self::ROLE_PROVINCE_CAMARINES_SUR => 'Camarines Sur',
+            self::ROLE_PROVINCE_ALBAY           => 'Albay',
+            self::ROLE_PROVINCE_CAMARINES_SUR   => 'Camarines Sur',
             self::ROLE_PROVINCE_CAMARINES_NORTE => 'Camarines Norte',
-            self::ROLE_PROVINCE_CATANDUANES => 'Catanduanes',
-            self::ROLE_PROVINCE_MASBATE => 'Masbate',
-            self::ROLE_PROVINCE_SORSOGON => 'Sorsogon',
+            self::ROLE_PROVINCE_CATANDUANES     => 'Catanduanes',
+            self::ROLE_PROVINCE_MASBATE         => 'Masbate',
+            self::ROLE_PROVINCE_SORSOGON        => 'Sorsogon',
         ];
 
         return $provinceNames[$this->role] ?? null;
+    }
+
+    /**
+     * Get the assigned province name for sheriff designate users  ← ADDED
+     */
+    public function getSheriffProvinceName()
+    {
+        if (!$this->isSheriffDesignate()) {
+            return null;
+        }
+
+        return self::PROVINCES[$this->province] ?? null;
     }
 
     public function hasRole($role)
