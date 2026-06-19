@@ -208,7 +208,8 @@
                 </a>
             </li>
             <hr class="sidebar-divider">
-            
+
+            {{-- User Management: Admin only --}}
             @if(Auth::user()->isAdmin())
             <div class="sidebar-heading">User Management</div>
             <li class="nav-item">
@@ -220,20 +221,29 @@
             <hr class="sidebar-divider">
             @endif
 
-            @if(Auth::user()->isAdmin() || Auth::user()->isProvince() || Auth::user()->isMalsu() || Auth::user()->isCaseManagement() || Auth::user()->isRecords())
+            {{-- Cases section --}}
+            @if(Auth::user()->isAdmin() || Auth::user()->isProvince() || Auth::user()->isMalsu() || Auth::user()->isCaseManagement() || Auth::user()->isRecords() || Auth::user()->isSheriff())
             <div class="sidebar-heading">Cases</div>
+
+            {{-- Active Cases: all allowed roles including sheriff --}}
             <li class="nav-item">
                 <a class="nav-link" href="{{ route('case.index') }}">
                     <i class="fas fa-fw fa-folder-open"></i>
                     <span>Active Cases</span>
                 </a>
             </li>
+
+            {{-- Archived Cases: everyone except sheriff --}}
+            @if(!Auth::user()->isSheriff())
             <li class="nav-item">
                 <a class="nav-link" href="{{ route('archive.index') }}">
                     <i class="fas fa-fw fa-archive"></i>
                     <span>Archived Cases</span>
                 </a>
             </li>
+            @endif
+
+            {{-- Labor Relation Cases: MALSU only --}}
             @if(Auth::user()->isMalsu())
             <li class="nav-item">
                 <a class="nav-link" href="{{ route('labor.index') }}">
@@ -242,21 +252,29 @@
                 </a>
             </li>
             @endif
+
+            {{-- Document Tracking: all allowed roles including sheriff --}}
             <li class="nav-item">
                 <a class="nav-link" href="{{ route('documents.tracking') }}">
                     <i class="fas fa-fw fa-map-marker-alt"></i>
                     <span>Document Tracking</span>
                 </a>
             </li>
+
+            {{-- Technical Overview: everyone except sheriff --}}
+            @if(!Auth::user()->isSheriff())
             <li class="nav-item">
                 <a class="nav-link" href="{{ route('analytics.index') }}">
                     <i class="fas fa-fw fa-chart-bar"></i>
                     <span>Technical Overview</span>
                 </a>
             </li>
+            @endif
+
             <hr class="sidebar-divider">
             @endif
 
+            {{-- Audit Logs: Admin only --}}
             @if(Auth::user()->isAdmin())
             <li class="nav-item">
                 <a class="nav-link" href="{{ route('logs.index') }}">
@@ -288,7 +306,6 @@
 
         <div id="content-wrapper">
 
-
             @yield('content')
 
             <div class="modal fade" id="logoutModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
@@ -311,14 +328,16 @@
                     </div>
                 </div>
             </div>
-        </div> </div> <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-easing/1.4.1/jquery.easing.min.js"></script>
     <script src="{{ asset('js/sb-admin-2.min.js') }}"></script>
     <script src="{{ asset('vendor/datatables/jquery.dataTables.min.js') }}"></script>
     <script src="{{ asset('vendor/datatables/dataTables.bootstrap4.min.js') }}"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
 
     @stack('scripts')
 </body>

@@ -15,11 +15,10 @@ class UserController extends Controller
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'fname'    => 'required|string|max:255',
-            'lname'    => 'required|string|max:255',
-            'email'    => 'required|string|email|max:255|unique:users',
-            'role'     => 'required|in:' . implode(',', User::VALID_ROLES),
-            'province' => 'nullable|required_if:role,sheriff_designate|in:' . implode(',', array_keys(User::PROVINCES)),
+            'fname' => 'required|string|max:255',
+            'lname' => 'required|string|max:255',
+            'email' => 'required|string|email|max:255|unique:users',
+            'role'  => 'required|in:' . implode(',', User::VALID_ROLES),
         ]);
 
         if ($validator->fails()) {
@@ -31,7 +30,6 @@ class UserController extends Controller
             'lname'              => $request->lname,
             'email'              => $request->email,
             'role'               => $request->role,
-            'province'           => $request->role === 'sheriff_designate' ? $request->province : null,
             'password'           => null,
             'two_factor_enabled' => true,
         ]);
@@ -44,7 +42,6 @@ class UserController extends Controller
             metadata: [
                 'email'     => $user->email,
                 'role'      => $user->role,
-                'province'  => $user->province,
                 'full_name' => "{$user->fname} {$user->lname}",
             ]
         );
@@ -102,26 +99,22 @@ class UserController extends Controller
         $user = User::findOrFail($id);
 
         $oldData = [
-            'fname'    => $user->fname,
-            'lname'    => $user->lname,
-            'email'    => $user->email,
-            'role'     => $user->role,
-            'province' => $user->province,
+            'fname' => $user->fname,
+            'lname' => $user->lname,
+            'email' => $user->email,
+            'role'  => $user->role,
         ];
 
         $validator = Validator::make($request->all(), [
-            'fname'    => 'required|string|max:255',
-            'lname'    => 'required|string|max:255',
-            'email'    => 'required|string|email|max:255|unique:users,email,' . $user->id,
-            'role'     => 'required|in:' . implode(',', User::VALID_ROLES),
-            'province' => 'nullable|required_if:role,sheriff_designate|in:' . implode(',', array_keys(User::PROVINCES)),
+            'fname' => 'required|string|max:255',
+            'lname' => 'required|string|max:255',
+            'email' => 'required|string|email|max:255|unique:users,email,' . $user->id,
+            'role'  => 'required|in:' . implode(',', User::VALID_ROLES),
         ]);
 
         if ($validator->fails()) {
             return back()->withErrors($validator)->withInput();
         }
-
-        $newProvince = $request->role === 'sheriff_designate' ? $request->province : null;
 
         // Track changes for logging
         $changes = [];
@@ -151,18 +144,11 @@ class UserController extends Controller
             $changesText[] = "Role: {$oldData['role']} → {$request->role}";
         }
 
-        if ($oldData['province'] !== $newProvince) {
-            $changes['province_old'] = $oldData['province'];
-            $changes['province_new'] = $newProvince;
-            $changesText[] = "Province: " . ($oldData['province'] ?? 'none') . " → " . ($newProvince ?? 'none');
-        }
-
         $user->update([
-            'fname'    => $request->fname,
-            'lname'    => $request->lname,
-            'email'    => $request->email,
-            'role'     => $request->role,
-            'province' => $newProvince,
+            'fname' => $request->fname,
+            'lname' => $request->lname,
+            'email' => $request->email,
+            'role'  => $request->role,
         ]);
 
         $description = "Updated user account for {$request->fname} {$request->lname}";

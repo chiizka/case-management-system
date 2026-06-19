@@ -16,7 +16,10 @@ class User extends Authenticatable
         'lname',
         'email',
         'role',
-        'province',         // ← ADDED
+        'province',         // Legacy column — no longer used to determine sheriff identity,
+                            // since province is now encoded directly in the role value
+                            // (sheriff_albay, sheriff_camarines_sur, etc.). Left here in case
+                            // other code/forms still write to it; safe to remove once confirmed unused.
         'password',
         'two_factor_enabled',
         'otp_code',
@@ -43,8 +46,7 @@ class User extends Authenticatable
     const ROLE_MALSU = 'malsu';
     const ROLE_CASE_MANAGEMENT = 'case_management';
     const ROLE_RECORDS = 'records';
-    const ROLE_SHERIFF_DESIGNATE = 'sheriff_designate';  // ← ADDED
-    
+
     // Province role constants
     const ROLE_PROVINCE_ALBAY = 'province_albay';
     const ROLE_PROVINCE_CAMARINES_SUR = 'province_camarines_sur';
@@ -53,7 +55,17 @@ class User extends Authenticatable
     const ROLE_PROVINCE_MASBATE = 'province_masbate';
     const ROLE_PROVINCE_SORSOGON = 'province_sorsogon';
 
-    // Province constants for sheriff
+    // Sheriff role constants — one province-qualified role per province,
+    // mirroring the province_* pattern above. Replaces the old single
+    // 'sheriff_designate' role + separate 'province' column.
+    const ROLE_SHERIFF_ALBAY = 'sheriff_albay';
+    const ROLE_SHERIFF_CAMARINES_SUR = 'sheriff_camarines_sur';
+    const ROLE_SHERIFF_CAMARINES_NORTE = 'sheriff_camarines_norte';
+    const ROLE_SHERIFF_CATANDUANES = 'sheriff_catanduanes';
+    const ROLE_SHERIFF_MASBATE = 'sheriff_masbate';
+    const ROLE_SHERIFF_SORSOGON = 'sheriff_sorsogon';
+
+    // Province display names — kept for dropdown labels / lookups
     const PROVINCES = [
         'albay'             => 'Albay',
         'camarines_sur'     => 'Camarines Sur',
@@ -73,6 +85,16 @@ class User extends Authenticatable
         self::ROLE_PROVINCE_SORSOGON,
     ];
 
+    // All sheriff roles array
+    const SHERIFF_ROLES = [
+        self::ROLE_SHERIFF_ALBAY,
+        self::ROLE_SHERIFF_CAMARINES_SUR,
+        self::ROLE_SHERIFF_CAMARINES_NORTE,
+        self::ROLE_SHERIFF_CATANDUANES,
+        self::ROLE_SHERIFF_MASBATE,
+        self::ROLE_SHERIFF_SORSOGON,
+    ];
+
     // All valid roles
     const VALID_ROLES = [
         self::ROLE_ADMIN,
@@ -80,13 +102,18 @@ class User extends Authenticatable
         self::ROLE_MALSU,
         self::ROLE_CASE_MANAGEMENT,
         self::ROLE_RECORDS,
-        self::ROLE_SHERIFF_DESIGNATE,       // ← ADDED
         self::ROLE_PROVINCE_ALBAY,
         self::ROLE_PROVINCE_CAMARINES_SUR,
         self::ROLE_PROVINCE_CAMARINES_NORTE,
         self::ROLE_PROVINCE_CATANDUANES,
         self::ROLE_PROVINCE_MASBATE,
         self::ROLE_PROVINCE_SORSOGON,
+        self::ROLE_SHERIFF_ALBAY,
+        self::ROLE_SHERIFF_CAMARINES_SUR,
+        self::ROLE_SHERIFF_CAMARINES_NORTE,
+        self::ROLE_SHERIFF_CATANDUANES,
+        self::ROLE_SHERIFF_MASBATE,
+        self::ROLE_SHERIFF_SORSOGON,
     ];
 
     // Check if user needs to set password
@@ -101,7 +128,7 @@ class User extends Authenticatable
         $this->otp_code = str_pad(rand(0, 999999), 6, '0', STR_PAD_LEFT);
         $this->otp_expires_at = Carbon::now()->addMinutes(10);
         $this->save();
-        
+
         return $this->otp_code;
     }
 
@@ -149,10 +176,20 @@ class User extends Authenticatable
         return $this->role === self::ROLE_RECORDS;
     }
 
-    // ← ADDED
-    public function isSheriffDesignate()
+    /**
+     * Check if user is a sheriff (any province)
+     */
+    public function isSheriff()
     {
-        return $this->role === self::ROLE_SHERIFF_DESIGNATE;
+        return in_array($this->role, self::SHERIFF_ROLES);
+    }
+
+    /**
+     * Check if user is the sheriff for a specific province
+     */
+    public function isSheriffOf($province)
+    {
+        return $this->role === 'sheriff_' . strtolower(str_replace(' ', '_', $province));
     }
 
     /**
@@ -193,15 +230,25 @@ class User extends Authenticatable
     }
 
     /**
-     * Get the assigned province name for sheriff designate users  ← ADDED
+     * Get the province name for sheriff users — derived from the role
+     * itself now, the same way getProvinceName() works for province roles.
      */
     public function getSheriffProvinceName()
     {
-        if (!$this->isSheriffDesignate()) {
+        if (!$this->isSheriff()) {
             return null;
         }
 
-        return self::PROVINCES[$this->province] ?? null;
+        $provinceNames = [
+            self::ROLE_SHERIFF_ALBAY           => 'Albay',
+            self::ROLE_SHERIFF_CAMARINES_SUR   => 'Camarines Sur',
+            self::ROLE_SHERIFF_CAMARINES_NORTE => 'Camarines Norte',
+            self::ROLE_SHERIFF_CATANDUANES     => 'Catanduanes',
+            self::ROLE_SHERIFF_MASBATE         => 'Masbate',
+            self::ROLE_SHERIFF_SORSOGON        => 'Sorsogon',
+        ];
+
+        return $provinceNames[$this->role] ?? null;
     }
 
     public function hasRole($role)
