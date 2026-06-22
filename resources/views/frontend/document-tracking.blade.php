@@ -826,6 +826,14 @@
                                         <option value="province_masbate">Masbate Province</option>
                                         <option value="province_sorsogon">Sorsogon Province</option>
                                     </optgroup>
+                                    <optgroup label="Sheriff Offices">
+                                        <option value="sheriff_albay">Sheriff - Albay</option>
+                                        <option value="sheriff_camarines_sur">Sheriff - Camarines Sur</option>
+                                        <option value="sheriff_camarines_norte">Sheriff - Camarines Norte</option>
+                                        <option value="sheriff_catanduanes">Sheriff - Catanduanes</option>
+                                        <option value="sheriff_masbate">Sheriff - Masbate</option>
+                                        <option value="sheriff_sorsogon">Sheriff - Sorsogon</option>
+                                    </optgroup>
                                 </select>
                             </div>
                         </div>

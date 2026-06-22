@@ -33,15 +33,23 @@ class DocumentTracking extends Model
         'malsu' => 'MALSU',
         'case_management' => 'Case Management',
         'records' => 'Records',
-        
+
         // Province roles
-        'province_albay' => 'Albay Province',
-        'province_camarines_sur' => 'Camarines Sur Province',
-        'province_camarines_norte' => 'Camarines Norte Province',
-        'province_catanduanes' => 'Catanduanes Province',
-        'province_masbate' => 'Masbate Province',
-        'province_sorsogon' => 'Sorsogon Province',
-        
+        'province_albay'          => 'Albay Province',
+        'province_camarines_sur'  => 'Camarines Sur Province',
+        'province_camarines_norte'=> 'Camarines Norte Province',
+        'province_catanduanes'    => 'Catanduanes Province',
+        'province_masbate'        => 'Masbate Province',
+        'province_sorsogon'       => 'Sorsogon Province',
+
+        // Sheriff roles
+        'sheriff_albay'           => 'Sheriff - Albay',
+        'sheriff_camarines_sur'   => 'Sheriff - Camarines Sur',
+        'sheriff_camarines_norte' => 'Sheriff - Camarines Norte',
+        'sheriff_catanduanes'     => 'Sheriff - Catanduanes',
+        'sheriff_masbate'         => 'Sheriff - Masbate',
+        'sheriff_sorsogon'        => 'Sheriff - Sorsogon',
+
         // Legacy support (if any old records still use 'province')
         'province' => 'Province (Legacy)',
     ];
@@ -112,6 +120,39 @@ class DocumentTracking extends Model
             'province_catanduanes' => 'Catanduanes',
             'province_masbate' => 'Masbate',
             'province_sorsogon' => 'Sorsogon',
+        ];
+
+        return $provinceNames[$this->current_role] ?? null;
+    }
+
+    public function isSheriffRole()
+    {
+        return in_array($this->current_role, [
+            'sheriff_albay',
+            'sheriff_camarines_sur',
+            'sheriff_camarines_norte',
+            'sheriff_catanduanes',
+            'sheriff_masbate',
+            'sheriff_sorsogon',
+        ]);
+    }
+
+    /**
+     * Get province name if it's a sheriff role
+     */
+    public function getSheriffProvinceName()
+    {
+        if (!$this->isSheriffRole()) {
+            return null;
+        }
+
+        $provinceNames = [
+            'sheriff_albay'           => 'Albay',
+            'sheriff_camarines_sur'   => 'Camarines Sur',
+            'sheriff_camarines_norte' => 'Camarines Norte',
+            'sheriff_catanduanes'     => 'Catanduanes',
+            'sheriff_masbate'         => 'Masbate',
+            'sheriff_sorsogon'        => 'Sorsogon',
         ];
 
         return $provinceNames[$this->current_role] ?? null;

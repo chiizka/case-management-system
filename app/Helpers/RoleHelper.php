@@ -10,20 +10,20 @@ class RoleHelper
      * Define which roles can access which features
      * This makes it easy to manage permissions in one place
      */
-    private static $rolePermissions = [
-        'user_management' => ['admin'],
-        'cases' => ['admin', 'province', 'malsu', 'case_management', 'records'],
-        'audit_logs' => ['admin'],
-        'charts' => ['admin'],
-        'tables' => ['admin', 'case_management'],
-        'inspections' => ['admin', 'case_management', 'malsu'],
-        'docketing' => ['admin', 'case_management'],
-        'hearing_process' => ['admin', 'case_management'],
-        'review_drafting' => ['admin', 'case_management'],
-        'orders_disposition' => ['admin', 'case_management'],
-        'compliance_awards' => ['admin', 'case_management'],
-        'appeals_resolution' => ['admin', 'case_management'],
-    ];
+private static $rolePermissions = [
+    'user_management' => ['admin'],
+    'cases' => ['admin', 'province', 'malsu', 'case_management', 'records', 'sheriff_albay', 'sheriff_camarines_sur', 'sheriff_camarines_norte', 'sheriff_catanduanes', 'sheriff_masbate', 'sheriff_sorsogon'],
+    'audit_logs' => ['admin'],
+    'charts' => ['admin'],
+    'tables' => ['admin', 'case_management'],
+    'inspections' => ['admin', 'case_management', 'malsu'],
+    'docketing' => ['admin', 'case_management'],
+    'hearing_process' => ['admin', 'case_management'],
+    'review_drafting' => ['admin', 'case_management'],
+    'orders_disposition' => ['admin', 'case_management'],
+    'compliance_awards' => ['admin', 'case_management'],
+    'appeals_resolution' => ['admin', 'case_management'],
+];
 
     /**
      * Check if current user can access a feature
