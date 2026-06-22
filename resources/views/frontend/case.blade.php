@@ -1178,6 +1178,65 @@ td.actions-cell.expanded {
                             </div>
                         </div>
                     </div>
+                    <div id="executeDeliverySection" style="display: none;">
+                        <hr>
+                        <p class="mb-2" style="font-size: 0.85rem; font-weight: 600; color: #495057;">
+                            <i class="fas fa-truck mr-1"></i> Delivery receipt details
+                            <span class="badge badge-danger ml-1" style="font-size: 0.7rem;">Required</span>
+                        </p>
+
+                        <div class="form-group mb-2">
+                            <label class="small mb-1">
+                                Received by (respondent's name) <span class="text-danger">*</span>
+                            </label>
+                            <input type="text"
+                                class="form-control form-control-sm"
+                                id="execReceivedBy"
+                                placeholder="Full name of the person who received the order">
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group mb-2">
+                                    <label class="small mb-1">
+                                        Date &amp; time received <span class="text-danger">*</span>
+                                    </label>
+                                    <input type="datetime-local"
+                                        class="form-control form-control-sm"
+                                        id="execDateReceived">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group mb-2">
+                                    <label class="small mb-1">
+                                        Tracking number <span class="text-danger">*</span>
+                                    </label>
+                                    <input type="text"
+                                        class="form-control form-control-sm"
+                                        id="execTrackingNo"
+                                        placeholder="e.g. LBC123456789">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group mb-0">
+                            <label class="small mb-1">
+                                Courier / delivery method <span class="text-danger">*</span>
+                            </label>
+                            <select class="form-control form-control-sm" id="execCourier">
+                                <option value="">Select courier…</option>
+                                <option value="LBC">LBC</option>
+                                <option value="Ninjavan">Ninjavan</option>
+                                <option value="J&T Express">J&amp;T Express</option>
+                                <option value="2GO">2GO</option>
+                                <option value="PHLPost">PHLPost</option>
+                                <option value="DHL">DHL</option>
+                                <option value="Personal Service">Personal service</option>
+                                <option value="Sheriff">Sheriff / court process server</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-dismiss="modal">
@@ -1368,6 +1427,7 @@ td.actions-cell.expanded {
         </div>
     </div>
 </div>
+
 
 @endsection
 @push('scripts')
@@ -2774,6 +2834,17 @@ loadTab0Data();
 
         // ── EXECUTE BLOCK MUST BE FIRST ────────────────────────────
         if (isExecute) {
+            // Validate delivery fields first
+            const receivedBy   = $('#execReceivedBy').val().trim();
+            const dateReceived = $('#execDateReceived').val().trim();
+            const trackingNo   = $('#execTrackingNo').val().trim();
+            const courier      = $('#execCourier').val().trim();
+
+            if (!receivedBy || !dateReceived || !trackingNo || !courier) {
+                showAlert('error', 'Please fill in all delivery receipt fields before confirming.');
+                return;
+            }
+
             button.prop('disabled', true);
             button.html('<i class="fas fa-spinner fa-spin"></i> Forwarding...');
 
@@ -2782,6 +2853,10 @@ loadTab0Data();
                 method: 'POST',
                 data: {
                     _token: '{{ csrf_token() }}',
+                    exec_received_by:   receivedBy,
+                    exec_date_received: dateReceived,
+                    exec_tracking_no:   trackingNo,
+                    exec_courier:       courier,
                     notes: 'Case forwarded for execution.'
                 },
                 success: function(response) {
@@ -3027,7 +3102,7 @@ $(document).on('click', '.dispose-case-btn', function(e) {
     $('#stageProgressionModal').modal('show');
 });
 
-// Execute case handler (Case Management → MALSU with For Execution tag)
+// Execute case handler
 $(document).on('click', '.execute-case-btn', function(e) {
     e.preventDefault();
     const button = $(this);
@@ -3052,15 +3127,15 @@ $(document).on('click', '.execute-case-btn', function(e) {
     $('#modalHeader')
         .removeClass('bg-success bg-warning')
         .addClass('bg-dark text-white');
-    $('#modalTitleText').text('Forward for Execution');
+    $('#modalTitleText').text('Forward for execution');
     $('#modalAlertBox')
         .removeClass('alert-success alert-warning')
         .addClass('alert-dark');
 
     $('#stageProgressionMessage').html(`
-        <strong>Forward this case to MALSU for Execution?</strong><br>
+        <strong>Forward this case to MALSU for execution?</strong><br>
         <small class="text-muted">The case will be transferred to MALSU and tagged
-        <span class="badge badge-danger"><i class="fas fa-bolt mr-1"></i>FOR EXECUTION</span>.</small>
+        <span class="badge badge-dark"><i class="fas fa-bolt mr-1"></i>FOR EXECUTION</span>.</small>
     `);
     $('#stageCaseInfo').text(`${caseNo} - ${establishment}`);
     $('#stageCurrentStage').text(currentStage);
@@ -3068,14 +3143,34 @@ $(document).on('click', '.execute-case-btn', function(e) {
         '<span class="badge badge-dark"><i class="fas fa-bolt mr-1"></i>Forwarded to MALSU — For Execution</span>'
     );
 
+    // Clear delivery fields from any previous open
+    $('#execReceivedBy').val('');
+    $('#execDateReceived').val('');
+    $('#execTrackingNo').val('');
+    $('#execCourier').val('');
+
     $('#confirmStageBtn')
         .removeClass('btn-success btn-warning')
         .addClass('btn-dark')
-        .html('<i class="fas fa-bolt mr-2"></i>Confirm Execute');
+        .html('<i class="fas fa-bolt mr-2"></i>Confirm execute');
 
     $('#stageProgressionModal').modal('show');
 });
 
+$('#stageProgressionModal').on('show.bs.modal', function() {
+    if (caseToProgress && caseToProgress.action === 'execute') {
+        $('#executeDeliverySection').show();
+    } else {
+        $('#executeDeliverySection').hide();
+    }
+});
+
+$('#stageProgressionModal').on('hidden.bs.modal', function() {
+    $('#execReceivedBy').val('');
+    $('#execDateReceived').val('');
+    $('#execTrackingNo').val('');
+    $('#execCourier').val('');
+});
 
 // Fix aria-hidden warnings on modals by managing focus properly
 $(document).on('hide.bs.modal', '#deleteCaseModal, #stageProgressionModal', function() {
