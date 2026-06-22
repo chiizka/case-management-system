@@ -61,7 +61,7 @@ Route::middleware('auth')->group(function () {
     });
 
     // Cases - Admin, All Province Roles, MALSU, Case Management, Records
-    Route::middleware('role:admin,province_albay,province_camarines_sur,province_camarines_norte,province_catanduanes,province_masbate,province_sorsogon,malsu,case_management,records')->group(function () {
+    Route::middleware('role:admin,province_albay,province_camarines_sur,province_camarines_norte,province_catanduanes,province_masbate,province_sorsogon,malsu,case_management,records,sheriff_albay,sheriff_camarines_sur,sheriff_camarines_norte,sheriff_catanduanes,sheriff_masbate,sheriff_sorsogon')->group(function () {
 
         // Specific routes BEFORE Route::resource
         Route::post('/case/import-csv', [CasesController::class, 'importCsv'])->name('case.import-csv');
