@@ -297,7 +297,7 @@
         <div class="tab-content" id="documentTabsContent">
             
             <!-- Pending Receipts Tab -->
-            <div class="tab-pane fade show active" id="pending" role="tabpanel">
+            <div class="tab-pane fade" id="pending" role="tabpanel">
                 <div class="card shadow mb-4">
                     <div class="card-header py-3 d-flex justify-content-between align-items-center">
                         <h6 class="m-0 font-weight-bold text-warning">
@@ -386,7 +386,7 @@
             </div>
 
             <!-- My Documents Tab -->
-            <div class="tab-pane fade" id="myDocs" role="tabpanel">
+            <div class="tab-pane fade show active" id="myDocs" role="tabpanel">
                 <div class="card shadow mb-4">
                     <div class="card-header py-3 d-flex justify-content-between align-items-center">
                         <h6 class="m-0 font-weight-bold text-primary">My Received Documents</h6>
