@@ -1826,6 +1826,39 @@ public function loadMalsuTab(Request $request)
     }
 }
 
+public function loadSheriffTab(Request $request)
+{
+    if (!Auth::user()->isSheriff() && !Auth::user()->isAdmin()) {
+        return response()->json(['success' => false, 'error' => 'Access denied.'], 403);
+    }
+
+    try {
+        $user = Auth::user();
+        $provinceName = $user->getSheriffProvinceName();
+
+        $cases = CaseFile::whereNotIn('overall_status', ['Completed', 'Disposed', 'Appealed'])
+            ->whereHas('documentTracking', function ($q) use ($user) {
+                $q->where('current_role', $user->role)
+                ->whereIn('status', ['Received']);
+            })
+            ->with(['documentTracking', 'malsu'])
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        $html = view('frontend.partials.malsu_tab', ['cases' => $cases])->render();
+
+        return response()->json([
+            'success' => true,
+            'html'    => $html,
+            'count'   => $cases->count()
+        ]);
+
+    } catch (\Exception $e) {
+        Log::error('Error loading Sheriff tab: ' . $e->getMessage());
+        return response()->json(['success' => false, 'error' => 'Failed to load data.'], 500);
+    }
+}
+
 public function loadTab0()
 {
     try {

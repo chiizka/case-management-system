@@ -83,12 +83,13 @@ Route::middleware('auth')->group(function () {
         Route::post('/case/{id}/execute', [CasesController::class, 'executeCase'])->name('case.execute');
         Route::get('/case/load-province-tab/{province}', [CasesController::class, 'loadProvinceTab'])
         ->name('case.loadProvinceTab');
+        Route::get('/case/load-sheriff-tab', [CasesController::class, 'loadSheriffTab'])->name('case.loadSheriffTab');
         // Resource route LAST
         Route::resource('case', CasesController::class);
 
         Route::get('/archive', [ArchivedController::class, 'index'])->name('archive.index');
 
-        Route::post('/archive/{caseId}/appeal', [ArchivedController::class, 'storeAppeal'])
+        Route::post('/archive/{cxaseId}/appeal', [ArchivedController::class, 'storeAppeal'])
             ->name('archive.appeal')
             ->middleware('role:admin,malsu,case_management');
 

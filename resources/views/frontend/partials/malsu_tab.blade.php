@@ -28,7 +28,7 @@
     <div>
         <span class="badge badge-info" style="font-size: 0.85rem; padding: 0.45rem 0.8rem;">
             <i class="fas fa-folder-open mr-1"></i>
-            {{ $cases->count() }} case(s) currently with MALSU
+            {{ $cases->count() }} case(s) currently with {{ Auth::user()->isSheriff() ? Auth::user()->getSheriffProvinceName() . ' Sheriff' : 'MALSU' }}
         </span>
     </div>
 </div>
@@ -224,7 +224,7 @@
                 <tr>
                     <td colspan="22" class="text-center text-muted py-4">
                         <i class="fas fa-inbox fa-2x mb-2 d-block"></i>
-                        No cases are currently assigned to MALSU.
+                        No cases are currently assigned.
                     </td>
                 </tr>
             @endif

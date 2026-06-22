@@ -450,8 +450,17 @@ td.actions-cell.expanded {
     <!-- Begin Page Content -->
     <div class="container-fluid">
 
-    @if(Auth::user()->isCaseManagement() || Auth::user()->isMalsu() || Auth::user()->isAdmin())
+    @if(Auth::user()->isSheriff() || Auth::user()->isCaseManagement() || Auth::user()->isMalsu() || Auth::user()->isAdmin())
         <ul class="nav nav-tabs mb-0" id="dataTableTabs" role="tablist">
+
+            @if(Auth::user()->isSheriff())
+            <li class="nav-item">
+                <a class="nav-link active" id="tabSheriff-tab" data-toggle="tab" href="#tabSheriff"
+                role="tab" aria-controls="tabSheriff" aria-selected="true">
+                    <i class="fas fa-briefcase mr-1"></i> My Cases
+                </a>
+            </li>
+            @endif
 
             @if(Auth::user()->isCaseManagement())
             <li class="nav-item">
@@ -462,7 +471,7 @@ td.actions-cell.expanded {
             </li>
             @endif
 
-            @if(!Auth::user()->isMalsu())
+            @if(!Auth::user()->isMalsu() && !Auth::user()->isSheriff())
             <li class="nav-item">
                 <a class="nav-link active" 
                 id="tab0-tab" data-toggle="tab" href="#tab0"
@@ -531,7 +540,7 @@ td.actions-cell.expanded {
         <div class="tab-content mt-1" id="dataTableTabsContent">
     
     <!-- Tab 0: All Active Cases (Enhanced with corrected columns) -->
-    @if(!Auth::user()->isMalsu())
+    @if(!Auth::user()->isMalsu() && !Auth::user()->isSheriff())
     <div class="tab-pane fade show active" id="tab0" role="tabpanel" aria-labelledby="tab0-tab">
         <div class="card shadow mb-4">
             <div class="card-body">
@@ -746,7 +755,7 @@ td.actions-cell.expanded {
             </div>
         </div>
     </div>
-
+ 
             @if(Auth::user()->isCaseManagement() || Auth::user()->isAdmin())
                 <!-- Tab CM: Case Management's Cases (LAZY LOAD) -->
                 <div class="tab-pane fade" id="tabCM" role="tabpanel" aria-labelledby="tabCM-tab">
@@ -793,6 +802,21 @@ td.actions-cell.expanded {
                 </div>
             </div>
             @endforeach
+            @endif
+
+            @if(Auth::user()->isSheriff())
+            <div class="tab-pane fade show active" id="tabSheriff" role="tabpanel" aria-labelledby="tabSheriff-tab">
+                <div class="card shadow mb-4">
+                    <div class="card-body">
+                        <div class="tab-loading text-center" style="padding: 3rem;">
+                            <div class="spinner-border text-primary mb-3" role="status" style="width: 3rem; height: 3rem;">
+                                <span class="sr-only">Loading...</span>
+                            </div>
+                            <p class="text-muted">Loading your assigned cases...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
             @endif
 
             @if(Auth::user()->isMalsu() || Auth::user()->isAdmin())
@@ -1359,6 +1383,7 @@ td.actions-cell.expanded {
 <script>
 let caseToProgress = null;
 let caseToDelete = null;
+let sheriffTabLoaded = false;
 $(document).ready(function() {
     console.log('jQuery version:', $.fn.jquery);
     console.log('DataTables available:', typeof $.fn.DataTable !== 'undefined');
@@ -2072,6 +2097,99 @@ $(document).on('click', function(e) {
         });
     });
 
+    $('a[href="#tabSheriff"]').on('shown.bs.tab', function () {
+    if (sheriffTabLoaded) {
+        if ($.fn.DataTable.isDataTable('#dataTableMALSU')) {
+            $('#dataTableMALSU').DataTable().columns.adjust().draw(false);
+        }
+        return;
+    }
+
+    const $cardBody = $('#tabSheriff .card-body');
+
+    $cardBody.html(`
+        <div class="tab-loading text-center" style="padding: 3rem;">
+            <div class="spinner-border text-primary mb-3" role="status" style="width: 3rem; height: 3rem;">
+                <span class="sr-only">Loading...</span>
+            </div>
+            <p class="text-muted">Loading your assigned cases...</p>
+        </div>
+    `);
+
+    $.ajax({
+        url: '/case/load-sheriff-tab',
+        method: 'GET',
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'),
+            'Accept': 'application/json'
+        },
+        success: function (response) {
+            if (response.success) {
+                $cardBody.html(response.html);
+                sheriffTabLoaded = true;
+
+                setTimeout(function () {
+                    if ($.fn.DataTable.isDataTable('#dataTableMALSU')) {
+                        $('#dataTableMALSU').DataTable().destroy();
+                    }
+
+                    $('#dataTableMALSU tbody tr td[colspan]').closest('tr').remove();
+
+                    tables['#dataTableMALSU'] = $('#dataTableMALSU').DataTable({
+                        pageLength: 10,
+                        lengthChange: false,
+                        paging: true,
+                        searching: true,
+                        info: true,
+                        dom: 'tip',
+                        columnDefs: [{ orderable: false, targets: 0 }],
+                        scrollX: true,
+                        scrollY: (window.innerHeight - 280) + 'px',
+                        scrollCollapse: true,
+                        language: {
+                            emptyTable: 'No cases are currently assigned to you.'
+                        },
+                        drawCallback: function() {
+                            $('.sticky-table thead th, #dataTableCM thead th, #dataTableMALSU thead th').css({
+                                'position': 'sticky',
+                                'top': 0,
+                                'z-index': 12
+                            });
+                            $('.sticky-table thead th:nth-child(-n+5), #dataTableCM thead th:nth-child(-n+5), #dataTableMALSU thead th:nth-child(-n+5)').css({
+                                'z-index': 13
+                            });
+                        }
+                    });
+
+                    $('#customSearchMALSU').off('keyup input change').on('keyup input change', function () {
+                        tables['#dataTableMALSU'].search(this.value).draw();
+                    });
+
+                    setTimeout(function() { tables['#dataTableMALSU'].columns.adjust().draw(false); }, 50);
+                    setTimeout(function() { tables['#dataTableMALSU'].columns.adjust().draw(false); }, 300);
+                    setTimeout(function() { tables['#dataTableMALSU'].columns.adjust().draw(false); }, 600);
+                    setTimeout(function() {
+                        tables['#dataTableMALSU'].columns.adjust().draw(false);
+                        if (tables['#dataTable0']) {
+                            tables['#dataTable0'].draw(false);
+                        }
+                    }, 200);
+
+                }, 100);
+            } else {
+                $cardBody.html(`<div class="alert alert-danger">Failed to load cases. Please try again.</div>`);
+            }
+        },
+        error: function (xhr) {
+            $cardBody.html(`
+                <div class="alert alert-danger">
+                    <strong>Error:</strong> ${xhr.responseJSON?.error || 'Failed to load data.'}
+                </div>
+            `);
+        }
+    });
+});
+
     $('a[href="#tabMALSU"]').on('shown.bs.tab', function () {
         if (malsuTabLoaded) {
             if ($.fn.DataTable.isDataTable('#dataTableMALSU')) {
@@ -2511,7 +2629,7 @@ loadTab0Data();
         var tabNumber = tabId.replace('tab', '');
 
         // ── Skip the CM tab — it has its own dedicated handler ──
-        if (tabId === 'tabCM' || tabId === 'tabMALSU' || tabId.startsWith('tabProv-')) return;
+        if (tabId === 'tabCM' || tabId === 'tabMALSU' || tabId === 'tabSheriff' || tabId.startsWith('tabProv-')) return;
 
         console.log('Tab switched to:', target);
         
@@ -3027,6 +3145,10 @@ $(document).ready(function() {
 
     if ($('#tabMALSU').hasClass('active')) {
     $('a[href="#tabMALSU"]').trigger('shown.bs.tab');
+    }
+
+    if ($('#tabSheriff').hasClass('active')) {
+    $('a[href="#tabSheriff"]').trigger('shown.bs.tab');
     }
 
     // Double-click to edit cell
