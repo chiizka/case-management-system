@@ -2825,16 +2825,15 @@ loadTab0Data();
         const button = $(this);
         const isForceComplete = caseToProgress.action === 'complete';
         const isDispose       = caseToProgress.action === 'dispose';
-        const isExecute       = caseToProgress.action === 'execute';   // ← ADD
+        const isExecute       = caseToProgress.action === 'execute';
             
         console.log('Is Force Complete:', isForceComplete);
         console.log('Is Dispose:', isDispose);
-        console.log('Is Execute:', isExecute);                         // ← ADD
+        console.log('Is Execute:', isExecute);
         console.log('Button classes:', caseToProgress.button.attr('class'));
 
         // ── EXECUTE BLOCK MUST BE FIRST ────────────────────────────
         if (isExecute) {
-            // Validate delivery fields first
             const receivedBy   = $('#execReceivedBy').val().trim();
             const dateReceived = $('#execDateReceived').val().trim();
             const trackingNo   = $('#execTrackingNo').val().trim();
@@ -2852,12 +2851,12 @@ loadTab0Data();
                 url: `/case/${caseToProgress.id}/execute`,
                 method: 'POST',
                 data: {
-                    _token: '{{ csrf_token() }}',
+                    _token:             '{{ csrf_token() }}',
                     exec_received_by:   receivedBy,
                     exec_date_received: dateReceived,
                     exec_tracking_no:   trackingNo,
                     exec_courier:       courier,
-                    notes: 'Case forwarded for execution.'
+                    notes:              'Case forwarded for execution.'
                 },
                 success: function(response) {
                     $('#stageProgressionModal').modal('hide');
@@ -2879,10 +2878,10 @@ loadTab0Data();
                         .html('<i class="fas fa-check mr-2"></i>Confirm');
                 }
             });
-            return; // ← stops here, never reaches /archive
+            return; // stops here, never reaches /archive
         }
         // ── END EXECUTE BLOCK ──────────────────────────────────────
-        
+
         button.prop('disabled', true);
         
         if (isDispose) {
@@ -2892,9 +2891,9 @@ loadTab0Data();
         }
         
         const ajaxData = {
-            _token: '{{ csrf_token() }}',
+            _token:         '{{ csrf_token() }}',
             force_complete: isForceComplete,
-            dispose: isDispose
+            dispose:        isDispose
         };
         
         console.log('Sending AJAX with data:', ajaxData);
@@ -3102,7 +3101,6 @@ $(document).on('click', '.dispose-case-btn', function(e) {
     $('#stageProgressionModal').modal('show');
 });
 
-// Execute case handler
 $(document).on('click', '.execute-case-btn', function(e) {
     e.preventDefault();
     const button = $(this);
@@ -3113,10 +3111,6 @@ $(document).on('click', '.execute-case-btn', function(e) {
         return;
     }
 
-    const caseNo        = button.data('case-no') || 'N/A';
-    const establishment = button.data('establishment') || 'N/A';
-    const currentStage  = button.data('stage') || 'Unknown';
-
     caseToProgress = {
         id:     caseId,
         button: button,
@@ -3124,43 +3118,35 @@ $(document).on('click', '.execute-case-btn', function(e) {
     };
 
     // Style modal for Execute
-    $('#modalHeader')
-        .removeClass('bg-success bg-warning')
-        .addClass('bg-dark text-white');
-    $('#modalTitleText').text('Forward for execution');
-    $('#modalAlertBox')
-        .removeClass('alert-success alert-warning')
-        .addClass('alert-dark');
+    $('#modalHeader').removeClass('bg-success bg-warning').addClass('bg-primary text-white');
+    $('#modalTitleText').text('Forward for Execution');
+    $('#modalAlertBox').removeClass('alert-success alert-warning').addClass('alert-info');
 
     $('#stageProgressionMessage').html(`
         <strong>Forward this case to MALSU for execution?</strong><br>
-        <small class="text-muted">The case will be transferred to MALSU and tagged
-        <span class="badge badge-dark"><i class="fas fa-bolt mr-1"></i>FOR EXECUTION</span>.</small>
+        <small class="text-muted">The case will remain Active. MALSU will be notified to receive it.</small>
     `);
-    $('#stageCaseInfo').text(`${caseNo} - ${establishment}`);
-    $('#stageCurrentStage').text(currentStage);
-    $('#stageNextStage').html(
-        '<span class="badge badge-dark"><i class="fas fa-bolt mr-1"></i>Forwarded to MALSU — For Execution</span>'
-    );
-
-    // Clear delivery fields from any previous open
-    $('#execReceivedBy').val('');
-    $('#execDateReceived').val('');
-    $('#execTrackingNo').val('');
-    $('#execCourier').val('');
+    $('#stageCaseInfo').text(`${button.data('case-no')} - ${button.data('establishment')}`);
+    $('#stageCurrentStage').text(button.data('stage'));
+    $('#stageNextStage').html('<span class="badge badge-primary"><i class="fas fa-gavel mr-1"></i>Forwarded to MALSU</span>');
 
     $('#confirmStageBtn')
         .removeClass('btn-success btn-warning')
-        .addClass('btn-dark')
-        .html('<i class="fas fa-bolt mr-2"></i>Confirm execute');
+        .addClass('btn-primary')
+        .html('<i class="fas fa-paper-plane mr-2"></i>Forward to MALSU');
+
+    // Show the delivery receipt fields
+    $('#executeDeliverySection').show();
+
+    // Clear previous values
+    $('#execReceivedBy, #execDateReceived, #execTrackingNo').val('');
+    $('#execCourier').val('');
 
     $('#stageProgressionModal').modal('show');
 });
 
 $('#stageProgressionModal').on('show.bs.modal', function() {
-    if (caseToProgress && caseToProgress.action === 'execute') {
-        $('#executeDeliverySection').show();
-    } else {
+    if (!caseToProgress || caseToProgress.action !== 'execute') {
         $('#executeDeliverySection').hide();
     }
 });

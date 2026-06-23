@@ -22,6 +22,7 @@ use Illuminate\Support\Facades\Storage;
 use PhpOffice\PhpSpreadsheet\Writer\Csv as CsvWriter;
 use App\Models\User;
 use App\Models\DocumentTrackingHistory;
+use App\Models\CaseExecution;
 
 class CasesController extends Controller
 {
@@ -1895,59 +1896,73 @@ public function loadTab0()
     }
 }
 
-/**
- * Execute: transfer case to MALSU with "For Execution" tag
- */
 public function executeCase(Request $request, $id)
 {
+    $request->validate([
+        'exec_received_by'   => 'required|string|max:255',
+        'exec_date_received' => 'required|date',
+        'exec_tracking_no'   => 'required|string|max:255',
+        'exec_courier'       => 'required|string|max:255',
+    ]);
+
     DB::beginTransaction();
     try {
         $case = CaseFile::findOrFail($id);
         $user = Auth::user();
 
+        // Archive current tracking to history, then point to MALSU
         $tracking = DocumentTracking::where('case_id', $case->id)->first();
 
-        if (!$tracking) {
-            return response()->json([
-                'success' => false,
-                'message' => 'No document tracking record found for this case.'
-            ], 404);
+        if ($tracking) {
+            // Save old cycle to history
+            \App\Models\DocumentTrackingHistory::create([
+                'document_tracking_id'   => $tracking->id,
+                'from_role'              => $tracking->current_role,
+                'to_role'                => $tracking->current_role,
+                'transferred_by_user_id' => $tracking->transferred_by_user_id,
+                'transferred_at'         => $tracking->transferred_at,
+                'received_by_user_id'    => $tracking->received_by_user_id,
+                'received_at'            => $tracking->received_at,
+                'notes'                  => $tracking->transfer_notes,
+            ]);
+
+            $tracking->update([
+                'current_role'           => 'malsu',
+                'status'                 => 'Pending Receipt',
+                'transferred_by_user_id' => $user->id,
+                'transferred_at'         => now(),
+                'received_by_user_id'    => null,
+                'received_at'            => null,
+                'transfer_notes'         => "Forwarded for execution via {$request->exec_courier} (Tracking: {$request->exec_tracking_no}). Received by: {$request->exec_received_by} on {$request->exec_date_received}.",
+                'case_tag'               => 'For Execution',
+            ]);
+        } else {
+            // No tracking record yet — create one pointing to MALSU
+            DocumentTracking::create([
+                'case_id'                => $case->id,
+                'current_role'           => 'malsu',
+                'status'                 => 'Pending Receipt',
+                'transferred_by_user_id' => $user->id,
+                'transferred_at'         => now(),
+                'transfer_notes'         => "Forwarded for execution via {$request->exec_courier} (Tracking: {$request->exec_tracking_no}). Received by: {$request->exec_received_by} on {$request->exec_date_received}.",
+                'case_tag'               => 'for execution',
+            ]);
         }
 
-        // Save current tracking state to history
-        DocumentTrackingHistory::create([
-            'document_tracking_id'   => $tracking->id,
-            'from_role'              => $tracking->current_role,
-            'to_role'                => $tracking->current_role,
-            'transferred_by_user_id' => $tracking->transferred_by_user_id,
-            'transferred_at'         => $tracking->transferred_at,
-            'received_by_user_id'    => $tracking->received_by_user_id,
-            'received_at'            => $tracking->received_at,
-            'notes'                  => $tracking->transfer_notes,
-        ]);
-
-        // Transfer to MALSU with "For Execution" tag
-        $tracking->update([
-            'current_role'           => User::ROLE_MALSU,
-            'status'                 => 'Pending Receipt',
-            'transferred_by_user_id' => $user->id,
-            'transferred_at'         => now(),
-            'received_by_user_id'    => null,
-            'received_at'            => null,
-            'transfer_notes'         => $request->input('notes', 'Case forwarded for execution.'),
-            'case_tag'               => 'For Execution',
-        ]);
+        // ✅ Do NOT change overall_status or current_stage
+        // Case stays Active at whatever stage it's currently in
 
         ActivityLogger::logAction(
-            'TRANSFER',
+            'EXECUTE',
             'Case',
             $case->inspection_id,
-            "Case forwarded to MALSU for execution by {$user->fname} {$user->lname}",
+            "Case forwarded for execution to MALSU via {$request->exec_courier} (tracking: {$request->exec_tracking_no})",
             [
                 'establishment' => $case->establishment_name,
-                'from_role'     => 'case_management',
-                'to_role'       => 'malsu',
-                'case_tag'      => 'For Execution',
+                'received_by'   => $request->exec_received_by,
+                'date_received' => $request->exec_date_received,
+                'tracking_no'   => $request->exec_tracking_no,
+                'courier'       => $request->exec_courier,
             ]
         );
 
@@ -1955,15 +1970,16 @@ public function executeCase(Request $request, $id)
 
         return response()->json([
             'success' => true,
-            'message' => 'Case successfully forwarded to MALSU for execution.'
+            'message' => 'Case forwarded to MALSU for execution successfully.'
         ]);
 
     } catch (\Exception $e) {
         DB::rollBack();
         Log::error('Execute case failed: ' . $e->getMessage());
+
         return response()->json([
             'success' => false,
-            'message' => 'Failed to execute case: ' . $e->getMessage()
+            'message' => 'Failed to forward case: ' . $e->getMessage()
         ], 500);
     }
 }
@@ -2025,5 +2041,6 @@ public function loadProvinceTab(Request $request, $province)
         return response()->json(['success' => false, 'error' => 'Failed to load data.'], 500);
     }
 }
+
 
 }

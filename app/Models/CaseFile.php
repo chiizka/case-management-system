@@ -234,4 +234,13 @@ class CaseFile extends Model
     {
         return $this->hasOne(\App\Models\Malsu::class, 'case_id');
     }
+    public function executions()
+    {
+        return $this->hasMany(CaseExecution::class, 'case_id');
+    }
+
+    public function latestExecution()
+    {
+        return $this->hasOne(CaseExecution::class, 'case_id')->latestOfMany();
+    }
 }
