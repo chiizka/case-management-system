@@ -2454,12 +2454,18 @@ $(document).on('click', function(e) {
                                     emptyTable: 'No cases are currently assigned to this province.'
                                 },
                                 drawCallback: function() {
-                                    $('#' + tableId + ' thead th').css({
+                                    $('.sticky-table thead th, #dataTableCM thead th, #dataTableMALSU thead th, ' +
+                                    '#dataTableSheriff-albay thead th, #dataTableSheriff-camarines_sur thead th, ' +
+                                    '#dataTableSheriff-camarines_norte thead th, #dataTableSheriff-catanduanes thead th, ' +
+                                    '#dataTableSheriff-masbate thead th, #dataTableSheriff-sorsogon thead th').css({
                                         'position': 'sticky',
                                         'top': 0,
                                         'z-index': 12
                                     });
-                                    $('#' + tableId + ' thead th:nth-child(-n+5)').css({
+                                    $('.sticky-table thead th:nth-child(-n+5), #dataTableCM thead th:nth-child(-n+5), #dataTableMALSU thead th:nth-child(-n+5), ' +
+                                    '#dataTableSheriff-albay thead th:nth-child(-n+5), #dataTableSheriff-camarines_sur thead th:nth-child(-n+5), ' +
+                                    '#dataTableSheriff-camarines_norte thead th:nth-child(-n+5), #dataTableSheriff-catanduanes thead th:nth-child(-n+5), ' +
+                                    '#dataTableSheriff-masbate thead th:nth-child(-n+5), #dataTableSheriff-sorsogon thead th:nth-child(-n+5)').css({
                                         'z-index': 13
                                     });
                                 }
@@ -2472,6 +2478,12 @@ $(document).on('click', function(e) {
                             setTimeout(function() { tables['#' + tableId].columns.adjust().draw(false); }, 50);
                             setTimeout(function() { tables['#' + tableId].columns.adjust().draw(false); }, 300);
                             setTimeout(function() { tables['#' + tableId].columns.adjust().draw(false); }, 600);
+                            setTimeout(function() {
+                                tables['#' + tableId].columns.adjust().draw(false);
+                                if (tables['#dataTable0']) {
+                                    tables['#dataTable0'].draw(false);
+                                }
+                            }, 200);
                         }, 100);
                     } else {
                         $cardBody.html(`<div class="alert alert-danger">Failed to load cases. Please try again.</div>`);
