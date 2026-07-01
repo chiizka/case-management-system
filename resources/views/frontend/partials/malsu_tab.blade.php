@@ -3,15 +3,22 @@
     Shows cases currently located at the MALSU role.
 --}}
 
-<div class="alert alert-success alert-dismissible fade" role="alert" id="success-alert-tabMALSU" style="display: none;">
-    <span id="success-message-tabMALSU"></span>
-    <button type="button" class="close" onclick="hideAlert('success-alert-tabMALSU')">
+@php
+    $alertSuffix = $alertSuffix ?? 'MALSU';
+    $tableId     = $tableId ?? 'dataTableMALSU';
+    $searchId    = $searchId ?? 'customSearchMALSU';
+    $badgeLabel  = $badgeLabel ?? (Auth::user()->isSheriff() ? Auth::user()->getSheriffProvinceName() . ' Sheriff' : 'MALSU');
+@endphp
+
+<div class="alert alert-success alert-dismissible fade" role="alert" id="success-alert-tab{{ $alertSuffix }}" style="display: none;">
+    <span id="success-message-tab{{ $alertSuffix }}"></span>
+    <button type="button" class="close" onclick="hideAlert('success-alert-tab{{ $alertSuffix }}')">
         <span aria-hidden="true">&times;</span>
     </button>
 </div>
-<div class="alert alert-danger alert-dismissible fade" role="alert" id="error-alert-tabMALSU" style="display: none;">
-    <span id="error-message-tabMALSU"></span>
-    <button type="button" class="close" onclick="hideAlert('error-alert-tabMALSU')">
+<div class="alert alert-danger alert-dismissible fade" role="alert" id="error-alert-tab{{ $alertSuffix }}" style="display: none;">
+    <span id="error-message-tab{{ $alertSuffix }}"></span>
+    <button type="button" class="close" onclick="hideAlert('error-alert-tab{{ $alertSuffix }}')">
         <span aria-hidden="true">&times;</span>
     </button>
 </div>
@@ -19,23 +26,23 @@
 <div class="d-flex justify-content-between align-items-center mb-3 custom-search-container">
     <div class="d-flex align-items-center">
         <label class="mr-2 mb-0" style="font-size: 0.8rem;">Search:</label>
-        <input type="search"
+            <input type="search"
                class="form-control form-control-sm"
-               id="customSearchMALSU"
-               placeholder="Search cases assigned to MALSU..."
+               id="{{ $searchId }}"
+               placeholder="Search cases..."
                style="width: 260px;">
     </div>
     <div>
         <span class="badge badge-info" style="font-size: 0.85rem; padding: 0.45rem 0.8rem;">
             <i class="fas fa-folder-open mr-1"></i>
-            {{ $cases->count() }} case(s) currently with {{ Auth::user()->isSheriff() ? Auth::user()->getSheriffProvinceName() . ' Sheriff' : 'MALSU' }}
+            {{ $cases->count() }} case(s) currently with {{ $badgeLabel }}
         </span>
     </div>
 </div>
 
 <div class="table-container">
     <table class="table table-bordered compact-table sticky-table cm-table"
-           id="dataTableMALSU"
+           id="{{ $tableId }}"
            width="100%"
            cellspacing="0">
         <thead>

@@ -451,377 +451,365 @@ td.actions-cell.expanded {
     <div class="container-fluid">
 
     @if(Auth::user()->isSheriff() || Auth::user()->isCaseManagement() || Auth::user()->isMalsu() || Auth::user()->isAdmin())
-        <ul class="nav nav-tabs mb-0" id="dataTableTabs" role="tablist">
+            <ul class="nav nav-tabs mb-0" id="dataTableTabs" role="tablist">
 
-            @if(Auth::user()->isSheriff())
-            <li class="nav-item">
-                <a class="nav-link active" id="tabSheriff-tab" data-toggle="tab" href="#tabSheriff"
-                role="tab" aria-controls="tabSheriff" aria-selected="true">
-                    <i class="fas fa-briefcase mr-1"></i> My Cases
-                </a>
-            </li>
-            @endif
+                @if(Auth::user()->isSheriff())
+                <li class="nav-item">
+                    <a class="nav-link active" id="tabSheriff-tab" data-toggle="tab" href="#tabSheriff"
+                    role="tab" aria-controls="tabSheriff" aria-selected="true">
+                        <i class="fas fa-briefcase mr-1"></i> My Cases
+                    </a>
+                </li>
+                @endif
 
-            @if(Auth::user()->isCaseManagement())
-            <li class="nav-item">
-                <a class="nav-link" id="tabCM-tab" data-toggle="tab" href="#tabCM"
-                role="tab" aria-controls="tabCM" aria-selected="false">
-                    <i class="fas fa-briefcase mr-1"></i> My Cases
-                </a>
-            </li>
-            @endif
+                @if(Auth::user()->isCaseManagement())
+                <li class="nav-item">
+                    <a class="nav-link" id="tabCM-tab" data-toggle="tab" href="#tabCM"
+                    role="tab" aria-controls="tabCM" aria-selected="false">
+                        <i class="fas fa-briefcase mr-1"></i> My Cases
+                    </a>
+                </li>
+                @endif
 
-            @if(!Auth::user()->isMalsu() && !Auth::user()->isSheriff())
-            <li class="nav-item">
-                <a class="nav-link active" 
-                id="tab0-tab" data-toggle="tab" href="#tab0"
-                role="tab" aria-controls="tab0" aria-selected="true">
-                    <i class="fas fa-folder-open mr-1"></i> All Active Cases
-                </a>
-            </li>
-            @endif
+                @if(!Auth::user()->isMalsu() && !Auth::user()->isSheriff())
+                <li class="nav-item">
+                    <a class="nav-link active" 
+                    id="tab0-tab" data-toggle="tab" href="#tab0"
+                    role="tab" aria-controls="tab0" aria-selected="true">
+                        <i class="fas fa-folder-open mr-1"></i> All Active Cases
+                    </a>
+                </li>
+                @endif
 
-            @if(Auth::user()->isCaseManagement())
-            @php
-            $provinceTabs = [
-                'albay'          => 'Albay',
-                'camarines_sur'  => 'Cam Sur',
-                'camarines_norte'=> 'Cam Norte',
-                'catanduanes'    => 'Catanduanes',
-                'masbate'        => 'Masbate',
-                'sorsogon'       => 'Sorsogon',
-            ];
-            @endphp
-            @foreach($provinceTabs as $key => $label)
-            <li class="nav-item">
-                <a class="nav-link" id="tabProv-{{ $key }}-tab"
-                data-toggle="tab" href="#tabProv-{{ $key }}"
-                role="tab" aria-controls="tabProv-{{ $key }}" aria-selected="false">
-                    <i class="fas fa-map-marker-alt mr-1"></i> {{ $label }}
-                </a>
-            </li>
-            @endforeach
-            @endif
+                @if(Auth::user()->isCaseManagement())
+                @php
+                $provinceTabs = [
+                    'albay'          => 'Albay',
+                    'camarines_sur'  => 'Cam Sur',
+                    'camarines_norte'=> 'Cam Norte',
+                    'catanduanes'    => 'Catanduanes',
+                    'masbate'        => 'Masbate',
+                    'sorsogon'       => 'Sorsogon',
+                ];
+                @endphp
+                @foreach($provinceTabs as $key => $label)
+                <li class="nav-item">
+                    <a class="nav-link" id="tabProv-{{ $key }}-tab"
+                    data-toggle="tab" href="#tabProv-{{ $key }}"
+                    role="tab" aria-controls="tabProv-{{ $key }}" aria-selected="false">
+                        <i class="fas fa-map-marker-alt mr-1"></i> {{ $label }}
+                    </a>
+                </li>
+                @endforeach
+                @endif
 
-            @if(Auth::user()->isMalsu() || Auth::user()->isAdmin())
-            <li class="nav-item">
-                <a class="nav-link" id="tabMALSU-tab" data-toggle="tab" href="#tabMALSU"
-                role="tab" aria-controls="tabMALSU" aria-selected="false">
-                    <i class="fas fa-briefcase mr-1"></i> My Cases
-                </a>
-            </li>
-            @endif
+                @if(Auth::user()->isMalsu() || Auth::user()->isAdmin())
+                <li class="nav-item">
+                    <a class="nav-link" id="tabMALSU-tab" data-toggle="tab" href="#tabMALSU"
+                    role="tab" aria-controls="tabMALSU" aria-selected="false">
+                        <i class="fas fa-briefcase mr-1"></i> My Cases
+                    </a>
+                </li>
+                @endif
 
-            @if(Auth::user()->isMalsu() || Auth::user()->isAdmin())
-            <li class="nav-item">
-                <a class="nav-link" id="tabSENA-tab" data-toggle="tab" href="#tabSENA"
-                role="tab" aria-controls="tabSENA" aria-selected="false">
-                    <i class="fas fa-gavel mr-1"></i> SENA
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" id="tabResolution-tab" data-toggle="tab" href="#tabResolution"
-                role="tab" aria-controls="tabResolution" aria-selected="false">
-                    <i class="fas fa-check-circle mr-1"></i>For Resolution
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" id="tabAppealed-tab" data-toggle="tab" href="#tabAppealed"
-                role="tab" aria-controls="tabAppealed" aria-selected="false">
-                    <i class="fas fa-balance-scale mr-1"></i> Appealed Cases
-                </a>
-            </li>
-            @endif
+                @if(Auth::user()->isMalsu() || Auth::user()->isAdmin())
+                @php
+                $sheriffProvinceTabs = [
+                    'albay'           => 'Albay',
+                    'camarines_sur'   => 'Cam Sur',
+                    'camarines_norte' => 'Cam Norte',
+                    'catanduanes'     => 'Catanduanes',
+                    'masbate'         => 'Masbate',
+                    'sorsogon'        => 'Sorsogon',
+                ];
+                @endphp
+                @foreach($sheriffProvinceTabs as $key => $label)
+                <li class="nav-item">
+                    <a class="nav-link" id="tabSheriffProv-{{ $key }}-tab"
+                    data-toggle="tab" href="#tabSheriffProv-{{ $key }}"
+                    role="tab" aria-controls="tabSheriffProv-{{ $key }}" aria-selected="false">
+                        <i class="fas fa-user-shield mr-1"></i> {{ $label }} Sheriff
+                    </a>
+                </li>
+                @endforeach
+                @endif
 
-        </ul>
-    @endif
+                @if(Auth::user()->isMalsu() || Auth::user()->isAdmin())
+                <li class="nav-item">
+                    <a class="nav-link" id="tabSENA-tab" data-toggle="tab" href="#tabSENA"
+                    role="tab" aria-controls="tabSENA" aria-selected="false">
+                        <i class="fas fa-gavel mr-1"></i> SENA
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" id="tabResolution-tab" data-toggle="tab" href="#tabResolution"
+                    role="tab" aria-controls="tabResolution" aria-selected="false">
+                        <i class="fas fa-check-circle mr-1"></i>For Resolution
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" id="tabAppealed-tab" data-toggle="tab" href="#tabAppealed"
+                    role="tab" aria-controls="tabAppealed" aria-selected="false">
+                        <i class="fas fa-balance-scale mr-1"></i> Appealed Cases
+                    </a>
+                </li>
+                @endif
 
-        <!-- Tabs Content -->
-        <div class="tab-content mt-1" id="dataTableTabsContent">
-    
-    <!-- Tab 0: All Active Cases (Enhanced with corrected columns) -->
-    @if(!Auth::user()->isMalsu() && !Auth::user()->isSheriff())
-    <div class="tab-pane fade show active" id="tab0" role="tabpanel" aria-labelledby="tab0-tab">
-        <div class="card shadow mb-4">
-            <div class="card-body">
-                <!-- Success/Error alerts for AJAX -->
-                <div class="alert alert-success alert-dismissible fade" role="alert" id="success-alert-tab0" style="display: none;">
-                    <span id="success-message-tab0"></span>
-                    <button type="button" class="close" onclick="hideAlert('success-alert-tab0')">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
-                </div>
-                
-                <div class="alert alert-danger alert-dismissible fade" role="alert" id="error-alert-tab0" style="display: none;">
-                    <span id="error-message-tab0"></span>
-                    <button type="button" class="close" onclick="hideAlert('error-alert-tab0')">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
-                </div>
+            </ul>
+        @endif
 
-                <!-- Search + Buttons Row -->
-                <div class="d-flex justify-content-between align-items-center mb-3 custom-search-container">
-                    <div class="d-flex align-items-center">
-                        <label class="mr-2 mb-0" style="font-size: 0.8rem;">Search:</label>
-                        <input type="search" class="form-control form-control-sm" id="customSearch0" placeholder="Search all active cases..." style="width: 200px;">
-                    </div>
-                    <div>
-                        <!-- NEW: Add this Upload CSV button -->
-                        <button class="btn btn-success btn-sm mr-2" data-toggle="modal" data-target="#uploadCsvModal">
-                            <i class="fas fa-upload"></i> Upload CSV
-                        </button>
-
-                        <button class="btn btn-info btn-sm mr-2" id="exportActiveCasesXlsx">
-                            <i class="fas fa-file-excel"></i> Export Active Cases (XLSX)
-                        </button>
-                        
-                        <button class="btn btn-primary btn-sm" data-toggle="modal" data-target="#addCaseModal" data-mode="add">
-                            + Add Case
+            <!-- Tabs Content -->
+            <div class="tab-content mt-1" id="dataTableTabsContent">
+        
+        <!-- Tab 0: All Active Cases (Enhanced with corrected columns) -->
+        @if(!Auth::user()->isMalsu() && !Auth::user()->isSheriff())
+        <div class="tab-pane fade show active" id="tab0" role="tabpanel" aria-labelledby="tab0-tab">
+            <div class="card shadow mb-4">
+                <div class="card-body">
+                    <!-- Success/Error alerts for AJAX -->
+                    <div class="alert alert-success alert-dismissible fade" role="alert" id="success-alert-tab0" style="display: none;">
+                        <span id="success-message-tab0"></span>
+                        <button type="button" class="close" onclick="hideAlert('success-alert-tab0')">
+                            <span aria-hidden="true">&times;</span>
                         </button>
                     </div>
-                </div>
-                
-                <!-- Table Container -->
-                <div class="table-container" id="tab0-table-container" style="display: none;">
-                    <!-- Loading spinner for Tab 0 -->
-                    <div id="tab0-loading" class="text-center" style="padding: 3rem;">
-                        <div class="spinner-border text-primary mb-3" role="status" style="width: 3rem; height: 3rem;">
-                            <span class="sr-only">Loading...</span>
+                    
+                    <div class="alert alert-danger alert-dismissible fade" role="alert" id="error-alert-tab0" style="display: none;">
+                        <span id="error-message-tab0"></span>
+                        <button type="button" class="close" onclick="hideAlert('error-alert-tab0')">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+
+                    <!-- Search + Buttons Row -->
+                    <div class="d-flex justify-content-between align-items-center mb-3 custom-search-container">
+                        <div class="d-flex align-items-center">
+                            <label class="mr-2 mb-0" style="font-size: 0.8rem;">Search:</label>
+                            <input type="search" class="form-control form-control-sm" id="customSearch0" placeholder="Search all active cases..." style="width: 200px;">
                         </div>
-                        <p class="text-muted">Loading active cases...</p>
-                        <small class="text-muted">This may take a moment for the first load</small>
-                    </div>
-                    <table class="table table-bordered compact-table sticky-table" id="dataTable0" style="min-width: 100%;">
-                        <thead>
-                            <tr>
-                                <th>Actions</th>
-                                {{-- Core Information --}}
-                                <th>No.</th>
-                                <th>Inspection ID</th>
-                                <th>Case No.</th>
-                                <th>Establishment Name</th>
-                                <th>Mode</th>
-                                <th>PO</th>
-                                <th>Type of Industry</th>
-                        
-                                {{-- Inspection Stage --}}
-                                <th>Date of Inspection</th>
-                                <th>Name of Inspector</th>
-                                <th>Authority No.</th>
-                                <th>Date of NR</th>
-                                <th>Lapse 20 Day Correction Period</th>
-                        
-                                {{-- Docketing Stage --}}
-                                <th>PCT for Docketing</th>
-                                <th>Date Scheduled/Docketed</th>
-                                <th>Aging (Docket)</th>
-                                <th>Status (Docket)</th>
-                                <th>Hearing Officer (MIS)</th>
-                        
-                                {{-- Hearing Process Stage --}}
-                                <th>Date of 1st MC (Actual)</th>
-                                <th>1st MC PCT</th>
-                                <th>Status (1st MC)</th>
-                                <th>Date of 2nd/Last MC (Actual)</th>
-                                <th>2nd/Last MC PCT</th>
-                                <th>Status (2nd MC)</th>
-                                <th>Case Folder Forwarded to RO</th>
-                        
-                                {{-- Review & Drafting --}}
-                                <th>PO PCT</th>
-                                <th>Aging (PO PCT)</th>
-                                <th>Status (PO PCT)</th>
-                        
-                                {{-- Orders & Disposition --}}
-                                <th>PCT (96 days from NR)</th>
-                                <th>Status (PCT)</th>
-                                <th>Date Signed (MIS)</th>
-                        
-                                <th>Created At</th>
-                            </tr>
-                        </thead>
-                        <tbody>
+                        <div>
+                            <!-- NEW: Add this Upload CSV button -->
+                            <button class="btn btn-success btn-sm mr-2" data-toggle="modal" data-target="#uploadCsvModal">
+                                <i class="fas fa-upload"></i> Upload CSV
+                            </button>
 
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    </div>
-    @endif
-
-    <!-- Tab 1: Inspection (LAZY LOAD) -->
-    <div class="tab-pane fade" id="tab1" role="tabpanel" aria-labelledby="tab1-tab">
-        <div class="card shadow mb-4">
-            <div class="card-body">
-                <!-- This will be replaced with actual content via AJAX when tab is clicked -->
-                <div class="tab-loading text-center" style="padding: 3rem;">
-                    <div class="spinner-border text-primary mb-3" role="status" style="width: 3rem; height: 3rem;">
-                        <span class="sr-only">Loading...</span>
-                    </div>
-                    <p class="text-muted">Loading inspection data...</p>
-                    <small class="text-muted">This may take a moment for the first load</small>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Tab 2: Docketing (LAZY LOAD) -->
-    <div class="tab-pane fade" id="tab2" role="tabpanel" aria-labelledby="tab2-tab">
-        <div class="card shadow mb-4">
-            <div class="card-body">
-                <div class="tab-loading text-center" style="padding: 3rem;">
-                    <div class="spinner-border text-primary mb-3" role="status" style="width: 3rem; height: 3rem;">
-                        <span class="sr-only">Loading...</span>
-                    </div>
-                    <p class="text-muted">Loading docketing data...</p>
-                    <small class="text-muted">This may take a moment for the first load</small>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Tab 3: Hearing Process (LAZY LOAD) -->
-    <div class="tab-pane fade" id="tab3" role="tabpanel" aria-labelledby="tab3-tab">
-        <div class="card shadow mb-4">
-            <div class="card-body">
-                <div class="tab-loading text-center" style="padding: 3rem;">
-                    <div class="spinner-border text-primary mb-3" role="status" style="width: 3rem; height: 3rem;">
-                        <span class="sr-only">Loading...</span>
-                    </div>
-                    <p class="text-muted">Loading hearing process data...</p>
-                    <small class="text-muted">This may take a moment for the first load</small>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Tab 4: Review & Drafting (LAZY LOAD) -->
-    <div class="tab-pane fade" id="tab4" role="tabpanel" aria-labelledby="tab4-tab">
-        <div class="card shadow mb-4">
-            <div class="card-body">
-                <div class="tab-loading text-center" style="padding: 3rem;">
-                    <div class="spinner-border text-primary mb-3" role="status" style="width: 3rem; height: 3rem;">
-                        <span class="sr-only">Loading...</span>
-                    </div>
-                    <p class="text-muted">Loading review & drafting data...</p>
-                    <small class="text-muted">This may take a moment for the first load</small>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Tab 5: Orders & Disposition (LAZY LOAD) -->
-    <div class="tab-pane fade" id="tab5" role="tabpanel" aria-labelledby="tab5-tab">
-        <div class="card shadow mb-4">
-            <div class="card-body">
-                <div class="tab-loading text-center" style="padding: 3rem;">
-                    <div class="spinner-border text-primary mb-3" role="status" style="width: 3rem; height: 3rem;">
-                        <span class="sr-only">Loading...</span>
-                    </div>
-                    <p class="text-muted">Loading orders & disposition data...</p>
-                    <small class="text-muted">This may take a moment for the first load</small>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Tab 6: Compliance & Awards (LAZY LOAD) -->
-    <div class="tab-pane fade" id="tab6" role="tabpanel" aria-labelledby="tab6-tab">
-        <div class="card shadow mb-4">
-            <div class="card-body">
-                <div class="tab-loading text-center" style="padding: 3rem;">
-                    <div class="spinner-border text-primary mb-3" role="status" style="width: 3rem; height: 3rem;">
-                        <span class="sr-only">Loading...</span>
-                    </div>
-                    <p class="text-muted">Loading compliance & awards data...</p>
-                    <small class="text-muted">This may take a moment for the first load</small>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Tab 7: Appeals & Resolution (LAZY LOAD) -->
-    <div class="tab-pane fade" id="tab7" role="tabpanel" aria-labelledby="tab7-tab">
-        <div class="card shadow mb-4">
-            <div class="card-body">
-                <div class="tab-loading text-center" style="padding: 3rem;">
-                    <div class="spinner-border text-primary mb-3" role="status" style="width: 3rem; height: 3rem;">
-                        <span class="sr-only">Loading...</span>
-                    </div>
-                    <p class="text-muted">Loading appeals & resolution data...</p>
-                    <small class="text-muted">This may take a moment for the first load</small>
-                </div>
-            </div>
-        </div>
-    </div>
- 
-            @if(Auth::user()->isCaseManagement() || Auth::user()->isAdmin())
-                <!-- Tab CM: Case Management's Cases (LAZY LOAD) -->
-                <div class="tab-pane fade" id="tabCM" role="tabpanel" aria-labelledby="tabCM-tab">
-                    <div class="card shadow mb-4">
-                        <div class="card-body">
-                            <div class="tab-loading text-center" style="padding: 3rem;">
-                                <div class="spinner-border text-primary mb-3" role="status"
-                                     style="width: 3rem; height: 3rem;">
-                                    <span class="sr-only">Loading...</span>
-                                </div>
-                                <p class="text-muted">Loading cases assigned to Case Management...</p>
-                                <small class="text-muted">This may take a moment for the first load</small>
-                            </div>
+                            <button class="btn btn-info btn-sm mr-2" id="exportActiveCasesXlsx">
+                                <i class="fas fa-file-excel"></i> Export Active Cases (XLSX)
+                            </button>
+                            
+                            <button class="btn btn-primary btn-sm" data-toggle="modal" data-target="#addCaseModal" data-mode="add">
+                                + Add Case
+                            </button>
                         </div>
                     </div>
-                </div>
-            @endif
-
-            @if(Auth::user()->isCaseManagement())
-            @foreach(['albay','camarines_sur','camarines_norte','catanduanes','masbate','sorsogon'] as $provKey)
-            @php
-            $provLabels = [
-                'albay'          => 'Albay',
-                'camarines_sur'  => 'Camarines Sur',
-                'camarines_norte'=> 'Camarines Norte',
-                'catanduanes'    => 'Catanduanes',
-                'masbate'        => 'Masbate',
-                'sorsogon'       => 'Sorsogon',
-            ];
-            @endphp
-            <div class="tab-pane fade" id="tabProv-{{ $provKey }}"
-                role="tabpanel" aria-labelledby="tabProv-{{ $provKey }}-tab">
-                <div class="card shadow mb-4">
-                    <div class="card-body">
-                        <div class="tab-loading text-center" style="padding: 3rem;">
-                            <div class="spinner-border text-primary mb-3" role="status"
-                                style="width: 3rem; height: 3rem;">
-                                <span class="sr-only">Loading...</span>
-                            </div>
-                            <p class="text-muted">Loading {{ $provLabels[$provKey] }} cases...</p>
-                            <small class="text-muted">This may take a moment for the first load</small>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            @endforeach
-            @endif
-
-            @if(Auth::user()->isSheriff())
-            <div class="tab-pane fade show active" id="tabSheriff" role="tabpanel" aria-labelledby="tabSheriff-tab">
-                <div class="card shadow mb-4">
-                    <div class="card-body">
-                        <div class="tab-loading text-center" style="padding: 3rem;">
+                    
+                    <!-- Table Container -->
+                    <div class="table-container" id="tab0-table-container" style="display: none;">
+                        <!-- Loading spinner for Tab 0 -->
+                        <div id="tab0-loading" class="text-center" style="padding: 3rem;">
                             <div class="spinner-border text-primary mb-3" role="status" style="width: 3rem; height: 3rem;">
                                 <span class="sr-only">Loading...</span>
                             </div>
-                            <p class="text-muted">Loading your assigned cases...</p>
+                            <p class="text-muted">Loading active cases...</p>
+                            <small class="text-muted">This may take a moment for the first load</small>
                         </div>
+                        <table class="table table-bordered compact-table sticky-table" id="dataTable0" style="min-width: 100%;">
+                            <thead>
+                                <tr>
+                                    <th>Actions</th>
+                                    {{-- Core Information --}}
+                                    <th>No.</th>
+                                    <th>Inspection ID</th>
+                                    <th>Case No.</th>
+                                    <th>Establishment Name</th>
+                                    <th>Mode</th>
+                                    <th>PO</th>
+                                    <th>Type of Industry</th>
+                            
+                                    {{-- Inspection Stage --}}
+                                    <th>Date of Inspection</th>
+                                    <th>Name of Inspector</th>
+                                    <th>Authority No.</th>
+                                    <th>Date of NR</th>
+                                    <th>Lapse 20 Day Correction Period</th>
+                            
+                                    {{-- Docketing Stage --}}
+                                    <th>PCT for Docketing</th>
+                                    <th>Date Scheduled/Docketed</th>
+                                    <th>Aging (Docket)</th>
+                                    <th>Status (Docket)</th>
+                                    <th>Hearing Officer (MIS)</th>
+                            
+                                    {{-- Hearing Process Stage --}}
+                                    <th>Date of 1st MC (Actual)</th>
+                                    <th>1st MC PCT</th>
+                                    <th>Status (1st MC)</th>
+                                    <th>Date of 2nd/Last MC (Actual)</th>
+                                    <th>2nd/Last MC PCT</th>
+                                    <th>Status (2nd MC)</th>
+                                    <th>Case Folder Forwarded to RO</th>
+                            
+                                    {{-- Review & Drafting --}}
+                                    <th>PO PCT</th>
+                                    <th>Aging (PO PCT)</th>
+                                    <th>Status (PO PCT)</th>
+                            
+                                    {{-- Orders & Disposition --}}
+                                    <th>PCT (96 days from NR)</th>
+                                    <th>Status (PCT)</th>
+                                    <th>Date Signed (MIS)</th>
+                            
+                                    <th>Created At</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
-            @endif
+        </div>
+        @endif
 
-            @if(Auth::user()->isMalsu() || Auth::user()->isAdmin())
-                <div class="tab-pane fade {{ Auth::user()->isMalsu() ? 'show active' : '' }}" 
-                    id="tabMALSU" role="tabpanel" aria-labelledby="tabMALSU-tab">
+        <!-- Tab 1: Inspection (LAZY LOAD) -->
+        <div class="tab-pane fade" id="tab1" role="tabpanel" aria-labelledby="tab1-tab">
+            <div class="card shadow mb-4">
+                <div class="card-body">
+                    <!-- This will be replaced with actual content via AJAX when tab is clicked -->
+                    <div class="tab-loading text-center" style="padding: 3rem;">
+                        <div class="spinner-border text-primary mb-3" role="status" style="width: 3rem; height: 3rem;">
+                            <span class="sr-only">Loading...</span>
+                        </div>
+                        <p class="text-muted">Loading inspection data...</p>
+                        <small class="text-muted">This may take a moment for the first load</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 2: Docketing (LAZY LOAD) -->
+        <div class="tab-pane fade" id="tab2" role="tabpanel" aria-labelledby="tab2-tab">
+            <div class="card shadow mb-4">
+                <div class="card-body">
+                    <div class="tab-loading text-center" style="padding: 3rem;">
+                        <div class="spinner-border text-primary mb-3" role="status" style="width: 3rem; height: 3rem;">
+                            <span class="sr-only">Loading...</span>
+                        </div>
+                        <p class="text-muted">Loading docketing data...</p>
+                        <small class="text-muted">This may take a moment for the first load</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 3: Hearing Process (LAZY LOAD) -->
+        <div class="tab-pane fade" id="tab3" role="tabpanel" aria-labelledby="tab3-tab">
+            <div class="card shadow mb-4">
+                <div class="card-body">
+                    <div class="tab-loading text-center" style="padding: 3rem;">
+                        <div class="spinner-border text-primary mb-3" role="status" style="width: 3rem; height: 3rem;">
+                            <span class="sr-only">Loading...</span>
+                        </div>
+                        <p class="text-muted">Loading hearing process data...</p>
+                        <small class="text-muted">This may take a moment for the first load</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 4: Review & Drafting (LAZY LOAD) -->
+        <div class="tab-pane fade" id="tab4" role="tabpanel" aria-labelledby="tab4-tab">
+            <div class="card shadow mb-4">
+                <div class="card-body">
+                    <div class="tab-loading text-center" style="padding: 3rem;">
+                        <div class="spinner-border text-primary mb-3" role="status" style="width: 3rem; height: 3rem;">
+                            <span class="sr-only">Loading...</span>
+                        </div>
+                        <p class="text-muted">Loading review & drafting data...</p>
+                        <small class="text-muted">This may take a moment for the first load</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 5: Orders & Disposition (LAZY LOAD) -->
+        <div class="tab-pane fade" id="tab5" role="tabpanel" aria-labelledby="tab5-tab">
+            <div class="card shadow mb-4">
+                <div class="card-body">
+                    <div class="tab-loading text-center" style="padding: 3rem;">
+                        <div class="spinner-border text-primary mb-3" role="status" style="width: 3rem; height: 3rem;">
+                            <span class="sr-only">Loading...</span>
+                        </div>
+                        <p class="text-muted">Loading orders & disposition data...</p>
+                        <small class="text-muted">This may take a moment for the first load</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 6: Compliance & Awards (LAZY LOAD) -->
+        <div class="tab-pane fade" id="tab6" role="tabpanel" aria-labelledby="tab6-tab">
+            <div class="card shadow mb-4">
+                <div class="card-body">
+                    <div class="tab-loading text-center" style="padding: 3rem;">
+                        <div class="spinner-border text-primary mb-3" role="status" style="width: 3rem; height: 3rem;">
+                            <span class="sr-only">Loading...</span>
+                        </div>
+                        <p class="text-muted">Loading compliance & awards data...</p>
+                        <small class="text-muted">This may take a moment for the first load</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 7: Appeals & Resolution (LAZY LOAD) -->
+        <div class="tab-pane fade" id="tab7" role="tabpanel" aria-labelledby="tab7-tab">
+            <div class="card shadow mb-4">
+                <div class="card-body">
+                    <div class="tab-loading text-center" style="padding: 3rem;">
+                        <div class="spinner-border text-primary mb-3" role="status" style="width: 3rem; height: 3rem;">
+                            <span class="sr-only">Loading...</span>
+                        </div>
+                        <p class="text-muted">Loading appeals & resolution data...</p>
+                        <small class="text-muted">This may take a moment for the first load</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    
+                @if(Auth::user()->isCaseManagement() || Auth::user()->isAdmin())
+                    <!-- Tab CM: Case Management's Cases (LAZY LOAD) -->
+                    <div class="tab-pane fade" id="tabCM" role="tabpanel" aria-labelledby="tabCM-tab">
+                        <div class="card shadow mb-4">
+                            <div class="card-body">
+                                <div class="tab-loading text-center" style="padding: 3rem;">
+                                    <div class="spinner-border text-primary mb-3" role="status"
+                                        style="width: 3rem; height: 3rem;">
+                                        <span class="sr-only">Loading...</span>
+                                    </div>
+                                    <p class="text-muted">Loading cases assigned to Case Management...</p>
+                                    <small class="text-muted">This may take a moment for the first load</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                @endif
+
+                @if(Auth::user()->isCaseManagement())
+                @foreach(['albay','camarines_sur','camarines_norte','catanduanes','masbate','sorsogon'] as $provKey)
+                @php
+                $provLabels = [
+                    'albay'          => 'Albay',
+                    'camarines_sur'  => 'Camarines Sur',
+                    'camarines_norte'=> 'Camarines Norte',
+                    'catanduanes'    => 'Catanduanes',
+                    'masbate'        => 'Masbate',
+                    'sorsogon'       => 'Sorsogon',
+                ];
+                @endphp
+                <div class="tab-pane fade" id="tabProv-{{ $provKey }}"
+                    role="tabpanel" aria-labelledby="tabProv-{{ $provKey }}-tab">
                     <div class="card shadow mb-4">
                         <div class="card-body">
                             <div class="tab-loading text-center" style="padding: 3rem;">
@@ -829,56 +817,120 @@ td.actions-cell.expanded {
                                     style="width: 3rem; height: 3rem;">
                                     <span class="sr-only">Loading...</span>
                                 </div>
-                                <p class="text-muted">Loading cases assigned to MALSU...</p>
+                                <p class="text-muted">Loading {{ $provLabels[$provKey] }} cases...</p>
+                                <small class="text-muted">This may take a moment for the first load</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                @endforeach
+                @endif
+
+                @if(Auth::user()->isSheriff())
+                <div class="tab-pane fade show active" id="tabSheriff" role="tabpanel" aria-labelledby="tabSheriff-tab">
+                    <div class="card shadow mb-4">
+                        <div class="card-body">
+                            <div class="tab-loading text-center" style="padding: 3rem;">
+                                <div class="spinner-border text-primary mb-3" role="status" style="width: 3rem; height: 3rem;">
+                                    <span class="sr-only">Loading...</span>
+                                </div>
+                                <p class="text-muted">Loading your assigned cases...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                @endif
+
+                @if(Auth::user()->isMalsu() || Auth::user()->isAdmin())
+                    <div class="tab-pane fade {{ Auth::user()->isMalsu() ? 'show active' : '' }}" 
+                        id="tabMALSU" role="tabpanel" aria-labelledby="tabMALSU-tab">
+                        <div class="card shadow mb-4">
+                            <div class="card-body">
+                                <div class="tab-loading text-center" style="padding: 3rem;">
+                                    <div class="spinner-border text-primary mb-3" role="status"
+                                        style="width: 3rem; height: 3rem;">
+                                        <span class="sr-only">Loading...</span>
+                                    </div>
+                                    <p class="text-muted">Loading cases assigned to MALSU...</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                @endif
+
+                @if(Auth::user()->isMalsu() || Auth::user()->isAdmin())
+                @foreach(['albay','camarines_sur','camarines_norte','catanduanes','masbate','sorsogon'] as $provKey)
+                @php
+                $sheriffProvLabels = [
+                    'albay'           => 'Albay',
+                    'camarines_sur'   => 'Camarines Sur',
+                    'camarines_norte' => 'Camarines Norte',
+                    'catanduanes'     => 'Catanduanes',
+                    'masbate'         => 'Masbate',
+                    'sorsogon'        => 'Sorsogon',
+                ];
+                @endphp
+                <div class="tab-pane fade" id="tabSheriffProv-{{ $provKey }}"
+                    role="tabpanel" aria-labelledby="tabSheriffProv-{{ $provKey }}-tab">
+                    <div class="card shadow mb-4">
+                        <div class="card-body">
+                            <div class="tab-loading text-center" style="padding: 3rem;">
+                                <div class="spinner-border text-primary mb-3" role="status"
+                                    style="width: 3rem; height: 3rem;">
+                                    <span class="sr-only">Loading...</span>
+                                </div>
+                                <p class="text-muted">Loading {{ $sheriffProvLabels[$provKey] }} sheriff cases...</p>
+                                <small class="text-muted">This may take a moment for the first load</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                @endforeach
+                @endif
+
+                @if(Auth::user()->isMalsu() || Auth::user()->isAdmin())
+                <div class="tab-pane fade" id="tabSENA" role="tabpanel" aria-labelledby="tabSENA-tab">
+                    <div class="card shadow mb-4">
+                        <div class="card-body">
+                            <div class="text-center py-5 text-muted">
+                                <i class="fas fa-gavel fa-3x mb-3 d-block"></i>
+                                <h5>CENA</h5>
+                                <p>Content coming soon.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tab-pane fade" id="tabResolution" role="tabpanel" aria-labelledby="tabResolution-tab">
+                    <div class="card shadow mb-4">
+                        <div class="card-body">
+                            <div class="text-center py-5 text-muted">
+                                <i class="fas fa-check-circle fa-3x mb-3 d-block"></i>
+                                <h5>Resolution</h5>
+                                <p>Content coming soon.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tab-pane fade" id="tabAppealed" role="tabpanel" aria-labelledby="tabAppealed-tab">
+                    <div class="card shadow mb-4">
+                        <div class="card-body">
+                            <div class="text-center py-5 text-muted">
+                                <i class="fas fa-balance-scale fa-3x mb-3 d-block"></i>
+                                <h5>Appealed Cases</h5>
+                                <p>Content coming soon.</p>
                             </div>
                         </div>
                     </div>
                 </div>
             @endif
 
-            @if(Auth::user()->isMalsu() || Auth::user()->isAdmin())
-            <div class="tab-pane fade" id="tabSENA" role="tabpanel" aria-labelledby="tabSENA-tab">
-                <div class="card shadow mb-4">
-                    <div class="card-body">
-                        <div class="text-center py-5 text-muted">
-                            <i class="fas fa-gavel fa-3x mb-3 d-block"></i>
-                            <h5>CENA</h5>
-                            <p>Content coming soon.</p>
-                        </div>
-                    </div>
-                </div>
             </div>
-
-            <div class="tab-pane fade" id="tabResolution" role="tabpanel" aria-labelledby="tabResolution-tab">
-                <div class="card shadow mb-4">
-                    <div class="card-body">
-                        <div class="text-center py-5 text-muted">
-                            <i class="fas fa-check-circle fa-3x mb-3 d-block"></i>
-                            <h5>Resolution</h5>
-                            <p>Content coming soon.</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="tab-pane fade" id="tabAppealed" role="tabpanel" aria-labelledby="tabAppealed-tab">
-                <div class="card shadow mb-4">
-                    <div class="card-body">
-                        <div class="text-center py-5 text-muted">
-                            <i class="fas fa-balance-scale fa-3x mb-3 d-block"></i>
-                            <h5>Appealed Cases</h5>
-                            <p>Content coming soon.</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        @endif
-
+            <!-- End Tabs Content -->
         </div>
-        <!-- End Tabs Content -->
+        <!-- /.container-fluid -->
     </div>
-    <!-- /.container-fluid -->
-</div>
 <!-- End of Main Content -->
 
     <div class="modal fade" id="addCaseModal" tabindex="-1" role="dialog" aria-labelledby="addCaseModalLabel" aria-hidden="true">
@@ -2066,6 +2118,7 @@ $(document).on('click', function(e) {
     var cmTabLoaded = false;
     var malsuTabLoaded = false;
     var provTabLoaded = {};
+    var sheriffProvTabLoaded = {};
 
     // ── Province tabs lazy load ──
     $('a[id^="tabProv-"]').on('shown.bs.tab', function () {
@@ -2340,6 +2393,98 @@ $(document).on('click', function(e) {
                     </div>
                 `);
             }
+        });
+    });
+
+    ['albay','camarines_sur','camarines_norte','catanduanes','masbate','sorsogon'].forEach(function(province) {
+        var tabSelector = '#tabSheriffProv-' + province;
+        var tableId  = 'dataTableSheriff-' + province;
+        var searchId = 'customSearchSheriff-' + province;
+
+        $('a[href="' + tabSelector + '"]').on('shown.bs.tab', function () {
+            if (sheriffProvTabLoaded[province]) {
+                if ($.fn.DataTable.isDataTable('#' + tableId)) {
+                    $('#' + tableId).DataTable().columns.adjust().draw(false);
+                }
+                return;
+            }
+
+            const $cardBody = $(tabSelector + ' .card-body');
+
+            $cardBody.html(`
+                <div class="tab-loading text-center" style="padding: 3rem;">
+                    <div class="spinner-border text-primary mb-3" role="status" style="width: 3rem; height: 3rem;">
+                        <span class="sr-only">Loading...</span>
+                    </div>
+                    <p class="text-muted">Loading cases...</p>
+                </div>
+            `);
+
+            $.ajax({
+                url: '/case/load-sheriff-province-tab/' + province,
+                method: 'GET',
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'),
+                    'Accept': 'application/json'
+                },
+                success: function (response) {
+                    if (response.success) {
+                        $cardBody.html(response.html);
+                        sheriffProvTabLoaded[province] = true;
+
+                        setTimeout(function () {
+                            if ($.fn.DataTable.isDataTable('#' + tableId)) {
+                                $('#' + tableId).DataTable().destroy();
+                            }
+
+                            $('#' + tableId + ' tbody tr td[colspan]').closest('tr').remove();
+
+                            tables['#' + tableId] = $('#' + tableId).DataTable({
+                                pageLength: 10,
+                                lengthChange: false,
+                                paging: true,
+                                searching: true,
+                                info: true,
+                                dom: 'tip',
+                                columnDefs: [{ orderable: false, targets: 0 }],
+                                scrollX: true,
+                                scrollY: (window.innerHeight - 280) + 'px',
+                                scrollCollapse: true,
+                                language: {
+                                    emptyTable: 'No cases are currently assigned to this province.'
+                                },
+                                drawCallback: function() {
+                                    $('#' + tableId + ' thead th').css({
+                                        'position': 'sticky',
+                                        'top': 0,
+                                        'z-index': 12
+                                    });
+                                    $('#' + tableId + ' thead th:nth-child(-n+5)').css({
+                                        'z-index': 13
+                                    });
+                                }
+                            });
+
+                            $('#' + searchId).off('keyup input change').on('keyup input change', function () {
+                                tables['#' + tableId].search(this.value).draw();
+                            });
+
+                            setTimeout(function() { tables['#' + tableId].columns.adjust().draw(false); }, 50);
+                            setTimeout(function() { tables['#' + tableId].columns.adjust().draw(false); }, 300);
+                            setTimeout(function() { tables['#' + tableId].columns.adjust().draw(false); }, 600);
+                        }, 100);
+                    } else {
+                        $cardBody.html(`<div class="alert alert-danger">Failed to load cases. Please try again.</div>`);
+                    }
+                },
+                error: function (xhr) {
+                    $cardBody.html(`
+                        <div class="alert alert-danger">
+                            <strong>Error:</strong> ${xhr.responseJSON?.error || 'Failed to load data.'}
+                        </div>
+                    `);
+                }
+            });
         });
     });
 
@@ -2689,7 +2834,7 @@ loadTab0Data();
         var tabNumber = tabId.replace('tab', '');
 
         // ── Skip the CM tab — it has its own dedicated handler ──
-        if (tabId === 'tabCM' || tabId === 'tabMALSU' || tabId === 'tabSheriff' || tabId.startsWith('tabProv-')) return;
+        if (tabId === 'tabCM' || tabId === 'tabMALSU' || tabId === 'tabSheriff' || tabId.startsWith('tabProv-') || tabId.startsWith('tabSheriffProv-')) return;
 
         console.log('Tab switched to:', target);
         

@@ -2042,5 +2042,65 @@ public function loadProvinceTab(Request $request, $province)
     }
 }
 
+public function loadSheriffProvinceTab(Request $request, $province)
+{
+    if (!Auth::user()->isMalsu() && !Auth::user()->isAdmin()) {
+        return response()->json(['success' => false, 'error' => 'Access denied.'], 403);
+    }
+
+    $provinceRoleMap = [
+        'albay'           => User::ROLE_SHERIFF_ALBAY,
+        'camarines_sur'   => User::ROLE_SHERIFF_CAMARINES_SUR,
+        'camarines_norte' => User::ROLE_SHERIFF_CAMARINES_NORTE,
+        'catanduanes'     => User::ROLE_SHERIFF_CATANDUANES,
+        'masbate'         => User::ROLE_SHERIFF_MASBATE,
+        'sorsogon'        => User::ROLE_SHERIFF_SORSOGON,
+    ];
+
+    $provinceLabelMap = [
+        'albay'           => 'Albay',
+        'camarines_sur'   => 'Camarines Sur',
+        'camarines_norte' => 'Camarines Norte',
+        'catanduanes'     => 'Catanduanes',
+        'masbate'         => 'Masbate',
+        'sorsogon'        => 'Sorsogon',
+    ];
+
+    $role = $provinceRoleMap[$province] ?? null;
+
+    if (!$role) {
+        return response()->json(['success' => false, 'error' => 'Invalid province.'], 400);
+    }
+
+    try {
+        $cases = CaseFile::whereNotIn('overall_status', ['Completed', 'Disposed', 'Appealed'])
+            ->whereHas('documentTracking', function ($q) use ($role) {
+                $q->where('current_role', $role)
+                  ->where('status', 'Received');
+            })
+            ->with(['documentTracking', 'malsu'])
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        $html = view('frontend.partials.malsu_tab', [
+            'cases'       => $cases,
+            'tableId'     => 'dataTableSheriff-' . $province,
+            'searchId'    => 'customSearchSheriff-' . $province,
+            'alertSuffix' => 'Sheriff-' . $province,
+            'badgeLabel'  => $provinceLabelMap[$province] . ' Sheriff',
+        ])->render();
+
+        return response()->json([
+            'success' => true,
+            'html'    => $html,
+            'count'   => $cases->count(),
+        ]);
+
+    } catch (\Exception $e) {
+        Log::error('loadSheriffProvinceTab error: ' . $e->getMessage());
+        return response()->json(['success' => false, 'error' => 'Failed to load data.'], 500);
+    }
+}
+
 
 }

@@ -83,6 +83,8 @@ Route::middleware('auth')->group(function () {
         Route::post('/case/{id}/execute', [CasesController::class, 'executeCase'])->name('case.execute');
         Route::get('/case/load-province-tab/{province}', [CasesController::class, 'loadProvinceTab'])
         ->name('case.loadProvinceTab');
+        Route::get('/case/load-sheriff-province-tab/{province}', [CasesController::class, 'loadSheriffProvinceTab'])
+        ->name('case.loadSheriffProvinceTab');
         Route::get('/case/load-sheriff-tab', [CasesController::class, 'loadSheriffTab'])->name('case.loadSheriffTab');
         Route::post('/case/{id}/execute', [CasesController::class, 'executeCase'])->name('case.execute');
         // Resource route LAST
