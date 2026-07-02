@@ -263,4 +263,50 @@ class User extends Authenticatable
     {
         return in_array($this->role, $roles);
     }
+
+// All valid case_management province scope values (for form dropdowns/validation)
+const CASE_MGMT_SCOPE_REGIONAL = 'regional';
+
+const CASE_MANAGEMENT_PROVINCE_OPTIONS = [
+    self::CASE_MGMT_SCOPE_REGIONAL => 'Regional (All Provinces)',
+    'albay'           => 'Albay',
+    'camarines_sur'   => 'Camarines Sur',
+    'camarines_norte' => 'Camarines Norte',
+    'catanduanes'     => 'Catanduanes',
+    'masbate'         => 'Masbate',
+    'sorsogon'        => 'Sorsogon',
+];
+
+/**
+ * True only for case_management users scoped to a specific province.
+ * Regional (or no province set) = sees everything.
+ */
+public function isProvincialCaseManagement()
+{
+    return $this->isCaseManagement()
+        && !empty($this->province)
+        && $this->province !== self::CASE_MGMT_SCOPE_REGIONAL;
+}
+
+/**
+ * Display name of the province a case_management user is scoped to,
+ * to match against CaseFile::po_office. Null if regional/unset.
+ */
+public function getCaseManagementProvinceName()
+{
+    if (!$this->isProvincialCaseManagement()) {
+        return null;
+    }
+
+    return self::PROVINCES[$this->province] ?? null;
+}
+
+/**
+ * True if this user is a provincial case_management user assigned
+ * to the given province key (e.g. 'albay', 'camarines_sur').
+ */
+public function isProvincialCaseManagementFor($provinceKey)
+{
+    return $this->isProvincialCaseManagement() && $this->province === $provinceKey;
+}
 }

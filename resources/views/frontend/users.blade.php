@@ -204,6 +204,17 @@
                     </optgroup>
                 </select>
             </div>
+
+            {{-- NEW: Case Management province scope, shown only when role = case_management --}}
+            <div class="form-group" id="addProvinceGroup" style="display: none;">
+                <label for="addProvince">Case Management Scope</label>
+                <select class="form-control" id="addProvince" name="province">
+                    @foreach(\App\Models\User::CASE_MANAGEMENT_PROVINCE_OPTIONS as $value => $label)
+                        <option value="{{ $value }}">{{ $label }}</option>
+                    @endforeach
+                </select>
+                <small class="form-text text-muted">Regional sees all provinces. A specific province limits visibility to that province's active cases.</small>
+            </div>
         </div>
 
         <div class="modal-footer">
@@ -275,7 +286,18 @@
                             </optgroup>
                         </select>
                     </div>
-                </div>
+
+                    {{-- NEW: Case Management province scope --}}
+                    <div class="form-group edit-province-group" id="provinceGroup{{ $user->id }}"
+                        style="display: {{ $user->role === 'case_management' ? 'block' : 'none' }};">
+                        <label for="province{{ $user->id }}">Case Management Scope</label>
+                        <select class="form-control" id="province{{ $user->id }}" name="province">
+                            @foreach(\App\Models\User::CASE_MANAGEMENT_PROVINCE_OPTIONS as $value => $label)
+                                <option value="{{ $value }}" {{ $user->province === $value ? 'selected' : '' }}>{{ $label }}</option>
+                            @endforeach
+                        </select>
+                        <small class="form-text text-muted">Regional sees all provinces. A specific province limits visibility to that province's active cases.</small>
+                    </div>
 
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
@@ -434,6 +456,35 @@ $(document).ready(function() {
             $('#editUserForm' + currentEditUserId).submit();
         }
     });
+
+
+    // --- Toggle province field for Case Management role (Add modal) ---
+    $('#addRole').on('change', function() {
+        if ($(this).val() === 'case_management') {
+            $('#addProvinceGroup').show();
+            $('#addProvince').prop('required', true);
+        } else {
+            $('#addProvinceGroup').hide();
+            $('#addProvince').prop('required', false);
+        }
+    });
+
+    // --- Toggle province field for Case Management role (Edit modals) ---
+    $('.edit-role-select').on('change', function() {
+        var userId = $(this).data('user-id');
+        var provinceGroup = $('#provinceGroup' + userId);
+        var provinceSelect = $('#province' + userId);
+
+        if ($(this).val() === 'case_management') {
+            provinceGroup.show();
+            provinceSelect.prop('required', true);
+        } else {
+            provinceGroup.hide();
+            provinceSelect.prop('required', false);
+        }
+    });
+    
 });
+
 </script>
 @endpush

@@ -19,6 +19,7 @@ class UserController extends Controller
             'lname' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
             'role'  => 'required|in:' . implode(',', User::VALID_ROLES),
+            'province' => 'nullable|required_if:role,case_management|in:' . implode(',', array_keys(User::CASE_MANAGEMENT_PROVINCE_OPTIONS)),
         ]);
 
         if ($validator->fails()) {
@@ -30,6 +31,7 @@ class UserController extends Controller
             'lname'              => $request->lname,
             'email'              => $request->email,
             'role'               => $request->role,
+            'province'           => $request->role === 'case_management' ? $request->province : null,
             'password'           => null,
             'two_factor_enabled' => true,
         ]);
@@ -42,6 +44,7 @@ class UserController extends Controller
             metadata: [
                 'email'     => $user->email,
                 'role'      => $user->role,
+                'province'  => $user->province,
                 'full_name' => "{$user->fname} {$user->lname}",
             ]
         );
@@ -99,10 +102,11 @@ class UserController extends Controller
         $user = User::findOrFail($id);
 
         $oldData = [
-            'fname' => $user->fname,
-            'lname' => $user->lname,
-            'email' => $user->email,
-            'role'  => $user->role,
+            'fname'    => $user->fname,
+            'lname'    => $user->lname,
+            'email'    => $user->email,
+            'role'     => $user->role,
+            'province' => $user->province,
         ];
 
         $validator = Validator::make($request->all(), [
@@ -110,11 +114,14 @@ class UserController extends Controller
             'lname' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users,email,' . $user->id,
             'role'  => 'required|in:' . implode(',', User::VALID_ROLES),
+            'province' => 'nullable|required_if:role,case_management|in:' . implode(',', array_keys(User::CASE_MANAGEMENT_PROVINCE_OPTIONS)),
         ]);
 
         if ($validator->fails()) {
             return back()->withErrors($validator)->withInput();
         }
+
+        $newProvince = $request->role === 'case_management' ? $request->province : null;
 
         // Track changes for logging
         $changes = [];
@@ -144,11 +151,18 @@ class UserController extends Controller
             $changesText[] = "Role: {$oldData['role']} → {$request->role}";
         }
 
+        if ($oldData['province'] !== $newProvince) {
+            $changes['province_old'] = $oldData['province'];
+            $changes['province_new'] = $newProvince;
+            $changesText[] = "Province: " . ($oldData['province'] ?? 'none') . " → " . ($newProvince ?? 'none');
+        }
+
         $user->update([
-            'fname' => $request->fname,
-            'lname' => $request->lname,
-            'email' => $request->email,
-            'role'  => $request->role,
+            'fname'    => $request->fname,
+            'lname'    => $request->lname,
+            'email'    => $request->email,
+            'role'     => $request->role,
+            'province' => $newProvince,
         ]);
 
         $description = "Updated user account for {$request->fname} {$request->lname}";

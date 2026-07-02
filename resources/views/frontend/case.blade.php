@@ -493,13 +493,15 @@ td.actions-cell.expanded {
                 ];
                 @endphp
                 @foreach($provinceTabs as $key => $label)
-                <li class="nav-item">
-                    <a class="nav-link" id="tabProv-{{ $key }}-tab"
-                    data-toggle="tab" href="#tabProv-{{ $key }}"
-                    role="tab" aria-controls="tabProv-{{ $key }}" aria-selected="false">
-                        <i class="fas fa-map-marker-alt mr-1"></i> {{ $label }}
-                    </a>
-                </li>
+                    @if(Auth::user()->isProvincialCaseManagementFor($key))
+                    <li class="nav-item">
+                        <a class="nav-link" id="tabProv-{{ $key }}-tab"
+                        data-toggle="tab" href="#tabProv-{{ $key }}"
+                        role="tab" aria-controls="tabProv-{{ $key }}" aria-selected="false">
+                            <i class="fas fa-map-marker-alt mr-1"></i> {{ $label }}
+                        </a>
+                    </li>
+                    @endif
                 @endforeach
                 @endif
 
@@ -798,6 +800,7 @@ td.actions-cell.expanded {
 
                 @if(Auth::user()->isCaseManagement())
                 @foreach(['albay','camarines_sur','camarines_norte','catanduanes','masbate','sorsogon'] as $provKey)
+                @if(Auth::user()->isProvincialCaseManagementFor($provKey))
                 @php
                 $provLabels = [
                     'albay'          => 'Albay',
@@ -823,6 +826,7 @@ td.actions-cell.expanded {
                         </div>
                     </div>
                 </div>
+                @endif
                 @endforeach
                 @endif
 

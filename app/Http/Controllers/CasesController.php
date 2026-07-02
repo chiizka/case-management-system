@@ -1990,6 +1990,13 @@ public function loadProvinceTab(Request $request, $province)
         return response()->json(['success' => false, 'error' => 'Access denied.'], 403);
     }
 
+    $user = Auth::user();
+
+    // Provincial case_management users may only load their own province tab
+    if ($user->isProvincialCaseManagement() && !$user->isProvincialCaseManagementFor($province)) {
+        return response()->json(['success' => false, 'error' => 'Access denied.'], 403);
+    }
+
     $provinceRoleMap = [
         'albay'          => User::ROLE_PROVINCE_ALBAY,
         'camarines_sur'  => User::ROLE_PROVINCE_CAMARINES_SUR,
@@ -2101,6 +2108,8 @@ public function loadSheriffProvinceTab(Request $request, $province)
         return response()->json(['success' => false, 'error' => 'Failed to load data.'], 500);
     }
 }
+
+
 
 
 }
