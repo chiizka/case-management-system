@@ -3497,7 +3497,9 @@ $(document).ready(function() {
             if (fieldConfig && fieldConfig.options) {
                 fieldConfig.options.forEach(opt => {
                     const selected = opt.value == originalValue || opt.text == originalValue;
-                    $input.append(`<option value="${opt.value}" ${selected ? 'selected' : ''}>${opt.text}</option>`);
+                    $input.append(
+                        `<option value="${opt.value}" data-role="${opt.role || ''}" ${selected ? 'selected' : ''}>${opt.text}</option>`
+                    );
                 });
             }
         } else if (fieldType === 'date' || fieldConfig?.type === 'date') {
@@ -3574,6 +3576,83 @@ $(document).ready(function() {
         const fieldType = $cell.data('type');
         const $row = $cell.closest('tr');
         const recordId = $row.data('id');
+
+        // ── Special handling: Sheriff Designate → confirm + transfer ──
+        if (field === 'sheriff_designate') {
+            const selectedRole = $input.find('option:selected').data('role') || '';
+            const selectedName = newValue;
+
+            // Cleared selection → just save blank, no transfer, no confirm needed
+            if (!selectedName) {
+                $.ajax({
+                    url: `/malsu/${recordId}/inline-update`,
+                    method: 'PUT',
+                    data: { sheriff_designate: '' },
+                    headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
+                    success: function() {
+                        restoreCellDisplay($cell, '', fieldType);
+                        showToast('Success', 'Sheriff designate cleared', 'success');
+                    },
+                    error: function() {
+                        restoreCellDisplay($cell, originalValue, fieldType);
+                        showToast('Error', 'Failed to clear', 'error');
+                    },
+                    complete: function() { currentEditingCell = null; }
+                });
+                return;
+            }
+
+            if (!selectedRole) {
+                restoreCellDisplay($cell, originalValue, fieldType);
+                currentEditingCell = null;
+                showToast('Error', 'This sheriff has no assigned province role.', 'error');
+                return;
+            }
+
+            Swal.fire({
+                icon: 'question',
+                title: 'Send case to sheriff?',
+                html: `Send this case to <strong>${selectedName}</strong>?<br>
+                    <small class="text-muted">It will leave your MALSU active cases until received.</small>`,
+                showCancelButton: true,
+                confirmButtonText: 'Yes, send it',
+                cancelButtonText: 'Cancel',
+                confirmButtonColor: '#28a745'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $cell.html('<i class="fas fa-spinner fa-spin text-primary"></i>');
+                    $.ajax({
+                        url: `/malsu/${recordId}/send-to-sheriff`,
+                        method: 'PUT',
+                        data: {
+                            sheriff_name: selectedName,
+                            target_role: selectedRole
+                        },
+                        headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
+                        success: function(response) {
+                            if (response.success) {
+                                showToast('Success', response.message || 'Case sent successfully', 'success');
+                                // Case leaves MALSU's active list immediately
+                                $row.fadeOut(300, function() { $(this).remove(); });
+                            } else {
+                                restoreCellDisplay($cell, originalValue, fieldType);
+                                showToast('Error', response.message || 'Send failed', 'error');
+                            }
+                        },
+                        error: function(xhr) {
+                            restoreCellDisplay($cell, originalValue, fieldType);
+                            showToast('Error', xhr.responseJSON?.message || 'Failed to send case', 'error');
+                        },
+                        complete: function() { currentEditingCell = null; }
+                    });
+                } else {
+                    // Cancelled → wipe the value entirely, per your spec
+                    restoreCellDisplay($cell, '', fieldType);
+                    currentEditingCell = null;
+                }
+            });
+            return; // stop here — skip the generic save logic below for this field
+        }
         
         // Get the endpoint based on table
         const $table = $cell.closest('table');
@@ -4068,10 +4147,13 @@ $(document).ready(function() {
             'sheriff_designate': {
                 type: 'select',
                 options: [
-                    { value: '', text: 'Select Sheriff' },
-                    { value: 'Juan Dela Cruz', text: 'Juan Dela Cruz' },
-                    { value: 'Maria Santos', text: 'Maria Santos' }
-                    // ...more names
+                    { value: '', text: 'Select Sheriff', role: '' },
+                    { value: 'Juan Dela Cruz', text: 'Juan Dela Cruz', role: 'sheriff_albay' },
+                    { value: 'Maria Santos',  text: 'Maria Santos',  role: 'sheriff_camarines_sur' },
+                    { value: 'PLACEHOLDER_1', text: 'PLACEHOLDER_1', role: 'sheriff_camarines_norte' }, // ← replace
+                    { value: 'PLACEHOLDER_2', text: 'PLACEHOLDER_2', role: 'sheriff_catanduanes' },      // ← replace
+                    { value: 'PLACEHOLDER_3', text: 'PLACEHOLDER_3', role: 'sheriff_masbate' },          // ← replace
+                    { value: 'PLACEHOLDER_4', text: 'PLACEHOLDER_4', role: 'sheriff_sorsogon' }          // ← replace
                 ]
             },
             'date_compliance_order':                    { type: 'date' },

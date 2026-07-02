@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\LogController;
 use App\Http\Controllers\DocumentTrackingController;
 use App\Http\Controllers\LaborRelationController;
+use App\Http\Controllers\MalsuController;
 
 
 Route::get('/', [FrontController::class, 'index'])->name('home');
@@ -72,8 +73,10 @@ Route::middleware('auth')->group(function () {
         Route::get('/case/load-tab/{tabNumber}', [CasesController::class, 'loadTabData'])->name('case.loadTab');
         Route::get('/case/load-case-management-tab', [CasesController::class, 'loadCaseManagementTab'])->name('case.loadCaseManagementTab');
         Route::get('/case/load-malsu-tab', [CasesController::class, 'loadMalsuTab'])->name('case.loadMalsuTab');
-        Route::put('/malsu/{caseId}/inline-update', [App\Http\Controllers\MalsuController::class, 'inlineUpdate'])
+        Route::put('/malsu/{caseId}/inline-update', [MalsuController::class, 'inlineUpdate'])
         ->name('malsu.inlineUpdate');
+        Route::put('/malsu/{caseId}/send-to-sheriff', [MalsuController::class, 'sendToSheriff'])
+        ->name('malsu.sendToSheriff');
         Route::get('/case/{id}/document-history', [CasesController::class, 'getDocumentHistory'])->name('case.documentHistory');
         Route::get('/case/{id}/documents', [CasesController::class, 'getDocuments'])->name('case.documents');
         Route::post('/case/{id}/documents', [CasesController::class, 'saveDocuments'])->name('case.documents.save');

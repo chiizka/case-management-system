@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
+use App\Services\DocumentTransferService;
 use App\Models\Malsu;
 
 class DocumentTrackingController extends Controller
@@ -260,43 +261,14 @@ class DocumentTrackingController extends Controller
 
         DB::beginTransaction();
         try {
-            $user     = Auth::user();
-            $caseId   = $request->case_id;
-            $targetRole = $request->target_role;
+            $user = Auth::user();
 
-            $document = DocumentTracking::firstOrCreate(
-                ['case_id' => $caseId],
-                [
-                    'current_role'          => $targetRole,
-                    'status'                => 'Pending Receipt',
-                    'transferred_by_user_id'=> $user->id,
-                    'transferred_at'        => now(),
-                    'transfer_notes'        => $request->transfer_notes,
-                ]
+            app(DocumentTransferService::class)->transferTo(
+                $request->case_id,
+                $request->target_role,
+                $user->id,
+                $request->transfer_notes
             );
-
-            if (!$document->wasRecentlyCreated) {
-                DocumentTrackingHistory::create([
-                    'document_tracking_id'   => $document->id,
-                    'from_role'              => $document->current_role,
-                    'to_role'                => $document->current_role,
-                    'transferred_by_user_id' => $document->transferred_by_user_id,
-                    'transferred_at'         => $document->transferred_at,
-                    'received_by_user_id'    => $document->received_by_user_id,
-                    'received_at'            => $document->received_at,
-                    'notes'                  => $document->transfer_notes,
-                ]);
-
-                $document->update([
-                    'current_role'           => $targetRole,
-                    'status'                 => 'Pending Receipt',
-                    'transferred_by_user_id' => $user->id,
-                    'transferred_at'         => now(),
-                    'transfer_notes'         => $request->transfer_notes,
-                    'received_by_user_id'    => null,
-                    'received_at'            => null,
-                ]);
-            }
 
             DB::commit();
 
