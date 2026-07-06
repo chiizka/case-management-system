@@ -450,7 +450,13 @@ td.actions-cell.expanded {
     <!-- Begin Page Content -->
     <div class="container-fluid">
 
-    @if(Auth::user()->isSheriff() || Auth::user()->isCaseManagement() || Auth::user()->isMalsu() || Auth::user()->isAdmin())
+        @if(Auth::user()->isSheriff() || Auth::user()->isCaseManagement() || Auth::user()->isMalsu() || Auth::user()->isAdmin())
+
+            @php
+                $user = Auth::user();
+                $isProvincialCM = $user->isProvincialCaseManagement();
+            @endphp
+
             <ul class="nav nav-tabs mb-0" id="dataTableTabs" role="tablist">
 
                 @if(Auth::user()->isSheriff())
@@ -462,7 +468,7 @@ td.actions-cell.expanded {
                 </li>
                 @endif
 
-                @if(Auth::user()->isCaseManagement())
+                @if(Auth::user()->isCaseManagement() && !$isProvincialCM)
                 <li class="nav-item">
                     <a class="nav-link" id="tabCM-tab" data-toggle="tab" href="#tabCM"
                     role="tab" aria-controls="tabCM" aria-selected="false">
@@ -471,7 +477,7 @@ td.actions-cell.expanded {
                 </li>
                 @endif
 
-                @if(!Auth::user()->isMalsu() && !Auth::user()->isSheriff())
+              @if(!Auth::user()->isMalsu() && !Auth::user()->isSheriff() && !$isProvincialCM)
                 <li class="nav-item">
                     <a class="nav-link active" 
                     id="tab0-tab" data-toggle="tab" href="#tab0"
@@ -495,7 +501,7 @@ td.actions-cell.expanded {
                 @foreach($provinceTabs as $key => $label)
                     @if(Auth::user()->isProvincialCaseManagementFor($key))
                     <li class="nav-item">
-                        <a class="nav-link" id="tabProv-{{ $key }}-tab"
+                        <a class="nav-link {{ $isProvincialCM ? 'active' : '' }}" id="tabProv-{{ $key }}-tab"
                         data-toggle="tab" href="#tabProv-{{ $key }}"
                         role="tab" aria-controls="tabProv-{{ $key }}" aria-selected="false">
                             <i class="fas fa-map-marker-alt mr-1"></i> {{ $label }}
@@ -564,7 +570,7 @@ td.actions-cell.expanded {
             <div class="tab-content mt-1" id="dataTableTabsContent">
         
         <!-- Tab 0: All Active Cases (Enhanced with corrected columns) -->
-        @if(!Auth::user()->isMalsu() && !Auth::user()->isSheriff())
+        @if(!Auth::user()->isMalsu() && !Auth::user()->isSheriff() && !$isProvincialCM)
         <div class="tab-pane fade show active" id="tab0" role="tabpanel" aria-labelledby="tab0-tab">
             <div class="card shadow mb-4">
                 <div class="card-body">
@@ -780,7 +786,7 @@ td.actions-cell.expanded {
             </div>
         </div>
     
-                @if(Auth::user()->isCaseManagement() || Auth::user()->isAdmin())
+                @if((Auth::user()->isCaseManagement() && !$isProvincialCM) || Auth::user()->isAdmin())
                     <!-- Tab CM: Case Management's Cases (LAZY LOAD) -->
                     <div class="tab-pane fade" id="tabCM" role="tabpanel" aria-labelledby="tabCM-tab">
                         <div class="card shadow mb-4">
@@ -811,7 +817,7 @@ td.actions-cell.expanded {
                     'sorsogon'       => 'Sorsogon',
                 ];
                 @endphp
-                <div class="tab-pane fade" id="tabProv-{{ $provKey }}"
+                <div class="tab-pane fade {{ $isProvincialCM ? 'show active' : '' }}" id="tabProv-{{ $provKey }}"
                     role="tabpanel" aria-labelledby="tabProv-{{ $provKey }}-tab">
                     <div class="card shadow mb-4">
                         <div class="card-body">
@@ -2877,6 +2883,56 @@ loadTab0Data();
             }
         }, 100);
     });
+
+    // Dedicated handler for province tabs (Case Management)
+    $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
+        var target = $(e.target).attr("href");
+        var tabId = target.replace('#', '');
+
+            if (tabId.startsWith('tabProv-')) {
+                var provinceKey = tabId.replace('tabProv-', '');
+                loadProvinceTabData(provinceKey);
+            }
+        });
+
+        function loadProvinceTabData(provinceKey) {
+        var tabId = 'tabProv-' + provinceKey;
+        var tableId = '#dataTableProv-' + provinceKey; // ⚠️ confirm this matches your partial's <table id="...">
+
+        if (loadedTabs[tabId]) {
+            if (tables[tableId]) {
+                tables[tableId].columns.adjust().draw(false);
+            }
+            return;
+        }
+
+        var $cardBody = $('#' + tabId + ' .card-body');
+
+        $.ajax({
+            url: '/case/load-province-tab/' + provinceKey,
+            method: 'GET',
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'),
+                'Accept': 'application/json'
+            },
+            success: function(response) {
+                if (response.success) {
+                    $cardBody.html(response.html);
+                    loadedTabs[tabId] = true;
+
+                    setTimeout(function() {
+                        initDataTable(tableId);
+                    }, 100);
+                } else {
+                    $cardBody.html('<div class="alert alert-danger">Failed to load data.</div>');
+                }
+            },
+            error: function(xhr) {
+                console.error('Province tab load error:', xhr);
+                $cardBody.html('<div class="alert alert-danger">Error loading province cases.</div>');
+            }
+        });
+    }
 
     // Fix sidebar toggle with state persistence
     $('#sidebarToggle, #sidebarToggleTop').on('click', function() {
