@@ -443,6 +443,10 @@ td.actions-cell.expanded {
 .cm-table td:nth-child(7) {
     background-color: #d4edda !important;
 }
+
+body.sheriff-readonly .edit-row-btn-case {
+    display: none !important;
+}
 </style>
 
 <!-- Main Content -->
@@ -1506,6 +1510,11 @@ td.actions-cell.expanded {
 let caseToProgress = null;
 let caseToDelete = null;
 let sheriffTabLoaded = false;
+const isReadOnlySheriff = {{ Auth::user()->isSheriff() ? 'true' : 'false' }};
+if (isReadOnlySheriff) {
+    document.body.classList.add('sheriff-readonly');
+}
+
 $(document).ready(function() {
     console.log('jQuery version:', $.fn.jquery);
     console.log('DataTables available:', typeof $.fn.DataTable !== 'undefined');
@@ -1876,6 +1885,7 @@ $(document).on('click', '.action-toggle-btn', function(e) {
 $(document).on('click', '.edit-row-btn-case', function(e) {
     e.preventDefault();
     e.stopPropagation();
+    if (isReadOnlySheriff) return;
 
     const $row = $(this).closest('tr');
     const $cell = $row.find('.actions-cell');
@@ -3465,6 +3475,7 @@ $(document).ready(function() {
     // Double-click to edit cell
     $(document).on('dblclick', '.editable-cell', function(e) {
         e.preventDefault();
+        if (isReadOnlySheriff) return;
         
         // If already editing another cell, save it first
         if (currentEditingCell && currentEditingCell !== this) {
@@ -3476,6 +3487,7 @@ $(document).ready(function() {
 
     $(document).on('dblclick', '.editable-cell small.address-subtext', function(e) {
         e.stopPropagation(); // prevent the parent cell's dblclick from firing too
+         if (isReadOnlySheriff) return;
         const $cell = $(this).closest('.editable-cell');
         if ($cell.find('input.address-inline-input').length) return;
 
@@ -4277,6 +4289,7 @@ $(document).ready(function() {
 
     // Unified edit button click handler
     $(document).on('click', '.edit-row-btn, .edit-row-btn-case, .edit-row-btn-docketing, .edit-row-btn-hearing, .edit-row-btn-review, .edit-row-btn-orders, .edit-row-btn-compliance, .edit-row-btn-appeals', function() {
+        if (isReadOnlySheriff) return;
         const row = $(this).closest('tr');
         currentTab = getCurrentTab();
         
