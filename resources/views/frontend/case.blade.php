@@ -1510,6 +1510,19 @@ $(document).ready(function() {
     console.log('jQuery version:', $.fn.jquery);
     console.log('DataTables available:', typeof $.fn.DataTable !== 'undefined');
     
+    $(document).ready(function() {
+    // If a province tab is active by default (provincial Case Management users),
+    // manually trigger its data load — shown.bs.tab never fires for an already-active tab
+    var initialTabId = $('.tab-pane.show.active').attr('id');
+
+    if (initialTabId && initialTabId.indexOf('tabProv-') === 0) {
+        var provinceKey = initialTabId.replace('tabProv-', '');
+        // Small delay to make sure loadProvinceTabData is defined and DOM is ready
+        setTimeout(function() {
+            loadProvinceTabData(provinceKey);
+        }, 50);
+    }
+    });
     // Initialize DataTable with Actions column excluded from sorting
     $('#dataTable0').DataTable({
         columnDefs: [
@@ -1529,8 +1542,8 @@ $(document).ready(function() {
         setTimeout(() => $(this).css('background-color', '#f8f9fa'), 400);
     });
 
-let documents = [];
-let currentCaseId = null;
+    let documents = [];
+    let currentCaseId = null;
 
 
     // Prevent editing of computed fields
@@ -2895,7 +2908,7 @@ loadTab0Data();
             }
         });
 
-        function loadProvinceTabData(provinceKey) {
+    function loadProvinceTabData(provinceKey) {
         var tabId = 'tabProv-' + provinceKey;
         var tableId = '#dataTableProv-' + provinceKey; // ⚠️ confirm this matches your partial's <table id="...">
 
