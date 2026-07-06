@@ -450,12 +450,12 @@ td.actions-cell.expanded {
     <!-- Begin Page Content -->
     <div class="container-fluid">
 
-        @if(Auth::user()->isSheriff() || Auth::user()->isCaseManagement() || Auth::user()->isMalsu() || Auth::user()->isAdmin())
+        @php
+            $user = Auth::user();
+            $isProvincialCM = $user->isProvincialCaseManagement();
+        @endphp
 
-            @php
-                $user = Auth::user();
-                $isProvincialCM = $user->isProvincialCaseManagement();
-            @endphp
+        @if(Auth::user()->isSheriff() || Auth::user()->isCaseManagement() || Auth::user()->isMalsu() || Auth::user()->isAdmin())
 
             <ul class="nav nav-tabs mb-0" id="dataTableTabs" role="tablist">
 
