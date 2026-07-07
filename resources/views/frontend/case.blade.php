@@ -1602,7 +1602,13 @@ $(document).ready(function() {
 
 
     // Prevent editing of computed fields
+// Prevent editing of computed fields
     $(document).on('click', '.readonly-cell', function(e) {
+        // Let real links (e.g. Sheriff Reports) work normally
+        if ($(e.target).is('a') || $(e.target).closest('a').length) {
+            return;
+        }
+
         e.stopPropagation();
         e.preventDefault();
         
