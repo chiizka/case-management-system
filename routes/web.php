@@ -17,6 +17,7 @@ use App\Http\Controllers\LogController;
 use App\Http\Controllers\DocumentTrackingController;
 use App\Http\Controllers\LaborRelationController;
 use App\Http\Controllers\MalsuController;
+use App\Http\Controllers\SheriffsReportController;
 
 
 Route::get('/', [FrontController::class, 'index'])->name('home');
@@ -89,6 +90,9 @@ Route::middleware('auth')->group(function () {
         Route::get('/case/load-sheriff-province-tab/{province}', [CasesController::class, 'loadSheriffProvinceTab'])
         ->name('case.loadSheriffProvinceTab');
         Route::get('/case/load-sheriff-tab', [CasesController::class, 'loadSheriffTab'])->name('case.loadSheriffTab');
+        Route::get('/case/{id}/sheriff-reports', [SheriffsReportController::class, 'index'])->name('sheriffReports.index');
+        Route::post('/case/{id}/sheriff-reports', [SheriffsReportController::class, 'store'])->name('sheriffReports.store');
+        Route::delete('/sheriff-reports/{id}', [SheriffsReportController::class, 'destroy'])->name('sheriffReports.destroy');
         Route::post('/case/{id}/execute', [CasesController::class, 'executeCase'])->name('case.execute');
         // Resource route LAST
         Route::resource('case', CasesController::class);

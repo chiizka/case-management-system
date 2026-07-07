@@ -69,6 +69,9 @@
                 <th>Date Indorsed to PO</th>
                 <th>PO Date Received</th>
                 <th>RO Received Sheriff's Return</th>
+                @unless(Auth::user()->isSheriff())
+                    <th>Sheriff Reports</th>
+                @endunless
             </tr>
         </thead>
         <tbody>
@@ -104,24 +107,26 @@
                                         <i class="fas fa-history"></i>
                                     </button>
 
-                                    <button type="button"
-                                            class="btn btn-primary btn-sm document-checklist-btn"
-                                            data-case-id="{{ $case->id }}"
-                                            data-case-no="{{ $case->case_no ?? 'N/A' }}"
-                                            data-establishment="{{ $case->establishment_name ?? 'N/A' }}"
-                                            title="Document Checklist">
-                                        <i class="fas fa-file-alt"></i>
-                                    </button>
-
-                                    <button type="button"
-                                            class="btn btn-success btn-sm complete-case-btn"
-                                            data-case-id="{{ $case->id }}"
-                                            data-case-no="{{ $case->case_no ?? 'N/A' }}"
-                                            data-establishment="{{ $case->establishment_name ?? 'N/A' }}"
-                                            data-stage="{{ explode(': ', $case->current_stage)[1] ?? $case->current_stage ?? 'Unknown' }}"
-                                            title="Mark as Complete">
-                                        <i class="fas fa-check-circle"></i>
-                                    </button>
+                                    @if(Auth::user()->isSheriff())
+                                        <button type="button"
+                                                class="btn btn-primary btn-sm upload-report-btn"
+                                                data-case-id="{{ $case->id }}"
+                                                data-case-no="{{ $case->case_no ?? 'N/A' }}"
+                                                data-establishment="{{ $case->establishment_name ?? 'N/A' }}"
+                                                title="Upload Report">
+                                            <i class="fas fa-upload"></i>
+                                        </button>
+                                    @else
+                                        <button type="button"
+                                                class="btn btn-success btn-sm complete-case-btn"
+                                                data-case-id="{{ $case->id }}"
+                                                data-case-no="{{ $case->case_no ?? 'N/A' }}"
+                                                data-establishment="{{ $case->establishment_name ?? 'N/A' }}"
+                                                data-stage="{{ explode(': ', $case->current_stage)[1] ?? $case->current_stage ?? 'Unknown' }}"
+                                                title="Mark as Complete">
+                                            <i class="fas fa-check-circle"></i>
+                                        </button>
+                                    @endif
                                 </div>
                             </div>
                         </td>
@@ -225,11 +230,25 @@
                         <td class="editable-cell" data-field="ro_received_sheriffs_return" data-type="date">
                             {{ $case->malsu?->ro_received_sheriffs_return ? \Carbon\Carbon::parse($case->malsu->ro_received_sheriffs_return)->format('Y-m-d') : '-' }}
                         </td>
+                        @unless(Auth::user()->isSheriff())
+                            <td class="readonly-cell wrap-cell">
+                                @php $reports = $case->malsu->sheriffsReports ?? collect(); @endphp
+                                @forelse($reports as $report)
+                                    <div class="mb-1">
+                                        <a href="{{ $report->report_link }}" target="_blank" rel="noopener">
+                                            <i class="fas fa-external-link-alt mr-1"></i>{{ optional($report->report_month)->format('F Y') }}
+                                        </a>
+                                    </div>
+                                @empty
+                                    <span class="text-muted">-</span>
+                                @endforelse
+                            </td>
+                        @endunless
                     </tr>
                 @endforeach
             @else
                 <tr>
-                    <td colspan="22" class="text-center text-muted py-4">
+                    <td colspan="{{ Auth::user()->isSheriff() ? 22 : 23 }}" class="text-center text-muted py-4">
                         <i class="fas fa-inbox fa-2x mb-2 d-block"></i>
                         No cases are currently assigned.
                     </td>

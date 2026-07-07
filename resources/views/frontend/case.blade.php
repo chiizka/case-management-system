@@ -1090,6 +1090,50 @@ body.sheriff-readonly .edit-row-btn-case {
         </div>
     </div>
 
+    <div class="modal fade" id="sheriffReportsModal" tabindex="-1" role="dialog" aria-labelledby="sheriffReportsModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title" id="sheriffReportsModalLabel"><i class="fas fa-upload"></i> Upload Sheriff Report</h5>
+                    <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close"><span>&times;</span></button>
+                </div>
+                <div class="modal-body">
+                    <p class="mb-1"><strong>Case No:</strong> <span id="sr-case-no"></span></p>
+                    <p class="mb-0"><strong>Establishment:</strong> <span id="sr-establishment"></span></p>
+                    <hr>
+                    <form id="sheriffReportForm">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>Report Month <span class="text-danger">*</span></label>
+                                    <input type="month" class="form-control" id="sr_report_month" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>Report Link <span class="text-danger">*</span></label>
+                                    <input type="url" class="form-control" id="sr_report_link" placeholder="https://drive.google.com/..." required>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Notes (optional)</label>
+                            <textarea class="form-control" id="sr_report_content" rows="2"></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-plus"></i> Add Report</button>
+                    </form>
+                    <hr>
+                    <h6>Submitted Reports</h6>
+                    <ul class="list-group" id="sheriffReportsList"></ul>
+                    <p class="text-muted text-center mt-3" id="noSheriffReportsMessage" style="display:none;">No reports submitted yet.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Delete Confirmation Modal -->
     <div class="modal fade" id="deleteCaseModal" tabindex="-1" role="dialog" aria-labelledby="deleteCaseModalLabel" aria-hidden="true">
         <div class="modal-dialog" role="document">
@@ -1510,6 +1554,8 @@ body.sheriff-readonly .edit-row-btn-case {
 let caseToProgress = null;
 let caseToDelete = null;
 let sheriffTabLoaded = false;
+let currentSheriffReportCaseId = null;
+
 const isReadOnlySheriff = {{ Auth::user()->isSheriff() ? 'true' : 'false' }};
 if (isReadOnlySheriff) {
     document.body.classList.add('sheriff-readonly');
@@ -1880,6 +1926,101 @@ $(document).on('click', '.action-toggle-btn', function(e) {
         $container.scrollLeft($container.scrollLeft() + 1);
         $container.scrollLeft($container.scrollLeft() - 1);
     }, 20);
+});
+
+$(document).on('click', '.upload-report-btn', function() {
+    currentSheriffReportCaseId = $(this).data('case-id');
+    $('#sr-case-no').text($(this).data('case-no'));
+    $('#sr-establishment').text($(this).data('establishment'));
+    $('#sheriffReportForm')[0].reset();
+    loadSheriffReports();
+    $('#sheriffReportsModal').modal('show');
+});
+
+function loadSheriffReports() {
+    $.ajax({
+        url: `/case/${currentSheriffReportCaseId}/sheriff-reports`,
+        method: 'GET',
+        success: function(response) {
+            if (response.success) renderSheriffReports(response.reports);
+        },
+        error: function(xhr) { console.error('Failed to load sheriff reports:', xhr); }
+    });
+}
+
+function renderSheriffReports(reports) {
+    const $list = $('#sheriffReportsList');
+    const $empty = $('#noSheriffReportsMessage');
+    $list.empty();
+
+    if (!reports || reports.length === 0) { $empty.show(); return; }
+    $empty.hide();
+
+    reports.forEach(function(r) {
+        $list.append(`
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                <div>
+                    <a href="${r.report_link}" target="_blank" rel="noopener">
+                        <i class="fas fa-external-link-alt mr-1"></i>${r.report_month_label}
+                    </a>
+                    <small class="text-muted d-block">Submitted: ${r.report_date_submitted}${r.submitted_by ? ' by ' + r.submitted_by : ''}</small>
+                    ${r.report_content ? `<small class="text-muted d-block">${r.report_content}</small>` : ''}
+                </div>
+                <button class="btn btn-sm btn-outline-danger delete-sheriff-report-btn" data-report-id="${r.id}" title="Remove">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </li>
+        `);
+    });
+}
+
+$('#sheriffReportForm').on('submit', function(e) {
+    e.preventDefault();
+    const reportMonth = $('#sr_report_month').val();
+    const reportLink = $('#sr_report_link').val().trim();
+    const reportContent = $('#sr_report_content').val().trim();
+
+    if (!reportMonth || !reportLink) { alert('Please fill in the required fields.'); return; }
+
+    $.ajax({
+        url: `/case/${currentSheriffReportCaseId}/sheriff-reports`,
+        method: 'POST',
+        data: {
+            _token: $('meta[name="csrf-token"]').attr('content'),
+            report_month: reportMonth,
+            report_link: reportLink,
+            report_content: reportContent
+        },
+        success: function(response) {
+            if (response.success) {
+                $('#sheriffReportForm')[0].reset();
+                loadSheriffReports();
+                showToast('Success', 'Report added successfully.', 'success');
+            } else {
+                showToast('Error', response.message || 'Failed to add report.', 'error');
+            }
+        },
+        error: function(xhr) {
+            showToast('Error', xhr.responseJSON?.message || 'Failed to add report.', 'error');
+        }
+    });
+});
+
+$(document).on('click', '.delete-sheriff-report-btn', function() {
+    if (!confirm('Remove this report link?')) return;
+    const reportId = $(this).data('report-id');
+
+    $.ajax({
+        url: `/sheriff-reports/${reportId}`,
+        method: 'DELETE',
+        data: { _token: $('meta[name="csrf-token"]').attr('content') },
+        success: function(response) {
+            if (response.success) { loadSheriffReports(); showToast('Success', 'Report removed.', 'success'); }
+        },
+        error: function(xhr) {
+            showToast('Error', xhr.responseJSON?.message || 'Failed to remove report.', 'error');
+        }
+    });
 });
 
 $(document).on('click', '.edit-row-btn-case', function(e) {

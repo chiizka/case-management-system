@@ -1809,7 +1809,7 @@ public function loadMalsuTab(Request $request)
                 $q->where('current_role', User::ROLE_MALSU)
                 ->whereIn('status', ['Received']);
             })
-            ->with(['documentTracking', 'malsu'])
+            ->with(['documentTracking', 'malsu.sheriffsReports'])
             ->orderBy('created_at', 'desc')
             ->get();
 
@@ -1842,7 +1842,7 @@ public function loadSheriffTab(Request $request)
                 $q->where('current_role', $user->role)
                 ->whereIn('status', ['Received']);
             })
-            ->with(['documentTracking', 'malsu'])
+            ->with(['documentTracking', 'malsu.sheriffsReports'])
             ->orderBy('created_at', 'desc')
             ->get();
 
@@ -2085,7 +2085,7 @@ public function loadSheriffProvinceTab(Request $request, $province)
                 $q->where('current_role', $role)
                   ->where('status', 'Received');
             })
-            ->with(['documentTracking', 'malsu'])
+            ->with(['documentTracking', 'malsu.sheriffsReports'])
             ->orderBy('created_at', 'desc')
             ->get();
 

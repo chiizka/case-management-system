@@ -49,8 +49,9 @@ class Malsu extends Model
         return $this->belongsTo(CaseFile::class, 'case_id');
     }
 
-    public function sheriffReports()
+    public function sheriffsReports()
     {
-        return $this->hasMany(MalsuSheriffReport::class, 'malsu_id')->orderBy('report_month', 'desc');
+        return $this->hasMany(\App\Models\SheriffsReport::class, 'malsu_id')
+            ->orderBy('report_month', 'desc');
     }
 }
