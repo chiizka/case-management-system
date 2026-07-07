@@ -1805,9 +1805,14 @@ public function loadMalsuTab(Request $request)
 
     try {
         $cases = CaseFile::whereNotIn('overall_status', ['Completed', 'Disposed', 'Appealed'])
-            ->whereHas('documentTracking', function ($q) {
-                $q->where('current_role', User::ROLE_MALSU)
-                ->whereIn('status', ['Received']);
+            ->where(function ($q) {
+                $q->whereHas('documentTracking', function ($q2) {
+                    $q2->where('current_role', User::ROLE_MALSU)
+                       ->where('status', 'Received');
+                })
+                ->orWhereHas('malsu', function ($q2) {
+                    $q2->whereNotNull('sheriff_designate');
+                });
             })
             ->with(['documentTracking', 'malsu.sheriffsReports'])
             ->orderBy('created_at', 'desc')

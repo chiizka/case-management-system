@@ -3839,7 +3839,7 @@ $(document).ready(function() {
                 icon: 'question',
                 title: 'Send case to sheriff?',
                 html: `Send this case to <strong>${selectedName}</strong>?<br>
-                    <small class="text-muted">It will leave your MALSU active cases until received.</small>`,
+                    <small class="text-muted">It will remain in your MALSU list and also appear in their queue once received.</small>`,
                 showCancelButton: true,
                 confirmButtonText: 'Yes, send it',
                 cancelButtonText: 'Cancel',
@@ -3858,8 +3858,8 @@ $(document).ready(function() {
                         success: function(response) {
                             if (response.success) {
                                 showToast('Success', response.message || 'Case sent successfully', 'success');
-                                // Case leaves MALSU's active list immediately
-                                $row.fadeOut(300, function() { $(this).remove(); });
+                                // Case stays in MALSU's list — just update the cell to show the new designate
+                                restoreCellDisplay($cell, selectedName, fieldType);
                             } else {
                                 restoreCellDisplay($cell, originalValue, fieldType);
                                 showToast('Error', response.message || 'Send failed', 'error');
@@ -4812,7 +4812,11 @@ $(document).ready(function() {
     function cancelEdit() {
         if (!currentEditingRow) return;
 
-        currentEditingRow.find('.editable-cell:not(.readonly-cell)').each(function() {
+        // Capture config BEFORE resetEditState() nulls out currentTab
+        const config = getTabConfig(currentTab);
+        const $editingRow = currentEditingRow;
+
+        $editingRow.find('.editable-cell:not(.readonly-cell)').each(function() {
             const cell = $(this);
             const field = cell.data('field');
             let displayValue = originalData[field] || '';
@@ -4836,17 +4840,18 @@ $(document).ready(function() {
             cell.removeClass('edit-mode');
         });
 
-        restoreActionButtons(currentEditingRow);
-        resetEditState();
+        restoreActionButtons($editingRow);
 
-         if (config.name === 'malsu') {
-            const $badge  = currentEditingRow.find('.case-tag-badge');
-            const $select = currentEditingRow.find('.case-tag-select');
+        if (config && config.name === 'malsu') {
+            const $badge  = $editingRow.find('.case-tag-badge');
+            const $select = $editingRow.find('.case-tag-select');
             $select.removeClass('edit-input').hide();
             if ($badge.attr('data-tag')) {
                 $badge.show();
             }
         }
+
+        resetEditState();
     }
 
     function resetEditState() {
