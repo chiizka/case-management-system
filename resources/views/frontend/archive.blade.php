@@ -395,7 +395,11 @@
         @if($archivedCases->count() > 0)
             @foreach($archivedCases as $case)
                 @php
-                    $isMalsuCase = $case->overall_status === 'Appealed' || $case->current_stage === '7: Appeals & Resolution';
+                    $trackingRole = optional($case->documentTracking)->current_role;
+                    $isMalsuCase = $case->overall_status === 'Appealed'
+                        || $case->current_stage === '7: Appeals & Resolution'
+                        || $trackingRole === 'malsu'
+                        || \Illuminate\Support\Str::startsWith((string) $trackingRole, 'sheriff_');
                     $isProvincialCase = $case->overall_status === 'Disposed';
                     $caseOrigin = $isProvincialCase ? 'provincial' : ($isMalsuCase ? 'malsu' : 'case-management');
                 @endphp
