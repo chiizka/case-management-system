@@ -474,18 +474,18 @@ body.sheriff-readonly .edit-row-btn-case {
 
                 @if(Auth::user()->isCaseManagement() && !$isProvincialCM)
                 <li class="nav-item">
-                    <a class="nav-link" id="tabCM-tab" data-toggle="tab" href="#tabCM"
-                    role="tab" aria-controls="tabCM" aria-selected="false">
+                    <a class="nav-link active" id="tabCM-tab" data-toggle="tab" href="#tabCM"
+                    role="tab" aria-controls="tabCM" aria-selected="true">
                         <i class="fas fa-briefcase mr-1"></i> My Cases
                     </a>
                 </li>
                 @endif
 
-              @if(!Auth::user()->isMalsu() && !Auth::user()->isSheriff() && !$isProvincialCM)
+                @if(!Auth::user()->isMalsu() && !Auth::user()->isSheriff() && !$isProvincialCM)
                 <li class="nav-item">
-                    <a class="nav-link active" 
+                    <a class="nav-link {{ Auth::user()->isCaseManagement() ? '' : 'active' }}" 
                     id="tab0-tab" data-toggle="tab" href="#tab0"
-                    role="tab" aria-controls="tab0" aria-selected="true">
+                    role="tab" aria-controls="tab0" aria-selected="{{ Auth::user()->isCaseManagement() ? 'false' : 'true' }}">
                         <i class="fas fa-folder-open mr-1"></i> All Active Cases
                     </a>
                 </li>
@@ -517,8 +517,8 @@ body.sheriff-readonly .edit-row-btn-case {
 
                 @if(Auth::user()->isMalsu() || Auth::user()->isAdmin())
                 <li class="nav-item">
-                    <a class="nav-link" id="tabMALSU-tab" data-toggle="tab" href="#tabMALSU"
-                    role="tab" aria-controls="tabMALSU" aria-selected="false">
+                    <a class="nav-link {{ Auth::user()->isMalsu() ? 'active' : '' }}" id="tabMALSU-tab" data-toggle="tab" href="#tabMALSU"
+                    role="tab" aria-controls="tabMALSU" aria-selected="{{ Auth::user()->isMalsu() ? 'true' : 'false' }}">
                         <i class="fas fa-briefcase mr-1"></i> My Cases
                     </a>
                 </li>
@@ -575,7 +575,7 @@ body.sheriff-readonly .edit-row-btn-case {
         
         <!-- Tab 0: All Active Cases (Enhanced with corrected columns) -->
         @if(!Auth::user()->isMalsu() && !Auth::user()->isSheriff() && !$isProvincialCM)
-        <div class="tab-pane fade show active" id="tab0" role="tabpanel" aria-labelledby="tab0-tab">
+        <div class="tab-pane fade {{ Auth::user()->isCaseManagement() ? '' : 'show active' }}" id="tab0" role="tabpanel" aria-labelledby="tab0-tab">
             <div class="card shadow mb-4">
                 <div class="card-body">
                     <!-- Success/Error alerts for AJAX -->
@@ -792,7 +792,7 @@ body.sheriff-readonly .edit-row-btn-case {
     
                 @if((Auth::user()->isCaseManagement() && !$isProvincialCM) || Auth::user()->isAdmin())
                     <!-- Tab CM: Case Management's Cases (LAZY LOAD) -->
-                    <div class="tab-pane fade" id="tabCM" role="tabpanel" aria-labelledby="tabCM-tab">
+                    <div class="tab-pane fade {{ (Auth::user()->isCaseManagement() && !$isProvincialCM) ? 'show active' : '' }}" id="tabCM" role="tabpanel" aria-labelledby="tabCM-tab">
                         <div class="card shadow mb-4">
                             <div class="card-body">
                                 <div class="tab-loading text-center" style="padding: 3rem;">
@@ -2092,7 +2092,7 @@ $(document).on('click', function(e) {
     
     // Track which tabs have been loaded
     var loadedTabs = {
-        'tab0': true,
+        'tab0': false,
         'tab1': false,
         'tab2': false,
         'tab3': false,
@@ -2995,7 +2995,11 @@ function loadTab0Data() {
 }
 
 // Trigger on page load (only once)
-loadTab0Data();
+if ($('#tab0').hasClass('active')) {
+    loadTab0Data();
+    loadedTabs['tab0'] = true;
+}
+
 
     // Show/hide "Other" note in Add Case modal
     $('#type_of_industry').on('change', function() {
@@ -3031,7 +3035,10 @@ loadTab0Data();
         console.log('Tab switched to:', target);
         
         if (tabId === 'tab0') {
-            if (tables[tableId]) {
+            if (!loadedTabs['tab0']) {
+                loadTab0Data();
+                loadedTabs['tab0'] = true;
+            } else if (tables[tableId]) {
                 tables[tableId].columns.adjust().draw(false);
             }
             return;
@@ -3617,6 +3624,10 @@ $(document).ready(function() {
 
     if ($('#tabSheriff').hasClass('active')) {
     $('a[href="#tabSheriff"]').trigger('shown.bs.tab');
+    }
+
+    if ($('#tabCM').hasClass('active')) {
+    $('a[href="#tabCM"]').trigger('shown.bs.tab');
     }
 
     // Double-click to edit cell
