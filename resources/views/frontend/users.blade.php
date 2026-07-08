@@ -298,6 +298,7 @@
                         </select>
                         <small class="form-text text-muted">Regional sees all provinces. A specific province limits visibility to that province's active cases.</small>
                     </div>
+                </div>
 
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
