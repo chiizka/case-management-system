@@ -232,16 +232,17 @@
                         </td>
                         @unless(Auth::user()->isSheriff())
                             <td class="readonly-cell wrap-cell">
-                                @php $reports = $case->malsu->sheriffsReports ?? collect(); @endphp
-                                @forelse($reports as $report)
-                                    <div class="mb-1">
-                                        <a href="{{ $report->report_link }}" target="_blank" rel="noopener">
-                                            <i class="fas fa-external-link-alt mr-1"></i>{{ optional($report->report_month)->format('F Y') }}
-                                        </a>
-                                    </div>
-                                @empty
+                                @php $reportCount = $case->malsu->sheriffsReports->count() ?? 0; @endphp
+                                @if($reportCount > 0)
+                                    <button type="button" class="btn btn-sm btn-outline-primary view-reports-grid-btn"
+                                            data-case-id="{{ $case->id }}"
+                                            data-case-no="{{ $case->case_no ?? 'N/A' }}"
+                                            data-establishment="{{ $case->establishment_name ?? 'N/A' }}">
+                                        <i class="fas fa-table"></i> {{ $reportCount }} report(s)
+                                    </button>
+                                @else
                                     <span class="text-muted">-</span>
-                                @endforelse
+                                @endif
                             </td>
                         @endunless
                     </tr>

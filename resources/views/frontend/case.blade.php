@@ -447,6 +447,19 @@ td.actions-cell.expanded {
 body.sheriff-readonly .edit-row-btn-case {
     display: none !important;
 }
+
+#rg-table th,
+#rg-table td {
+    position: static !important;
+    left: auto !important;
+    background-color: #fff !important;
+    box-shadow: none !important;
+    z-index: auto !important;
+}
+
+#rg-table thead th {
+    background-color: #f8f9fc !important;
+}
 </style>
 
 <!-- Main Content -->
@@ -1094,38 +1107,52 @@ body.sheriff-readonly .edit-row-btn-case {
         <div class="modal-dialog modal-lg" role="document">
             <div class="modal-content">
                 <div class="modal-header bg-primary text-white">
-                    <h5 class="modal-title" id="sheriffReportsModalLabel"><i class="fas fa-upload"></i> Upload Sheriff Report</h5>
+                    <h5 class="modal-title" id="sheriffReportsModalLabel"><i class="fas fa-file-alt"></i> Monthly Report</h5>
                     <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close"><span>&times;</span></button>
                 </div>
                 <div class="modal-body">
                     <p class="mb-1"><strong>Case No:</strong> <span id="sr-case-no"></span></p>
                     <p class="mb-0"><strong>Establishment:</strong> <span id="sr-establishment"></span></p>
                     <hr>
+
                     <form id="sheriffReportForm">
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label>Report Month <span class="text-danger">*</span></label>
-                                    <input type="month" class="form-control" id="sr_report_month" required>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label>Report Link <span class="text-danger">*</span></label>
-                                    <input type="url" class="form-control" id="sr_report_link" placeholder="https://drive.google.com/..." required>
-                                </div>
-                            </div>
-                        </div>
                         <div class="form-group">
-                            <label>Notes (optional)</label>
-                            <textarea class="form-control" id="sr_report_content" rows="2"></textarea>
+                            <label>Report Month <span class="text-danger">*</span></label>
+                            <input type="month" class="form-control" id="sr_report_month" required>
+                            <small class="form-text text-muted" id="sr_month_status"></small>
                         </div>
-                        <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-plus"></i> Add Report</button>
+
+                        <div class="form-group">
+                            <label>Report <span class="text-danger">*</span></label>
+                            <textarea class="form-control" id="sr_report_content" rows="5"
+                                placeholder="Describe what happened this month for this case (payments received, actions taken, respondent status, etc.)"
+                                required></textarea>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Attach supporting document/link <span class="text-muted">(optional)</span></label>
+                            <input type="url" class="form-control" id="sr_report_link" placeholder="https://drive.google.com/...">
+                        </div>
+
+                        <button type="submit" class="btn btn-primary btn-sm" id="sr_submit_btn">
+                            <i class="fas fa-save"></i> Save Report
+                        </button>
+                        <button type="button" class="btn btn-secondary btn-sm" id="sr_cancel_edit_btn" style="display:none;">
+                            Cancel Edit
+                        </button>
                     </form>
+
                     <hr>
-                    <h6>Submitted Reports</h6>
-                    <ul class="list-group" id="sheriffReportsList"></ul>
-                    <p class="text-muted text-center mt-3" id="noSheriffReportsMessage" style="display:none;">No reports submitted yet.</p>
+
+                    <a href="#" id="sr_toggle_history" class="d-block mb-2">
+                        <i class="fas fa-chevron-right" id="sr_history_icon"></i>
+                        ▸ Past Reports (<span id="sr_history_count">0</span>)
+                    </a>
+
+                    <div id="sr_history_container" style="display:none;">
+                        <ul class="list-group" id="sheriffReportsList"></ul>
+                        <p class="text-muted text-center mt-3" id="noSheriffReportsMessage" style="display:none;">No past reports yet.</p>
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
@@ -1538,6 +1565,45 @@ body.sheriff-readonly .edit-row-btn-case {
     </div>
 </div>
 
+<!-- Sheriff Reports Grid Modal (Admin/MALSU view) -->
+<div class="modal fade" id="reportsGridModal" tabindex="-1" role="dialog" aria-labelledby="reportsGridModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="reportsGridModalLabel">
+                    <i class="fas fa-table"></i> Monthly Reports
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-1"><strong>Case No:</strong> <span id="rg-case-no"></span></p>
+                <p class="mb-3"><strong>Establishment:</strong> <span id="rg-establishment"></span></p>
+
+                <div id="rg-loading" class="text-center py-4">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="sr-only">Loading...</span>
+                    </div>
+                </div>
+
+                <div id="rg-content" style="display:none; overflow-x:auto; overflow-y:hidden; max-width:100%;">
+                    <table class="table table-bordered mb-0" id="rg-table" style="table-layout:fixed; width:max-content;">
+                        <thead>
+                            <tr id="rg-table-head"></tr>
+                        </thead>
+                        <tbody>
+                            <tr id="rg-table-body"></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
 
 @endsection
 @push('scripts')
@@ -1934,13 +2000,36 @@ $(document).on('click', '.action-toggle-btn', function(e) {
     }, 20);
 });
 
+let sheriffReportsCache = [];
+
 $(document).on('click', '.upload-report-btn', function() {
     currentSheriffReportCaseId = $(this).data('case-id');
     $('#sr-case-no').text($(this).data('case-no'));
     $('#sr-establishment').text($(this).data('establishment'));
     $('#sheriffReportForm')[0].reset();
+    $('#sr_cancel_edit_btn').hide();
+    $('#sr_submit_btn').html('<i class="fas fa-save"></i> Save Report');
+    $('#sr_month_status').text('');
+    $('#sr_report_month').data('editing-id', null);
+
+    // Default to current month for a brand-new report
+    const now = new Date();
+    const currentMonthStr = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+    $('#sr_report_month').val(currentMonthStr);
+
+    $('#sr_history_container').hide();
+    $('#sr_history_icon').removeClass('fa-chevron-down').addClass('fa-chevron-right');
+
     loadSheriffReports();
     $('#sheriffReportsModal').modal('show');
+});
+
+$('#sr_toggle_history').on('click', function(e) {
+    e.preventDefault();
+    const $container = $('#sr_history_container');
+    const isVisible = $container.is(':visible');
+    $container.slideToggle(150);
+    $('#sr_history_icon').toggleClass('fa-chevron-right fa-chevron-down');
 });
 
 function loadSheriffReports() {
@@ -1948,7 +2037,10 @@ function loadSheriffReports() {
         url: `/case/${currentSheriffReportCaseId}/sheriff-reports`,
         method: 'GET',
         success: function(response) {
-            if (response.success) renderSheriffReports(response.reports);
+            if (response.success) {
+                sheriffReportsCache = response.reports;
+                renderSheriffReports(response.reports);
+            }
         },
         error: function(xhr) { console.error('Failed to load sheriff reports:', xhr); }
     });
@@ -1957,36 +2049,90 @@ function loadSheriffReports() {
 function renderSheriffReports(reports) {
     const $list = $('#sheriffReportsList');
     const $empty = $('#noSheriffReportsMessage');
+    $('#sr_history_count').text(reports ? reports.length : 0);
     $list.empty();
 
     if (!reports || reports.length === 0) { $empty.show(); return; }
     $empty.hide();
 
     reports.forEach(function(r) {
+        const editedNote = r.was_edited
+            ? `<small class="text-muted d-block"><i class="fas fa-pen"></i> Last edited: ${r.updated_at}</small>`
+            : '';
+        const linkHtml = r.report_link
+            ? `<a href="${r.report_link}" target="_blank" rel="noopener" class="ml-2"><i class="fas fa-link"></i> Attachment</a>`
+            : '';
+
         $list.append(`
-            <li class="list-group-item d-flex justify-content-between align-items-center">
-                <div>
-                    <a href="${r.report_link}" target="_blank" rel="noopener">
-                        <i class="fas fa-external-link-alt mr-1"></i>${r.report_month_label}
-                    </a>
-                    <small class="text-muted d-block">Submitted: ${r.report_date_submitted}${r.submitted_by ? ' by ' + r.submitted_by : ''}</small>
-                    ${r.report_content ? `<small class="text-muted d-block">${r.report_content}</small>` : ''}
+            <li class="list-group-item">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div style="flex:1;">
+                        <strong>${r.report_month_label}</strong>${linkHtml}
+                        <p class="mb-1 mt-1" style="white-space: pre-wrap;">${r.report_content || '<span class="text-muted">No content</span>'}</p>
+                        <small class="text-muted d-block">Submitted: ${r.report_date_submitted}${r.submitted_by ? ' by ' + r.submitted_by : ''}</small>
+                        ${editedNote}
+                    </div>
+                    <div class="ml-2" style="white-space:nowrap;">
+                        @if(Auth::user()->isSheriff())
+                        <button class="btn btn-sm btn-outline-primary edit-sheriff-report-btn" data-report-id="${r.id}" title="Edit this report">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger delete-sheriff-report-btn" data-report-id="${r.id}" title="Remove">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                        @endif
+                    </div>
                 </div>
-                <button class="btn btn-sm btn-outline-danger delete-sheriff-report-btn" data-report-id="${r.id}" title="Remove">
-                    <i class="fas fa-trash"></i>
-                </button>
             </li>
         `);
     });
 }
 
+// Click a past entry to load it into the form for editing
+$(document).on('click', '.edit-sheriff-report-btn', function() {
+    const reportId = $(this).data('report-id');
+    const report = sheriffReportsCache.find(r => r.id == reportId);
+    if (!report) return;
+
+    $('#sr_report_month').val(report.report_month);
+    $('#sr_report_content').val(report.report_content || '');
+    $('#sr_report_link').val(report.report_link || '');
+    $('#sr_report_month').data('editing-id', reportId);
+
+    $('#sr_month_status').html(`<i class="fas fa-info-circle"></i> Editing ${report.report_month_label}'s report.`);
+    $('#sr_submit_btn').html('<i class="fas fa-save"></i> Update Report');
+    $('#sr_cancel_edit_btn').show();
+
+    // scroll modal body up to the form
+    $('.modal-body').animate({ scrollTop: 0 }, 200);
+});
+
+$('#sr_cancel_edit_btn').on('click', function() {
+    $('#sheriffReportForm')[0].reset();
+    $('#sr_cancel_edit_btn').hide();
+    $('#sr_submit_btn').html('<i class="fas fa-save"></i> Save Report');
+    $('#sr_month_status').text('');
+    $('#sr_report_month').data('editing-id', null);
+
+    const now = new Date();
+    const currentMonthStr = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+    $('#sr_report_month').val(currentMonthStr);
+});
+
 $('#sheriffReportForm').on('submit', function(e) {
     e.preventDefault();
     const reportMonth = $('#sr_report_month').val();
-    const reportLink = $('#sr_report_link').val().trim();
     const reportContent = $('#sr_report_content').val().trim();
+    const reportLink = $('#sr_report_link').val().trim();
 
-    if (!reportMonth || !reportLink) { alert('Please fill in the required fields.'); return; }
+    if (!reportMonth || !reportContent) {
+        showToast('Error', 'Please fill in the report month and content.', 'error');
+        return;
+    }
+
+    const $submitBtn = $('#sr_submit_btn');
+    const originalHtml = $submitBtn.html();
+    $submitBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Saving...');
 
     $.ajax({
         url: `/case/${currentSheriffReportCaseId}/sheriff-reports`,
@@ -1994,26 +2140,43 @@ $('#sheriffReportForm').on('submit', function(e) {
         data: {
             _token: $('meta[name="csrf-token"]').attr('content'),
             report_month: reportMonth,
-            report_link: reportLink,
-            report_content: reportContent
+            report_content: reportContent,
+            report_link: reportLink || null
         },
         success: function(response) {
             if (response.success) {
                 $('#sheriffReportForm')[0].reset();
+                $('#sr_cancel_edit_btn').hide();
+                $('#sr_submit_btn').html('<i class="fas fa-save"></i> Save Report');
+                $('#sr_month_status').text('');
+                $('#sr_report_month').data('editing-id', null);
+
+                const now = new Date();
+                const currentMonthStr = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+                $('#sr_report_month').val(currentMonthStr);
+
                 loadSheriffReports();
-                showToast('Success', 'Report added successfully.', 'success');
+                showToast('Success', response.message || 'Report saved.', 'success');
             } else {
-                showToast('Error', response.message || 'Failed to add report.', 'error');
+                showToast('Error', response.message || 'Failed to save report.', 'error');
             }
         },
         error: function(xhr) {
-            showToast('Error', xhr.responseJSON?.message || 'Failed to add report.', 'error');
+            if (xhr.status === 409) {
+                showToast('Error', 'A report for this month already exists. Reloading...', 'error');
+                loadSheriffReports();
+            } else {
+                showToast('Error', xhr.responseJSON?.message || 'Failed to save report.', 'error');
+            }
+        },
+        complete: function() {
+            $submitBtn.prop('disabled', false).html(originalHtml);
         }
     });
 });
 
 $(document).on('click', '.delete-sheriff-report-btn', function() {
-    if (!confirm('Remove this report link?')) return;
+    if (!confirm('Remove this report? This cannot be undone.')) return;
     const reportId = $(this).data('report-id');
 
     $.ajax({
@@ -2025,6 +2188,76 @@ $(document).on('click', '.delete-sheriff-report-btn', function() {
         },
         error: function(xhr) {
             showToast('Error', xhr.responseJSON?.message || 'Failed to remove report.', 'error');
+        }
+    });
+});
+
+$(document).on('click', '.toggle-reports-grid-btn', function() {
+    const targetId = $(this).data('toggle-target');
+    $('#' + targetId).slideToggle(150);
+    $(this).find('i').toggleClass('fa-chevron-right fa-chevron-down');
+});
+
+
+$(document).on('click', '.view-reports-grid-btn', function() {
+    const caseId = $(this).data('case-id');
+    $('#rg-case-no').text($(this).data('case-no'));
+    $('#rg-establishment').text($(this).data('establishment'));
+
+    $('#rg-content').hide();
+    $('#rg-loading').show();
+    $('#rg-table-head').empty();
+    $('#rg-table-body').empty();
+
+    $('#reportsGridModal').modal('show');
+
+    $.ajax({
+        url: `/case/${caseId}/sheriff-reports`,
+        method: 'GET',
+        success: function(response) {
+            $('#rg-loading').hide();
+            $('#rg-content').show();
+
+            if (!response.success || !response.reports || response.reports.length === 0) {
+                $('#rg-content').html('<p class="text-muted text-center py-4">No reports found.</p>');
+                return;
+            }
+
+            // Sort ascending by month so it reads left-to-right like the spreadsheet
+            const reports = [...response.reports].sort((a, b) => a.report_month.localeCompare(b.report_month));
+
+            const $head = $('#rg-table-head');
+            const $body = $('#rg-table-body');
+
+            const COL_WIDTH = 300; // px — widened to give bigger text room to breathe
+
+            reports.forEach(function(r) {
+                $head.append(`
+                    <th style="white-space:nowrap; background:#f8f9fc; width:${COL_WIDTH}px; min-width:${COL_WIDTH}px; max-width:${COL_WIDTH}px; font-size:1.1rem; padding:12px;">
+                        ${r.report_month_label}
+                    </th>
+                `);
+
+                const linkHtml = r.report_link
+                    ? `<br><a href="${r.report_link}" target="_blank" rel="noopener" style="font-size:1rem;"><i class="fas fa-link"></i> Attachment</a>`
+                    : '';
+                const editedHtml = r.was_edited
+                    ? `<br><span class="text-muted" style="font-size:0.9rem;"><i class="fas fa-pen"></i> Edited ${r.updated_at}</span>`
+                    : '';
+
+                $body.append(`
+                    <td style="vertical-align:top; width:${COL_WIDTH}px; min-width:${COL_WIDTH}px; max-width:${COL_WIDTH}px; white-space:normal; word-wrap:break-word; padding:12px; line-height:1.5;">
+                        <div>${r.report_content ? r.report_content.replace(/\n/g, '<br>') : '<span class="text-muted">—</span>'}</div>
+                        <span class="text-muted d-block mt-2" style="font-size:0.9rem;">Submitted: ${r.report_date_submitted}${r.submitted_by ? ' by ' + r.submitted_by : ''}</span>
+                        ${editedHtml}
+                        ${linkHtml}
+                    </td>
+                `);
+            });
+        },
+        error: function(xhr) {
+            $('#rg-loading').hide();
+            $('#rg-content').show().html('<p class="text-danger text-center py-4">Failed to load reports.</p>');
         }
     });
 });

@@ -14,14 +14,13 @@ class SheriffsReportController extends Controller
 {
     /**
      * Confirm the current sheriff is actually assigned to this case right now.
-     * Mirrors the same "current_role + Received" check used elsewhere for sheriff tabs.
      */
     private function assertSheriffOwnsCase(CaseFile $case)
     {
         $user = Auth::user();
 
         if ($user->isAdmin()) {
-            return; // admins bypass the assignment check
+            return;
         }
 
         if (!$user->isSheriff()) {
@@ -40,7 +39,7 @@ class SheriffsReportController extends Controller
     }
 
     /**
-     * List all report links for a case (via its malsu record), newest first.
+     * List all reports for a case (via its malsu record), newest month first.
      */
     public function index($caseId)
     {
@@ -49,17 +48,21 @@ class SheriffsReportController extends Controller
 
             if (!$case->malsu) {
                 return response()->json([
-                    'success'  => true,
-                    'reports'  => [],
+                    'success' => true,
+                    'reports' => [],
                 ]);
             }
 
             $reports = $case->malsu->sheriffsReports()
                 ->with('submittedBy')
-                ->orderByDesc('report_date_submitted')
-                ->orderByDesc('id')
+                ->orderByDesc('report_month')
                 ->get()
                 ->map(function ($report) {
+                    // Consider it "edited" if updated_at is more than a minute past created_at
+                    // (avoids flagging the initial save as an "edit" due to timestamp rounding)
+                    $wasEdited = $report->updated_at && $report->created_at
+                        && $report->updated_at->diffInSeconds($report->created_at) > 60;
+
                     return [
                         'id'                     => $report->id,
                         'report_month'           => optional($report->report_month)->format('Y-m'),
@@ -71,6 +74,8 @@ class SheriffsReportController extends Controller
                             ? trim($report->submittedBy->fname . ' ' . $report->submittedBy->lname)
                             : null,
                         'created_at'             => optional($report->created_at)->format('M d, Y h:i A'),
+                        'updated_at'             => optional($report->updated_at)->format('M d, Y h:i A'),
+                        'was_edited'             => $wasEdited,
                     ];
                 });
 
@@ -89,20 +94,20 @@ class SheriffsReportController extends Controller
     }
 
     /**
-     * Store a new report link for a case. Sheriffs may add multiple per month.
+     * Create or update a report for a case+month (upsert).
+     * One report per case per month — resubmitting the same month edits it.
      */
     public function store(Request $request, $caseId)
     {
         $validated = $request->validate([
-            'report_month'          => 'required|date_format:Y-m',
-            'report_link'           => 'required|url|max:255',
-            'report_content'        => 'nullable|string',
+            'report_month'   => 'required|date_format:Y-m',
+            'report_content' => 'required|string',
+            'report_link'    => 'nullable|url|max:255',
         ]);
 
         DB::beginTransaction();
         try {
             $case = CaseFile::with('malsu')->findOrFail($caseId);
-
             $this->assertSheriffOwnsCase($case);
 
             if (!$case->malsu) {
@@ -113,27 +118,36 @@ class SheriffsReportController extends Controller
                 ], 422);
             }
 
-            // report_month comes in as "Y-m" (e.g. "2026-03"); store as first day of month
             $reportMonth = $validated['report_month'] . '-01';
 
-            $report = SheriffsReport::create([
-                'malsu_id'               => $case->malsu->id,
-                'report_month'           => $reportMonth,
-                'report_date_submitted'  => now(),
-                'report_content'         => $validated['report_content'] ?? null,
-                'report_link'            => $validated['report_link'],
-                'submitted_by_user_id'   => Auth::id(),
-            ]);
+            $report = SheriffsReport::where('malsu_id', $case->malsu->id)
+                ->where('report_month', $reportMonth)
+                ->first();
+
+            $isNew = !$report;
+
+            if (!$report) {
+                $report = new SheriffsReport([
+                    'malsu_id'              => $case->malsu->id,
+                    'report_month'          => $reportMonth,
+                    'report_date_submitted' => now(), // frozen at first submission only
+                    'submitted_by_user_id'  => Auth::id(),
+                ]);
+            }
+
+            $report->report_content = $validated['report_content'];
+            $report->report_link    = $validated['report_link'] ?? null;
+            $report->save(); // updated_at refreshes automatically on every save
 
             ActivityLogger::logAction(
-                'CREATE',
+                $isNew ? 'CREATE' : 'UPDATE',
                 'Sheriff Report',
                 $case->inspection_id,
-                "Sheriff submitted a report link for {$case->establishment_name}",
+                ($isNew ? 'Sheriff submitted' : 'Sheriff updated') .
+                    " a report for {$case->establishment_name} ({$report->report_month->format('F Y')})",
                 [
                     'establishment' => $case->establishment_name,
                     'report_month'  => $reportMonth,
-                    'report_link'   => $validated['report_link'],
                 ]
             );
 
@@ -141,13 +155,16 @@ class SheriffsReportController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Report link added successfully.',
+                'message' => $isNew ? 'Report submitted successfully.' : 'Report updated successfully.',
                 'report'  => [
-                    'id'                    => $report->id,
-                    'report_month_label'    => $report->report_month->format('F Y'),
-                    'report_date_submitted' => $report->report_date_submitted->format('Y-m-d'),
-                    'report_link'           => $report->report_link,
-                    'report_content'        => $report->report_content,
+                    'id'                     => $report->id,
+                    'report_month'           => $report->report_month->format('Y-m'),
+                    'report_month_label'     => $report->report_month->format('F Y'),
+                    'report_date_submitted'  => optional($report->report_date_submitted)->format('Y-m-d'),
+                    'report_link'            => $report->report_link,
+                    'report_content'         => $report->report_content,
+                    'updated_at'             => optional($report->updated_at)->format('M d, Y h:i A'),
+                    'is_new'                 => $isNew,
                 ],
             ]);
 
@@ -158,6 +175,20 @@ class SheriffsReportController extends Controller
                 'message' => 'Validation failed.',
                 'errors'  => $e->errors(),
             ], 422);
+
+        } catch (\Illuminate\Database\QueryException $e) {
+            DB::rollBack();
+            if ($e->getCode() === '23000') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'A report for this month already exists. Please refresh and try again.',
+                ], 409);
+            }
+            Log::error('DB error saving sheriff report: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to save report.',
+            ], 500);
 
         } catch (\Exception $e) {
             DB::rollBack();
@@ -170,7 +201,7 @@ class SheriffsReportController extends Controller
     }
 
     /**
-     * Delete a report link. Only the assigned sheriff (or admin) may delete.
+     * Delete a report. Only the assigned sheriff (or admin) may delete.
      */
     public function destroy($reportId)
     {
@@ -195,7 +226,7 @@ class SheriffsReportController extends Controller
                 'DELETE',
                 'Sheriff Report',
                 $case->inspection_id,
-                "Deleted a sheriff report link for {$case->establishment_name}",
+                "Deleted a sheriff report for {$case->establishment_name}",
                 ['establishment' => $case->establishment_name]
             );
 
@@ -203,7 +234,7 @@ class SheriffsReportController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Report link removed.',
+                'message' => 'Report removed.',
             ]);
 
         } catch (\Exception $e) {
