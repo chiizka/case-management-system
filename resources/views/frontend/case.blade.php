@@ -1622,10 +1622,7 @@ let caseToDelete = null;
 let sheriffTabLoaded = false;
 let currentSheriffReportCaseId = null;
 
-const isReadOnlySheriff = {{ Auth::user()->isSheriff() ? 'true' : 'false' }};
-if (isReadOnlySheriff) {
-    document.body.classList.add('sheriff-readonly');
-}
+const isReadOnlySheriff = false; // sheriffs can now edit cases assigned to them
 
 $(document).ready(function() {
     console.log('jQuery version:', $.fn.jquery);
@@ -4660,6 +4657,7 @@ $(document).ready(function() {
         }
     };
     tabConfigs['tabCM']    = tabConfigs['tab0'];
+    tabConfigs['tabSheriff'] = tabConfigs['tabMALSU'];
     tabConfigs['tabProv-albay']          = tabConfigs['tab0'];
     tabConfigs['tabProv-camarines_sur']  = tabConfigs['tab0'];
     tabConfigs['tabProv-camarines_norte']= tabConfigs['tab0'];

@@ -162,23 +162,38 @@
                                 </span>
 
                                 {{-- Editable select (shown in edit mode) --}}
-                                <select class="form-control form-control-sm case-tag-select editable-input mt-1"
-                                        data-field="case_tag"
-                                        style="display:none; min-width: 160px;">
-                                    <option value="">— No Tag —</option>
-                                    <option value="For Execution"              {{ $currentTag === 'For Execution'              ? 'selected' : '' }}>For Execution</option>
-                                    <option value="Motion for Reconsideration" {{ $currentTag === 'Motion for Reconsideration' ? 'selected' : '' }}>Motion for Reconsideration</option>
-                                </select>
+                                @unless(Auth::user()->isSheriff())
+                                    {{-- Editable select (shown in edit mode) --}}
+                                    <select class="form-control form-control-sm case-tag-select editable-input mt-1"
+                                            data-field="case_tag"
+                                            style="display:none; min-width: 160px;">
+                                        <option value="">— No Tag —</option>
+                                        <option value="For Execution"              {{ $currentTag === 'For Execution'              ? 'selected' : '' }}>For Execution</option>
+                                        <option value="Motion for Reconsideration" {{ $currentTag === 'Motion for Reconsideration' ? 'selected' : '' }}>Motion for Reconsideration</option>
+                                    </select>
+                                @endunless
                             @endif
                         </td>
 
                         {{-- From malsu table --}}
-                        <td class="editable-cell" data-field="regional_docket_number" style="background-color: #fff3cd !important;">
-                            {{ $case->malsu->regional_docket_number ?? '-' }}
-                        </td>
-                        <td class="editable-cell" data-field="sheriff_designate" data-type="select">
-                            {{ $case->malsu->sheriff_designate ?? '-' }}
-                        </td>
+                        @if(Auth::user()->isSheriff())
+                            <td class="readonly-cell" data-field="regional_docket_number" style="background-color: #fff3cd !important;">
+                                {{ $case->malsu->regional_docket_number ?? '-' }}
+                            </td>
+                        @else
+                            <td class="editable-cell" data-field="regional_docket_number" style="background-color: #fff3cd !important;">
+                                {{ $case->malsu->regional_docket_number ?? '-' }}
+                            </td>
+                        @endif
+                        @if(Auth::user()->isSheriff())
+                            <td class="readonly-cell" data-field="sheriff_designate">
+                                {{ $case->malsu->sheriff_designate ?? '-' }}
+                            </td>
+                        @else
+                            <td class="editable-cell" data-field="sheriff_designate" data-type="select">
+                                {{ $case->malsu->sheriff_designate ?? '-' }}
+                            </td>
+                        @endif
                         <td class="editable-cell" data-field="date_compliance_order" data-type="date">
                             {{ $case->malsu?->date_compliance_order ? \Carbon\Carbon::parse($case->malsu->date_compliance_order)->format('Y-m-d') : '-' }}
                         </td>
