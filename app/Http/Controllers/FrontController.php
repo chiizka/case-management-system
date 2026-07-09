@@ -19,6 +19,7 @@ class FrontController extends Controller
         $isProvince = $user->isProvince();
         $userRole   = $user->role;
         $isMalsu            = false;
+        $isSheriff          = false;
         $malsuActiveCases   = 0;
         $malsuDisposedCases = 0;
 
@@ -163,6 +164,68 @@ class FrontController extends Controller
             $misDisposedCasesList      = collect();
             $caseManagementActiveCases = 0;
             $byProvince                = collect();
+
+        
+        } elseif ($user->isSheriff()) {
+            $isSheriff = true;
+
+            $activeCases = CaseFile::where('overall_status', 'Active')
+                ->whereHas('documentTracking', fn($q) => $q
+                    ->where('current_role', $userRole)
+                    ->where('status', 'Received')
+                )
+                ->count();
+
+            $myPendingDocs = \App\Models\DocumentTracking::with(['case', 'transferredBy'])
+                ->where('current_role', $userRole)
+                ->where('status', 'Pending Receipt')
+                ->orderBy('transferred_at', 'desc')
+                ->get();
+            $myPendingCount = $myPendingDocs->count();
+
+            // ── Sheriff report compliance for the current month ───────────────
+            $currentMonthStart = Carbon::now()->startOfMonth();
+
+            $sheriffCases = CaseFile::where('overall_status', 'Active')
+                ->whereHas('documentTracking', fn($q) => $q
+                    ->where('current_role', $userRole)
+                    ->where('status', 'Received')
+                )
+                ->whereHas('malsu')
+                ->with(['malsu.sheriffsReports' => function ($q) use ($currentMonthStart) {
+                    $q->whereDate('report_month', $currentMonthStart->format('Y-m-d'));
+                }])
+                ->get();
+
+            $sheriffReportStats = $sheriffCases->map(function ($case) {
+                $report = $case->malsu->sheriffsReports->first();
+                return [
+                    'case_id'       => $case->id,
+                    'case_no'       => $case->case_no ?? $case->inspection_id ?? 'N/A',
+                    'establishment' => $case->establishment_name ?? 'Unknown',
+                    'filed'         => (bool) $report,
+                    'submitted_at'  => $report ? optional($report->report_date_submitted)->format('M d, Y') : null,
+                ];
+            })->values();
+
+            $reportsFiledCount   = $sheriffReportStats->where('filed', true)->count();
+            $reportsMissingCount = $sheriffReportStats->where('filed', false)->count();
+            $reportsTotalCount   = $sheriffReportStats->count();
+            $currentMonthLabel   = $currentMonthStart->format('F Y');
+
+            $sheriffCaseHistory = app(\App\Services\SheriffReportComplianceService::class)
+                ->getCasesWithHistory($userRole);
+
+            // ── Unused-elsewhere placeholders so compact() below doesn't error ─
+            $totalCases                = $activeCases;
+            $disposedCases             = 0;
+            $actualDisposedCases       = 0;
+            $misDisposedCases          = 0;
+            $misDisposedCasesList      = collect();
+            $caseManagementActiveCases = 0;
+            $byProvince                = collect();
+            $activeByRole              = [];
+            $provincePendingDocs       = [];
 
         } else {
             // ── Regional roles: system-wide counts ───────────────────────────
@@ -403,6 +466,8 @@ class FrontController extends Controller
             'isMalsu',
             'malsuActiveCases',
             'malsuDisposedCases',
+            'isSheriff',              // ← add this
+            'sheriffCaseHistory',     // ← and this
         ));
     }
 

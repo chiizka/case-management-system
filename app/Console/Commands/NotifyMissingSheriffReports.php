@@ -3,11 +3,10 @@
 namespace App\Console\Commands;
 
 use App\Mail\MissingSheriffReportNotification;
-use App\Models\CaseFile;
 use App\Models\User;
+use App\Services\SheriffReportComplianceService;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 
 class NotifyMissingSheriffReports extends Command
@@ -27,7 +26,6 @@ class NotifyMissingSheriffReports extends Command
 
         $dryRun = $this->option('dry-run');
 
-        // "Last month" — stable regardless of which day within this month we actually run on.
         $targetMonth = Carbon::now()->startOfMonth()->subMonth();
         $monthLabel  = $targetMonth->format('F Y');
 
@@ -76,41 +74,11 @@ class NotifyMissingSheriffReports extends Command
         return self::SUCCESS;
     }
 
-    /**
-     * Cases currently assigned (Received) to the given sheriff role that
-     * have no SheriffsReport row for the target month.
-     */
     private function getMissingCasesForRole(string $role, Carbon $targetMonth): array
     {
-        $cases = CaseFile::where('overall_status', 'Active')
-            ->whereHas('documentTracking', function ($q) use ($role) {
-                $q->where('current_role', $role)->where('status', 'Received');
-            })
-            ->whereHas('malsu')
-            ->with('malsu.sheriffsReports')
-            ->get();
-
-        $missing = [];
-
-        foreach ($cases as $case) {
-            $hasReport = $case->malsu->sheriffsReports->contains(
-                fn ($report) => $report->report_month && $report->report_month->isSameMonth($targetMonth)
-            );
-
-            if (!$hasReport) {
-                $missing[] = [
-                    'case_no'       => $case->case_no ?? $case->inspection_id ?? 'N/A',
-                    'establishment' => $case->establishment_name ?? 'Unknown',
-                ];
-            }
-        }
-
-        return $missing;
+        return app(SheriffReportComplianceService::class)->getMissingCasesForRole($role, $targetMonth);
     }
 
-    /**
-     * True only on the first weekday on/after the 1st of the current month.
-     */
     private function isScheduledRunDay(): bool
     {
         $target = Carbon::now()->startOfMonth();

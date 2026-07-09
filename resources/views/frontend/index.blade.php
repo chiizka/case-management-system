@@ -199,7 +199,54 @@
                 </div>
             </div>
 
-        @else
+            @elseif($isSheriff)
+            {{-- SHERIFF VIEW: 2 cards only --}}
+
+            {{-- 1. Active Cases --}}
+            <div class="col-xl-6 col-md-6 mb-4">
+                <div class="card border-left-success shadow h-100 py-3">
+                    <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Active Cases</div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800">{{ $activeCases }}</div>
+                                <small class="text-muted" style="font-size:0.72rem;">Currently assigned to you</small>
+                            </div>
+                            <div class="col-auto"><i class="fas fa-clipboard-list fa-2x text-gray-300"></i></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {{-- 2. Pending Documents (to be received) --}}
+            <div class="col-xl-6 col-md-6 mb-4">
+                <div class="card shadow h-100 py-3 clickable-card"
+                    style="border-left:4px solid #f6c23e;cursor:pointer;"
+                    data-toggle="modal" data-target="#myPendingDocsModal">
+                    <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs font-weight-bold text-uppercase mb-1" style="color:#d4a017;">Pending Documents</div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800">{{ $myPendingCount }}</div>
+                                <div class="mt-1">
+                                    @if($myPendingCount > 0)
+                                        <small style="color:#856404;font-size:0.75rem;">
+                                            <i class="fas fa-inbox mr-1"></i>Awaiting acknowledgment
+                                        </small>
+                                    @else
+                                        <small class="text-muted" style="font-size:0.75rem;">
+                                            <i class="fas fa-check-circle mr-1 text-success"></i>All received
+                                        </small>
+                                    @endif
+                                </div>
+                            </div>
+                            <div class="col-auto"><i class="fas fa-inbox fa-2x" style="color:#f6c23e;opacity:0.6;"></i></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            @else
+
             {{-- REGIONAL/ADMIN VIEW --}}
             @php $hasCMCard = in_array(Auth::user()->role, ['case_management', 'admin']); @endphp
 
@@ -335,6 +382,52 @@
                         </div>
                     </div>
 
+                    @elseif($isSheriff)
+                    {{-- SHERIFF VIEW: Case Report History (whole-case, no urgency) --}}
+                    <div class="card shadow h-100 d-flex flex-column" style="min-height: 0;">
+                        <div class="card-header py-3 d-flex align-items-center justify-content-between flex-shrink-0">
+                            <h6 class="m-0 font-weight-bold text-primary">Case Report History</h6>
+                            <span class="badge badge-secondary badge-pill">{{ $sheriffCaseHistory->count() }} active cases</span>
+                        </div>
+                        <div class="card-body" style="min-height: 0; overflow-y: auto; padding: 1rem 1.25rem;">
+                            @if($sheriffCaseHistory->isEmpty())
+                                <div class="text-center text-muted py-5">
+                                    <i class="fas fa-inbox fa-3x mb-3 d-block"></i>
+                                    <p class="mb-0">You have no active cases assigned right now.</p>
+                                </div>
+                            @else
+                                @foreach($sheriffCaseHistory as $stat)
+                                <div class="d-flex justify-content-between align-items-center py-2"
+                                     style="border-bottom:1px solid #f0f0f0;">
+                                    <div>
+                                        <div class="font-weight-bold text-dark" style="font-size:0.85rem;">
+                                            {{ $stat['case_no'] }}
+                                        </div>
+                                        <div class="text-muted" style="font-size:0.75rem;">{{ $stat['establishment'] }}</div>
+                                    </div>
+                                    <div class="text-right">
+                                        @if($stat['total_reports'] > 0)
+                                            <div style="font-size:0.72rem;color:#4e73df;font-weight:600;">
+                                                {{ $stat['total_reports'] }} report{{ $stat['total_reports'] > 1 ? 's' : '' }} on file
+                                            </div>
+                                            <div class="text-muted" style="font-size:0.68rem;">
+                                                Last: {{ $stat['latest_month_label'] }} ({{ $stat['latest_submitted_at'] }})
+                                            </div>
+                                        @else
+                                            <span class="badge badge-light border" style="font-size:0.7rem;">No reports filed yet</span>
+                                        @endif
+                                    </div>
+                                </div>
+                                @endforeach
+                            @endif
+                        </div>
+                        <div class="card-footer text-center bg-white border-top py-2 flex-shrink-0">
+                            <a href="{{ route('case.index') }}" class="btn btn-sm btn-link text-primary font-weight-bold" style="font-size:0.8rem;text-decoration:none;">
+                                <i class="fas fa-folder-open mr-1"></i> Go to My Cases
+                            </a>
+                        </div>
+                    </div>
+
                 @elseif(in_array(Auth::user()->role, ['case_management', 'admin']))
                     {{-- ADMIN / CASE MANAGEMENT VIEW: Province Breakdown Table --}}
                     <div class="card shadow h-100 d-flex flex-column" style="min-height: 0;">
@@ -452,16 +545,17 @@
                 <div class="card shadow h-100 d-flex flex-column" style="min-height: 0;">
                     <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between flex-shrink-0">
                         <h6 class="m-0 font-weight-bold text-danger">
-                            <i class="fas fa-exclamation-triangle"></i> Deadline Alerts
+                            <i class="fas fa-exclamation-triangle"></i>
+                            {{ $isSheriff ? 'Overdue Sheriff Reports' : 'Deadline Alerts' }}
                         </h6>
                         <span class="badge badge-danger badge-pill d-none" id="widgetNotifBadge">0</span>
                     </div>
-                    
+
                     <div class="card-body alerts-card-scrollable" id="widgetNotifItems" style="overflow-y: auto; overflow-x: hidden; padding: 1.25rem;">
                         <div class="text-center text-muted py-4 my-auto" id="widgetNotifEmpty">
                             <i class="fas fa-check-circle fa-3x mb-3 d-block text-success"></i>
-                            <p class="mb-0">No cases beyond deadline</p>
-                            <small>All caught up!</small>
+                            <p class="mb-0">{{ $isSheriff ? 'No overdue reports' : 'No cases beyond deadline' }}</p>
+                            <small>{{ $isSheriff ? 'Last month is fully filed.' : 'All caught up!' }}</small>
                         </div>
                     </div>
 
@@ -548,7 +642,7 @@
     </div>
 </div>
 
-@if($isMalsu)
+@if($isMalsu || $isSheriff)
 <div class="modal fade" id="myPendingDocsModal" tabindex="-1" role="dialog" aria-hidden="true">
     <div class="modal-dialog modal-md" role="document">
         <div class="modal-content" style="border-top:4px solid #f6c23e;">

@@ -59,7 +59,7 @@ class NotificationController extends Controller
         $today = Carbon::today();
 
         // ── MALSU: no PCT notifications ───────────────────────────────────
-        if ($user->role === 'malsu') {
+         if ($user->role === 'malsu') {
             return response()->json([
                 'success'       => true,
                 'count'         => 0,
@@ -67,6 +67,35 @@ class NotificationController extends Controller
                 'nearing_cases' => [],
             ]);
         }
+
+        if ($user->isSheriff()) {
+            $service    = app(\App\Services\SheriffReportComplianceService::class);
+            $lastMonth  = Carbon::now()->startOfMonth()->subMonth();
+            $missing    = $service->getMissingCasesForRole($user->role, $lastMonth);
+
+            $beyondCases = collect($missing)->map(function ($case) use ($lastMonth) {
+                $months = $case['consecutive_missing_months'];
+                $label  = $months > 1
+                    ? "{$months} months overdue"
+                    : "Missing {$lastMonth->format('F')} report";
+
+                return [
+                    'id'            => $case['case_id'],
+                    'case_no'       => $case['case_no'],
+                    'establishment' => $case['establishment'],
+                    'po_office'     => $case['po_office'],
+                    'beyond_fields' => [$label],
+                ];
+            })->values();
+
+            return response()->json([
+                'success'       => true,
+                'count'         => $beyondCases->count(),
+                'beyond_cases'  => $beyondCases,
+                'nearing_cases' => [],
+            ]);
+        }
+
 
         // ── Determine which PCT fields this role cares about ──────────────
         $isProvince       = $user->isProvince();
