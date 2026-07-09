@@ -32,11 +32,16 @@
                placeholder="Search cases..."
                style="width: 260px;">
     </div>
-    <div>
-        <span class="badge badge-info" style="font-size: 0.85rem; padding: 0.45rem 0.8rem;">
+    <div class="d-flex align-items-center">
+        <span class="badge badge-info mr-2" style="font-size: 0.85rem; padding: 0.45rem 0.8rem;">
             <i class="fas fa-folder-open mr-1"></i>
             {{ $cases->count() }} case(s) currently with {{ $badgeLabel }}
         </span>
+
+        {{-- Dummy button — not wired up to anything yet --}}
+        <button type="button" class="btn btn-success btn-sm" id="malsuUploadExcelBtn" title="Upload Excel (coming soon)">
+            <i class="fas fa-file-excel mr-1"></i> Upload Excel
+        </button>
     </div>
 </div>
 
