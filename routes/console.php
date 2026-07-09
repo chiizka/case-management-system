@@ -19,3 +19,12 @@ Schedule::command('notify:beyond-cases')->dailyAt('07:00')->weekdays()
     ->onFailure(function () {
         \Log::error('Beyond case notification FAILED at ' . now());
     });
+
+// Notify sheriffs of missing monthly reports — first weekday on/after the 1st
+Schedule::command('notify:missing-sheriff-reports')->dailyAt('07:05')->weekdays()
+    ->onSuccess(function () {
+        \Log::info('Missing sheriff report notification run completed at ' . now());
+    })
+    ->onFailure(function () {
+        \Log::error('Missing sheriff report notification run FAILED at ' . now());
+    });
