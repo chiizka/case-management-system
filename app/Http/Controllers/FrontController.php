@@ -22,6 +22,7 @@ class FrontController extends Controller
         $isSheriff          = false;
         $malsuActiveCases   = 0;
         $malsuDisposedCases = 0;
+        $sheriffCaseHistory = collect();
 
         if ($isProvince) {
             $provinceName              = $user->getProvinceName();
