@@ -18,6 +18,7 @@ use App\Http\Controllers\DocumentTrackingController;
 use App\Http\Controllers\LaborRelationController;
 use App\Http\Controllers\MalsuController;
 use App\Http\Controllers\SheriffsReportController;
+use App\Http\Controllers\SenaController;
 
 
 Route::get('/', [FrontController::class, 'index'])->name('home');
@@ -74,6 +75,11 @@ Route::middleware('auth')->group(function () {
         Route::get('/case/load-tab/{tabNumber}', [CasesController::class, 'loadTabData'])->name('case.loadTab');
         Route::get('/case/load-case-management-tab', [CasesController::class, 'loadCaseManagementTab'])->name('case.loadCaseManagementTab');
         Route::get('/case/load-malsu-tab', [CasesController::class, 'loadMalsuTab'])->name('case.loadMalsuTab');
+        Route::middleware(['auth'])->group(function () {
+            Route::get('/case/load-sena-tab', [SenaController::class, 'loadTab'])->name('sena.loadTab');
+            Route::put('/sena/{id}/inline-update', [SenaController::class, 'inlineUpdate'])->name('sena.inlineUpdate');
+            Route::delete('/sena/{id}', [SenaController::class, 'destroy'])->name('sena.destroy');
+        });
         Route::put('/malsu/{caseId}/inline-update', [MalsuController::class, 'inlineUpdate'])
         ->name('malsu.inlineUpdate');
         Route::put('/malsu/{caseId}/send-to-sheriff', [MalsuController::class, 'sendToSheriff'])

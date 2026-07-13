@@ -919,10 +919,11 @@ body.sheriff-readonly .edit-row-btn-case {
                 <div class="tab-pane fade" id="tabSENA" role="tabpanel" aria-labelledby="tabSENA-tab">
                     <div class="card shadow mb-4">
                         <div class="card-body">
-                            <div class="text-center py-5 text-muted">
-                                <i class="fas fa-gavel fa-3x mb-3 d-block"></i>
-                                <h5>CENA</h5>
-                                <p>Content coming soon.</p>
+                            <div class="tab-loading text-center" style="padding: 3rem;">
+                                <div class="spinner-border text-primary mb-3" role="status" style="width: 3rem; height: 3rem;">
+                                    <span class="sr-only">Loading...</span>
+                                </div>
+                                <p class="text-muted">Loading SENA records...</p>
                             </div>
                         </div>
                     </div>
@@ -2806,6 +2807,90 @@ $(document).on('click', function(e) {
         });
     });
 
+    var senaTabLoaded = false;
+
+    $('a[href="#tabSENA"]').on('shown.bs.tab', function () {
+        if (senaTabLoaded) {
+            if ($.fn.DataTable.isDataTable('#dataTableSENA')) {
+                $('#dataTableSENA').DataTable().columns.adjust().draw(false);
+            }
+            return;
+        }
+
+        const $cardBody = $('#tabSENA .card-body');
+
+        $cardBody.html(`
+            <div class="tab-loading text-center" style="padding: 3rem;">
+                <div class="spinner-border text-primary mb-3" role="status" style="width: 3rem; height: 3rem;">
+                    <span class="sr-only">Loading...</span>
+                </div>
+                <p class="text-muted">Loading SENA records...</p>
+            </div>
+        `);
+
+        $.ajax({
+            url: '/case/load-sena-tab',
+            method: 'GET',
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'),
+                'Accept': 'application/json'
+            },
+            success: function (response) {
+                if (response.success) {
+                    $cardBody.html(response.html);
+                    senaTabLoaded = true;
+
+                    setTimeout(function () {
+                        if ($.fn.DataTable.isDataTable('#dataTableSENA')) {
+                            $('#dataTableSENA').DataTable().destroy();
+                        }
+
+                        $('#dataTableSENA tbody tr td[colspan]').closest('tr').remove();
+
+                        tables['#dataTableSENA'] = $('#dataTableSENA').DataTable({
+                            pageLength: 10,
+                            lengthChange: false,
+                            paging: true,
+                            searching: true,
+                            info: true,
+                            dom: 'tip',
+                            columnDefs: [{ orderable: false, targets: 0 }],
+                            scrollX: true,
+                            scrollY: (window.innerHeight - 280) + 'px',
+                            scrollCollapse: true,
+                            language: {
+                                emptyTable: 'No SENA records yet.'
+                            },
+                            drawCallback: function () {
+                                $('#dataTableSENA thead th').css({
+                                    'position': 'sticky',
+                                    'top': 0,
+                                    'z-index': 12
+                                });
+                            }
+                        });
+
+                        $('#customSearchSENA').off('keyup input change').on('keyup input change', function () {
+                            tables['#dataTableSENA'].search(this.value).draw();
+                        });
+
+                        setTimeout(function() { tables['#dataTableSENA'].columns.adjust().draw(false); }, 50);
+                        setTimeout(function() { tables['#dataTableSENA'].columns.adjust().draw(false); }, 300);
+                    }, 100);
+                } else {
+                    $cardBody.html(`<div class="alert alert-danger">Failed to load SENA records. Please try again.</div>`);
+                }
+            },
+            error: function (xhr) {
+                $cardBody.html(`
+                    <div class="alert alert-danger">
+                        <strong>Error:</strong> ${xhr.responseJSON?.error || 'Failed to load data.'}
+                    </div>
+                `);
+            }
+        });
+    });
+
     ['albay','camarines_sur','camarines_norte','catanduanes','masbate','sorsogon'].forEach(function(province) {
         var tabSelector = '#tabSheriffProv-' + province;
         var tableId  = 'dataTableSheriff-' + province;
@@ -3260,7 +3345,7 @@ if ($('#tab0').hasClass('active')) {
         var tabNumber = tabId.replace('tab', '');
 
         // ── Skip the CM tab — it has its own dedicated handler ──
-        if (tabId === 'tabCM' || tabId === 'tabMALSU' || tabId === 'tabSheriff' || tabId.startsWith('tabProv-') || tabId.startsWith('tabSheriffProv-')) return;
+        if (tabId === 'tabCM' || tabId === 'tabMALSU' || tabId === 'tabSheriff' || tabId === 'tabSENA' || tabId.startsWith('tabProv-') || tabId.startsWith('tabSheriffProv-')) return;
 
         console.log('Tab switched to:', target);
         
@@ -3402,17 +3487,18 @@ if ($('#tab0').hasClass('active')) {
         const orderId = button.data('order-id');
         const complianceId = button.data('compliance-id');
         const appealId = button.data('appeal-id');
+        const senaId = button.data('sena-id');
         
         console.log('Delete button clicked - inspectionId:', inspectionId, 'caseId:', caseId, 'docketingId:', docketingId, 'hearingId:', hearingId, 'reviewId:', reviewId, 'orderId:', orderId, 'complianceId:', complianceId, 'appealId:', appealId);
         
-        if (!inspectionId && !caseId && !docketingId && !hearingId && !reviewId && !orderId && !complianceId && !appealId) {
+        if (!inspectionId && !caseId && !docketingId && !hearingId && !reviewId && !orderId && !complianceId && !appealId && !senaId) {
             console.error('No ID found on delete button');
             showAlert('error', 'Error: Could not identify record');
             return;
         }
         
-        const recordId = inspectionId || caseId || docketingId || hearingId || reviewId || orderId || complianceId || appealId;
-        const recordType = inspectionId ? 'inspection' : (caseId ? 'case' : (docketingId ? 'docketing' : (hearingId ? 'hearing' : (reviewId ? 'review' : (orderId ? 'order' : (complianceId ? 'compliance' : 'appeal'))))));
+        const recordId = inspectionId || caseId || docketingId || hearingId || reviewId || orderId || complianceId || appealId || senaId;
+        const recordType = inspectionId ? 'inspection' : (caseId ? 'case' : (docketingId ? 'docketing' : (hearingId ? 'hearing' : (reviewId ? 'review' : (orderId ? 'order' : (complianceId ? 'compliance' : (appealId ? 'appeal' : 'sena')))))));
         
         const establishment = button.data('establishment') || 'N/A';
         const inspector = button.data('inspector') || 'N/A';
@@ -3576,6 +3662,8 @@ if ($('#tab0').hasClass('active')) {
         
         if (caseToDelete.type === 'inspection') {
             url = `/inspection/${caseToDelete.id}`;
+        } else if (caseToDelete.type === 'sena') {
+            url = `/sena/${caseToDelete.id}`;
         } else {
             url = `/case/${caseToDelete.id}`;
         }
@@ -3957,6 +4045,7 @@ $(document).ready(function() {
         else if (tableId === 'dataTable7') tabKey = 'tab7';
         else if (tableId === 'dataTableMALSU') tabKey = 'tabMALSU';
         else if (tableId === 'dataTableCM') tabKey = 'tabCM';
+        else if (tableId === 'dataTableSENA') tabKey = 'tabSENA';
         
         const fieldConfig = tabConfigs[tabKey]?.fields[field];
         
@@ -4141,6 +4230,7 @@ $(document).ready(function() {
         else if (tableId === 'dataTable7') endpoint = '/appeals-and-resolution/';
         else if (tableId === 'dataTableMALSU') endpoint = '/malsu/';
         else if (tableId === 'dataTableCM') endpoint = '/case/';
+        else if (tableId === 'dataTableSENA') endpoint = '/sena/';
         
         // If value hasn't changed, just restore original display
         if (newValue === originalValue) {
@@ -4656,6 +4746,38 @@ $(document).ready(function() {
             }
         }
     };
+
+    
+    tabConfigs['tabSENA'] = {
+        name: 'sena',
+        endpoint: '/sena/',
+        editBtnClass: '.edit-row-btn-case',
+        saveBtnClass: '.save-btn-case',
+        cancelBtnClass: '.cancel-btn-case',
+        alertPrefix: 'tabSENA',
+        fields: {
+            'regional_docket_number':                    { type: 'text' },
+            'sheriff_designate':                         { type: 'text' },
+            'date_compliance_order':                     { type: 'date' },
+            'total_gls_monetary_award':                  { type: 'number', step: '0.01' },
+            'total_workers_benefited':                   { type: 'number' },
+            'amount_penalty_double_indemnity':           { type: 'number', step: '0.01' },
+            'voluntary_compliance':                      { type: 'text' },
+            'action_taken':                               { type: 'text' },
+            'total_gls_monetary_satisfied':               { type: 'number', step: '0.01' },
+            'total_workers_satisfied':                    { type: 'number' },
+            'complied_oshs_violations':                   { type: 'text' },
+            'total_penalty_double_indemnity_collected':   { type: 'number', step: '0.01' },
+            'total_oshs_penalty_admin_fines_collected':   { type: 'number', step: '0.01' },
+            'total_workers_absorbed':                     { type: 'number' },
+            'full_or_partial':                            { type: 'text' },
+            'date_writ_of_execution_served':              { type: 'date' },
+            'date_indorsed_to_po':                        { type: 'date' },
+            'po_date_received':                           { type: 'date' },
+            'ro_received_sheriffs_return':                { type: 'date' }
+        }
+    };
+
     tabConfigs['tabCM']    = tabConfigs['tab0'];
     tabConfigs['tabSheriff'] = tabConfigs['tabMALSU'];
     tabConfigs['tabProv-albay']          = tabConfigs['tab0'];
