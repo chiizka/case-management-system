@@ -540,12 +540,12 @@ body.sheriff-readonly .edit-row-btn-case {
                 @if(Auth::user()->isMalsu() || Auth::user()->isAdmin())
                 @php
                 $sheriffProvinceTabs = [
-                    'albay'           => 'Albay',
-                    'camarines_sur'   => 'Cam Sur',
-                    'camarines_norte' => 'Cam Norte',
-                    'catanduanes'     => 'Catanduanes',
-                    'masbate'         => 'Masbate',
-                    'sorsogon'        => 'Sorsogon',
+                    'albay'           => 'APO',
+                    'camarines_sur'   => 'CS',
+                    'camarines_norte' => 'CN',
+                    'catanduanes'     => 'CAT',
+                    'masbate'         => 'MAS',
+                    'sorsogon'        => 'SOR',
                 ];
                 @endphp
                 @foreach($sheriffProvinceTabs as $key => $label)
@@ -553,7 +553,7 @@ body.sheriff-readonly .edit-row-btn-case {
                     <a class="nav-link" id="tabSheriffProv-{{ $key }}-tab"
                     data-toggle="tab" href="#tabSheriffProv-{{ $key }}"
                     role="tab" aria-controls="tabSheriffProv-{{ $key }}" aria-selected="false">
-                        <i class="fas fa-user-shield mr-1"></i> {{ $label }} Sheriff
+                        <i class="fas fa-user-shield mr-1"></i> {{ $label }}
                     </a>
                 </li>
                 @endforeach
