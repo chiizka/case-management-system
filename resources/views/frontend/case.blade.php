@@ -1588,15 +1588,8 @@ body.sheriff-readonly .edit-row-btn-case {
                     </div>
                 </div>
 
-                <div id="rg-content" style="display:none; overflow-x:auto; overflow-y:hidden; max-width:100%;">
-                    <table class="table table-bordered mb-0" id="rg-table" style="table-layout:fixed; width:max-content;">
-                        <thead>
-                            <tr id="rg-table-head"></tr>
-                        </thead>
-                        <tbody>
-                            <tr id="rg-table-body"></tr>
-                        </tbody>
-                    </table>
+                <div id="rg-content" style="display:none; overflow-y:auto; overflow-x:hidden; max-height:65vh;">
+                    <div id="rg-cards-container" style="display:grid; grid-template-columns:repeat(2, 1fr); gap:16px;"></div>
                 </div>
             </div>
             <div class="modal-footer">
@@ -2248,8 +2241,7 @@ $(document).on('click', '.view-reports-grid-btn', function() {
 
     $('#rg-content').hide();
     $('#rg-loading').show();
-    $('#rg-table-head').empty();
-    $('#rg-table-body').empty();
+    $('#rg-cards-container').empty();
 
     $('#reportsGridModal').modal('show');
 
@@ -2261,45 +2253,42 @@ $(document).on('click', '.view-reports-grid-btn', function() {
             $('#rg-content').show();
 
             if (!response.success || !response.reports || response.reports.length === 0) {
-                $('#rg-content').html('<p class="text-muted text-center py-4">No reports found.</p>');
+                $('#rg-cards-container').html('<p class="text-muted text-center py-4 mb-0" style="grid-column:1 / -1;">No reports found.</p>');
                 return;
             }
 
-            // Sort ascending by month so it reads left-to-right like the spreadsheet
+            // Sort ascending by month so it reads left-to-right, top-to-bottom like a calendar
             const reports = [...response.reports].sort((a, b) => a.report_month.localeCompare(b.report_month));
 
-            const $head = $('#rg-table-head');
-            const $body = $('#rg-table-body');
-
-            const COL_WIDTH = 300; // px — widened to give bigger text room to breathe
+            const $container = $('#rg-cards-container');
 
             reports.forEach(function(r) {
-                $head.append(`
-                    <th style="white-space:nowrap; background:#f8f9fc; width:${COL_WIDTH}px; min-width:${COL_WIDTH}px; max-width:${COL_WIDTH}px; font-size:1.1rem; padding:12px;">
-                        ${r.report_month_label}
-                    </th>
-                `);
-
                 const linkHtml = r.report_link
-                    ? `<br><a href="${r.report_link}" target="_blank" rel="noopener" style="font-size:1rem;"><i class="fas fa-link"></i> Attachment</a>`
+                    ? `<div class="mt-2"><a href="${r.report_link}" target="_blank" rel="noopener" style="font-size:1rem;"><i class="fas fa-link"></i> Attachment</a></div>`
                     : '';
                 const editedHtml = r.was_edited
-                    ? `<br><span class="text-muted" style="font-size:0.9rem;"><i class="fas fa-pen"></i> Edited ${r.updated_at}</span>`
+                    ? `<div class="mt-1"><span class="text-muted" style="font-size:0.9rem;"><i class="fas fa-pen"></i> Edited ${r.updated_at}</span></div>`
                     : '';
 
-                $body.append(`
-                    <td style="vertical-align:top; width:${COL_WIDTH}px; min-width:${COL_WIDTH}px; max-width:${COL_WIDTH}px; white-space:normal; word-wrap:break-word; padding:12px; line-height:1.5;">
-                        <div>${r.report_content ? r.report_content.replace(/\n/g, '<br>') : '<span class="text-muted">—</span>'}</div>
-                        <span class="text-muted d-block mt-2" style="font-size:0.9rem;">Submitted: ${r.report_date_submitted}${r.submitted_by ? ' by ' + r.submitted_by : ''}</span>
-                        ${editedHtml}
-                        ${linkHtml}
-                    </td>
+                $container.append(`
+                    <div class="card h-100">
+                        <div class="card-header" style="background:#f8f9fc; font-size:1.1rem; font-weight:600;">
+                            ${r.report_month_label}
+                        </div>
+                        <div class="card-body" style="line-height:1.5;">
+                            <div>${r.report_content ? r.report_content.replace(/\n/g, '<br>') : '<span class="text-muted">—</span>'}</div>
+                            <span class="text-muted d-block mt-2" style="font-size:0.9rem;">Submitted: ${r.report_date_submitted}${r.submitted_by ? ' by ' + r.submitted_by : ''}</span>
+                            ${editedHtml}
+                            ${linkHtml}
+                        </div>
+                    </div>
                 `);
             });
         },
         error: function(xhr) {
             $('#rg-loading').hide();
-            $('#rg-content').show().html('<p class="text-danger text-center py-4">Failed to load reports.</p>');
+            $('#rg-content').show();
+            $('#rg-cards-container').html('<p class="text-danger text-center py-4 mb-0" style="grid-column:1 / -1;">Failed to load reports.</p>');
         }
     });
 });
