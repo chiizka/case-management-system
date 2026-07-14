@@ -77,6 +77,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/case/load-malsu-tab', [CasesController::class, 'loadMalsuTab'])->name('case.loadMalsuTab');
         Route::middleware(['auth'])->group(function () {
             Route::get('/case/load-sena-tab', [SenaController::class, 'loadTab'])->name('sena.loadTab');
+            Route::post('/sena', [SenaController::class, 'store'])->name('sena.store');
             Route::put('/sena/{id}/inline-update', [SenaController::class, 'inlineUpdate'])->name('sena.inlineUpdate');
             Route::delete('/sena/{id}', [SenaController::class, 'destroy'])->name('sena.destroy');
         });

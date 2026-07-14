@@ -1606,6 +1606,50 @@ body.sheriff-readonly .edit-row-btn-case {
     </div>
 </div>
 
+<!-- Add SENA Case Modal -->
+<div class="modal fade" id="addSenaModal" tabindex="-1" role="dialog" aria-labelledby="addSenaModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addSenaModalLabel">Add New SENA Case</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="senaForm">
+                    @csrf
+
+                    <div class="form-group">
+                        <label for="sena_establishment_name">Establishment Name <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="sena_establishment_name" name="establishment_name" placeholder="Enter establishment name" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="sena_regional_docket_number">Regional Docket No.</label>
+                        <input type="text" class="form-control" id="sena_regional_docket_number" name="regional_docket_number" placeholder="Enter regional docket number (optional)">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="sena_sheriff_designate">Sheriff Designate</label>
+                        <input type="text" class="form-control" id="sena_sheriff_designate" name="sheriff_designate" placeholder="Enter sheriff designate (optional)">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="sena_date_compliance_order">Date of Compliance Order / Resolution</label>
+                        <input type="date" class="form-control" id="sena_date_compliance_order" name="date_compliance_order">
+                    </div>
+
+                    <div class="modal-footer px-0 pb-0">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-primary">Save SENA Case</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
 @endsection
 @push('scripts')
 <!-- DataTables plugins -->
@@ -2889,6 +2933,57 @@ $(document).on('click', function(e) {
                 `);
             }
         });
+    });
+
+    // ── Add SENA Case form submission ──────────────────────────────────
+    $('#senaForm').on('submit', function(e) {
+        e.preventDefault();
+
+        const $form = $(this);
+        const $submitBtn = $form.find('button[type="submit"]');
+        const originalBtnText = $submitBtn.html();
+
+        $submitBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Saving...');
+
+        $.ajax({
+            url: '/sena',
+            method: 'POST',
+            data: $form.serialize(),
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            },
+            success: function(response) {
+                if (response.success) {
+                    $('#addSenaModal').modal('hide');
+                    $form[0].reset();
+
+                    // Reload the SENA tab so the new row shows up
+                    senaTabLoaded = false;
+                    $('a[href="#tabSENA"]').trigger('shown.bs.tab');
+
+                    showAlert('success', response.message || 'SENA case added successfully!');
+                } else {
+                    showAlert('error', response.message || 'Failed to add SENA case.');
+                }
+            },
+            error: function(xhr) {
+                let errorMessage = 'Failed to add SENA case.';
+                if (xhr.responseJSON?.message) {
+                    errorMessage = xhr.responseJSON.message;
+                } else if (xhr.status === 422 && xhr.responseJSON?.errors) {
+                    errorMessage = Object.values(xhr.responseJSON.errors).flat().join(' ');
+                }
+                showAlert('error', errorMessage);
+            },
+            complete: function() {
+                $submitBtn.prop('disabled', false).html(originalBtnText);
+            }
+        });
+    });
+
+    // Reset the form when the modal closes
+    $('#addSenaModal').on('hidden.bs.modal', function() {
+        $('#senaForm')[0].reset();
     });
 
     ['albay','camarines_sur','camarines_norte','catanduanes','masbate','sorsogon'].forEach(function(province) {
@@ -4747,7 +4842,6 @@ $(document).ready(function() {
         }
     };
 
-    
     tabConfigs['tabSENA'] = {
         name: 'sena',
         endpoint: '/sena/',
@@ -4756,6 +4850,7 @@ $(document).ready(function() {
         cancelBtnClass: '.cancel-btn-case',
         alertPrefix: 'tabSENA',
         fields: {
+            'establishment_name':                        { type: 'text' },
             'regional_docket_number':                    { type: 'text' },
             'sheriff_designate':                         { type: 'text' },
             'date_compliance_order':                     { type: 'date' },

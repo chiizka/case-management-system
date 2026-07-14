@@ -39,18 +39,22 @@
             <i class="fas fa-gavel mr-1"></i>
             {{ $senaRecords->count() }} SENA record(s)
         </span>
+        <button class="btn btn-primary btn-sm" data-toggle="modal" data-target="#addSenaModal">
+            <i class="fas fa-plus"></i> Add SENA Case
+        </button>
     </div>
 </div>
 
 <div class="table-container">
-    <table class="table table-bordered compact-table sticky-table cm-table"
-           id="{{ $tableId }}"
-           width="100%"
-           cellspacing="0">
+    <table class="table table-bordered compact-table sticky-table"
+        id="{{ $tableId }}"
+        width="100%"
+        cellspacing="0">
         <thead>
             <tr>
                 <th>Actions</th>
                 <th>No.</th>
+                <th style="background-color: #d1ecf1 !important;">Establishment Name</th>
                 <th style="background-color: #fff3cd !important;">Regional Docket No.</th>
                 <th>Sheriff Designate</th>
                 <th>Date of Compliance Order / Resolution</th>
@@ -100,6 +104,9 @@
 
                         <td class="readonly-cell">{{ $loop->iteration }}</td>
 
+                        <td class="editable-cell wrap-cell" data-field="establishment_name" style="background-color: #d1ecf1 !important; font-weight: bold;">
+                            {{ $sena->establishment_name ?? '-' }}
+                        </td>
                         <td class="editable-cell" data-field="regional_docket_number" style="background-color: #fff3cd !important;">
                             {{ $sena->regional_docket_number ?? '-' }}
                         </td>
@@ -161,7 +168,7 @@
                 @endforeach
             @else
                 <tr>
-                    <td colspan="20" class="text-center text-muted py-4">
+                    <td colspan="21" class="text-center text-muted py-4">
                         <i class="fas fa-inbox fa-2x mb-2 d-block"></i>
                         No SENA records yet.
                     </td>

@@ -34,6 +34,7 @@ class SenaController extends Controller
 
         // Whitelist of fields that can be inline-edited — mirrors the sena table columns
         $allowedFields = [
+            'establishment_name',
             'regional_docket_number',
             'sheriff_designate',
             'date_compliance_order',
@@ -65,6 +66,27 @@ class SenaController extends Controller
         return response()->json([
             'success' => true,
             'data'    => $sena->fresh(),
+        ]);
+    }
+
+    /**
+     * Create a new SENA record (from the Add SENA Case modal)
+     */
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'establishment_name'      => 'required|string|max:255',
+            'regional_docket_number'  => 'nullable|string|max:100',
+            'sheriff_designate'       => 'nullable|string|max:255',
+            'date_compliance_order'   => 'nullable|date',
+        ]);
+
+        $sena = Sena::create($validated);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'SENA case added successfully.',
+            'data'    => $sena,
         ]);
     }
 

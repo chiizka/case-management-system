@@ -13,6 +13,7 @@ class Sena extends Model
 
     protected $fillable = [
         'case_id',
+        'establishment_name',
         'regional_docket_number',
         'sheriff_designate',
         'date_compliance_order',
