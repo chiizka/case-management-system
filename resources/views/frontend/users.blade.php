@@ -57,6 +57,11 @@
                                     <span class="badge badge-info">MALSU</span>
                                 @elseif($user->role === 'case_management')
                                     <span class="badge badge-warning">Case Management</span>
+                                    @if($user->isProvincialCaseManagement())
+                                        <span class="badge badge-secondary ml-1">{{ $user->getCaseManagementProvinceName() }}</span>
+                                    @else
+                                        <span class="badge badge-secondary ml-1">Regional</span>
+                                    @endif
                                 @elseif($user->role === 'records')
                                     <span class="badge badge-success">Records</span>
                                 @elseif($user->role === 'province_albay')
