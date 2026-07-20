@@ -2236,6 +2236,7 @@ $(document).on('click', '.toggle-reports-grid-btn', function() {
 
 $(document).on('click', '.view-reports-grid-btn', function() {
     const caseId = $(this).data('case-id');
+    const malsuId = $(this).data('malsu-id');
     $('#rg-case-no').text($(this).data('case-no'));
     $('#rg-establishment').text($(this).data('establishment'));
 
@@ -2245,8 +2246,10 @@ $(document).on('click', '.view-reports-grid-btn', function() {
 
     $('#reportsGridModal').modal('show');
 
+    const reportsUrl = caseId ? `/case/${caseId}/sheriff-reports` : `/malsu/${malsuId}/sheriff-reports`;
+
     $.ajax({
-        url: `/case/${caseId}/sheriff-reports`,
+        url: reportsUrl,
         method: 'GET',
         success: function(response) {
             $('#rg-loading').hide();
@@ -4129,6 +4132,7 @@ $(document).ready(function() {
         else if (tableId === 'dataTable7') tabKey = 'tab7';
         else if (tableId === 'dataTableMALSU') tabKey = 'tabMALSU';
         else if (tableId === 'dataTableCM') tabKey = 'tabCM';
+        else if (tableId && tableId.startsWith('dataTableSheriff-')) tabKey = 'tabMALSU';
         else if (tableId === 'dataTableSENA') tabKey = 'tabSENA';
         
         const fieldConfig = tabConfigs[tabKey]?.fields[field];
@@ -4301,6 +4305,7 @@ $(document).ready(function() {
         }
         
         // Get the endpoint based on table
+        // Get the endpoint based on table
         const $table = $cell.closest('table');
         const tableId = $table.attr('id');
         let endpoint = '/case/';
@@ -4314,6 +4319,7 @@ $(document).ready(function() {
         else if (tableId === 'dataTable7') endpoint = '/appeals-and-resolution/';
         else if (tableId === 'dataTableMALSU') endpoint = '/malsu/';
         else if (tableId === 'dataTableCM') endpoint = '/case/';
+        else if (tableId && tableId.startsWith('dataTableSheriff-')) endpoint = '/malsu/';
         else if (tableId === 'dataTableSENA') endpoint = '/sena/';
         
         // If value hasn't changed, just restore original display
@@ -4863,13 +4869,18 @@ $(document).ready(function() {
     };
 
     tabConfigs['tabCM']    = tabConfigs['tab0'];
-    tabConfigs['tabSheriff'] = tabConfigs['tabMALSU'];
     tabConfigs['tabProv-albay']          = tabConfigs['tab0'];
     tabConfigs['tabProv-camarines_sur']  = tabConfigs['tab0'];
     tabConfigs['tabProv-camarines_norte']= tabConfigs['tab0'];
     tabConfigs['tabProv-catanduanes']    = tabConfigs['tab0'];
     tabConfigs['tabProv-masbate']        = tabConfigs['tab0'];
     tabConfigs['tabProv-sorsogon']       = tabConfigs['tab0'];
+    tabConfigs['tabSheriffProv-albay']           = tabConfigs['tabMALSU'];
+    tabConfigs['tabSheriffProv-camarines_sur']   = tabConfigs['tabMALSU'];
+    tabConfigs['tabSheriffProv-camarines_norte'] = tabConfigs['tabMALSU'];
+    tabConfigs['tabSheriffProv-catanduanes']     = tabConfigs['tabMALSU'];
+    tabConfigs['tabSheriffProv-masbate']         = tabConfigs['tabMALSU'];
+    tabConfigs['tabSheriffProv-sorsogon']        = tabConfigs['tabMALSU'];
 
     // Get current active tab
     function getCurrentTab() {

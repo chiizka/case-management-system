@@ -10,6 +10,7 @@ class Malsu extends Model
 
     protected $fillable = [
         'case_id',
+        'case_title',
         'regional_docket_number',
         'sheriff_designate',
         'date_compliance_order',

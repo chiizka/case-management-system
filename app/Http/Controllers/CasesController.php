@@ -69,7 +69,13 @@ class CasesController extends Controller
                 ->where('status', 'Received');  
             });
         }
-        // Admin, MALSU, case_management see all active cases in Tab 0
+
+        // case_management shouldn't see auto-created legacy-MALSU cases in Tab 0
+        if ($user->isCaseManagement()) {
+            $query->where('inspection_id', 'not like', 'LEGACY-%');
+        }
+
+        // Admin, MALSU see all active cases in Tab 0
         // case_management gets a second filtered tab via AJAX (loadCaseManagementTab)
 
         $cases = $query->get();
@@ -1804,26 +1810,33 @@ public function loadMalsuTab(Request $request)
     }
 
     try {
-        $cases = CaseFile::whereNotIn('overall_status', ['Completed', 'Disposed', 'Appealed'])
+        $malsus = \App\Models\Malsu::with(['case.documentTracking', 'sheriffsReports'])
             ->where(function ($q) {
-                $q->whereHas('documentTracking', function ($q2) {
-                    $q2->where('current_role', User::ROLE_MALSU)
-                       ->where('status', 'Received');
-                })
-                ->orWhereHas('malsu', function ($q2) {
-                    $q2->whereNotNull('sheriff_designate');
-                });
+                // Legacy imported rows — no case, always show
+                $q->whereNull('case_id')
+                  ->orWhere(function ($q2) {
+                      // Linked-case rows — same logic as before, expressed from Malsu's side
+                      $q2->whereHas('case', function ($q3) {
+                          $q3->whereNotIn('overall_status', ['Completed', 'Disposed', 'Appealed']);
+                      })
+                      ->where(function ($q3) {
+                          $q3->whereHas('case.documentTracking', function ($q4) {
+                              $q4->where('current_role', User::ROLE_MALSU)
+                                 ->where('status', 'Received');
+                          })
+                          ->orWhereNotNull('sheriff_designate');
+                      });
+                  });
             })
-            ->with(['documentTracking', 'malsu.sheriffsReports'])
             ->orderBy('created_at', 'desc')
             ->get();
 
-        $html = view('frontend.partials.malsu_tab', ['cases' => $cases])->render();
+        $html = view('frontend.partials.malsu_tab', ['cases' => $malsus])->render();
 
         return response()->json([
             'success' => true,
             'html'    => $html,
-            'count'   => $cases->count()
+            'count'   => $malsus->count()
         ]);
 
     } catch (\Exception $e) {
@@ -1833,25 +1846,26 @@ public function loadMalsuTab(Request $request)
 }
 
 public function loadSheriffTab(Request $request)
-{
-    if (!Auth::user()->isSheriff() && !Auth::user()->isAdmin()) {
-        return response()->json(['success' => false, 'error' => 'Access denied.'], 403);
-    }
+    {
+        if (!Auth::user()->isSheriff() && !Auth::user()->isAdmin()) {
+            return response()->json(['success' => false, 'error' => 'Access denied.'], 403);
+        }
 
-    try {
-        $user = Auth::user();
-        $provinceName = $user->getSheriffProvinceName();
+        try {
+            $user = Auth::user();
 
-        $cases = CaseFile::whereNotIn('overall_status', ['Completed', 'Disposed', 'Appealed'])
-            ->whereHas('documentTracking', function ($q) use ($user) {
-                $q->where('current_role', $user->role)
-                ->whereIn('status', ['Received']);
-            })
-            ->with(['documentTracking', 'malsu.sheriffsReports'])
-            ->orderBy('created_at', 'desc')
-            ->get();
+            $cases = \App\Models\Malsu::with(['case.documentTracking', 'sheriffsReports'])
+                ->whereHas('case', function ($q) use ($user) {
+                    $q->whereNotIn('overall_status', ['Completed', 'Disposed', 'Appealed'])
+                      ->whereHas('documentTracking', function ($q2) use ($user) {
+                          $q2->where('current_role', $user->role)
+                             ->whereIn('status', ['Received']);
+                      });
+                })
+                ->orderBy('created_at', 'desc')
+                ->get();
 
-        $html = view('frontend.partials.malsu_tab', ['cases' => $cases])->render();
+            $html = view('frontend.partials.malsu_tab', ['cases' => $cases])->render();
 
         return response()->json([
             'success' => true,
@@ -1878,6 +1892,10 @@ public function loadTab0()
                 $q->where('current_role', $user->role)
                   ->where('status', 'Received');
             });
+        }
+
+        if ($user->isCaseManagement()) {
+            $query->where('inspection_id', 'not like', 'LEGACY-%');
         }
 
         $cases = $query->with('documentTracking')->get();  // ← only change
@@ -2085,19 +2103,20 @@ public function loadSheriffProvinceTab(Request $request, $province)
     }
 
     try {
-        $cases = CaseFile::whereNotIn('overall_status', ['Completed', 'Disposed', 'Appealed'])
-            ->whereHas('documentTracking', function ($q) use ($role) {
-                $q->where('current_role', $role)
-                  ->where('status', 'Received');
+        $cases = \App\Models\Malsu::with(['case.documentTracking', 'sheriffsReports'])
+            ->whereHas('case', function ($q) use ($role) {
+                $q->whereNotIn('overall_status', ['Completed', 'Disposed', 'Appealed'])
+                  ->whereHas('documentTracking', function ($q2) use ($role) {
+                      $q2->where('current_role', $role)
+                         ->where('status', 'Received');
+                  });
             })
-            ->with(['documentTracking', 'malsu.sheriffsReports'])
             ->orderBy('created_at', 'desc')
             ->get();
 
         $html = view('frontend.partials.malsu_tab', [
             'cases'       => $cases,
             'tableId'     => 'dataTableSheriff-' . $province,
-            'searchId'    => 'customSearchSheriff-' . $province,
             'alertSuffix' => 'Sheriff-' . $province,
             'badgeLabel'  => $provinceLabelMap[$province] . ' Sheriff',
         ])->render();

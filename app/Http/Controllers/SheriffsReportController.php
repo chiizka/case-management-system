@@ -93,6 +93,53 @@ class SheriffsReportController extends Controller
         }
     }
 
+    public function indexByMalsu($malsuId)
+    {
+        if (!Auth::user()->isMalsu() && !Auth::user()->isAdmin()) {
+            return response()->json(['success' => false, 'message' => 'Access denied.'], 403);
+        }
+
+        try {
+            $malsu = \App\Models\Malsu::with('sheriffsReports.submittedBy')->findOrFail($malsuId);
+
+            $reports = $malsu->sheriffsReports()
+                ->with('submittedBy')
+                ->orderByDesc('report_month')
+                ->get()
+                ->map(function ($report) {
+                    $wasEdited = $report->updated_at && $report->created_at
+                        && $report->updated_at->diffInSeconds($report->created_at) > 60;
+
+                    return [
+                        'id'                     => $report->id,
+                        'report_month'           => optional($report->report_month)->format('Y-m'),
+                        'report_month_label'     => optional($report->report_month)->format('F Y'),
+                        'report_date_submitted'  => optional($report->report_date_submitted)->format('Y-m-d'),
+                        'report_content'         => $report->report_content,
+                        'report_link'            => $report->report_link,
+                        'submitted_by'           => $report->submittedBy
+                            ? trim($report->submittedBy->fname . ' ' . $report->submittedBy->lname)
+                            : null,
+                        'created_at'             => optional($report->created_at)->format('M d, Y h:i A'),
+                        'updated_at'             => optional($report->updated_at)->format('M d, Y h:i A'),
+                        'was_edited'             => $wasEdited,
+                    ];
+                });
+
+            return response()->json([
+                'success' => true,
+                'reports' => $reports,
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error loading sheriff reports by malsu: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to load reports.',
+            ], 500);
+        }
+    }
+
     /**
      * Create or update a report for a case+month (upsert).
      * One report per case per month — resubmitting the same month edits it.

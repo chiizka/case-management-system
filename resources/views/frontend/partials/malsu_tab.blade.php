@@ -81,8 +81,9 @@
         </thead>
         <tbody>
             @if($cases->count() > 0)
-                @foreach($cases as $case)
-                    <tr data-id="{{ $case->id }}">
+                @foreach($cases as $malsu)
+                @php $case = $malsu->case; @endphp
+                    <tr data-id="{{ $malsu->id }}" data-has-case="{{ $case ? '1' : '0' }}">
                         <td class="actions-cell collapsed">
                             <div class="action-buttons-container">
                                 <button class="action-toggle-btn" type="button">
@@ -90,64 +91,77 @@
                                 </button>
                                 <div class="action-buttons">
                                     <button class="btn btn-warning btn-sm edit-row-btn-case"
-                                            data-case-id="{{ $case->id }}"
+                                            data-case-id="{{ $malsu->id }}"
                                             title="Edit Row">
                                         <i class="fas fa-edit"></i>
                                     </button>
 
-                                    <button type="button"
-                                            class="btn btn-danger btn-sm delete-btn"
-                                            data-case-id="{{ $case->id }}"
-                                            data-case-no="{{ $case->case_no ?? 'N/A' }}"
-                                            data-establishment="{{ $case->establishment_name ?? 'N/A' }}"
-                                            title="Delete">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-
-                                    <button class="btn btn-info btn-sm view-history-btn"
-                                            data-case-id="{{ $case->id }}"
-                                            data-case-no="{{ $case->case_no ?? 'N/A' }}"
-                                            data-establishment="{{ $case->establishment_name ?? 'N/A' }}"
-                                            title="View Document History">
-                                        <i class="fas fa-history"></i>
-                                    </button>
-
-                                    @if(Auth::user()->isSheriff())
+                                    @if($case)
                                         <button type="button"
-                                                class="btn btn-primary btn-sm upload-report-btn"
+                                                class="btn btn-danger btn-sm delete-btn"
                                                 data-case-id="{{ $case->id }}"
                                                 data-case-no="{{ $case->case_no ?? 'N/A' }}"
                                                 data-establishment="{{ $case->establishment_name ?? 'N/A' }}"
-                                                title="Upload Report">
-                                            <i class="fas fa-upload"></i>
+                                                title="Delete">
+                                            <i class="fas fa-trash"></i>
                                         </button>
-                                    @else
-                                        <button type="button"
-                                                class="btn btn-success btn-sm complete-case-btn"
+
+                                        <button class="btn btn-info btn-sm view-history-btn"
                                                 data-case-id="{{ $case->id }}"
                                                 data-case-no="{{ $case->case_no ?? 'N/A' }}"
                                                 data-establishment="{{ $case->establishment_name ?? 'N/A' }}"
-                                                data-stage="{{ explode(': ', $case->current_stage)[1] ?? $case->current_stage ?? 'Unknown' }}"
-                                                title="Mark as Complete">
-                                            <i class="fas fa-check-circle"></i>
+                                                title="View Document History">
+                                            <i class="fas fa-history"></i>
                                         </button>
+                                    @endif
+
+                                        @if(Auth::user()->isSheriff())
+                                            @if($case)
+                                                <button type="button"
+                                                        class="btn btn-primary btn-sm upload-report-btn"
+                                                        data-case-id="{{ $case->id }}"
+                                                        data-case-no="{{ $case->case_no ?? 'N/A' }}"
+                                                        data-establishment="{{ $case->establishment_name ?? 'N/A' }}"
+                                                        title="Upload Report">
+                                                    <i class="fas fa-upload"></i>
+                                                </button>
+                                            @else
+                                                <span class="text-muted small" title="Legacy record — no linked case for reports">
+                                                    <i class="fas fa-ban"></i>
+                                                </span>
+                                            @endif
+                                        @else
+                                        @if($case)
+                                            <button type="button"
+                                                    class="btn btn-success btn-sm complete-case-btn"
+                                                    data-case-id="{{ $case->id }}"
+                                                    data-case-no="{{ $case->case_no ?? 'N/A' }}"
+                                                    data-establishment="{{ $case->establishment_name ?? 'N/A' }}"
+                                                    data-stage="{{ explode(': ', $case->current_stage)[1] ?? $case->current_stage ?? 'Unknown' }}"
+                                                    title="Mark as Complete">
+                                                <i class="fas fa-check-circle"></i>
+                                            </button>
+                                        @endif
                                     @endif
                                 </div>
                             </div>
                         </td>
 
                         {{-- From cases table --}}
-                        <td class="readonly-cell">{{ $case->no ?? '-' }}</td>
+                        <td class="readonly-cell">{{ $case?->no ?? '-' }}</td>
                         <td class="readonly-cell wrap-cell" style="background-color: #d1ecf1 !important;">
-                            <span>{{ $case->establishment_name ?? '-' }}</span>
-                            @if($case->establishment_address)
+                            <span>{{ $case->establishment_name ?? $malsu->case_title ?? '-' }}</span>
+                            @if(!$case)
+                                <span class="badge badge-secondary ml-1" style="font-size:0.65rem;">Legacy Record</span>
+                            @endif
+                            @if($case?->establishment_address)
                                 <br><small class="text-muted address-subtext"
                                         style="font-weight: normal; font-size: 0.75rem;">
                                     {{ $case->establishment_address }}
                                 </small>
                             @endif
                             {{-- Replace the existing @if($case->documentTracking && ...) badge block --}}
-                            @if($case->documentTracking)
+                            @if($case?->documentTracking)
                                 <br>
                                 @php
                                     $tagColors = [
@@ -183,81 +197,82 @@
                         {{-- From malsu table --}}
                         @if(Auth::user()->isSheriff())
                             <td class="readonly-cell" data-field="regional_docket_number" style="background-color: #fff3cd !important;">
-                                {{ $case->malsu->regional_docket_number ?? '-' }}
+                                {{ $malsu->regional_docket_number ?? '-' }}
                             </td>
                         @else
                             <td class="editable-cell" data-field="regional_docket_number" style="background-color: #fff3cd !important;">
-                                {{ $case->malsu->regional_docket_number ?? '-' }}
+                                {{ $malsu->regional_docket_number ?? '-' }}
                             </td>
                         @endif
                         @if(Auth::user()->isSheriff())
                             <td class="readonly-cell" data-field="sheriff_designate">
-                                {{ $case->malsu->sheriff_designate ?? '-' }}
+                                {{ $malsu->sheriff_designate ?? '-' }}
                             </td>
                         @else
                             <td class="editable-cell" data-field="sheriff_designate" data-type="select">
-                                {{ $case->malsu->sheriff_designate ?? '-' }}
+                                {{ $malsu->sheriff_designate ?? '-' }}
                             </td>
                         @endif
                         <td class="editable-cell" data-field="date_compliance_order" data-type="date">
-                            {{ $case->malsu?->date_compliance_order ? \Carbon\Carbon::parse($case->malsu->date_compliance_order)->format('Y-m-d') : '-' }}
+                            {{ $malsu->date_compliance_order ? \Carbon\Carbon::parse($malsu->date_compliance_order)->format('Y-m-d') : '-' }}
                         </td>
                         <td class="editable-cell" data-field="total_gls_monetary_award">
-                            {{ $case->malsu->total_gls_monetary_award ?? '-' }}
+                            {{ $malsu->total_gls_monetary_award ?? '-' }}
                         </td>
                         <td class="editable-cell" data-field="total_workers_benefited">
-                            {{ $case->malsu->total_workers_benefited ?? '-' }}
+                            {{ $malsu->total_workers_benefited ?? '-' }}
                         </td>
                         <td class="editable-cell" data-field="amount_penalty_double_indemnity">
-                            {{ $case->malsu->amount_penalty_double_indemnity ?? '-' }}
+                            {{ $malsu->amount_penalty_double_indemnity ?? '-' }}
                         </td>
                         <td class="editable-cell" data-field="voluntary_compliance">
-                            {{ $case->malsu->voluntary_compliance ?? '-' }}
+                            {{ $malsu->voluntary_compliance ?? '-' }}
                         </td>
                         <td class="editable-cell" data-field="action_taken">
-                            {{ $case->malsu->action_taken ?? '-' }}
+                            {{ $malsu->action_taken ?? '-' }}
                         </td>
                         <td class="editable-cell" data-field="total_gls_monetary_satisfied">
-                            {{ $case->malsu->total_gls_monetary_satisfied ?? '-' }}
+                            {{ $malsu->total_gls_monetary_satisfied ?? '-' }}
                         </td>
                         <td class="editable-cell" data-field="total_workers_satisfied">
-                            {{ $case->malsu->total_workers_satisfied ?? '-' }}
+                            {{ $malsu->total_workers_satisfied ?? '-' }}
                         </td>
                         <td class="editable-cell" data-field="complied_oshs_violations">
-                            {{ $case->malsu->complied_oshs_violations ?? '-' }}
+                            {{ $malsu->complied_oshs_violations ?? '-' }}
                         </td>
                         <td class="editable-cell" data-field="total_penalty_double_indemnity_collected">
-                            {{ $case->malsu->total_penalty_double_indemnity_collected ?? '-' }}
+                            {{ $malsu->total_penalty_double_indemnity_collected ?? '-' }}
                         </td>
                         <td class="editable-cell" data-field="total_oshs_penalty_admin_fines_collected">
-                            {{ $case->malsu->total_oshs_penalty_admin_fines_collected ?? '-' }}
+                            {{ $malsu->total_oshs_penalty_admin_fines_collected ?? '-' }}
                         </td>
                         <td class="editable-cell" data-field="total_workers_absorbed">
-                            {{ $case->malsu->total_workers_absorbed ?? '-' }}
+                            {{ $malsu->total_workers_absorbed ?? '-' }}
                         </td>
                         <td class="editable-cell" data-field="full_or_partial">
-                            {{ $case->malsu->full_or_partial ?? '-' }}
+                            {{ $malsu->full_or_partial ?? '-' }}
                         </td>
                         <td class="editable-cell" data-field="date_writ_of_execution_served" data-type="date">
-                            {{ $case->malsu?->date_writ_of_execution_served ? \Carbon\Carbon::parse($case->malsu->date_writ_of_execution_served)->format('Y-m-d') : '-' }}
+                            {{ $malsu->date_writ_of_execution_served ? \Carbon\Carbon::parse($malsu->date_writ_of_execution_served)->format('Y-m-d') : '-' }}
                         </td>
                         <td class="editable-cell" data-field="date_indorsed_to_po" data-type="date">
-                            {{ $case->malsu?->date_indorsed_to_po ? \Carbon\Carbon::parse($case->malsu->date_indorsed_to_po)->format('Y-m-d') : '-' }}
+                            {{ $malsu->date_indorsed_to_po ? \Carbon\Carbon::parse($malsu->date_indorsed_to_po)->format('Y-m-d') : '-' }}
                         </td>
                         <td class="editable-cell" data-field="po_date_received" data-type="date">
-                            {{ $case->malsu?->po_date_received ? \Carbon\Carbon::parse($case->malsu->po_date_received)->format('Y-m-d') : '-' }}
+                            {{ $malsu->po_date_received ? \Carbon\Carbon::parse($malsu->po_date_received)->format('Y-m-d') : '-' }}
                         </td>
                         <td class="editable-cell" data-field="ro_received_sheriffs_return" data-type="date">
-                            {{ $case->malsu?->ro_received_sheriffs_return ? \Carbon\Carbon::parse($case->malsu->ro_received_sheriffs_return)->format('Y-m-d') : '-' }}
+                            {{ $malsu->ro_received_sheriffs_return ? \Carbon\Carbon::parse($malsu->ro_received_sheriffs_return)->format('Y-m-d') : '-' }}
                         </td>
                         @unless(Auth::user()->isSheriff())
                             <td class="readonly-cell wrap-cell">
-                                @php $reportCount = $case->malsu->sheriffsReports->count() ?? 0; @endphp
+                                @php $reportCount = $malsu->sheriffsReports->count(); @endphp
                                 @if($reportCount > 0)
                                     <button type="button" class="btn btn-sm btn-outline-primary view-reports-grid-btn"
-                                            data-case-id="{{ $case->id }}"
+                                            data-case-id="{{ $case->id ?? '' }}"
+                                            data-malsu-id="{{ $malsu->id }}"
                                             data-case-no="{{ $case->case_no ?? 'N/A' }}"
-                                            data-establishment="{{ $case->establishment_name ?? 'N/A' }}">
+                                            data-establishment="{{ $case->establishment_name ?? $malsu->case_title ?? 'N/A' }}">
                                         <i class="fas fa-table"></i> {{ $reportCount }} report(s)
                                     </button>
                                 @else
