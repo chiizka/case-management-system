@@ -27,7 +27,7 @@ class ArchivedController extends Controller
                 'province' => $provinceName
             ]);
             
-            $query = CaseFile::with(['appeal', 'malsu'])
+            $query = CaseFile::with(['appeal', 'malsu.sheriffsReports.submittedBy'])
                 ->where('overall_status', 'Disposed')
                 ->where('po_office', $provinceName);
             
@@ -37,7 +37,7 @@ class ArchivedController extends Controller
                 'role' => $user->role
             ]);
             
-            $query = CaseFile::with(['appeal', 'malsu'])
+            $query = CaseFile::with(['appeal', 'malsu.sheriffsReports.submittedBy'])
                 ->whereIn('overall_status', ['Completed', 'Disposed', 'Appealed']);
         }
         

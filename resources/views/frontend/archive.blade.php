@@ -458,7 +458,7 @@
                                     </span>
                                 @endif
                             @else
-                                <span class="text-green-600">{{ $case->overall_status }}</span>
+                                <span class="text-green-600">{{ $case->overall_status === 'Completed' ? 'Archived' : $case->overall_status }}</span>
                             @endif
                         </div>
                         <div>
@@ -482,6 +482,12 @@
                             @if($case->malsu)
                                 <div class="tab" data-tab="malsu-{{ $case->id }}">
                                     <i class="fas fa-gavel" style="font-size:0.75rem; margin-right:4px;"></i> MALSU
+                                </div>
+                            @endif
+
+                            @if($case->malsu && $case->malsu->sheriffsReports->count())
+                                <div class="tab" data-tab="sheriff-reports-{{ $case->id }}">
+                                    <i class="fas fa-user-shield" style="font-size:0.75rem; margin-right:4px;"></i> Sheriff Reports
                                 </div>
                             @endif
 
@@ -828,6 +834,43 @@
                             </div>
                         </div>
                         @endif
+
+                        {{-- Sheriff Reports Tab --}}
+                        @if($case->malsu && $case->malsu->sheriffsReports->count())
+                        <div id="sheriff-reports-{{ $case->id }}" class="tab-content">
+                            <h3 class="font-bold mb-3" style="font-size: 1.25rem; color: #1f2937;">Sheriff Reports</h3>
+                            <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(260px, 1fr)); gap:1rem;">
+                                @foreach($case->malsu->sheriffsReports->sortBy('report_month') as $report)
+                                    @php
+                                        $wasEdited = $report->updated_at && $report->created_at
+                                            && $report->updated_at->diffInSeconds($report->created_at) > 60;
+                                    @endphp
+                                    <div class="card h-100">
+                                        <div class="card-header" style="background:#f8f9fc; font-weight:600;">
+                                            {{ optional($report->report_month)->format('F Y') }}
+                                        </div>
+                                        <div class="card-body" style="line-height:1.5;">
+                                            <div>{!! $report->report_content ? nl2br(e($report->report_content)) : '<span class="text-muted">—</span>' !!}</div>
+                                            <span class="text-muted d-block mt-2" style="font-size:0.85rem;">
+                                                Submitted: {{ optional($report->report_date_submitted)->format('Y-m-d') }}
+                                                @if($report->submittedBy) by {{ $report->submittedBy->fname }} {{ $report->submittedBy->lname }} @endif
+                                            </span>
+                                            @if($wasEdited)
+                                                <span class="text-muted d-block mt-1" style="font-size:0.85rem;">
+                                                    <i class="fas fa-pen"></i> Edited {{ $report->updated_at->format('M d, Y h:i A') }}
+                                                </span>
+                                            @endif
+                                            @if($report->report_link)
+                                                <div class="mt-2"><a href="{{ $report->report_link }}" target="_blank" rel="noopener"><i class="fas fa-link"></i> Attachment</a></div>
+                                            @endif
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+                        @endif
+
+                        <!-- Document History Tab -->
 
                         <!-- Document History Tab -->
                         <div id="doc-history-{{ $case->id }}" class="tab-content">
