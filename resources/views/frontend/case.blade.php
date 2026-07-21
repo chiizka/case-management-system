@@ -980,59 +980,30 @@ body.sheriff-readonly .edit-row-btn-case {
                             <label for="type_of_industry">Type of Industry <span class="text-danger">*</span></label>
                             <select class="form-control" id="type_of_industry" name="type_of_industry" required>
                                 <option value="">-- Select Type of Industry --</option>
-
-                                <optgroup label="1. Retail Establishments">
-                                    <option value="Retail - Specifics">Specifics</option>
-                                    <option value="Retail - Sales Methods">Sales Methods</option>
-                                </optgroup>
-
-                                <optgroup label="2. Food Service Establishments">
-                                    <option value="Food Service - Specifics">Specifics</option>
-                                    <option value="Food Service - Includes">Includes</option>
-                                    <option value="Food Service - Drinking Establishments">Drinking Establishments</option>
-                                </optgroup>
-
-                                <optgroup label="3. Professional Service Establishments">
-                                    <option value="Professional - Legal & Finance">Legal &amp; Finance</option>
-                                    <option value="Professional - Technical & Design">Technical &amp; Design</option>
-                                    <option value="Professional - Consulting & Management">Consulting &amp; Management</option>
-                                    <option value="Professional - Creative & Media">Creative &amp; Media</option>
-                                    <option value="Professional - Rent">Rent</option>
-                                </optgroup>
-
-                                <optgroup label="4. Healthcare Industry">
-                                    <option value="Healthcare - Specifics">Specifics</option>
-                                </optgroup>
-
-                                <optgroup label="5. Non-Agricultural Establishment">
-                                    <option value="Non-Agricultural - Construction (Principal)">Construction - Principal</option>
-                                    <option value="Non-Agricultural - Construction (Contractor)">Construction - Contractor</option>
-                                    <option value="Non-Agricultural - Manufacturing">Manufacturing</option>
-                                    <option value="Non-Agricultural - Mining & Quarrying">Mining &amp; Quarrying</option>
-                                    <option value="Non-Agricultural - Energy Sector">Energy Sector</option>
-                                    <option value="Non-Agricultural - Transportation & Logistics">Transportation &amp; Logistics</option>
-                                    <option value="Non-Agricultural - Telecommunications">Telecommunications</option>
-                                    <option value="Non-Agricultural - BPO">BPO</option>
-                                </optgroup>
-
-                                <optgroup label="6. Agriculture Establishment">
-                                    <option value="Agriculture - Agriculture">Agriculture</option>
-                                    <option value="Agriculture - Plantation">Plantation</option>
-                                    <option value="Agriculture - Non-Plantation">Non-Plantation</option>
-                                    <option value="Agriculture - Fishing/Marine Industry">Fishing/Marine Industry</option>
-                                    <option value="Agriculture - Horticultural">Horticultural</option>
-                                    <option value="Agriculture - Animal Farming">Animal Farming</option>
-                                </optgroup>
-
-                                <optgroup label="7. Other">
-                                    <option value="Other - Please specify in remarks">Other (Please specify in the column)</option>
-                                </optgroup>
+                                <option value="Retail Establishments">1. Retail Establishments</option>
+                                <option value="Food Service Establishments">2. Food Service Establishments</option>
+                                <option value="Professional Service Establishments">3. Professional Service Establishments</option>
+                                <option value="Healthcare Industry">4. Healthcare Industry</option>
+                                <option value="Non-Agricultural Establishment">5. Non-Agricultural Establishment</option>
+                                <option value="Agriculture Establishment">6. Agriculture Establishment</option>
+                                <option value="Other - Please specify in remarks">7. Other</option>
                             </select>
-                             </select>
+
                             <small class="form-text text-muted">
                                 <i class="fas fa-info-circle"></i> Select the industry category that best describes the establishment
                             </small>
-                            
+
+                            {{-- Static reference subtext, small font, always visible --}}
+                            <div class="mt-2" style="font-size: 0.72rem; line-height: 1.5; color: #868e96;">
+                                <div><strong>1.</strong> Specifics, Sales Methods</div>
+                                <div><strong>2.</strong> Specifics, Includes, Drinking Establishments</div>
+                                <div><strong>3.</strong> Legal &amp; Finance, Technical &amp; Design, Consulting &amp; Management, Creative &amp; Media, Rent</div>
+                                <div><strong>4.</strong> Specifics</div>
+                                <div><strong>5.</strong> Construction (Principal), Construction (Contractor), Manufacturing, Mining &amp; Quarrying, Energy Sector, Transportation &amp; Logistics, Telecommunications, BPO</div>
+                                <div><strong>6.</strong> Agriculture, Plantation, Non-Plantation, Fishing/Marine Industry, Horticultural, Animal Farming</div>
+                                <div><strong>7.</strong> Please specify in remarks</div>
+                            </div>
+
                             {{-- shown only when Other is selected --}}
                             <div id="otherIndustryNote" class="alert alert-warning mt-2 py-2" style="display:none; font-size:0.85rem;">
                                 <i class="fas fa-exclamation-circle"></i>
