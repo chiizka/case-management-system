@@ -1633,6 +1633,52 @@ let currentSheriffReportCaseId = null;
 
 const isReadOnlySheriff = false; // sheriffs can now edit cases assigned to them
 
+// ==========================================
+// DATE FIELD EDIT PERMISSIONS
+// Province offices (province_albay, province_sorsogon, etc.): date_scheduled_docketed only
+// Case Management Regional: all other stage dates
+// Admin: bypasses all restrictions
+// ==========================================
+const isAdminUser    = {{ Auth::user()->isAdmin() ? 'true' : 'false' }};
+const isProvinceUser = {{ Auth::user()->isProvince() ? 'true' : 'false' }};
+const isRegionalCM   = {{ (Auth::user()->isCaseManagement() && !Auth::user()->isProvincialCaseManagement()) ? 'true' : 'false' }};
+
+const PROVINCE_ONLY_DATE_FIELDS = ['date_scheduled_docketed'];
+const REGIONAL_CM_ONLY_DATE_FIELDS = [
+    'date_of_inspection',
+    'date_of_nr',
+    'date_1st_mc_actual',
+    'date_2nd_last_mc',
+    'case_folder_forwarded_to_ro',
+    'date_signed_mis'
+];
+
+function canEditDateField(field) {
+    if (isAdminUser) return true;
+    if (PROVINCE_ONLY_DATE_FIELDS.includes(field)) return isProvinceUser;
+    if (REGIONAL_CM_ONLY_DATE_FIELDS.includes(field)) return isRegionalCM;
+    return true; // not a restricted field — leave existing behavior alone
+}
+
+// Downgrades restricted date cells to readonly for users not allowed to edit
+// them. Safe to call repeatedly on any (re)render of tab0 / tabCM / tabProv-*.
+function applyDateFieldPermissions(scopeSelector) {
+    if (isAdminUser) return;
+
+    PROVINCE_ONLY_DATE_FIELDS.concat(REGIONAL_CM_ONLY_DATE_FIELDS).forEach(function(field) {
+        if (canEditDateField(field)) return;
+
+        $(scopeSelector).find('.editable-cell[data-field="' + field + '"]').each(function() {
+            $(this)
+                .removeClass('editable-cell')
+                .addClass('readonly-cell')
+                .attr('title', PROVINCE_ONLY_DATE_FIELDS.includes(field)
+                    ? 'Editable by Provincial Offices only'
+                    : 'Editable by Case Management (Regional) only');
+        });
+    });
+}
+
 $(document).ready(function() {
     console.log('jQuery version:', $.fn.jquery);
     console.log('DataTables available:', typeof $.fn.DataTable !== 'undefined');
@@ -2505,6 +2551,7 @@ $(document).on('click', function(e) {
             success: function(response) {
                 if (response.success) {
                     $cardBody.html(response.html);
+                    applyDateFieldPermissions('#' + tabId);
                     loadedTabs[tabId] = true;
                     
                     const tableId = '#dataTable' + tabNumber;
@@ -2572,6 +2619,7 @@ $(document).on('click', function(e) {
             success: function (response) {
                 if (response.success) {
                     $cardBody.html(response.html);
+                    applyDateFieldPermissions('#tabProv-' + province);
                     provTabLoaded[province] = true;
 
                     setTimeout(function () {
@@ -3083,6 +3131,7 @@ $(document).on('click', function(e) {
             success: function (response) {
                 if (response.success) {
                     $cardBody.html(response.html);
+                    applyDateFieldPermissions('#tabCM');
                     cmTabLoaded = true;
 
                     // Small delay to let DOM settle before DataTable init
@@ -3323,6 +3372,7 @@ function loadTab0Data() {
         success: function(response) {
             if (response.success) {
                 $('#dataTable0 tbody').html(response.html);
+                applyDateFieldPermissions('#dataTable0');
                 $('#tab0-loading').hide();
                 $('#tab0-table-container').show();
 
@@ -3468,6 +3518,7 @@ if ($('#tab0').hasClass('active')) {
             success: function(response) {
                 if (response.success) {
                     $cardBody.html(response.html);
+                    applyDateFieldPermissions('#' + tabId);
                     loadedTabs[tabId] = true;
 
                     setTimeout(function() {

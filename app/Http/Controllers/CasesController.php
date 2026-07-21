@@ -29,6 +29,17 @@ class CasesController extends Controller
     /**
      * Get allowed tabs based on user role
      */
+
+    private const PROVINCE_ONLY_DATE_FIELDS = ['date_scheduled_docketed'];
+
+    private const REGIONAL_CM_ONLY_DATE_FIELDS = [
+        'date_of_inspection',
+        'date_of_nr',
+        'date_1st_mc_actual',
+        'date_2nd_last_mc',
+        'case_folder_forwarded_to_ro',
+        'date_signed_mis',
+    ];
     private function getAllowedTabs()
     {
         $user = Auth::user();
@@ -852,6 +863,25 @@ public function destroy($id)
             ];
         }
 
+    private function checkDateFieldPermissions(array $updateData, $user)
+    {
+        if ($user->isAdmin()) {
+            return null;
+        }
+
+        foreach ($updateData as $field => $value) {
+            if (in_array($field, self::PROVINCE_ONLY_DATE_FIELDS) && !$user->isProvince()) {
+                return 'Only Provincial Offices can edit "' . str_replace('_', ' ', $field) . '".';
+            }
+
+            $isRegionalCM = $user->isCaseManagement() && !$user->isProvincialCaseManagement();
+            if (in_array($field, self::REGIONAL_CM_ONLY_DATE_FIELDS) && !$isRegionalCM) {
+                return 'Only Case Management (Regional) can edit "' . str_replace('_', ' ', $field) . '".';
+            }
+        }
+
+        return null;
+    }
     /**
      * Update case with validation
      */
@@ -868,6 +898,17 @@ public function destroy($id)
             
             // Get only the fields that are being updated
             $updateData = $request->except(['_token', '_method', 'id']);
+
+            // ── Date field edit restrictions ──────────────────────────
+            $permissionError = $this->checkDateFieldPermissions($updateData, Auth::user());
+            if ($permissionError) {
+                DB::rollBack();
+                return response()->json([
+                    'success' => false,
+                    'message' => $permissionError,
+                ], 403);
+            }
+            // ── END ────────────────────────────────────────────────────
             
             // Validate the data
             $validated = $request->validate($this->getValidationRules());
