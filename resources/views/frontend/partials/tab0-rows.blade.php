@@ -106,7 +106,7 @@
         </td>
         {{-- <td class="editable-cell wrap-cell" data-field="establishment_address">{{ $case->establishment_address ?? '-' }}</td> --}}
         <td class="editable-cell" data-field="mode">{{ $case->mode ?? '-' }}</td>
-        <td class="readonly-cell" data-field="po_office">{{ $case->po_office ?? '-' }}</td>
+        <td class="readonly-cell" data-field="po_office" title="{{ $case->po_office ?? '' }}">{{ $case->po_office_short ?? '-' }}</td>
         <td class="editable-cell" data-field="type_of_industry">{{ $case->type_of_industry ?? '-' }}</td>
         {{-- <td class="readonly-cell" data-field="overall_status">{{ $case->overall_status ?? '-' }}</td> --}}
 

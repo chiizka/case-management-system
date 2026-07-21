@@ -1138,7 +1138,7 @@ public function importCsv(Request $request)
                 
                 // Extract fields from MIS CSV format
                 $inspectionId = trim($data['Inspection ID'] ?? '');
-                $fieldOffice = trim($data['Field Office'] ?? '');
+                $fieldOffice = $this->normalizeFieldOfficeToProvince($data['Field Office'] ?? '');
                 $establishmentName = trim($data['Establishment/Ship Name'] ?? '');
                 $establishmentAddress = trim($data['Establishment/Ship Address'] ?? '');
                 $mode = trim($data['Mode'] ?? '');
@@ -2133,6 +2133,43 @@ public function loadSheriffProvinceTab(Request $request, $province)
     }
 }
 
+private function normalizeFieldOfficeToProvince(string $fieldOffice): string
+{
+    $fieldOffice = strtoupper(trim($fieldOffice));
+
+    $codeToProvince = [
+        'APFO' => 'Albay',
+        'SFO'  => 'Sorsogon',
+        'CSFO' => 'Camarines Sur',
+        'CNFO' => 'Camarines Norte',
+        'MFO'  => 'Masbate',
+        'CFO'  => 'Catanduanes',
+    ];
+
+    if (isset($codeToProvince[$fieldOffice])) {
+        return $codeToProvince[$fieldOffice];
+    }
+
+    // Fallback: if the sheet already contains a full province name
+    // (case-insensitive match), normalize it to our canonical casing.
+    $knownProvinces = [
+        'ALBAY' => 'Albay',
+        'SORSOGON' => 'Sorsogon',
+        'CAMARINES SUR' => 'Camarines Sur',
+        'CAMARINES NORTE' => 'Camarines Norte',
+        'MASBATE' => 'Masbate',
+        'CATANDUANES' => 'Catanduanes',
+    ];
+
+    if (isset($knownProvinces[$fieldOffice])) {
+        return $knownProvinces[$fieldOffice];
+    }
+
+    // Unrecognized code — log it and pass through as-is so it's visible
+    // in the UI/logs rather than silently disappearing.
+    Log::warning("Unrecognized Field Office code '{$fieldOffice}' during CSV import — storing as-is.");
+    return $fieldOffice;
+}
 
 
 

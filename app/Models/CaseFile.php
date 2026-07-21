@@ -243,4 +243,18 @@ class CaseFile extends Model
     {
         return $this->hasOne(CaseExecution::class, 'case_id')->latestOfMany();
     }
+
+    protected const PO_PROVINCE_TO_CODE = [
+    'Albay'           => 'APFO',
+    'Sorsogon'        => 'SFO',
+    'Camarines Sur'   => 'CSFO',
+    'Camarines Norte' => 'CNFO',
+    'Masbate'         => 'MFO',
+    'Catanduanes'     => 'CFO',
+    ];
+
+    public function getPoOfficeShortAttribute()
+    {
+        return self::PO_PROVINCE_TO_CODE[$this->po_office] ?? $this->po_office;
+    }
 }

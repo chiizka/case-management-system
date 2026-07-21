@@ -168,7 +168,7 @@
                             @endif
                         </td>
                         <td class="editable-cell" data-field="mode">{{ $case->mode ?? '-' }}</td>
-                        <td class="readonly-cell" data-field="po_office" style="background-color: #d4edda !important;">{{ $case->po_office ?? '-' }}</td>
+                        <td class="readonly-cell" data-field="po_office" style="background-color: #d4edda !important;" title="{{ $case->po_office ?? '' }}">{{ $case->po_office_short ?? '-' }}</td>
                         <td class="editable-cell" data-field="type_of_industry">{{ $case->type_of_industry ?? '-' }}</td>
 
                         {{-- Inspection Stage --}}
