@@ -278,7 +278,20 @@ class SendBeyondCaseNotifications extends Command
         $cmUpcoming = $formatUpcoming($allUpcomingCases, true, false, false, true, true);
 
         foreach (User::where('role', User::ROLE_CASE_MANAGEMENT)->get() as $cm) {
-            $sendEmail($cm, $cmBeyond, $cmUpcoming);
+            if ($cm->isProvincialCaseManagement()) {
+                $provinceName = $cm->getCaseManagementProvinceName();
+
+                $scopedBeyond   = $allBeyondCases->where('po_office', $provinceName);
+                $scopedUpcoming = $allUpcomingCases->where('po_office', $provinceName);
+
+                $beyondFormatted   = $formatBeyond($scopedBeyond,   true, false, false, true, true);
+                $upcomingFormatted = $formatUpcoming($scopedUpcoming, true, false, false, true, true);
+
+                $sendEmail($cm, $beyondFormatted, $upcomingFormatted);
+            } else {
+                // Regional CM — sees all provinces
+                $sendEmail($cm, $cmBeyond, $cmUpcoming);
+            }
         }
 
         // ══════════════════════════════════════════════════════════════════

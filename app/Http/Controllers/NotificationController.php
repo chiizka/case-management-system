@@ -17,10 +17,22 @@ class NotificationController extends Controller
     {
         $user = Auth::user();
 
-        $pending = DocumentTracking::with(['case', 'transferredBy'])
+        $pendingQuery = DocumentTracking::with(['case', 'transferredBy'])
             ->active()
             ->where('current_role', $user->role)
-            ->where('status', 'Pending Receipt')
+            ->where('status', 'Pending Receipt');
+
+        // Provincial Case Management users: only docs tied to cases in their province
+        if ($user->isProvincialCaseManagement()) {
+            $provinceName = $user->getCaseManagementProvinceName();
+            if ($provinceName) {
+                $pendingQuery->whereHas('case', function ($q) use ($provinceName) {
+                    $q->where('po_office', $provinceName);
+                });
+            }
+        }
+
+        $pending = $pendingQuery
             ->orderBy('transferred_at', 'desc')
             ->get()
             ->map(function ($doc) {
@@ -100,6 +112,8 @@ class NotificationController extends Controller
         // ── Determine which PCT fields this role cares about ──────────────
         $isProvince       = $user->isProvince();
         $isCaseManagement = $user->isCaseManagement();
+        $isProvincialCM   = $user->isProvincialCaseManagement();
+        $cmProvinceName   = $isProvincialCM ? $user->getCaseManagementProvinceName() : null;
 
         // Province   → 1st MC + 2nd MC only
         // Case Mgmt  → Docket + PO PCT + PCT 96 days only
@@ -143,6 +157,11 @@ class NotificationController extends Controller
                 $q->where('current_role', $user->role)
                   ->where('status', 'Received');
             });
+        }
+
+        // Provincial Case Management users: only cases from their assigned province
+        if ($isProvincialCM && $cmProvinceName) {
+            $baseQuery->where('po_office', $cmProvinceName);
         }
 
         $selectFields = [
