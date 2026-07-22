@@ -10,7 +10,8 @@
         "laravel/framework": "^12.0",
         "laravel/tinker": "^2.10.1",
         "league/csv": "^9.27",
-        "phpoffice/phpspreadsheet": "^5.3"
+        "phpoffice/phpspreadsheet": "^5.3",
+        "phpoffice/phpword": "^1.4"
     },
     "require-dev": {
         "barryvdh/laravel-ide-helper": "^3.6",

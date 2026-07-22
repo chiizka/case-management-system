@@ -1971,7 +1971,7 @@ public function loadTab0()
     }
 }
 
-public function executeCase(Request $request, $id)
+ public function executeCase(Request $request, $id)
 {
     $request->validate([
         'exec_received_by'   => 'required|string|max:255',
@@ -1985,11 +1985,9 @@ public function executeCase(Request $request, $id)
         $case = CaseFile::findOrFail($id);
         $user = Auth::user();
 
-        // Archive current tracking to history, then point to MALSU
         $tracking = DocumentTracking::where('case_id', $case->id)->first();
 
         if ($tracking) {
-            // Save old cycle to history
             \App\Models\DocumentTrackingHistory::create([
                 'document_tracking_id'   => $tracking->id,
                 'from_role'              => $tracking->current_role,
@@ -2012,7 +2010,6 @@ public function executeCase(Request $request, $id)
                 'case_tag'               => 'For Execution',
             ]);
         } else {
-            // No tracking record yet — create one pointing to MALSU
             DocumentTracking::create([
                 'case_id'                => $case->id,
                 'current_role'           => 'malsu',
@@ -2024,8 +2021,40 @@ public function executeCase(Request $request, $id)
             ]);
         }
 
-        // ✅ Do NOT change overall_status or current_stage
-        // Case stays Active at whatever stage it's currently in
+        // ── NEW: persist structured execution data, with logging ──
+        Log::info('Attempting to save CaseExecution', [
+            'case_id'       => $case->id,
+            'received_by'   => $request->exec_received_by,
+            'date_received' => $request->exec_date_received,
+            'tracking_no'   => $request->exec_tracking_no,
+            'courier'       => $request->exec_courier,
+            'forwarded_by'  => $user->id,
+        ]);
+
+        try {
+            $execution = CaseExecution::create([
+                'case_id'       => $case->id,
+                'received_by'   => $request->exec_received_by,
+                'date_received' => $request->exec_date_received,
+                'tracking_no'   => $request->exec_tracking_no,
+                'courier'       => $request->exec_courier,
+                'forwarded_by'  => $user->id,
+                'notes'         => 'Case forwarded for execution.',
+            ]);
+
+            Log::info('CaseExecution saved successfully', [
+                'execution_id' => $execution->id,
+                'case_id'      => $case->id,
+            ]);
+        } catch (\Exception $execError) {
+            Log::error('CaseExecution save FAILED', [
+                'case_id' => $case->id,
+                'error'   => $execError->getMessage(),
+                'trace'   => $execError->getTraceAsString(),
+            ]);
+            throw $execError; // re-throw so the whole transaction rolls back and you see it in the response too
+        }
+        // ── END NEW ──
 
         ActivityLogger::logAction(
             'EXECUTE',

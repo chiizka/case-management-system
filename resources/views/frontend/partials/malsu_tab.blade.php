@@ -141,6 +141,15 @@
                                                     title="Mark as Complete">
                                                 <i class="fas fa-check-circle"></i>
                                             </button>
+
+                                            <button type="button"
+                                                    class="btn btn-secondary btn-sm notice-of-finality-btn"
+                                                    data-case-id="{{ $case->id }}"
+                                                    data-case-no="{{ $case->case_no ?? 'N/A' }}"
+                                                    data-establishment="{{ $case->establishment_name ?? 'N/A' }}"
+                                                    title="Generate Notice of Finality">
+                                                <i class="fas fa-file-signature"></i>
+                                            </button>
                                         @endif
                                     @endif
                                 </div>

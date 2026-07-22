@@ -19,6 +19,8 @@ use App\Http\Controllers\LaborRelationController;
 use App\Http\Controllers\MalsuController;
 use App\Http\Controllers\SheriffsReportController;
 use App\Http\Controllers\SenaController;
+use App\Http\Controllers\NoticeOfFinalityController;
+
 
 
 Route::get('/', [FrontController::class, 'index'])->name('home');
@@ -71,6 +73,12 @@ Route::middleware('auth')->group(function () {
         Route::post('/case/{id}/archive', [CasesController::class, 'moveToNextStage'])->name('case.archive');
         Route::post('/case/{id}/next-stage', [CasesController::class, 'moveToNextStage'])->name('case.nextStage');
         Route::put('/case/{id}/inline-update', [CasesController::class, 'inlineUpdate'])->name('case.inlineUpdate');
+        Route::post('/case/{id}/notice-of-finality', [NoticeOfFinalityController::class, 'generate'])
+        ->name('case.notice-of-finality');
+        Route::get('/case/{id}/notice-of-finality-data', [NoticeOfFinalityController::class, 'getData'])
+        ->name('case.notice-of-finality.data');
+        Route::get('/case/{id}/notice-of-finality-test', [NoticeOfFinalityController::class, 'generate'])
+        ->name('case.notice-of-finality.test');
         Route::get('/case/load-tab/0', [CasesController::class, 'loadTab0']);
         Route::get('/case/load-tab/{tabNumber}', [CasesController::class, 'loadTabData'])->name('case.loadTab');
         Route::get('/case/load-case-management-tab', [CasesController::class, 'loadCaseManagementTab'])->name('case.loadCaseManagementTab');

@@ -1614,6 +1614,100 @@ body.sheriff-readonly .edit-row-btn-case {
     </div>
 </div>
 
+<!-- Notice of Finality Modal -->
+<div class="modal fade" id="noticeOfFinalityModal" tabindex="-1" role="dialog" aria-labelledby="noticeOfFinalityModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-secondary text-white">
+                <h5 class="modal-title" id="noticeOfFinalityModalLabel">
+                    <i class="fas fa-file-signature"></i> Generate Notice of Finality
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-1"><strong>Case No:</strong> <span id="nof-case-no"></span></p>
+                <p class="mb-3"><strong>Establishment:</strong> <span id="nof-establishment"></span></p>
+
+                <div id="nof-loading" class="text-center py-3">
+                    <div class="spinner-border spinner-border-sm text-secondary" role="status">
+                        <span class="sr-only">Loading...</span>
+                    </div>
+                    <small class="text-muted d-block mt-1">Loading case details...</small>
+                </div>
+
+                <form id="noticeOfFinalityForm" style="display:none;">
+                    <div class="form-group">
+                        <label>Order Date</label>
+                        <input type="date" class="form-control form-control-sm" id="nof_order_date">
+                        <small class="form-text text-muted">Pre-filled from case record if available. Leave blank if unknown.</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Dispositive Paragraph (WHEREFORE clause)</label>
+                        <textarea class="form-control form-control-sm" id="nof_dispositive_paragraph" rows="6"
+                            placeholder="Paste or type the full dispositive portion of the order here..."></textarea>
+                        <small class="form-text text-muted">Pre-filled from the case's disposition field if present — review and edit as needed.</small>
+                    </div>
+
+                    <hr>
+
+                    <div class="alert alert-success py-2 mb-2" id="nof_execution_notice" style="display:none; font-size: 0.8rem;">
+                        <i class="fas fa-check-circle"></i> Delivery details auto-filled from this case's execution record. Review and adjust if needed.
+                    </div>
+                    <p class="mb-2" style="font-size: 0.85rem; font-weight: 600; color: #495057;">
+                        <i class="fas fa-truck mr-1"></i> Delivery details
+                        <span class="badge badge-secondary ml-1" style="font-size: 0.7rem;">Manual entry</span>
+                    </p>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group mb-2">
+                                <label class="small mb-1">Courier</label>
+                                <input type="text" class="form-control form-control-sm" id="nof_courier" placeholder="e.g. LBC Express">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group mb-2">
+                                <label class="small mb-1">Tracking No.</label>
+                                <input type="text" class="form-control form-control-sm" id="nof_tracking_no" placeholder="e.g. 153075215841">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group mb-2">
+                                <label class="small mb-1">Date Received</label>
+                                <input type="date" class="form-control form-control-sm" id="nof_date_received">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group mb-2">
+                                <label class="small mb-1">Received By (representative's name)</label>
+                                <input type="text" class="form-control form-control-sm" id="nof_received_by" placeholder="e.g. Mr. Ryan Co Say">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group mb-0">
+                        <label class="small mb-1">Finality Date</label>
+                        <input type="date" class="form-control form-control-sm" id="nof_finality_date">
+                        <small class="form-text text-muted">Auto-suggested as 10 days after date received — adjust if needed.</small>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-secondary" id="nof_generate_btn" disabled>
+                    <i class="fas fa-file-word"></i> Generate & Download
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 @endsection
 @push('scripts')
 <!-- DataTables plugins -->
@@ -3827,7 +3921,123 @@ if ($('#tab0').hasClass('active')) {
         });
     });
 
+let currentNoticeCaseId = null;
 
+$(document).on('click', '.notice-of-finality-btn', function(e) {
+    e.preventDefault();
+    currentNoticeCaseId = $(this).data('case-id');
+    const caseNo = $(this).data('case-no');
+    const establishment = $(this).data('establishment');
+
+    $('#nof-case-no').text(caseNo);
+    $('#nof-establishment').text(establishment);
+
+    $('#noticeOfFinalityForm')[0].reset();
+    $('#noticeOfFinalityForm').hide();
+    $('#nof-loading').show();
+    $('#nof_generate_btn').prop('disabled', true);
+    $('#nof_execution_notice').hide();
+
+    $('#noticeOfFinalityModal').modal('show');
+
+    $.get(`/case/${currentNoticeCaseId}/notice-of-finality-data`, function(response) {
+        if (response.success) {
+            const c = response.case;
+            const exec = response.execution;
+
+            if (c.date_of_order_actual) {
+                $('#nof_order_date').val(c.date_of_order_actual);
+            }
+            if (c.disposition_actual) {
+                $('#nof_dispositive_paragraph').val(c.disposition_actual);
+            }
+
+            if (exec) {
+                // Pre-fill delivery details from the case_executions record
+                if (exec.courier)       $('#nof_courier').val(exec.courier);
+                if (exec.tracking_no)   $('#nof_tracking_no').val(exec.tracking_no);
+                if (exec.received_by)   $('#nof_received_by').val(exec.received_by);
+                if (exec.date_received) {
+                    $('#nof_date_received').val(exec.date_received);
+                    // Auto-suggest finality date = date received + 10 days
+                    const d = new Date(exec.date_received);
+                    d.setDate(d.getDate() + 10);
+                    $('#nof_finality_date').val(d.toISOString().split('T')[0]);
+                }
+                $('#nof_execution_notice').show();
+            }
+        }
+    }).always(function() {
+        $('#nof-loading').hide();
+        $('#noticeOfFinalityForm').show();
+        $('#nof_generate_btn').prop('disabled', false);
+    });
+});
+
+// Auto-suggest finality date = date received + 10 days
+$(document).on('change', '#nof_date_received', function() {
+    const dateReceived = $(this).val();
+    if (dateReceived && !$('#nof_finality_date').val()) {
+        const d = new Date(dateReceived);
+        d.setDate(d.getDate() + 10);
+        $('#nof_finality_date').val(d.toISOString().split('T')[0]);
+    }
+});
+
+$('#nof_generate_btn').on('click', function() {
+    if (!currentNoticeCaseId) return;
+
+    const $btn = $(this);
+    const originalHtml = $btn.html();
+    $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Generating...');
+
+    const payload = {
+        _token:                 $('meta[name="csrf-token"]').attr('content'),
+        order_date:             $('#nof_order_date').val(),
+        dispositive_paragraph:  $('#nof_dispositive_paragraph').val(),
+        courier:                $('#nof_courier').val(),
+        date_received:          $('#nof_date_received').val(),
+        received_by:            $('#nof_received_by').val(),
+        tracking_no:            $('#nof_tracking_no').val(),
+        finality_date:          $('#nof_finality_date').val(),
+    };
+
+    fetch(`/case/${currentNoticeCaseId}/notice-of-finality`, {
+        method: 'POST',
+        headers: {
+            'X-CSRF-TOKEN': payload._token,
+            'Accept': 'application/octet-stream',
+        },
+        body: new URLSearchParams(payload),
+    })
+    .then(response => {
+        if (!response.ok) throw new Error('Generation failed');
+        const disposition = response.headers.get('Content-Disposition') || '';
+        const match = disposition.match(/filename="?([^"]+)"?/);
+        const filename = match ? match[1] : 'Notice_of_Finality.docx';
+        return response.blob().then(blob => ({ blob, filename }));
+    })
+    .then(({ blob, filename }) => {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        window.URL.revokeObjectURL(url);
+
+        $('#noticeOfFinalityModal').modal('hide');
+        showToast('Success', 'Notice of Finality generated.', 'success');
+    })
+    .catch(err => {
+        console.error(err);
+        showToast('Error', 'Failed to generate the notice. Please try again.', 'error');
+    })
+    .finally(() => {
+        $btn.prop('disabled', false).html(originalHtml);
+    });
+});
 
 // Complete case handler (archives case from any stage)
 $(document).on('click', '.complete-case-btn', function(e) {
