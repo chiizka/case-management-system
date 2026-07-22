@@ -935,13 +935,18 @@ public function destroy($id)
                     $updateData[$field] = filter_var($updateData[$field], FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
                 }
             }
-
+            
             $case->update($updateData);
             $case->refresh();
 
             // Capture manual status_po_pct before computeFields() potentially clears it
             $manualStatusPoPct = array_key_exists('status_po_pct', $updateData)
                 ? $updateData['status_po_pct']
+                : null;
+
+            // Capture manual status_pct before computeFields() potentially clears it
+            $manualStatusPct = array_key_exists('status_pct', $updateData)
+                ? $updateData['status_pct']
                 : null;
 
             // Recompute all auto-calculated fields
@@ -951,6 +956,12 @@ public function destroy($id)
             // and user provided a manual value, restore it
             if ($case->status_po_pct === null && in_array($manualStatusPoPct, ['Within', 'Beyond'])) {
                 $case->status_po_pct = $manualStatusPoPct;
+            }
+
+            // If auto-compute couldn't determine status_pct (missing date_signed_mis or pct_96_days)
+            // and user provided a manual value, restore it
+            if ($case->status_pct === null && in_array($manualStatusPct, ['Within', 'Beyond'])) {
+                $case->status_pct = $manualStatusPct;
             }
 
             $case->saveQuietly();

@@ -333,7 +333,11 @@ trait CaseComputations
                 $this->status_pct = null;
             }
         } else {
-            $this->status_pct = null;
+            // Auto-compute inputs missing (no date_signed_mis or pct_96_days yet).
+            // Only clear if there's no existing manual value — preserve manual input.
+            if (!in_array($this->status_pct, ['Within', 'Beyond'])) {
+                $this->status_pct = null;
+            }
         }
     }
 
