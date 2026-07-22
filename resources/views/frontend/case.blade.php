@@ -4010,8 +4010,15 @@ $('#nof_generate_btn').on('click', function() {
         },
         body: new URLSearchParams(payload),
     })
-    .then(response => {
-        if (!response.ok) throw new Error('Generation failed');
+    .then(async response => {
+        if (!response.ok) {
+            const message = await response.text();
+            throw new Error(message || 'Generation failed');
+        }
+        const contentType = response.headers.get('Content-Type') || '';
+        if (!contentType.includes('application/vnd.openxmlformats-officedocument.wordprocessingml.document')) {
+            throw new Error('The server did not return a Word document.');
+        }
         const disposition = response.headers.get('Content-Disposition') || '';
         const match = disposition.match(/filename="?([^"]+)"?/);
         const filename = match ? match[1] : 'Notice_of_Finality.docx';

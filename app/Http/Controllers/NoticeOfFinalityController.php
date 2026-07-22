@@ -2,203 +2,210 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use App\Models\CaseFile;
 use App\Helpers\ActivityLogger;
-use PhpOffice\PhpWord\PhpWord;
+use App\Models\CaseFile;
+use Carbon\Carbon;
+use Illuminate\Http\Request;
 use PhpOffice\PhpWord\IOFactory as PhpWordIOFactory;
+use PhpOffice\PhpWord\PhpWord;
 use PhpOffice\PhpWord\SimpleType\Jc;
 
 class NoticeOfFinalityController extends Controller
 {
     /**
-     * TEMPORARY DIAGNOSTIC VERSION.
-     * Ignores case data entirely and always generates the exact same
-     * static sample document, word-for-word, regardless of which case
-     * was clicked. Used to confirm the PHPWord pipeline itself produces
-     * a valid, openable .docx before reintroducing dynamic case data.
+     * Generate a Notice of Finality from the values reviewed in the modal.
+     * The document is generated only for download; no case data is changed.
      */
     public function generate(Request $request, $id)
     {
-        // Still validate the case exists / route works, but its data is unused for now
-        $case = CaseFile::findOrFail($id);
+        $validated = $request->validate([
+            'order_date' => ['nullable', 'date'],
+            'dispositive_paragraph' => ['nullable', 'string', 'max:65000'],
+            'courier' => ['nullable', 'string', 'max:255'],
+            'date_received' => ['nullable', 'date'],
+            'received_by' => ['nullable', 'string', 'max:255'],
+            'tracking_no' => ['nullable', 'string', 'max:255'],
+            'finality_date' => ['nullable', 'date'],
+        ]);
 
-        $tempPath = $this->buildDocument();
+        $case = CaseFile::findOrFail($id);
+        $path = $this->buildDocument($case, $validated);
 
         ActivityLogger::logAction(
             'GENERATE',
             'Case',
             $case->inspection_id,
-            'Generated Notice of Finality document (static test)',
+            'Generated Notice of Finality document',
             ['establishment' => $case->establishment_name]
         );
 
-        return response()->download($tempPath, 'Notice_of_Finality.docx')->deleteFileAfterSend(true);
+        return response()
+            ->download(
+                $path,
+                'Notice_of_Finality.docx',
+                ['Content-Type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document']
+            )
+            ->deleteFileAfterSend(true);
     }
 
-    private function buildDocument()
+    private function buildDocument(CaseFile $case, array $data): string
     {
         $phpWord = new PhpWord();
         $phpWord->setDefaultFontName('Arial');
         $phpWord->setDefaultFontSize(10);
 
         $section = $phpWord->addSection([
-            'marginLeft' => 900, 'marginRight' => 900, 'marginTop' => 700, 'marginBottom' => 700,
+            'marginTop' => 680,
+            'marginBottom' => 680,
+            'marginLeft' => 900,
+            'marginRight' => 900,
         ]);
 
         $center = ['alignment' => Jc::CENTER];
-        $bold   = ['bold' => true];
-        $italic = ['italic' => true];
+        $right = ['alignment' => Jc::RIGHT];
+        $bold = ['bold' => true];
+        $body = ['spaceAfter' => 130, 'lineHeight' => 1.15];
+        $indented = ['indentation' => ['left' => 720, 'right' => 720], 'spaceAfter' => 130, 'lineHeight' => 1.15];
 
-        // ── Letterhead ─────────────────────────────────────────────
-        $section->addText('Republic of the Philippines', ['size' => 10], $center);
-        $section->addText('DEPARTMENT OF LABOR AND EMPLOYMENT', array_merge($bold, ['size' => 11]), $center);
-        $section->addText('Regional Office No. 5', ['size' => 9], $center);
-        $section->addText('DOLE RO5 Bldg., Doña Aurora St., Old Albay, Legazpi City', ['size' => 8], $center);
-        $section->addText('ORD: 0981-461-8788   TSSD: 0963-206-0008   IMSD: 0912-330-4751', ['size' => 8], $center);
-        $section->addText('ro5@dole.gov.ph', ['size' => 8, 'color' => '0000FF'], $center);
-        $section->addTextBreak(1);
+        $this->addLetterhead($section);
 
-        // ── Case info table ────────────────────────────────────────
-        $table = $section->addTable(['borderSize' => 6, 'borderColor' => '000000']);
-        $table->addRow();
-        $table->addCell(6000)->addText('IN THE MATTER OF LABOR INSPECTION CONDUCTED AT:', array_merge($bold, ['size' => 9]));
-        $table->addCell(4000)->addText('CASE NO. RO5-CSFO-LI-2025-11-0074-O', array_merge($bold, ['size' => 9]));
-        $section->addTextBreak(1);
+        $caseInfo = $section->addTable(['borderSize' => 0, 'cellMargin' => 0]);
+        $caseInfo->addRow();
+        $caseInfo->addCell(5000)->addText('IN THE MATTER OF LABOR INSPECTION CONDUCTED AT:', array_merge($bold, ['size' => 9]));
+        $caseInfo->addCell(4000)->addText('CASE NO. ' . $this->clean($case->case_no), array_merge($bold, ['size' => 9]), $right);
 
-        $section->addText('CO SAY AND COMPANY INC.', $bold);
-        $section->addText('La Purisima, Pili, Camarines Sur');
-        $section->addTextBreak(1);
-        $section->addText('MR. MAXIMO CO SAY', $bold);
-        $section->addText('President');
-        $section->addTextBreak(1);
-        $section->addText('x' . str_repeat('-', 44) . 'x');
-        $section->addTextBreak(1);
+        $section->addText($this->clean($case->establishment_name), $bold, ['spaceBefore' => 150, 'spaceAfter' => 0]);
+        $section->addText($this->clean($case->establishment_address), [], ['spaceAfter' => 110]);
+        $section->addText('x' . str_repeat('-', 44) . 'x', [], ['spaceAfter' => 250]);
 
-        // ── Title ──────────────────────────────────────────────────
-        $section->addText('NOTICE OF FINALITY', array_merge($bold, ['size' => 12]), $center);
-        $section->addTextBreak(1);
+        $section->addText('NOTICE OF FINALITY', array_merge($bold, ['size' => 12]), ['alignment' => Jc::CENTER, 'spaceAfter' => 220]);
 
+        $orderDate = $this->formatDate($data['order_date'] ?? null);
         $section->addText(
-            'This Office issued an Order dated 03 June 2026, the dispositive portion of which is here quoted as follows:',
-            ['size' => 10]
-        );
-        $section->addTextBreak(1);
-
-        // ── Dispositive paragraph (single bold block) ─────────────
-        $dispositive = '"WHEREFORE, respondent CO SAY AND COMPANY INC. and/or MR. MAXIMO CO SAY is hereby ORDERED to submit a copy of Permit to Operate for pressure vessel & boiler (refinery) and proof of existence of competent personnel in boiler operation. Submission shall be within the same period of ten (10) days from receipt hereof, otherwise, an administrative fine of EIGHT THOUSAND PESOS (PhP8,000.00) per day as provided for in Department Order No. 252-25 or the Revised Implementing Rules and Regulations of Republic Act No. 11058 entitled. "An Act Strengthening Compliance Safety and Health Standards and Providing Penalties- for Violations Thereof" shall be imposed.';
-
-        $section->addText($dispositive, array_merge($bold, ['size' => 10]), [
-            'indentation' => ['left' => 720, 'right' => 720],
-        ]);
-        $section->addTextBreak(1);
-
-        $section->addText(
-            'A Writ of Execution shall be issued upon finality of its Order.',
-            ['size' => 10],
-            ['indentation' => ['left' => 720, 'right' => 720]]
-        );
-        $section->addText('SO ORDERED.', ['size' => 10], ['indentation' => ['left' => 720, 'right' => 720]]);
-        $section->addText(
-            'Legazpi City, Philippines, 03 June 2026."',
-            ['size' => 10],
-            ['indentation' => ['left' => 720, 'right' => 720]]
-        );
-        $section->addTextBreak(1);
-
-        // ── Delivery paragraph ─────────────────────────────────────
-        $section->addText(
-            'A copy of the Order was delivered through courier, LBC Express, to respondent CO SAY AND COMPANY INC. on 15 June 2026 and was duly received by through its representative Mr. Ryan Co Say, as evidenced by LBC Track and Trace Number 153075215841.',
-            ['size' => 10]
-        );
-        $section->addTextBreak(1);
-
-        $textRun = $section->addTextRun();
-        $textRun->addText('Hence, the said Order has become ');
-        $textRun->addText('FINAL AND EXECUTORY', $bold);
-        $textRun->addText(' on ');
-        $textRun->addText('25 June 2026', $bold);
-        $textRun->addText('.');
-        $section->addTextBreak(2);
-
-        $section->addText('Legazpi City, Philippines, _________________________.', ['size' => 10]);
-        $section->addTextBreak(2);
-
-        // ── Signature block ────────────────────────────────────────
-        $section->addText('ATTY. NEPOMUCENO A. LEAÑO II, CPA', $bold, $center);
-        $section->addText('OIC - Regional Director', $italic + ['size' => 9], $center);
-        $section->addTextBreak(1);
-
-        $section->addText('Copy furnished:', ['size' => 9]);
-        $section->addText('MR. MAXIMO CO SAY', array_merge($bold, ['size' => 9]));
-        $section->addText('President', ['size' => 9]);
-        $section->addText('CO SAY AND COMPANY INC.', array_merge($bold, ['size' => 9]));
-        $section->addText('La Purisima, Pili, Camarines Sur', ['size' => 9]);
-        $section->addText('0998-561-6109', ['size' => 9]);
-        $section->addTextBreak(1);
-
-        // ── Footer: provincial offices table (3 columns x 2 rows) ──
-        $footerTable = $section->addTable(['borderSize' => 6, 'borderColor' => '000000']);
-
-        $footerTable->addRow();
-        $footerTable->addCell(3300)->addText(
-            "DOLE ALBAY PROVINCIAL OFFICE\n4F Ayala Malls, Legazpi City, Albay\nro5_albay@dole.gov.ph\n0938-161-7978 / 0956-399-1015",
-            ['size' => 7]
-        );
-        $footerTable->addCell(3300)->addText(
-            "DOLE CAMARINES SUR PROVINCIAL OFFICE\n2F DOLE Bldg., City Hall Compound, Concepcion Pequeña, Naga City\nro5_camarinessur@dole.gov.ph\n0929-283-5382 / 0915-928-5037",
-            ['size' => 7]
-        );
-        $footerTable->addCell(3300)->addText(
-            "DOLE MASBATE PROVINCIAL OFFICE\n2F, Sanchez Bldg., Crossing, Quezon St. Masbate City\nro5_masbate@dole.gov.ph\n0948-443-2990 / 0966-215-9284",
-            ['size' => 7]
+            'This Office issued an Order dated ' . $orderDate . ', the dispositive portion of which is here quoted as follows:',
+            [],
+            $body
         );
 
-        $footerTable->addRow();
-        $footerTable->addCell(3300)->addText(
-            "DOLE CAMARINES NORTE PROVINCIAL OFFICE\n2F Tanzo Bldg., National Diversion Rd. Junction, Brgy. Itomang, Talisay, Camarines Norte\nro5_camarinesnorte@dole.gov.ph\n0946-397-4375",
-            ['size' => 7]
-        );
-        $footerTable->addCell(3300)->addText(
-            "DOLE CATANDUANES PROVINCIAL OFFICE\nLlantino Bldg., Brgy. Concepcion, Virac, Catanduanes\nro5_catanduanes@dole.gov.ph\n0931-890-5032",
-            ['size' => 7]
-        );
-        $footerTable->addCell(3300)->addText(
-            "DOLE SORSOGON PROVINCIAL OFFICE\n2F DOLE Bldg., City Hall Complex, Cabid-an, Sorsogon City\nro5_sorsogon@dole.gov.ph\n0981-002-3132 / 0919-755-2721",
-            ['size' => 7]
-        );
-
-        // ── Save ───────────────────────────────────────────────────
-        $tempDir = storage_path('app/temp_notices');
-        if (!file_exists($tempDir)) {
-            mkdir($tempDir, 0777, true);
+        $dispositive = $this->clean($data['dispositive_paragraph'] ?? '');
+        if ($dispositive !== '') {
+            foreach (preg_split('/\R/u', $dispositive) as $paragraph) {
+                if (trim($paragraph) !== '') {
+                    $section->addText($paragraph, $bold, $indented);
+                }
+            }
         }
-        $tempPath = $tempDir . '/notice_static_test_' . time() . '.docx';
 
-        PhpWordIOFactory::createWriter($phpWord, 'Word2007')->save($tempPath);
+        $section->addText('A Writ of Execution shall be issued upon finality of its Order.', [], $indented);
+        $section->addText('SO ORDERED.', $bold, $indented);
+        $section->addText('Legazpi City, Philippines, ' . $orderDate, [], $indented);
 
-        return $tempPath;
+        $courier = $this->clean($data['courier'] ?? '');
+        $recipient = $this->clean($case->establishment_name);
+        $receivedDate = $this->formatDate($data['date_received'] ?? null);
+        $receivedBy = $this->clean($data['received_by'] ?? '');
+        $trackingNo = $this->clean($data['tracking_no'] ?? '');
+        $section->addText(
+            'A copy of the Order was delivered through courier' . $this->withComma($courier)
+            . ', to respondent ' . $recipient
+            . ' on ' . $receivedDate
+            . ' and was duly received by ' . $receivedBy
+            . '. Tracking Number: ' . $trackingNo . '.',
+            [],
+            ['spaceBefore' => 120, 'spaceAfter' => 190, 'lineHeight' => 1.15]
+        );
+
+        $finalityDate = $this->formatDate($data['finality_date'] ?? null);
+        $finality = $section->addTextRun(['alignment' => Jc::CENTER, 'spaceAfter' => 230]);
+        $finality->addText('Hence, the said Order has become ');
+        $finality->addText('FINAL AND EXECUTORY', $bold);
+        $finality->addText(' on ' . $finalityDate . '.');
+
+        $section->addText('Legazpi City, Philippines, _________________________.', [], ['spaceAfter' => 560]);
+        $section->addText('ATTY. NEPOMUCENO A. LEAÑO II, CPA', $bold, $center);
+        $section->addText('OIC - Regional Director', ['italic' => true, 'size' => 9], $center);
+
+        $footer = $section->addFooter();
+        $footer->addText('Department of Labor and Employment - Regional Office No. 5', ['size' => 7], $center);
+
+        $directory = storage_path('app/temp_notices');
+        if (! is_dir($directory)) {
+            mkdir($directory, 0775, true);
+        }
+
+        $path = tempnam($directory, 'notice_of_finality_');
+        PhpWordIOFactory::createWriter($phpWord, 'Word2007')->save($path);
+
+        return $path;
+    }
+
+    private function addLetterhead($section): void
+    {
+        $header = $section->addHeader();
+        $table = $header->addTable(['borderSize' => 0, 'cellMargin' => 0]);
+        $table->addRow();
+
+        $dole = $table->addCell(900, ['valign' => 'center']);
+        $dole->addImage(public_path('img/notice-of-finality/dole-bicol.png'), ['width' => 62, 'height' => 62, 'alignment' => Jc::LEFT]);
+
+        $office = $table->addCell(5600, ['valign' => 'center']);
+        $office->addText('Republic of the Philippines', ['size' => 8], ['alignment' => Jc::CENTER, 'spaceAfter' => 0]);
+        $office->addText('DEPARTMENT OF LABOR AND EMPLOYMENT', ['bold' => true, 'size' => 10], ['alignment' => Jc::CENTER, 'spaceAfter' => 0]);
+        $office->addText('Regional Office No. 5', ['size' => 8], ['alignment' => Jc::CENTER, 'spaceAfter' => 0]);
+        $office->addText('DOLE RO5 Bldg., Doña Aurora St., Old Albay, Legazpi City', ['size' => 7], ['alignment' => Jc::CENTER, 'spaceAfter' => 0]);
+        $office->addText('ORD: 0981-461-8788   TSSD: 0963-206-0008   IMSD: 0912-330-4751', ['size' => 7], ['alignment' => Jc::CENTER, 'spaceAfter' => 0]);
+        $office->addText('ro5@dole.gov.ph', ['size' => 7, 'color' => '0000FF'], ['alignment' => Jc::CENTER, 'spaceAfter' => 0]);
+
+        $bagong = $table->addCell(1100, ['valign' => 'center']);
+        $bagong->addImage(public_path('img/notice-of-finality/bagong-pilipinas.png'), ['width' => 56, 'height' => 56, 'alignment' => Jc::CENTER]);
+
+        $bureau = $table->addCell(1500, ['valign' => 'center']);
+        $bureau->addImage(public_path('img/notice-of-finality/bureau-veritas.png'), ['width' => 88, 'height' => 45, 'alignment' => Jc::RIGHT]);
+    }
+
+    private function clean(?string $value): string
+    {
+        $value = (string) $value;
+        $value = preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F]/u', '', $value) ?? '';
+
+        // PHPWord writes text values directly to its XML template. Escaping here
+        // keeps values such as "J&T Express" from creating malformed .docx XML.
+        return htmlspecialchars(
+            trim(str_replace(["\r\n", "\r"], "\n", $value)),
+            ENT_XML1 | ENT_QUOTES,
+            'UTF-8'
+        );
+    }
+
+    private function formatDate(?string $date): string
+    {
+        return $date ? Carbon::parse($date)->format('d F Y') : '';
+    }
+
+    private function withComma(string $value): string
+    {
+        return $value === '' ? '' : ', ' . $value;
     }
 
     public function getData($id)
     {
         $case = CaseFile::with('latestExecution')->findOrFail($id);
-        $exec = $case->latestExecution;
+        $execution = $case->latestExecution;
 
         return response()->json([
             'success' => true,
             'case' => [
-                'case_no'               => $case->case_no,
-                'establishment_name'    => $case->establishment_name,
+                'case_no' => $case->case_no,
+                'establishment_name' => $case->establishment_name,
                 'establishment_address' => $case->establishment_address,
-                'date_of_order_actual'  => optional($case->date_of_order_actual)->format('Y-m-d'),
-                'disposition_actual'    => $case->disposition_actual,
+                'date_of_order_actual' => optional($case->date_of_order_actual)->format('Y-m-d'),
+                'disposition_actual' => $case->disposition_actual,
             ],
-            'execution' => $exec ? [
-                'received_by'   => $exec->received_by,
-                'date_received' => optional($exec->date_received)->format('Y-m-d'),
-                'tracking_no'   => $exec->tracking_no,
-                'courier'       => $exec->courier,
+            'execution' => $execution ? [
+                'received_by' => $execution->received_by,
+                'date_received' => optional($execution->date_received)->format('Y-m-d'),
+                'tracking_no' => $execution->tracking_no,
+                'courier' => $execution->courier,
             ] : null,
         ]);
     }

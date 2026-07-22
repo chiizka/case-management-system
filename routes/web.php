@@ -77,8 +77,6 @@ Route::middleware('auth')->group(function () {
         ->name('case.notice-of-finality');
         Route::get('/case/{id}/notice-of-finality-data', [NoticeOfFinalityController::class, 'getData'])
         ->name('case.notice-of-finality.data');
-        Route::get('/case/{id}/notice-of-finality-test', [NoticeOfFinalityController::class, 'generate'])
-        ->name('case.notice-of-finality.test');
         Route::get('/case/load-tab/0', [CasesController::class, 'loadTab0']);
         Route::get('/case/load-tab/{tabNumber}', [CasesController::class, 'loadTabData'])->name('case.loadTab');
         Route::get('/case/load-case-management-tab', [CasesController::class, 'loadCaseManagementTab'])->name('case.loadCaseManagementTab');
