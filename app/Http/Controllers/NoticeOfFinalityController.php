@@ -57,19 +57,19 @@ class NoticeOfFinalityController extends Controller
         $section = $phpWord->addSection([
             'marginTop' => 680,
             'marginBottom' => 680,
-            'marginLeft' => 900,
-            'marginRight' => 900,
+            'marginLeft' => 1700,   // was 900 — a touch more left indentation overall
+            'marginRight' => 700,
         ]);
 
         $center = ['alignment' => Jc::CENTER];
         $right = ['alignment' => Jc::RIGHT];
         $bold = ['bold' => true];
-        $body = ['spaceAfter' => 130, 'lineHeight' => 1.15];
-        $indented = ['indentation' => ['left' => 720, 'right' => 720], 'spaceAfter' => 130, 'lineHeight' => 1.15];
+        $body = ['spaceAfter' => 130, 'lineHeight' => 1.15, 'alignment' => Jc::BOTH];       // justified
+        $indented = ['indentation' => ['left' => 720, 'right' => 720], 'spaceAfter' => 130, 'lineHeight' => 1.15, 'alignment' => Jc::BOTH]; // justified
 
         $this->addLetterhead($section);
 
-        $caseInfo = $section->addTable(['borderSize' => 0, 'cellMargin' => 0]);
+        $caseInfo = $section->addTable(['cellMargin' => 0]);
         $caseInfo->addRow();
         $caseInfo->addCell(5000)->addText('IN THE MATTER OF LABOR INSPECTION CONDUCTED AT:', array_merge($bold, ['size' => 9]));
         $caseInfo->addCell(4000)->addText('CASE NO. ' . $this->clean($case->case_no), array_merge($bold, ['size' => 9]), $right);
@@ -78,13 +78,13 @@ class NoticeOfFinalityController extends Controller
         $section->addText($this->clean($case->establishment_address), [], ['spaceAfter' => 110]);
         $section->addText('x' . str_repeat('-', 44) . 'x', [], ['spaceAfter' => 250]);
 
-        $section->addText('NOTICE OF FINALITY', array_merge($bold, ['size' => 12]), ['alignment' => Jc::CENTER, 'spaceAfter' => 220]);
+        $section->addText('NOTICE OF FINALITY', array_merge($bold, ['size' => 12]), ['alignment' => Jc::CENTER, 'spaceAfter' => 400]);
 
         $orderDate = $this->formatDate($data['order_date'] ?? null);
         $section->addText(
             'This Office issued an Order dated ' . $orderDate . ', the dispositive portion of which is here quoted as follows:',
             [],
-            $body
+            array_merge($body, ['spaceAfter' => 300]) // was 130, now leaves a gap before the quote
         );
 
         $dispositive = $this->clean($data['dispositive_paragraph'] ?? '');
@@ -96,9 +96,11 @@ class NoticeOfFinalityController extends Controller
             }
         }
 
-        $section->addText('A Writ of Execution shall be issued upon finality of its Order.', [], $indented);
-        $section->addText('SO ORDERED.', $bold, $indented);
-        $section->addText('Legazpi City, Philippines, ' . $orderDate, [], $indented);
+        $closingIndent = ['indentation' => ['left' => 1440, 'right' => 720], 'spaceAfter' => 260, 'lineHeight' => 1.5];
+
+        $section->addText('A Writ of Execution shall be issued upon finality of its Order.', [], $closingIndent);
+        $section->addText('SO ORDERED.', $bold, $closingIndent);
+        $section->addText('Legazpi City, Philippines, ' . $orderDate, [], $closingIndent);
 
         $courier = $this->clean($data['courier'] ?? '');
         $recipient = $this->clean($case->establishment_name);
@@ -112,18 +114,21 @@ class NoticeOfFinalityController extends Controller
             . ' and was duly received by ' . $receivedBy
             . '. Tracking Number: ' . $trackingNo . '.',
             [],
-            ['spaceBefore' => 120, 'spaceAfter' => 190, 'lineHeight' => 1.15]
+            ['spaceBefore' => 400, 'spaceAfter' => 190, 'lineHeight' => 1.5, 'alignment' => Jc::BOTH]  // wider spacing + justified
         );
 
+         $finalitySpacing = ['indentation' => ['left' => 720], 'spaceBefore' => 240, 'spaceAfter' => 240];
+
         $finalityDate = $this->formatDate($data['finality_date'] ?? null);
-        $finality = $section->addTextRun(['alignment' => Jc::CENTER, 'spaceAfter' => 230]);
+        $finality = $section->addTextRun(array_merge($finalitySpacing, ['alignment' => Jc::LEFT]));
         $finality->addText('Hence, the said Order has become ');
         $finality->addText('FINAL AND EXECUTORY', $bold);
         $finality->addText(' on ' . $finalityDate . '.');
 
-        $section->addText('Legazpi City, Philippines, _________________________.', [], ['spaceAfter' => 560]);
-        $section->addText('ATTY. NEPOMUCENO A. LEAÑO II, CPA', $bold, $center);
-        $section->addText('OIC - Regional Director', ['italic' => true, 'size' => 9], $center);
+        $section->addText('Legazpi City, Philippines, _________________________.', [], $finalitySpacing);
+        $section->addTextBreak(2);
+        $section->addText('ATTY. NEPOMUCENO A. LEAÑO II, CPA', $bold, $right);
+        $section->addText('OIC - Regional Director', ['italic' => true, 'size' => 9], $right);
 
         $footer = $section->addFooter();
         $footer->addText('Department of Labor and Employment - Regional Office No. 5', ['size' => 7], $center);
@@ -142,11 +147,14 @@ class NoticeOfFinalityController extends Controller
     private function addLetterhead($section): void
     {
         $header = $section->addHeader();
-        $table = $header->addTable(['borderSize' => 0, 'cellMargin' => 0]);
+        $table = $header->addTable([
+            'cellMargin' => 0,
+            'layout' => \PhpOffice\PhpWord\Style\Table::LAYOUT_FIXED,
+        ]);
         $table->addRow();
 
-        $dole = $table->addCell(900, ['valign' => 'center']);
-        $dole->addImage(public_path('img/notice-of-finality/dole-bicol.png'), ['width' => 62, 'height' => 62, 'alignment' => Jc::LEFT]);
+        $dole = $table->addCell(1200, ['valign' => 'center']);
+        $dole->addImage(public_path('img/notice-of-finality/dole-bicol.png'), ['width' => 60, 'height' => 60, 'alignment' => Jc::LEFT]);
 
         $office = $table->addCell(5600, ['valign' => 'center']);
         $office->addText('Republic of the Philippines', ['size' => 8], ['alignment' => Jc::CENTER, 'spaceAfter' => 0]);
@@ -156,11 +164,13 @@ class NoticeOfFinalityController extends Controller
         $office->addText('ORD: 0981-461-8788   TSSD: 0963-206-0008   IMSD: 0912-330-4751', ['size' => 7], ['alignment' => Jc::CENTER, 'spaceAfter' => 0]);
         $office->addText('ro5@dole.gov.ph', ['size' => 7, 'color' => '0000FF'], ['alignment' => Jc::CENTER, 'spaceAfter' => 0]);
 
-        $bagong = $table->addCell(1100, ['valign' => 'center']);
-        $bagong->addImage(public_path('img/notice-of-finality/bagong-pilipinas.png'), ['width' => 56, 'height' => 56, 'alignment' => Jc::CENTER]);
-
-        $bureau = $table->addCell(1500, ['valign' => 'center']);
-        $bureau->addImage(public_path('img/notice-of-finality/bureau-veritas.png'), ['width' => 88, 'height' => 45, 'alignment' => Jc::RIGHT]);
+        // Wide enough to actually hold both images at their current sizes, left-aligned
+        // so they hug the office-text column instead of drifting to the page edge
+        $rightLogos = $table->addCell(2600, ['valign' => 'center', 'noWrap' => true]);
+        $logosRun = $rightLogos->addTextRun(['alignment' => Jc::LEFT]);
+        $logosRun->addImage(public_path('img/notice-of-finality/bagong-pilipinas.png'), ['width' => 52, 'height' => 52]);
+        $logosRun->addText(' ');
+        $logosRun->addImage(public_path('img/notice-of-finality/bureau-veritas.png'), ['width' => 74, 'height' => 38]);
     }
 
     private function clean(?string $value): string
