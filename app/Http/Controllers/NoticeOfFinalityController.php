@@ -112,7 +112,7 @@ class NoticeOfFinalityController extends Controller
             . ', to respondent ' . $recipient
             . ' on ' . $receivedDate
             . ' and was duly received by ' . $receivedBy
-            . '. Tracking Number: ' . $trackingNo . '.',
+            . ' as evidenced by Tracking Number: ' . $trackingNo . '.',
             [],
             ['spaceBefore' => 400, 'spaceAfter' => 190, 'lineHeight' => 1.5, 'alignment' => Jc::BOTH]  // wider spacing + justified
         );
