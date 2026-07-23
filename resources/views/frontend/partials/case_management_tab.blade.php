@@ -156,7 +156,7 @@
                                 <br>
                                 @php
                                     $tagColors = [
-                                        'For Execution'             => 'danger',
+                                        'For Finality'             => 'danger',
                                         'Motion for Reconsideration'=> 'warning',
                                     ];
                                     $tagColor = $tagColors[$case->documentTracking->case_tag] ?? 'secondary';

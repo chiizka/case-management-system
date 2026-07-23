@@ -174,7 +174,7 @@
                                 <br>
                                 @php
                                     $tagColors = [
-                                        'For Execution'              => 'danger',
+                                        'For Finality'              => 'danger',
                                         'Motion for Reconsideration' => 'warning',
                                     ];
                                     $currentTag = $case->documentTracking->case_tag ?? '';
@@ -196,7 +196,7 @@
                                             data-field="case_tag"
                                             style="display:none; min-width: 160px;">
                                         <option value="">— No Tag —</option>
-                                        <option value="For Execution"              {{ $currentTag === 'For Execution'              ? 'selected' : '' }}>For Execution</option>
+                                        <option value="For Finality"               {{ $currentTag === 'For Finality'              ? 'selected' : '' }}>For Finality</option>
                                         <option value="Motion for Reconsideration" {{ $currentTag === 'Motion for Reconsideration' ? 'selected' : '' }}>Motion for Reconsideration</option>
                                     </select>
                                 @endunless

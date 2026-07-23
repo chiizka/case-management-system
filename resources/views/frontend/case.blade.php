@@ -4161,7 +4161,7 @@ $(document).on('click', '.execute-case-btn', function(e) {
     $('#modalAlertBox').removeClass('alert-success alert-warning').addClass('alert-info');
 
     $('#stageProgressionMessage').html(`
-        <strong>Forward this case to MALSU for execution?</strong><br>
+        <strong>Forward this case to MALSU for finality?</strong><br>
         <small class="text-muted">The case will remain Active. MALSU will be notified to receive it.</small>
     `);
     $('#stageCaseInfo').text(`${button.data('case-no')} - ${button.data('establishment')}`);
@@ -5069,7 +5069,7 @@ $(document).ready(function() {
                 type: 'select',
                 options: [
                     { value: '',                        text: '— No Tag —' },
-                    { value: 'For Execution',            text: 'For Execution' },
+                    { value: 'For Finality',            text: 'For Finality' },
                     { value: 'Motion for Reconsideration', text: 'Motion for Reconsideration' }
                 ]
             }
@@ -5355,7 +5355,7 @@ $(document).ready(function() {
                     // Refresh case_tag badge (MALSU tab only)
                     if (response.case_tag !== undefined) {
                         const tagColors = {
-                            'For Execution':              'danger',
+                            'For Finality':              'danger',
                             'Motion for Reconsideration': 'warning'
                         };
                         const tag    = response.case_tag || '';
@@ -5472,7 +5472,7 @@ $(document).ready(function() {
             const tag     = $select.val() || '';
 
             const tagColors = {
-                'For Execution':              'danger',
+                'For Finality':              'danger',
                 'Motion for Reconsideration': 'warning'
             };
 
