@@ -2007,7 +2007,7 @@ public function loadTab0()
                 'received_by_user_id'    => null,
                 'received_at'            => null,
                 'transfer_notes'         => "Forwarded for execution via {$request->exec_courier} (Tracking: {$request->exec_tracking_no}). Received by: {$request->exec_received_by} on {$request->exec_date_received}.",
-                'case_tag'               => 'For Execution',
+                'case_tag'               => 'For Finality',
             ]);
         } else {
             DocumentTracking::create([
@@ -2017,7 +2017,7 @@ public function loadTab0()
                 'transferred_by_user_id' => $user->id,
                 'transferred_at'         => now(),
                 'transfer_notes'         => "Forwarded for execution via {$request->exec_courier} (Tracking: {$request->exec_tracking_no}). Received by: {$request->exec_received_by} on {$request->exec_date_received}.",
-                'case_tag'               => 'for execution',
+                'case_tag'                => 'For Finality',
             ]);
         }
 

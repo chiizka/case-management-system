@@ -328,9 +328,9 @@
                                                     title="{{ $doc->case->establishment_name ?? 'N/A' }}">
                                                     {{ $doc->case->establishment_name ?? 'N/A' }}
                                                 </div>
-                                                @if(Auth::user()->isMalsu() && $doc->case_tag === 'For Execution')
+                                                @if(Auth::user()->isMalsu() && $doc->case_tag === 'For Finality')
                                                     <span class="badge badge-danger mt-1" style="font-size: 0.7rem;">
-                                                        <i class="fas fa-bolt mr-1"></i> FOR EXECUTION
+                                                        <i class="fas fa-bolt mr-1"></i> FOR FINALITY
                                                     </span>
                                                 @endif
                                             </td>
@@ -415,9 +415,9 @@
                                                     title="{{ $doc->case->establishment_name ?? 'N/A' }}">
                                                     {{ $doc->case->establishment_name ?? 'N/A' }}
                                                 </div>
-                                                @if(Auth::user()->isMalsu() && $doc->case_tag === 'For Execution')
+                                                @if(Auth::user()->isMalsu() && $doc->case_tag === 'For Finality')
                                                     <span class="badge badge-danger mt-1" style="font-size: 0.7rem;">
-                                                        <i class="fas fa-bolt mr-1"></i> FOR EXECUTION
+                                                        <i class="fas fa-bolt mr-1"></i> FOR FINALITY
                                                     </span>
                                                 @endif
                                             </td>

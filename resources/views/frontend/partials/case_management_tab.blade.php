@@ -132,7 +132,7 @@
                                             data-case-no="{{ $case->case_no ?? 'N/A' }}"
                                             data-establishment="{{ $case->establishment_name ?? 'N/A' }}"
                                             data-stage="{{ explode(': ', $case->current_stage)[1] ?? $case->current_stage ?? 'Unknown' }}"
-                                            title="Forward for Execution">
+                                            title="For Finality">
                                         <i class="fas fa-bolt"></i>
                                     </button>
                                 </div>

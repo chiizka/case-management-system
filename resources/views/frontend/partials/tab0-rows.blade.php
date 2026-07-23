@@ -67,7 +67,7 @@
                                 data-case-no="{{ $case->case_no ?? 'N/A' }}"
                                 data-establishment="{{ $case->establishment_name ?? 'N/A' }}"
                                 data-stage="{{ explode(': ', $case->current_stage)[1] ?? $case->current_stage ?? 'Unknown' }}"
-                                title="Execute">
+                                title="For Finality">
                             <i class="fas fa-bolt"></i>
                         </button>
                     @endif
@@ -93,7 +93,7 @@
                 <br>
                 @php
                     $tagColors = [
-                        'For Execution'             => 'danger',
+                        'For Finality'             => 'danger',
                         'Motion for Reconsideration'=> 'warning',
                     ];
                     $tagColor = $tagColors[$case->documentTracking->case_tag] ?? 'secondary';
