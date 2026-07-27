@@ -34,7 +34,8 @@ class SendBeyondCaseNotifications extends Command
         // Only Active cases that are currently Received at some role
         $baseQuery = CaseFile::where('overall_status', 'Active')
             ->whereHas('documentTracking', function ($q) {
-                $q->where('status', 'Received');
+                $q->where('status', 'Received')
+                  ->where('current_role', '!=', 'malsu');
             });
 
         // ── Common select fields ──────────────────────────────────────────

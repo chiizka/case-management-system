@@ -148,7 +148,8 @@ class NotificationController extends Controller
         // ── Base query ────────────────────────────────────────────────────
         $baseQuery = CaseFile::where('overall_status', 'Active')
             ->whereHas('documentTracking', function ($q) {
-                $q->where('status', 'Received');
+                $q->where('status', 'Received')
+                  ->where('current_role', '!=', 'malsu');
             });
 
         // Province users: only cases currently at their location
