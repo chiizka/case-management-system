@@ -75,7 +75,7 @@
             </tr>
         </thead>
         <tbody>
-            @include('frontend.partials.tab0-rows', ['cases' => $cases])
+            @include('frontend.partials.tab0-rows', ['cases' => $cases, 'showLocationBadge' => true])
         </tbody>
     </table>
 </div>

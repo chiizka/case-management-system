@@ -103,6 +103,18 @@
                     {{ strtoupper($case->documentTracking->case_tag) }}
                 </span>
             @endif
+            @if(($showLocationBadge ?? false) && $case->documentTracking && $case->documentTracking->current_role === \App\Models\User::ROLE_CASE_MANAGEMENT)
+                <br>
+                @if($case->documentTracking->status === 'Received')
+                    <span class="badge badge-info mt-1" style="font-size: 0.7rem;">
+                        <i class="fas fa-share mr-1"></i>With Case Management
+                    </span>
+                @else
+                    <span class="badge badge-warning mt-1" style="font-size: 0.7rem;">
+                        <i class="fas fa-share mr-1"></i>Forwarded to CM &mdash; Pending Receipt
+                    </span>
+                @endif
+            @endif
         </td>
         {{-- <td class="editable-cell wrap-cell" data-field="establishment_address">{{ $case->establishment_address ?? '-' }}</td> --}}
         <td class="editable-cell" data-field="mode">{{ $case->mode ?? '-' }}</td>

@@ -2126,10 +2126,24 @@ public function loadProvinceTab(Request $request, $province)
     }
 
     try {
+        $provinceLabel = $provinceLabelMap[$province];
+
         $cases = CaseFile::whereNotIn('overall_status', ['Completed', 'Disposed', 'Appealed'])
-            ->whereHas('documentTracking', function ($q) use ($role) {
-                $q->where('current_role', $role)
-                  ->where('status', 'Received');
+            ->where(function ($q) use ($role, $provinceLabel) {
+                // Still physically at this province office — unchanged, existing behavior
+                $q->whereHas('documentTracking', function ($q2) use ($role) {
+                        $q2->where('current_role', $role)
+                           ->where('status', 'Received');
+                    })
+                    // Forwarded on to Case Management (Regional) — keep it on this
+                    // province's tab even if Regional CM hasn't "Received" it yet,
+                    // as long as the case originated from this province.
+                    ->orWhere(function ($q2) use ($provinceLabel) {
+                        $q2->where('po_office', $provinceLabel)
+                           ->whereHas('documentTracking', function ($q3) {
+                               $q3->where('current_role', User::ROLE_CASE_MANAGEMENT);
+                           });
+                    });
             })
             ->with('documentTracking')
             ->orderBy('created_at', 'desc')
