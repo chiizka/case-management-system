@@ -323,7 +323,8 @@ class DocumentTrackingController extends Controller
             // ── Auto-create malsu row when MALSU receives a document ──
             if ($document->current_role === User::ROLE_MALSU) {
                 \App\Models\Malsu::firstOrCreate(
-                    ['case_id' => $document->case_id]
+                    ['case_id' => $document->case_id],
+                    ['regional_docket_number' => $document->case?->case_no]
                 );
             }
 
