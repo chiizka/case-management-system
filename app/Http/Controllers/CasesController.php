@@ -1880,8 +1880,14 @@ public function loadMalsuTab(Request $request)
                       });
                   });
             })
-            ->orderBy('created_at', 'desc')
-            ->get();
+            ->get()
+            ->sortByDesc(function ($malsu) {
+                $receivedAt = $malsu->case?->documentTracking?->received_at;
+                return $receivedAt
+                    ? \Carbon\Carbon::parse($receivedAt)
+                    : \Carbon\Carbon::parse($malsu->created_at);
+            })
+            ->values();
 
         $html = view('frontend.partials.malsu_tab', ['cases' => $malsus])->render();
 
@@ -1914,8 +1920,14 @@ public function loadSheriffTab(Request $request)
                              ->whereIn('status', ['Received']);
                       });
                 })
-                ->orderBy('created_at', 'desc')
-                ->get();
+                ->get()
+                ->sortByDesc(function ($malsu) {
+                $receivedAt = $malsu->case?->documentTracking?->received_at;
+                return $receivedAt
+                    ? \Carbon\Carbon::parse($receivedAt)
+                    : \Carbon\Carbon::parse($malsu->created_at);
+            })
+                ->values();
 
             $html = view('frontend.partials.malsu_tab', ['cases' => $cases])->render();
 
@@ -2206,8 +2218,14 @@ public function loadSheriffProvinceTab(Request $request, $province)
                          ->where('status', 'Received');
                   });
             })
-            ->orderBy('created_at', 'desc')
-            ->get();
+            ->get()
+            ->sortByDesc(function ($malsu) {
+                $receivedAt = $malsu->case?->documentTracking?->received_at;
+                return $receivedAt
+                    ? \Carbon\Carbon::parse($receivedAt)
+                    : \Carbon\Carbon::parse($malsu->created_at);
+            })
+            ->values();
 
         $html = view('frontend.partials.malsu_tab', [
             'cases'       => $cases,
