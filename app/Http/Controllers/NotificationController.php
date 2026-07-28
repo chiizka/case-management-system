@@ -146,17 +146,26 @@ class NotificationController extends Controller
         }
 
         // ── Base query ────────────────────────────────────────────────────
-        $baseQuery = CaseFile::where('overall_status', 'Active')
-            ->whereHas('documentTracking', function ($q) {
-                $q->where('status', 'Received')
-                  ->where('current_role', '!=', 'malsu');
-            });
+        $baseQuery = CaseFile::where('overall_status', 'Active');
 
-        // Province users: only cases currently at their location
         if ($isProvince) {
+            // Province users: only cases currently received at their own location
             $baseQuery->whereHas('documentTracking', function ($q) use ($user) {
                 $q->where('current_role', $user->role)
                   ->where('status', 'Received');
+            });
+        } elseif ($isCaseManagement) {
+            // Case Management (Regional or Provincial) is notified regardless of
+            // whether the case has been received yet by whoever currently holds it.
+            if ($user->isProvincialCaseManagement()) {
+                // Provincial CM only sees cases that originated in their own province
+                $baseQuery->where('po_office', $user->getCaseManagementProvinceName());
+            }
+            // Regional CM: no scoping — sees all active cases
+        } else {
+            // Admin / any other role — keep original requirement
+            $baseQuery->whereHas('documentTracking', function ($q) {
+                $q->where('status', 'Received');
             });
         }
 

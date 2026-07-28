@@ -38,6 +38,15 @@ class SendBeyondCaseNotifications extends Command
                   ->where('current_role', '!=', 'malsu');
             });
 
+        // Case Management (Regional + Provincial) should be notified even if
+        // the case is still Pending Receipt at whoever currently holds it
+        // (e.g. a province hasn't clicked "Receive" yet). Same Active/not-malsu
+        // constraints, just without the Received requirement.
+        $baseQueryForCM = CaseFile::where('overall_status', 'Active')
+            ->whereHas('documentTracking', function ($q) {
+                $q->where('current_role', '!=', 'malsu');
+            });
+
         // ── Common select fields ──────────────────────────────────────────
         $selectFields = [
             'id', 'case_no', 'inspection_id', 'establishment_name', 'po_office',
@@ -67,12 +76,24 @@ class SendBeyondCaseNotifications extends Command
             ->with('documentTracking')
             ->get($selectFields);
 
+        // Same Beyond query, but for CM's relaxed (no-Received-required) scope
+        $allBeyondCasesForCM = (clone $baseQueryForCM)
+            ->where(function ($q) {
+                $q->where('status_docket',  'Beyond')
+                  ->orWhere('status_1st_mc', 'Beyond')
+                  ->orWhere('status_2nd_mc', 'Beyond')
+                  ->orWhere('status_po_pct', 'Beyond')
+                  ->orWhere('status_pct',    'Beyond');
+            })
+            ->with('documentTracking')
+            ->get($selectFields);
+
         // ══════════════════════════════════════════════════════════════════
         // FETCH ALL UPCOMING — we'll filter per recipient below
         // ══════════════════════════════════════════════════════════════════
         $in5Days = Carbon::today()->addDays(5);
 
-        $allUpcomingCases = (clone $baseQuery)
+$allUpcomingCases = (clone $baseQuery)
             ->where(function ($q) use ($today, $in5Days) {
                 $q->orWhere(function ($q2) {
                     $q2->whereBetween('aging_docket', [-5, 0])
@@ -108,7 +129,45 @@ class SendBeyondCaseNotifications extends Command
             ->with('documentTracking')
             ->get($selectFields);
 
-        if ($allBeyondCases->isEmpty() && $allUpcomingCases->isEmpty()) {
+        // Same Upcoming query, but for CM's relaxed (no-Received-required) scope
+        $allUpcomingCasesForCM = (clone $baseQueryForCM)
+            ->where(function ($q) use ($today, $in5Days) {
+                $q->orWhere(function ($q2) {
+                    $q2->whereBetween('aging_docket', [-5, 0])
+                       ->where(function ($q3) {
+                           $q3->where('status_docket', '!=', 'Beyond')->orWhereNull('status_docket');
+                       });
+                });
+                $q->orWhere(function ($q2) {
+                    $q2->whereBetween('aging_po_pct', [-5, 0])
+                       ->where(function ($q3) {
+                           $q3->where('status_po_pct', '!=', 'Beyond')->orWhereNull('status_po_pct');
+                       });
+                });
+                $q->orWhere(function ($q2) use ($today, $in5Days) {
+                    $q2->whereBetween('pct_96_days', [$today, $in5Days])
+                       ->where(function ($q3) {
+                           $q3->where('status_pct', '!=', 'Beyond')->orWhereNull('status_pct');
+                       });
+                });
+                $q->orWhere(function ($q2) {
+                    $q2->whereBetween('first_mc_pct', [-5, 0])
+                       ->where(function ($q3) {
+                           $q3->where('status_1st_mc', '!=', 'Beyond')->orWhereNull('status_1st_mc');
+                       });
+                });
+                $q->orWhere(function ($q2) {
+                    $q2->whereBetween('second_last_mc_pct', [-5, 0])
+                       ->where(function ($q3) {
+                           $q3->where('status_2nd_mc', '!=', 'Beyond')->orWhereNull('status_2nd_mc');
+                       });
+                });
+            })
+            ->with('documentTracking')
+            ->get($selectFields);
+
+        if ($allBeyondCases->isEmpty() && $allUpcomingCases->isEmpty()
+            && $allBeyondCasesForCM->isEmpty() && $allUpcomingCasesForCM->isEmpty()) {
             $this->info('No Beyond or Upcoming cases found. No emails sent.');
             return 0;
         }
@@ -275,22 +334,22 @@ class SendBeyondCaseNotifications extends Command
         // SEND: Case Management — Docket, PO PCT, PCT 96 days only
         //       (no 1st MC, no 2nd MC)
         // ══════════════════════════════════════════════════════════════════
-        $cmBeyond   = $formatBeyond($allBeyondCases,    true, false, false, true, true);
-        $cmUpcoming = $formatUpcoming($allUpcomingCases, true, false, false, true, true);
+        $cmBeyond   = $formatBeyond($allBeyondCasesForCM,    true, false, false, true, true);
+        $cmUpcoming = $formatUpcoming($allUpcomingCasesForCM, true, false, false, true, true);
 
         foreach (User::where('role', User::ROLE_CASE_MANAGEMENT)->get() as $cm) {
             if ($cm->isProvincialCaseManagement()) {
                 $provinceName = $cm->getCaseManagementProvinceName();
 
-                $scopedBeyond   = $allBeyondCases->where('po_office', $provinceName);
-                $scopedUpcoming = $allUpcomingCases->where('po_office', $provinceName);
+                $scopedBeyond   = $allBeyondCasesForCM->where('po_office', $provinceName);
+                $scopedUpcoming = $allUpcomingCasesForCM->where('po_office', $provinceName);
 
                 $beyondFormatted   = $formatBeyond($scopedBeyond,   true, false, false, true, true);
                 $upcomingFormatted = $formatUpcoming($scopedUpcoming, true, false, false, true, true);
 
                 $sendEmail($cm, $beyondFormatted, $upcomingFormatted);
             } else {
-                // Regional CM — sees all provinces
+                // Regional CM — sees all provinces, regardless of receipt status
                 $sendEmail($cm, $cmBeyond, $cmUpcoming);
             }
         }

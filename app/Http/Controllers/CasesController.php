@@ -870,11 +870,12 @@ public function destroy($id)
         }
 
         foreach ($updateData as $field => $value) {
-            if (in_array($field, self::PROVINCE_ONLY_DATE_FIELDS) && !$user->isProvince()) {
-                return 'Only Provincial Offices can edit "' . str_replace('_', ' ', $field) . '".';
+            $isRegionalCM = $user->isCaseManagement() && !$user->isProvincialCaseManagement();
+
+            if (in_array($field, self::PROVINCE_ONLY_DATE_FIELDS) && !$user->isProvince() && !$isRegionalCM) {
+                return 'Only Provincial Offices or Case Management (Regional) can edit "' . str_replace('_', ' ', $field) . '".';
             }
 
-            $isRegionalCM = $user->isCaseManagement() && !$user->isProvincialCaseManagement();
             if (in_array($field, self::REGIONAL_CM_ONLY_DATE_FIELDS) && !$isRegionalCM) {
                 return 'Only Case Management (Regional) can edit "' . str_replace('_', ' ', $field) . '".';
             }

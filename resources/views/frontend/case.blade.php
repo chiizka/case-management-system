@@ -1749,7 +1749,7 @@ const REGIONAL_CM_ONLY_DATE_FIELDS = [
 
 function canEditDateField(field) {
     if (isAdminUser) return true;
-    if (PROVINCE_ONLY_DATE_FIELDS.includes(field)) return isProvinceUser;
+    if (PROVINCE_ONLY_DATE_FIELDS.includes(field)) return isProvinceUser || isRegionalCM;
     if (REGIONAL_CM_ONLY_DATE_FIELDS.includes(field)) return isRegionalCM;
     return true; // not a restricted field — leave existing behavior alone
 }
