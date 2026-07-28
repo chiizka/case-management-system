@@ -1876,7 +1876,13 @@ public function loadMalsuTab(Request $request)
                               $q4->where('current_role', User::ROLE_MALSU)
                                  ->where('status', 'Received');
                           })
-                          ->orWhereNotNull('sheriff_designate');
+                          ->orWhere(function ($q4) {
+                              // Sheriff assigned but they haven't accepted (received) it yet
+                              $q4->whereNotNull('sheriff_designate')
+                                 ->whereHas('case.documentTracking', function ($q5) {
+                                     $q5->where('status', '!=', 'Received');
+                                 });
+                          });
                       });
                   });
             })
