@@ -2006,11 +2006,13 @@ public function loadTab0()
 
         $tracking = DocumentTracking::where('case_id', $case->id)->first();
 
+        $oldRole = $tracking->current_role; // capture BEFORE update
+
         if ($tracking) {
             \App\Models\DocumentTrackingHistory::create([
                 'document_tracking_id'   => $tracking->id,
-                'from_role'              => $tracking->current_role,
-                'to_role'                => $tracking->current_role,
+                'from_role'              => $oldRole,
+                'to_role'                => 'malsu',   // ← the NEW destination role
                 'transferred_by_user_id' => $tracking->transferred_by_user_id,
                 'transferred_at'         => $tracking->transferred_at,
                 'received_by_user_id'    => $tracking->received_by_user_id,
@@ -2127,6 +2129,7 @@ public function loadProvinceTab(Request $request, $province)
         'catanduanes'    => User::ROLE_PROVINCE_CATANDUANES,
         'masbate'        => User::ROLE_PROVINCE_MASBATE,
         'sorsogon'       => User::ROLE_PROVINCE_SORSOGON,
+        'ro'              => User::ROLE_SHERIFF_RO, 
     ];
 
     $provinceLabelMap = [
@@ -2136,6 +2139,7 @@ public function loadProvinceTab(Request $request, $province)
         'catanduanes'    => 'Catanduanes',
         'masbate'        => 'Masbate',
         'sorsogon'       => 'Sorsogon',
+        'ro'              => 'Regional',
     ];
 
     $role = $provinceRoleMap[$province] ?? null;
@@ -2199,6 +2203,7 @@ public function loadSheriffProvinceTab(Request $request, $province)
         'catanduanes'     => User::ROLE_SHERIFF_CATANDUANES,
         'masbate'         => User::ROLE_SHERIFF_MASBATE,
         'sorsogon'        => User::ROLE_SHERIFF_SORSOGON,
+        'ro'              => User::ROLE_SHERIFF_RO,
     ];
 
     $provinceLabelMap = [
@@ -2208,6 +2213,7 @@ public function loadSheriffProvinceTab(Request $request, $province)
         'catanduanes'     => 'Catanduanes',
         'masbate'         => 'Masbate',
         'sorsogon'        => 'Sorsogon',
+        'ro'              => 'Regional',
     ];
 
     $role = $provinceRoleMap[$province] ?? null;

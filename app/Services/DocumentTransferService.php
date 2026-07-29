@@ -30,7 +30,7 @@ class DocumentTransferService
             DocumentTrackingHistory::create([
                 'document_tracking_id'   => $document->id,
                 'from_role'              => $document->current_role,
-                'to_role'                => $document->current_role,
+                'to_role'                => $targetRole,
                 'transferred_by_user_id' => $document->transferred_by_user_id,
                 'transferred_at'         => $document->transferred_at,
                 'received_by_user_id'    => $document->received_by_user_id,

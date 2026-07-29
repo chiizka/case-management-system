@@ -64,6 +64,7 @@ class User extends Authenticatable
     const ROLE_SHERIFF_CATANDUANES = 'sheriff_catanduanes';
     const ROLE_SHERIFF_MASBATE = 'sheriff_masbate';
     const ROLE_SHERIFF_SORSOGON = 'sheriff_sorsogon';
+    const ROLE_SHERIFF_RO = 'sheriff_ro';
 
     // Province display names — kept for dropdown labels / lookups
     const PROVINCES = [
@@ -73,6 +74,7 @@ class User extends Authenticatable
         'catanduanes'       => 'Catanduanes',
         'masbate'           => 'Masbate',
         'sorsogon'          => 'Sorsogon',
+        'ro'                => 'Regional',
     ];
 
     // All province roles array
@@ -93,6 +95,7 @@ class User extends Authenticatable
         self::ROLE_SHERIFF_CATANDUANES,
         self::ROLE_SHERIFF_MASBATE,
         self::ROLE_SHERIFF_SORSOGON,
+        self::ROLE_SHERIFF_RO,
     ];
 
     // All valid roles
@@ -114,6 +117,7 @@ class User extends Authenticatable
         self::ROLE_SHERIFF_CATANDUANES,
         self::ROLE_SHERIFF_MASBATE,
         self::ROLE_SHERIFF_SORSOGON,
+        self::ROLE_SHERIFF_RO,
     ];
 
     // Check if user needs to set password
@@ -246,6 +250,7 @@ class User extends Authenticatable
             self::ROLE_SHERIFF_CATANDUANES     => 'Catanduanes',
             self::ROLE_SHERIFF_MASBATE         => 'Masbate',
             self::ROLE_SHERIFF_SORSOGON        => 'Sorsogon',
+            self::ROLE_SHERIFF_RO              => 'Regional'
         ];
 
         return $provinceNames[$this->role] ?? null;

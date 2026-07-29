@@ -540,6 +540,7 @@ body.sheriff-readonly .edit-row-btn-case {
                 @if(Auth::user()->isMalsu() || Auth::user()->isAdmin())
                 @php
                 $sheriffProvinceTabs = [
+                    'ro'              => 'RO',
                     'albay'           => 'APO',
                     'camarines_sur'   => 'CS',
                     'camarines_norte' => 'CN',
@@ -886,9 +887,10 @@ body.sheriff-readonly .edit-row-btn-case {
                 @endif
 
                 @if(Auth::user()->isMalsu() || Auth::user()->isAdmin())
-                @foreach(['albay','camarines_sur','camarines_norte','catanduanes','masbate','sorsogon'] as $provKey)
+                @foreach(['ro','albay','camarines_sur','camarines_norte','catanduanes','masbate','sorsogon'] as $provKey)
                 @php
                 $sheriffProvLabels = [
+                    'ro'              => 'Regional',
                     'albay'           => 'Albay',
                     'camarines_sur'   => 'Camarines Sur',
                     'camarines_norte' => 'Camarines Norte',
@@ -3093,7 +3095,7 @@ $(document).on('click', function(e) {
         $('#senaForm')[0].reset();
     });
 
-    ['albay','camarines_sur','camarines_norte','catanduanes','masbate','sorsogon'].forEach(function(province) {
+    ['albay','camarines_sur','camarines_norte','catanduanes','masbate','sorsogon','ro'].forEach(function(province) {
         var tabSelector = '#tabSheriffProv-' + province;
         var tableId  = 'dataTableSheriff-' + province;
         var searchId = 'customSearchSheriff-' + province;
@@ -5048,7 +5050,8 @@ $(document).ready(function() {
                     { value: 'PLACEHOLDER_1', text: 'PLACEHOLDER_1', role: 'sheriff_camarines_norte' }, // ← replace
                     { value: 'PLACEHOLDER_2', text: 'PLACEHOLDER_2', role: 'sheriff_catanduanes' },      // ← replace
                     { value: 'PLACEHOLDER_3', text: 'PLACEHOLDER_3', role: 'sheriff_masbate' },          // ← replace
-                    { value: 'PLACEHOLDER_4', text: 'PLACEHOLDER_4', role: 'sheriff_sorsogon' }          // ← replace
+                    { value: 'PLACEHOLDER_4', text: 'PLACEHOLDER_4', role: 'sheriff_sorsogon' },         // ← replace
+                    { value: 'PLACEHOLDER_RO', text: 'PLACEHOLDER_RO', role: 'sheriff_ro' }              // ← replace
                 ]
             },
             'date_compliance_order':                    { type: 'date' },
@@ -5123,6 +5126,7 @@ $(document).ready(function() {
     tabConfigs['tabSheriffProv-catanduanes']     = tabConfigs['tabMALSU'];
     tabConfigs['tabSheriffProv-masbate']         = tabConfigs['tabMALSU'];
     tabConfigs['tabSheriffProv-sorsogon']        = tabConfigs['tabMALSU'];
+    tabConfigs['tabSheriffProv-ro']              = tabConfigs['tabMALSU'];
 
     // Get current active tab
     function getCurrentTab() {

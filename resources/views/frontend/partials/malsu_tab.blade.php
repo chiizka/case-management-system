@@ -38,10 +38,6 @@
             {{ $cases->count() }} case(s) currently with {{ $badgeLabel }}
         </span>
 
-        {{-- Dummy button — not wired up to anything yet --}}
-        <button type="button" class="btn btn-success btn-sm" id="malsuUploadExcelBtn" title="Upload Excel (coming soon)">
-            <i class="fas fa-file-excel mr-1"></i> Upload Excel
-        </button>
     </div>
 </div>
 

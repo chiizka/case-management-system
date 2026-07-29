@@ -206,6 +206,7 @@
                         <option value="sheriff_catanduanes">Sheriff &mdash; Catanduanes</option>
                         <option value="sheriff_masbate">Sheriff &mdash; Masbate</option>
                         <option value="sheriff_sorsogon">Sheriff &mdash; Sorsogon</option>
+                        <option value="sheriff_ro">Sheriff &mdash; Regional (RO)</option>
                     </optgroup>
                 </select>
             </div>
@@ -288,6 +289,7 @@
                                 <option value="sheriff_catanduanes" {{ $user->role === 'sheriff_catanduanes' ? 'selected' : '' }}>Sheriff &mdash; Catanduanes</option>
                                 <option value="sheriff_masbate" {{ $user->role === 'sheriff_masbate' ? 'selected' : '' }}>Sheriff &mdash; Masbate</option>
                                 <option value="sheriff_sorsogon" {{ $user->role === 'sheriff_sorsogon' ? 'selected' : '' }}>Sheriff &mdash; Sorsogon</option>
+                                <option value="sheriff_ro" {{ $user->role === 'sheriff_ro' ? 'selected' : '' }}>Sheriff &mdash; Regional (RO)</option>
                             </optgroup>
                         </select>
                     </div>
