@@ -313,7 +313,7 @@ class DocumentTrackingController extends Controller
             ]);
 
             $latestHistory = $document->history()->latest()->first();
-            if ($latestHistory && !$latestHistory->received_by_user_id) {
+            if ($latestHistory && !$latestHistory->received_by_user_id && $latestHistory->transferred_by_user_id) {
                 $latestHistory->update([
                     'received_by_user_id' => $user->id,
                     'received_at'         => now()

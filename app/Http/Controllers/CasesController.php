@@ -1068,7 +1068,7 @@ public function destroy($id)
                     : 'N/A',
                 'received_by' => $documentTracking->receivedBy 
                     ? $documentTracking->receivedBy->fname . ' ' . $documentTracking->receivedBy->lname 
-                    : 'Pending',
+                    : ($documentTracking->status === 'Received' ? 'System' : 'Pending'),
                 'received_at' => $documentTracking->received_at 
                     ? $documentTracking->received_at->format('M d, Y h:i A') 
                     : 'Pending',
@@ -1093,7 +1093,7 @@ public function destroy($id)
                         : 'N/A',
                     'received_by' => $history->receivedBy 
                         ? $history->receivedBy->fname . ' ' . $history->receivedBy->lname 
-                        : 'Not Received',
+                        : (!$history->transferred_by_user_id ? 'System' : 'Not Received'),
                     'received_at' => $history->received_at 
                         ? $history->received_at->format('M d, Y h:i A') 
                         : 'N/A',

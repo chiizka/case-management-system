@@ -20,6 +20,8 @@ class ImportLegacyMalsuData extends Command
 
     protected $description = 'One-time import of legacy MALSU register data from Excel into the malsu table';
 
+    private array $caseLinkLog = [];
+
     // Which sheets to import, and which row their real headers sit on.
     // MAS has one fewer banner row than the rest.
     private array $sheetConfig = [
@@ -159,17 +161,12 @@ class ImportLegacyMalsuData extends Command
 
             // Stop entirely once we hit the trailing legend/summary block —
             // everything after this is tally counts, not case data.
-            // (Covers sheets where "LEGEND" lands directly in the case_title
-            // column, e.g. APO/CN/CS/MAS. Sheets like CAT, where the legend
-            // block's title column is blank, are already excluded by the
-            // blank-case_title skip below — no special handling needed there.)
             if ($caseTitle !== null && str_contains(strtoupper($caseTitle), 'LEGEND')) {
                 $this->legendStops[] = "{$sheetName}: stopped at row {$row} — {$this->summary[$sheetName]['rows']} real rows found above it";
                 break;
             }
 
-            // Skip fully blank rows (also catches shifted-column legend rows
-            // like CAT's, where case_title is blank but other columns aren't)
+            // Skip fully blank rows (also catches shifted-column legend rows)
             if (empty($caseTitle)) {
                 continue;
             }
@@ -190,6 +187,12 @@ class ImportLegacyMalsuData extends Command
             if (!$isDryRun) {
                 $malsu = Malsu::create($malsuData);
                 $malsuId = $malsu->id;
+
+                // ── Auto-create/link a CaseFile so document tracking works ──
+                $this->linkOrCreateCaseFile($malsu, $sheetName);
+            } else {
+                // Dry-run preview of what the case-linking step would do
+                $this->previewCaseLink($malsuData, $sheetName);
             }
 
             $this->summary[$sheetName]['rows']++;
@@ -234,6 +237,81 @@ class ImportLegacyMalsuData extends Command
 
                 $this->summary[$sheetName]['reports']++;
             }
+        }
+    }
+
+    /**
+     * Auto-create a stub CaseFile for a legacy MALSU record so document
+     * tracking has a case_id to attach to. If a CaseFile already exists
+     * with a matching case_no (== regional_docket_number), link to that
+     * instead of creating a duplicate.
+     */
+    
+    private function linkOrCreateCaseFile(Malsu $malsu, string $sheetName): void
+    {
+        $docketNumber = $malsu->regional_docket_number;
+
+        if (empty($docketNumber)) {
+            $this->caseLinkLog[] = "{$sheetName}: MALSU #{$malsu->id} has no regional_docket_number, skipped case linking.";
+            return;
+        }
+
+        $existingCase = \App\Models\CaseFile::where('case_no', $docketNumber)->first();
+
+        if ($existingCase) {
+            $malsu->case_id = $existingCase->id;
+            $malsu->save();
+            $this->caseLinkLog[] = "{$sheetName}: MALSU #{$malsu->id} linked to existing CaseFile #{$existingCase->id} (case_no: {$docketNumber}).";
+            return;
+        }
+
+        $newCase = \App\Models\CaseFile::create([
+            'inspection_id'      => 'LEGACY-' . $malsu->id,
+            'case_no'            => $docketNumber,
+            'establishment_name' => $malsu->case_title ?: 'Unknown (legacy import)',
+            'current_stage'      => '1: Inspections',
+            'remarks_notes'      => 'Auto-created from legacy MALSU import.',
+        ]);
+
+        $malsu->case_id = $newCase->id;
+        $malsu->save();
+
+        // Initial document tracking — case already sits with MALSU, no accept needed.
+        \App\Models\DocumentTracking::create([
+            'case_id'                => $newCase->id,
+            'current_role'           => 'malsu',
+            'status'                 => 'Received',
+            'transferred_by_user_id' => null,
+            'transferred_at'         => now(),
+            'received_by_user_id'    => null,
+            'received_at'            => now(),
+            'transfer_notes'         => 'Auto-created from legacy MALSU import.',
+        ]);
+
+        $this->caseLinkLog[] = "{$sheetName}: MALSU #{$malsu->id} → created new CaseFile #{$newCase->id} + DocumentTracking (malsu/Received) (case_no: {$docketNumber}).";
+    }
+
+    /**
+     * Dry-run version of linkOrCreateCaseFile — reports what WOULD happen
+     * without writing anything (Malsu row doesn't exist yet in dry-run,
+     * so we work off the raw $malsuData array instead).
+     */
+    private function previewCaseLink(array $malsuData, string $sheetName): void
+    {
+        $docketNumber = $malsuData['regional_docket_number'] ?? null;
+        $caseTitle = $malsuData['case_title'] ?? null;
+
+        if (empty($docketNumber)) {
+            $this->caseLinkLog[] = "{$sheetName}: (dry-run) no regional_docket_number — would skip case linking.";
+            return;
+        }
+
+        $existingCase = \App\Models\CaseFile::where('case_no', $docketNumber)->first();
+
+        if ($existingCase) {
+            $this->caseLinkLog[] = "{$sheetName}: (dry-run) would link to existing CaseFile #{$existingCase->id} (case_no: {$docketNumber}).";
+        } else {
+            $this->caseLinkLog[] = "{$sheetName}: (dry-run) would CREATE new CaseFile for case_no: {$docketNumber} (establishment: {$caseTitle}).";
         }
     }
 
@@ -438,6 +516,14 @@ class ImportLegacyMalsuData extends Command
             $this->newLine();
             $this->warn('Skipped messy date cells (' . count($this->skippedMessyDates) . ') — needs manual entry:');
             foreach ($this->skippedMessyDates as $item) {
+                $this->line("  - {$item}");
+            }
+        }
+
+        if (!empty($this->caseLinkLog)) {
+            $this->newLine();
+            $this->info('Case linking (' . count($this->caseLinkLog) . '):');
+            foreach ($this->caseLinkLog as $item) {
                 $this->line("  - {$item}");
             }
         }
