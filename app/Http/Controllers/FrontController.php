@@ -18,11 +18,12 @@ class FrontController extends Controller
         $user       = Auth::user();
         $isProvince = $user->isProvince();
         $userRole   = $user->role;
-        $isMalsu            = false;
-        $isSheriff          = false;
-        $malsuActiveCases   = 0;
-        $malsuDisposedCases = 0;
-        $sheriffCaseHistory = collect();
+        $isMalsu              = false;
+        $isSheriff            = false;
+        $malsuActiveCases     = 0;
+        $malsuDisposedCases   = 0;
+        $sheriffCaseHistory   = collect();
+        $sheriffOverviewRoles = [];
 
         if ($isProvince) {
             $provinceName              = $user->getProvinceName();
@@ -158,7 +159,7 @@ class FrontController extends Controller
                     ->get(['id', 'case_id', 'transferred_by_user_id', 'transferred_at', 'transfer_notes']);
             }
 
-            $totalCases                = CaseFile::count();
+           $totalCases                = CaseFile::count();
             $actualDisposedCases       = 0;
             $disposedCases             = 0;
             $misDisposedCases          = 0;
@@ -166,7 +167,16 @@ class FrontController extends Controller
             $caseManagementActiveCases = 0;
             $byProvince                = collect();
 
-        
+            $sheriffOverviewRoles = [
+                'sheriff_ro'              => 'RO',
+                'sheriff_albay'           => 'Albay',
+                'sheriff_camarines_sur'   => 'Cam Sur',
+                'sheriff_camarines_norte' => 'Cam Norte',
+                'sheriff_catanduanes'     => 'Catanduanes',
+                'sheriff_masbate'         => 'Masbate',
+                'sheriff_sorsogon'        => 'Sorsogon',
+            ];
+
         } elseif ($user->isSheriff()) {
             $isSheriff = true;
 
@@ -469,8 +479,9 @@ class FrontController extends Controller
             'isMalsu',
             'malsuActiveCases',
             'malsuDisposedCases',
-            'isSheriff',              // ← add this
-            'sheriffCaseHistory',     // ← and this
+            'isSheriff',             
+            'sheriffCaseHistory', 
+            'sheriffOverviewRoles',
         ));
     }
 

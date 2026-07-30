@@ -49,6 +49,7 @@ class DocumentTracking extends Model
         'sheriff_catanduanes'     => 'Sheriff - Catanduanes',
         'sheriff_masbate'         => 'Sheriff - Masbate',
         'sheriff_sorsogon'        => 'Sheriff - Sorsogon',
+        'sheriff_ro'              => 'Sheriff - RO (Regional)',
 
         // Legacy support (if any old records still use 'province')
         'province' => 'Province (Legacy)',
@@ -134,6 +135,7 @@ class DocumentTracking extends Model
             'sheriff_catanduanes',
             'sheriff_masbate',
             'sheriff_sorsogon',
+            'sheriff_ro',
         ]);
     }
 
@@ -153,6 +155,7 @@ class DocumentTracking extends Model
             'sheriff_catanduanes'     => 'Catanduanes',
             'sheriff_masbate'         => 'Masbate',
             'sheriff_sorsogon'        => 'Sorsogon',
+            'sheriff_ro'              => 'Regional',
         ];
 
         return $provinceNames[$this->current_role] ?? null;

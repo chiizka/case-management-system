@@ -42,6 +42,50 @@ class SheriffReportComplianceService
     }
 
     /**
+     * Province-wide overview for MALSU: every case currently sitting with
+     * this sheriff role (all users sharing that role, not just one person),
+     * combined with report history and a missing-last-month flag.
+     */
+    public function getSheriffOverviewForRole(string $role): array
+    {
+        $lastMonth = Carbon::now()->startOfMonth()->subMonth();
+
+        $cases = CaseFile::where('overall_status', 'Active')
+            ->whereHas('documentTracking', fn ($q) => $q
+                ->where('current_role', $role)
+                ->where('status', 'Received')
+            )
+            ->whereHas('malsu')
+            ->with(['malsu.sheriffsReports' => fn ($q) => $q->orderByDesc('report_month')])
+            ->get();
+
+        $overview = $cases->map(function ($case) use ($lastMonth) {
+            $reports = $case->malsu->sheriffsReports;
+            $latest  = $reports->first();
+
+            $missingLastMonth = !$reports->contains(
+                fn ($report) => $report->report_month && $report->report_month->isSameMonth($lastMonth)
+            );
+
+            return [
+                'case_id'             => $case->id,
+                'malsu_id'            => $case->malsu->id,
+                'case_no'             => $case->case_no ?? $case->inspection_id ?? 'N/A',
+                'establishment'       => $case->establishment_name ?? 'Unknown',
+                'sheriff_designate'   => $case->malsu->sheriff_designate ?? null,
+                'total_reports'       => $reports->count(),
+                'latest_month_label'  => $latest ? $latest->report_month->format('F Y') : null,
+                'latest_submitted_at' => $latest ? optional($latest->report_date_submitted)->format('M d, Y') : null,
+                'missing_last_month'  => $missingLastMonth,
+                'missing_month_label' => $missingLastMonth ? $lastMonth->format('F') : null,
+            ];
+        });
+
+        // Missing-last-month cases surface first, rest keep original order
+        return $overview->sortByDesc('missing_last_month')->values()->all();
+    }
+
+    /**
      * Cases missing a report for $targetMonth (normally "last month"),
      * with how many consecutive months in a row have been missed.
      */

@@ -513,6 +513,32 @@
                         </div>
                     </div>
 
+                @elseif($isMalsu)
+                    {{-- MALSU VIEW: Sheriff Reports Overview --}}
+                    <div class="card shadow h-100 d-flex flex-column" style="min-height: 0;">
+                        <div class="card-header py-3 d-flex align-items-center justify-content-between flex-shrink-0">
+                            <h6 class="m-0 font-weight-bold text-primary">Sheriff Reports Overview</h6>
+                            <span class="badge badge-info badge-pill" id="sheriffOverviewCount">0 case(s)</span>
+                        </div>
+                        <div class="card-body d-flex flex-column" style="min-height: 0; padding: 1rem 1.25rem;">
+                            <div class="d-flex flex-wrap mb-3" style="gap:6px;" id="sheriffOverviewPills">
+                                @foreach($sheriffOverviewRoles as $roleKey => $roleLabel)
+                                <button type="button"
+                                    class="btn btn-sm sheriff-overview-pill {{ $loop->first ? 'btn-primary' : 'btn-outline-secondary' }}"
+                                    data-role="{{ $roleKey }}">
+                                    {{ $roleLabel }}
+                                </button>
+                                @endforeach
+                            </div>
+                            <div style="flex:1 1 auto; overflow-y:auto; min-height:0;" id="sheriffOverviewList">
+                                <div class="text-center py-5">
+                                    <div class="spinner-border text-primary" role="status">
+                                        <span class="sr-only">Loading...</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 @else
                     {{-- OTHER REGIONAL ROLES: fallback chart --}}
                     <div class="card shadow h-100 d-flex flex-column" style="min-height: 0;">
@@ -1097,6 +1123,40 @@ $provinceRolesForModal = [
 {{-- ===================================================================== --}}
 {{--  PROVINCIAL PENDING DOCUMENTS MODAL                                   --}}
 {{-- ===================================================================== --}}
+@if($isMalsu)
+<div class="modal fade" id="reportsGridModal" tabindex="-1" role="dialog" aria-labelledby="reportsGridModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="reportsGridModalLabel">
+                    <i class="fas fa-table"></i> Monthly Reports
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-1"><strong>Case No:</strong> <span id="rg-case-no"></span></p>
+                <p class="mb-3"><strong>Establishment:</strong> <span id="rg-establishment"></span></p>
+
+                <div id="rg-loading" class="text-center py-4">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="sr-only">Loading...</span>
+                    </div>
+                </div>
+
+                <div id="rg-content" style="display:none; overflow-y:auto; overflow-x:hidden; max-height:65vh;">
+                    <div id="rg-cards-container" style="display:grid; grid-template-columns:repeat(2, 1fr); gap:16px;"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+@endif
+
 @if($isProvince)
 <div class="modal fade" id="myPendingDocsModal" tabindex="-1" role="dialog" aria-hidden="true">
     <div class="modal-dialog modal-md" role="document">
@@ -1213,6 +1273,122 @@ $provinceRolesForModal = [
 @push('scripts')
 <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
 <script>
+@if($isMalsu)
+// ── Sheriff Reports Overview (MALSU dashboard) ─────────────────────────
+(function() {
+    const overviewUrlTemplate = "{{ route('malsu.sheriffOverview', ['role' => '__ROLE__']) }}";
+    const csrfToken = $('meta[name="csrf-token"]').attr('content');
+    const cache = {};
+
+    function loadSheriffOverview(role) {
+        if (cache[role]) {
+            $('#sheriffOverviewList').html(cache[role].html);
+            $('#sheriffOverviewCount').text(cache[role].count + ' case(s)');
+            return;
+        }
+
+        $('#sheriffOverviewList').html(`
+            <div class="text-center py-5">
+                <div class="spinner-border text-primary" role="status"><span class="sr-only">Loading...</span></div>
+            </div>
+        `);
+
+        $.ajax({
+            url: overviewUrlTemplate.replace('__ROLE__', role),
+            method: 'GET',
+            headers: { 'X-CSRF-TOKEN': csrfToken, 'Accept': 'application/json' },
+            success: function(response) {
+                if (response.success) {
+                    cache[role] = { html: response.html, count: response.count };
+                    $('#sheriffOverviewList').html(response.html);
+                    $('#sheriffOverviewCount').text(response.count + ' case(s)');
+                } else {
+                    $('#sheriffOverviewList').html('<div class="alert alert-danger m-0">Failed to load cases.</div>');
+                }
+            },
+            error: function() {
+                $('#sheriffOverviewList').html('<div class="alert alert-danger m-0">Failed to load cases.</div>');
+            }
+        });
+    }
+
+    $(document).on('click', '.sheriff-overview-pill', function() {
+        $('.sheriff-overview-pill').removeClass('btn-primary').addClass('btn-outline-secondary');
+        $(this).removeClass('btn-outline-secondary').addClass('btn-primary');
+        loadSheriffOverview($(this).data('role'));
+    });
+
+    $(function() {
+        const $first = $('.sheriff-overview-pill').first();
+        if ($first.length) {
+            loadSheriffOverview($first.data('role'));
+        }
+    });
+
+    // Reports Grid modal (per-case "X reports" button)
+    $(document).on('click', '.view-reports-grid-btn', function() {
+        const caseId  = $(this).data('case-id');
+        const malsuId = $(this).data('malsu-id');
+        $('#rg-case-no').text($(this).data('case-no'));
+        $('#rg-establishment').text($(this).data('establishment'));
+
+        $('#rg-content').hide();
+        $('#rg-loading').show();
+        $('#rg-cards-container').empty();
+
+        $('#reportsGridModal').modal('show');
+
+        const reportsUrl = caseId ? `/case/${caseId}/sheriff-reports` : `/malsu/${malsuId}/sheriff-reports`;
+
+        $.ajax({
+            url: reportsUrl,
+            method: 'GET',
+            success: function(response) {
+                $('#rg-loading').hide();
+                $('#rg-content').show();
+
+                if (!response.success || !response.reports || response.reports.length === 0) {
+                    $('#rg-cards-container').html('<p class="text-muted text-center py-4 mb-0" style="grid-column:1 / -1;">No reports found.</p>');
+                    return;
+                }
+
+                const reports = [...response.reports].sort((a, b) => a.report_month.localeCompare(b.report_month));
+                const $container = $('#rg-cards-container');
+
+                reports.forEach(function(r) {
+                    const linkHtml = r.report_link
+                        ? `<div class="mt-2"><a href="${r.report_link}" target="_blank" rel="noopener" style="font-size:1rem;"><i class="fas fa-link"></i> Attachment</a></div>`
+                        : '';
+                    const editedHtml = r.was_edited
+                        ? `<div class="mt-1"><span class="text-muted" style="font-size:0.9rem;"><i class="fas fa-pen"></i> Edited ${r.updated_at}</span></div>`
+                        : '';
+
+                    $container.append(`
+                        <div class="card h-100">
+                            <div class="card-header" style="background:#f8f9fc; font-size:1.1rem; font-weight:600;">
+                                ${r.report_month_label}
+                            </div>
+                            <div class="card-body" style="line-height:1.5;">
+                                <div>${r.report_content ? r.report_content.replace(/\n/g, '<br>') : '<span class="text-muted">—</span>'}</div>
+                                <span class="text-muted d-block mt-2" style="font-size:0.9rem;">Submitted: ${r.report_date_submitted}${r.submitted_by ? ' by ' + r.submitted_by : ''}</span>
+                                ${editedHtml}
+                                ${linkHtml}
+                            </div>
+                        </div>
+                    `);
+                });
+            },
+            error: function() {
+                $('#rg-loading').hide();
+                $('#rg-content').show();
+                $('#rg-cards-container').html('<p class="text-danger text-center py-4 mb-0" style="grid-column:1 / -1;">Failed to load reports.</p>');
+            }
+        });
+    });
+})();
+@endif
+
+// Chart initialization
 // Chart initialization
 var ctx = document.getElementById("casesAreaChart");
 if (ctx) {

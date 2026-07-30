@@ -177,4 +177,40 @@ class MalsuController extends Controller
             return response()->json(['success' => false, 'message' => 'Failed to send: ' . $e->getMessage()], 500);
         }
     }
+
+    /**
+     * MALSU dashboard: province-wide sheriff report overview for one role.
+     * AJAX-loaded per pill click.
+     */
+    public function loadSheriffOverview(Request $request, $role)
+    {
+        if (!Auth::user()->isMalsu() && !Auth::user()->isAdmin()) {
+            return response()->json(['success' => false, 'error' => 'Access denied.'], 403);
+        }
+
+        if (!in_array($role, User::SHERIFF_ROLES)) {
+            return response()->json(['success' => false, 'error' => 'Invalid sheriff role.'], 400);
+        }
+
+        try {
+            $overview = app(\App\Services\SheriffReportComplianceService::class)
+                ->getSheriffOverviewForRole($role);
+
+            $roleLabel = DocumentTracking::ROLE_NAMES[$role] ?? $role;
+
+            $html = view('frontend.partials.sheriff_overview_list', [
+                'cases'     => $overview,
+                'roleLabel' => $roleLabel,
+            ])->render();
+
+            return response()->json([
+                'success' => true,
+                'html'    => $html,
+                'count'   => count($overview),
+            ]);
+        } catch (\Exception $e) {
+            Log::error('loadSheriffOverview error: ' . $e->getMessage());
+            return response()->json(['success' => false, 'error' => 'Failed to load data.'], 500);
+        }
+    }
 }

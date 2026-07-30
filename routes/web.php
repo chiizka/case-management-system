@@ -92,6 +92,8 @@ Route::middleware('auth')->group(function () {
         ->name('malsu.sendToSheriff');
         Route::get('/malsu/{malsuId}/sheriff-reports', [SheriffsReportController::class, 'indexByMalsu'])
         ->name('malsu.sheriffReports.index');
+        Route::get('/malsu/sheriff-overview/{role}', [MalsuController::class, 'loadSheriffOverview'])
+        ->name('malsu.sheriffOverview');
         Route::get('/case/{id}/document-history', [CasesController::class, 'getDocumentHistory'])->name('case.documentHistory');
         Route::get('/case/{id}/documents', [CasesController::class, 'getDocuments'])->name('case.documents');
         Route::post('/case/{id}/documents', [CasesController::class, 'saveDocuments'])->name('case.documents.save');
