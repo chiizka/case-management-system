@@ -19,19 +19,29 @@ class DocumentTrackingController extends Controller
     {
         $user = Auth::user();
         
-        // Get documents based on user role - ONLY ACTIVE CASES
-        $myDocuments = DocumentTracking::with(['case', 'transferredBy', 'receivedBy'])
+        $myDocumentsQuery = DocumentTracking::with(['case', 'transferredBy', 'receivedBy'])
             ->active()
             ->where('current_role', $user->role)
-            ->where('status', 'Received')
-            ->get();
-        
-        // Get pending documents for user's role - ONLY ACTIVE CASES
-        $pendingDocuments = DocumentTracking::with(['case', 'transferredBy'])
+            ->where('status', 'Received');
+
+        $pendingDocumentsQuery = DocumentTracking::with(['case', 'transferredBy'])
             ->active()
             ->where('current_role', $user->role)
-            ->where('status', 'Pending Receipt')
-            ->get();
+            ->where('status', 'Pending Receipt');
+
+        // Sheriffs only see documents assigned specifically to them,
+        // not everyone sharing the same province sheriff role.
+        if ($user->isSheriff()) {
+            $myDocumentsQuery->whereHas('case.malsu', function ($q) use ($user) {
+                $q->where('assigned_sheriff_user_id', $user->id);
+            });
+            $pendingDocumentsQuery->whereHas('case.malsu', function ($q) use ($user) {
+                $q->where('assigned_sheriff_user_id', $user->id);
+            });
+        }
+
+        $myDocuments = $myDocumentsQuery->get();
+        $pendingDocuments = $pendingDocumentsQuery->get();
         
         // All documents (for admin overview) - ONLY ACTIVE CASES
         $allDocuments = DocumentTracking::with(['case', 'transferredBy', 'receivedBy'])

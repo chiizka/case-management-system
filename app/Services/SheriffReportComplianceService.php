@@ -11,14 +11,18 @@ class SheriffReportComplianceService
      * Whole-case report history for a sheriff's currently assigned cases.
      * No month-locking, no urgency — just a reference view.
      */
-    public function getCasesWithHistory(string $role)
+    public function getCasesWithHistory(string $role, ?int $userId = null)
     {
         return CaseFile::where('overall_status', 'Active')
             ->whereHas('documentTracking', fn ($q) => $q
                 ->where('current_role', $role)
                 ->where('status', 'Received')
             )
-            ->whereHas('malsu')
+            ->whereHas('malsu', function ($q) use ($userId) {
+                if ($userId) {
+                    $q->where('assigned_sheriff_user_id', $userId);
+                }
+            })
             ->with(['malsu.sheriffsReports' => fn ($q) => $q->orderByDesc('report_month')])
             ->get()
             ->map(function ($case) {
@@ -41,14 +45,18 @@ class SheriffReportComplianceService
      * Cases missing a report for $targetMonth (normally "last month"),
      * with how many consecutive months in a row have been missed.
      */
-    public function getMissingCasesForRole(string $role, Carbon $targetMonth): array
+    public function getMissingCasesForRole(string $role, Carbon $targetMonth, ?int $userId = null): array
     {
         $cases = CaseFile::where('overall_status', 'Active')
             ->whereHas('documentTracking', fn ($q) => $q
                 ->where('current_role', $role)
                 ->where('status', 'Received')
             )
-            ->whereHas('malsu')
+            ->whereHas('malsu', function ($q) use ($userId) {
+                if ($userId) {
+                    $q->where('assigned_sheriff_user_id', $userId);
+                }
+            })
             ->with('malsu.sheriffsReports')
             ->get();
 

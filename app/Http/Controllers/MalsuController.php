@@ -23,6 +23,11 @@ class MalsuController extends Controller
 
             $updateData = $request->except(['_token', '_method', 'id', 'case_tag']);
 
+            // Clearing sheriff_designate should also clear the linked user
+            if (array_key_exists('sheriff_designate', $updateData) && $updateData['sheriff_designate'] === '') {
+                $updateData['assigned_sheriff_user_id'] = null;
+            }
+
             if (!empty($updateData)) {
                 $malsu->update($updateData);
             }
@@ -66,8 +71,7 @@ class MalsuController extends Controller
     public function sendToSheriff(Request $request, $malsuId)
     {
         $request->validate([
-            'sheriff_name' => 'required|string|max:255',
-            'target_role'  => ['required', 'in:' . implode(',', User::SHERIFF_ROLES)],
+            'sheriff_user_id' => 'required|exists:users,id',
         ]);
 
         $user = Auth::user();
@@ -75,14 +79,22 @@ class MalsuController extends Controller
             return response()->json(['success' => false, 'message' => 'Access denied.'], 403);
         }
 
+        $sheriff = User::findOrFail($request->sheriff_user_id);
+
+        if (!in_array($sheriff->role, User::SHERIFF_ROLES)) {
+            return response()->json(['success' => false, 'message' => 'Selected user is not a sheriff.'], 422);
+        }
+
+        $targetRole  = $sheriff->role;
+        $sheriffName = trim($sheriff->fname . ' ' . $sheriff->lname);
+
         DB::beginTransaction();
         try {
             $malsu = Malsu::findOrFail($malsuId);
-            $roleLabel = DocumentTracking::ROLE_NAMES[$request->target_role] ?? $request->target_role;
+            $roleLabel = DocumentTracking::ROLE_NAMES[$targetRole] ?? $targetRole;
 
             if (!$malsu->case_id) {
-                // Legacy record — auto-create a CaseFile and point tracking straight at the sheriff
-                $provinceKey  = str_replace('sheriff_', '', $request->target_role);
+                $provinceKey  = str_replace('sheriff_', '', $targetRole);
                 $provinceName = User::PROVINCES[$provinceKey] ?? null;
 
                 if (!$provinceName) {
@@ -108,18 +120,18 @@ class MalsuController extends Controller
 
                 DocumentTracking::create([
                     'case_id'                => $case->id,
-                    'current_role'           => $request->target_role,
+                    'current_role'           => $targetRole,
                     'status'                 => 'Pending Receipt',
                     'transferred_by_user_id' => $user->id,
                     'transferred_at'         => now(),
-                    'transfer_notes'         => "Legacy MALSU record converted to case and forwarded to sheriff designate {$request->sheriff_name} ({$roleLabel}) by {$user->fname} {$user->lname}",
+                    'transfer_notes'         => "Legacy MALSU record converted to case and forwarded to sheriff designate {$sheriffName} ({$roleLabel}) by {$user->fname} {$user->lname}",
                 ]);
 
                 ActivityLogger::logAction(
                     'CREATE',
                     'Case',
                     $case->inspection_id,
-                    "Auto-created from legacy MALSU record #{$malsu->id} and sent to sheriff designate: {$request->sheriff_name} ({$roleLabel})",
+                    "Auto-created from legacy MALSU record #{$malsu->id} and sent to sheriff designate: {$sheriffName} ({$roleLabel})",
                     ['establishment' => $case->establishment_name]
                 );
 
@@ -133,28 +145,29 @@ class MalsuController extends Controller
 
                 app(DocumentTransferService::class)->transferTo(
                     $case->id,
-                    $request->target_role,
+                    $targetRole,
                     $user->id,
-                    "Forwarded to sheriff designate {$request->sheriff_name} ({$roleLabel}) by {$user->fname} {$user->lname}"
+                    "Forwarded to sheriff designate {$sheriffName} ({$roleLabel}) by {$user->fname} {$user->lname}"
                 );
             }
 
-            $malsu->sheriff_designate = $request->sheriff_name;
+            $malsu->sheriff_designate         = $sheriffName;
+            $malsu->assigned_sheriff_user_id  = $sheriff->id;
             $malsu->save();
 
             ActivityLogger::logAction(
                 'TRANSFER',
                 'Case',
                 $case->inspection_id,
-                "Sent to sheriff designate: {$request->sheriff_name} ({$roleLabel})",
-                ['establishment' => $case->establishment_name, 'sheriff' => $request->sheriff_name, 'target_role' => $request->target_role]
+                "Sent to sheriff designate: {$sheriffName} ({$roleLabel})",
+                ['establishment' => $case->establishment_name, 'sheriff' => $sheriffName, 'target_role' => $targetRole]
             );
 
             DB::commit();
 
             return response()->json([
                 'success' => true,
-                'message' => "Case sent to {$request->sheriff_name} successfully!",
+                'message' => "Case sent to {$sheriffName} successfully!",
                 'data'    => $malsu->fresh()
             ]);
 

@@ -30,6 +30,7 @@ class Malsu extends Model
         'date_indorsed_to_po',
         'po_date_received',
         'ro_received_sheriffs_return',
+        'assigned_sheriff_user_id',
     ];
 
     protected $casts = [
@@ -54,5 +55,10 @@ class Malsu extends Model
     {
         return $this->hasMany(\App\Models\SheriffsReport::class, 'malsu_id')
             ->orderBy('report_month', 'desc');
+    }
+
+    public function assignedSheriff()
+    {
+        return $this->belongsTo(User::class, 'assigned_sheriff_user_id');
     }
 }

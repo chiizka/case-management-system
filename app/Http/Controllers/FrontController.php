@@ -175,11 +175,13 @@ class FrontController extends Controller
                     ->where('current_role', $userRole)
                     ->where('status', 'Received')
                 )
+                ->whereHas('malsu', fn($q) => $q->where('assigned_sheriff_user_id', $user->id))
                 ->count();
 
             $myPendingDocs = \App\Models\DocumentTracking::with(['case', 'transferredBy'])
                 ->where('current_role', $userRole)
                 ->where('status', 'Pending Receipt')
+                ->whereHas('case.malsu', fn($q) => $q->where('assigned_sheriff_user_id', $user->id))
                 ->orderBy('transferred_at', 'desc')
                 ->get();
             $myPendingCount = $myPendingDocs->count();
@@ -192,7 +194,7 @@ class FrontController extends Controller
                     ->where('current_role', $userRole)
                     ->where('status', 'Received')
                 )
-                ->whereHas('malsu')
+                ->whereHas('malsu', fn($q) => $q->where('assigned_sheriff_user_id', $user->id))
                 ->with(['malsu.sheriffsReports' => function ($q) use ($currentMonthStart) {
                     $q->whereDate('report_month', $currentMonthStart->format('Y-m-d'));
                 }])
@@ -215,7 +217,7 @@ class FrontController extends Controller
             $currentMonthLabel   = $currentMonthStart->format('F Y');
 
             $sheriffCaseHistory = app(\App\Services\SheriffReportComplianceService::class)
-                ->getCasesWithHistory($userRole);
+                ->getCasesWithHistory($userRole, $user->id);
 
             // ── Unused-elsewhere placeholders so compact() below doesn't error ─
             $totalCases                = $activeCases;

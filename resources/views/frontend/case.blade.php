@@ -4473,11 +4473,12 @@ $(document).ready(function() {
 
         // ── Special handling: Sheriff Designate → confirm + transfer ──
         if (field === 'sheriff_designate') {
-            const selectedRole = $input.find('option:selected').data('role') || '';
-            const selectedName = newValue;
+            const selectedRole   = $input.find('option:selected').data('role') || '';
+            const selectedUserId = newValue;
+            const selectedName   = $input.find('option:selected').text();
 
             // Cleared selection → just save blank, no transfer, no confirm needed
-            if (!selectedName) {
+            if (!selectedUserId) {
                 $.ajax({
                     url: `/malsu/${recordId}/inline-update`,
                     method: 'PUT',
@@ -4519,9 +4520,8 @@ $(document).ready(function() {
                         url: `/malsu/${recordId}/send-to-sheriff`,
                         method: 'PUT',
                         data: {
-                            sheriff_name: selectedName,
-                            target_role: selectedRole
-                        },
+                            sheriff_user_id: selectedUserId
+                            },
                         headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
                         success: function(response) {
                             if (response.success) {
@@ -5045,13 +5045,9 @@ $(document).ready(function() {
                 type: 'select',
                 options: [
                     { value: '', text: 'Select Sheriff', role: '' },
-                    { value: 'Juan Dela Cruz', text: 'Juan Dela Cruz', role: 'sheriff_albay' },
-                    { value: 'Maria Santos',  text: 'Maria Santos',  role: 'sheriff_camarines_sur' },
-                    { value: 'PLACEHOLDER_1', text: 'PLACEHOLDER_1', role: 'sheriff_camarines_norte' }, // ← replace
-                    { value: 'PLACEHOLDER_2', text: 'PLACEHOLDER_2', role: 'sheriff_catanduanes' },      // ← replace
-                    { value: 'PLACEHOLDER_3', text: 'PLACEHOLDER_3', role: 'sheriff_masbate' },          // ← replace
-                    { value: 'PLACEHOLDER_4', text: 'PLACEHOLDER_4', role: 'sheriff_sorsogon' },         // ← replace
-                    { value: 'PLACEHOLDER_RO', text: 'PLACEHOLDER_RO', role: 'sheriff_ro' }              // ← replace
+                    @foreach($sheriffUsers as $su)
+                    { value: {{ $su->id }}, text: '{{ addslashes(trim($su->fname . ' ' . $su->lname)) }}', role: '{{ $su->role }}' },
+                    @endforeach
                 ]
             },
             'date_compliance_order':                    { type: 'date' },

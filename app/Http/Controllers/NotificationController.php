@@ -83,7 +83,7 @@ class NotificationController extends Controller
         if ($user->isSheriff()) {
             $service    = app(\App\Services\SheriffReportComplianceService::class);
             $lastMonth  = Carbon::now()->startOfMonth()->subMonth();
-            $missing    = $service->getMissingCasesForRole($user->role, $lastMonth);
+            $missing    = $service->getMissingCasesForRole($user->role, $lastMonth, $user->id);
 
             $beyondCases = collect($missing)->map(function ($case) use ($lastMonth) {
                 $months = $case['consecutive_missing_months'];

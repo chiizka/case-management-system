@@ -93,9 +93,14 @@ class CasesController extends Controller
 
         $allowedTabs = $this->getAllowedTabs();
 
+        $sheriffUsers = User::whereIn('role', User::SHERIFF_ROLES)
+            ->orderBy('fname')
+            ->get(['id', 'fname', 'lname', 'role']);
+
         return view('frontend.case', [
             'cases' => $cases,
             'allowedTabs' => $allowedTabs,
+            'sheriffUsers' => $sheriffUsers,
             'inspections' => collect([]),
             'docketing' => collect([]),
             'hearingProcess' => collect([]),
@@ -1091,9 +1096,9 @@ public function destroy($id)
                     'transferred_at' => $history->transferred_at 
                         ? $history->transferred_at->format('M d, Y h:i A') 
                         : 'N/A',
-                    'received_by' => $history->receivedBy 
+                    'received_by'    => $history->receivedBy 
                         ? $history->receivedBy->fname . ' ' . $history->receivedBy->lname 
-                        : (!$history->transferred_by_user_id ? 'System' : 'Not Received'),
+                        : (!$history->transferredBy ? 'System' : 'Not Received'),
                     'received_at' => $history->received_at 
                         ? $history->received_at->format('M d, Y h:i A') 
                         : 'N/A',
@@ -1920,12 +1925,13 @@ public function loadSheriffTab(Request $request)
             $user = Auth::user();
 
             $cases = \App\Models\Malsu::with(['case.documentTracking', 'sheriffsReports'])
+                ->where('assigned_sheriff_user_id', $user->id)
                 ->whereHas('case', function ($q) use ($user) {
                     $q->whereNotIn('overall_status', ['Completed', 'Disposed', 'Appealed'])
-                      ->whereHas('documentTracking', function ($q2) use ($user) {
-                          $q2->where('current_role', $user->role)
-                             ->whereIn('status', ['Received']);
-                      });
+                    ->whereHas('documentTracking', function ($q2) use ($user) {
+                        $q2->where('current_role', $user->role)
+                            ->whereIn('status', ['Received']);
+                    });
                 })
                 ->get()
                 ->sortByDesc(function ($malsu) {
