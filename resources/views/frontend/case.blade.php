@@ -444,6 +444,164 @@ td.actions-cell.expanded {
     background-color: #d4edda !important;
 }
 
+/* ==================== MALSU TABLE STICKY COLUMNS (size-only override) ==================== */
+.cm-table.malsu-sticky-table th:nth-child(2),
+.cm-table.malsu-sticky-table td:nth-child(2) {
+    width: 50px;
+    min-width: 50px;
+    max-width: 50px;
+}
+
+.cm-table.malsu-sticky-table th:nth-child(3),
+.cm-table.malsu-sticky-table td:nth-child(3) {
+    left: 50px;
+    width: 200px;
+    min-width: 200px;
+    max-width: 200px;
+    white-space: normal;
+    word-break: break-word;
+}
+
+.cm-table.malsu-sticky-table th:nth-child(4),
+.cm-table.malsu-sticky-table td:nth-child(4) {
+    left: 250px;
+    width: 200px;
+    min-width: 200px;
+    max-width: 200px;
+}
+
+.cm-table.malsu-sticky-table th:nth-child(5),
+.cm-table.malsu-sticky-table td:nth-child(5) {
+    left: 450px;
+    min-width: 150px;
+    max-width: 150px;
+}
+
+/* Non-sticky column width tweaks */
+
+/* Date of Compliance Order / Resolution — shortened, title compressed */
+.cm-table.malsu-sticky-table th:nth-child(6),
+.cm-table.malsu-sticky-table td:nth-child(6) {
+    width: 110px;
+    min-width: 110px;
+    max-width: 110px;
+}
+.cm-table.malsu-sticky-table th:nth-child(6) {
+    white-space: normal;
+    word-break: break-word;
+}
+
+/* Total GLS Monetary Award — title compressed */
+.cm-table.malsu-sticky-table th:nth-child(7),
+.cm-table.malsu-sticky-table td:nth-child(7) {
+    width: 100px;
+    min-width: 100px;
+    max-width: 100px;
+}
+.cm-table.malsu-sticky-table th:nth-child(7) {
+    white-space: normal;
+    word-break: break-word;
+}
+
+/* Total No. of Workers Benefited — title compressed */
+.cm-table.malsu-sticky-table th:nth-child(8),
+.cm-table.malsu-sticky-table td:nth-child(8) {
+    width: 90px;
+    min-width: 90px;
+    max-width: 90px;
+}
+.cm-table.malsu-sticky-table th:nth-child(8) {
+    white-space: normal;
+    word-break: break-word;
+}
+
+/* Amount of Penalty for Double Indemnity — shortened, title compressed */
+.cm-table.malsu-sticky-table th:nth-child(9),
+.cm-table.malsu-sticky-table td:nth-child(9) {
+    width: 100px;
+    min-width: 100px;
+    max-width: 100px;
+}
+.cm-table.malsu-sticky-table th:nth-child(9) {
+    white-space: normal;
+    word-break: break-word;
+}
+
+/* Action Taken — widened */
+.cm-table.malsu-sticky-table th:nth-child(11),
+.cm-table.malsu-sticky-table td:nth-child(11) {
+    width: 220px;
+    min-width: 220px;
+    max-width: 220px;
+}
+
+/* Total GLS Monetary Award Satisfied — title compressed */
+.cm-table.malsu-sticky-table th:nth-child(12),
+.cm-table.malsu-sticky-table td:nth-child(12) {
+    width: 100px;
+    min-width: 100px;
+    max-width: 100px;
+}
+.cm-table.malsu-sticky-table th:nth-child(12) {
+    white-space: normal;
+    word-break: break-word;
+}
+
+/* Total No. of Workers Satisfied — title compressed */
+.cm-table.malsu-sticky-table th:nth-child(13),
+.cm-table.malsu-sticky-table td:nth-child(13) {
+    width: 90px;
+    min-width: 90px;
+    max-width: 90px;
+}
+.cm-table.malsu-sticky-table th:nth-child(13) {
+    white-space: normal;
+    word-break: break-word;
+}
+
+.cm-table.malsu-sticky-table th:nth-child(14),
+.cm-table.malsu-sticky-table td:nth-child(14) {
+    width: 280px;
+    min-width: 280px;
+    max-width: 280px;
+}
+
+/* Total Amount of Penalty for Double Indemnity Collected — widened */
+.cm-table.malsu-sticky-table th:nth-child(15),
+.cm-table.malsu-sticky-table td:nth-child(15) {
+    width: 140px;
+    min-width: 140px;
+    max-width: 140px;
+}
+.cm-table.malsu-sticky-table th:nth-child(15) {
+    white-space: normal;
+    word-break: break-word;
+}
+
+/* Total OSHS Penalty / Administrative Fines Collected — shortened, title compressed */
+.cm-table.malsu-sticky-table th:nth-child(16),
+.cm-table.malsu-sticky-table td:nth-child(16) {
+    width: 100px;
+    min-width: 100px;
+    max-width: 100px;
+}
+.cm-table.malsu-sticky-table th:nth-child(16) {
+    white-space: normal;
+    word-break: break-word;
+}
+
+/* Total No. of Absorbed Workers — shortened, title compressed */
+.cm-table.malsu-sticky-table th:nth-child(17),
+.cm-table.malsu-sticky-table td:nth-child(17) {
+    width: 90px;
+    min-width: 90px;
+    max-width: 90px;
+}
+.cm-table.malsu-sticky-table th:nth-child(17) {
+    white-space: normal;
+    word-break: break-word;
+}
+
 body.sheriff-readonly .edit-row-btn-case {
     display: none !important;
 }
@@ -460,6 +618,17 @@ body.sheriff-readonly .edit-row-btn-case {
 #rg-table thead th {
     background-color: #f8f9fc !important;
 }
+
+.table-container {
+    height: auto !important;
+    overflow-y: visible !important;
+}
+
+.table-container .dataTables_scrollBody {
+    height: calc(100vh - 280px) !important;
+    max-height: calc(100vh - 280px) !important;
+}
+
 </style>
 
 <!-- Main Content -->

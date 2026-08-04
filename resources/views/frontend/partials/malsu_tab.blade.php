@@ -41,8 +41,8 @@
     </div>
 </div>
 
-<div class="table-container">
-    <table class="table table-bordered compact-table sticky-table cm-table"
+<div class="table-container malsu-table-container">
+    <table class="table table-bordered compact-table sticky-table cm-table malsu-sticky-table"
            id="{{ $tableId }}"
            width="100%"
            cellspacing="0">
@@ -153,7 +153,7 @@
                         </td>
 
                         {{-- From cases table --}}
-                        <td class="readonly-cell">{{ $case?->no ?? '-' }}</td>
+                        <td class="readonly-cell">{{ $loop->iteration }}</td>
                         <td class="readonly-cell wrap-cell" style="background-color: #d1ecf1 !important;">
                             <span>{{ $case->establishment_name ?? $malsu->case_title ?? '-' }}</span>
                             @if(!$case)
