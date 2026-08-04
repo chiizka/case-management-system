@@ -139,7 +139,7 @@
                             </div>
                         </td>
 
-                        <td class="editable-cell" data-field="no">{{ $case->no ?? '-' }}</td>
+                        <td class="readonly-cell">{{ $loop->iteration }}</td>
                         <td class="editable-cell" data-field="inspection_id">{{ $case->inspection_id ?? '-' }}</td>
                         <td class="editable-cell" data-field="case_no" style="background-color: #fff3cd !important;">{{ $case->case_no ?? '-' }}</td>
                         <td class="editable-cell wrap-cell" data-field="establishment_name" 
