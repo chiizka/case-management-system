@@ -4,10 +4,10 @@
 <style>
 /* ==================== TABLE CONTAINER - TALLER ==================== */
 .table-container {
-    overflow-x: auto;
-    overflow-y: auto;
+    overflow-x: hidden;
+    overflow-y: visible;
     max-width: 100%;
-    height: calc(100vh - 185px);
+    height: auto;
     border: 1px solid #dee2e6;
     border-radius: 0.35rem;
     position: relative;
@@ -22,9 +22,13 @@
     z-index: 30;
     background-color: #f8f9fc !important;
     box-shadow: 0 2px 5px rgba(0,0,0,0.15);
-    white-space: nowrap;
+    white-space: normal;
+    word-break: normal;
+    overflow-wrap: break-word;
+    line-height: 1.3;
+    vertical-align: middle;
     font-weight: 750;
-    padding: 0.75rem 0.7rem;
+    padding: 0.6rem 0.7rem;
 }
 
 /* ==================== STICKY LEFT COLUMNS ==================== */
@@ -100,13 +104,19 @@
 }
 
 .compact-table th,
-.compact-table td {
+.compact-table td,
+.cm-table th,
+.cm-table td {
     padding: 0.45rem 0.7rem;
     vertical-align: middle;
     border-right: 1px solid #dee2e6;
     min-height: 38px;
     height: auto;
     line-height: 1.4;
+    width: 130px;
+    min-width: 130px;
+    white-space: normal;
+    word-break: break-word;
 }
 
 /* ==================== WRAP COLUMNS ==================== */
@@ -125,14 +135,14 @@
     padding: 0.4rem 0.6rem !important;
     white-space: nowrap;
     vertical-align: middle;
-    min-width: 68px;
+    min-width: 56px;
     transition: all 0.25s ease;
 }
 
 .actions-cell.collapsed {
-    width: 68px;
-    min-width: 68px;
-    max-width: 68px;
+    width: 56px;
+    min-width: 56px;
+    max-width: 56px;
 }
 
 .actions-cell.expanded {
@@ -350,7 +360,8 @@ td.actions-cell.expanded {
 }
 
 #content {
-    overflow: hidden !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
     flex: 1 !important;
 }
 
@@ -591,6 +602,7 @@ td.actions-cell.expanded {
 }
 
 /* Total No. of Absorbed Workers — shortened, title compressed */
+/* Total No. of Absorbed Workers — shortened, title compressed */
 .cm-table.malsu-sticky-table th:nth-child(17),
 .cm-table.malsu-sticky-table td:nth-child(17) {
     width: 90px;
@@ -598,6 +610,18 @@ td.actions-cell.expanded {
     max-width: 90px;
 }
 .cm-table.malsu-sticky-table th:nth-child(17) {
+    white-space: normal;
+    word-break: break-word;
+}
+
+/* RO Received Sheriff's Return — widened so the title isn't cut off */
+.cm-table.malsu-sticky-table th:nth-child(22),
+.cm-table.malsu-sticky-table td:nth-child(22) {
+    width: 150px;
+    min-width: 150px;
+    max-width: 150px;
+}
+.cm-table.malsu-sticky-table th:nth-child(22) {
     white-space: normal;
     word-break: break-word;
 }
@@ -619,14 +643,26 @@ body.sheriff-readonly .edit-row-btn-case {
     background-color: #f8f9fc !important;
 }
 
-.table-container {
-    height: auto !important;
-    overflow-y: visible !important;
+#rg-table.dataTable {
+    /* rg-table doesn't use DataTables scrollX/scrollY, so no height overrides needed here */
 }
 
+/* ==================== HARD CONSTRAIN SCROLLBODY WIDTH ====================
+   DataTables' .dataTables_scrollBody normally sizes itself to 100% of its
+   parent, but at non-100% browser zoom, sub-pixel rounding can make it
+   grow to match its own content width instead of staying clipped — which
+   breaks horizontal scrolling entirely. Forcing max-width + overflow here
+   guarantees it never escapes .table-container regardless of zoom rounding. */
 .table-container .dataTables_scrollBody {
-    height: calc(100vh - 280px) !important;
-    max-height: calc(100vh - 280px) !important;
+    max-width: 100% !important;
+    overflow-x: auto !important;
+}
+
+/* Keeps the pagination/info row inside the visible container instead of
+   rendering off in clipped-away space when the wrapper tries to grow to
+   match the full (unscrolled) table width. */
+.table-container .dataTables_wrapper {
+    max-width: 100% !important;
 }
 
 </style>
@@ -1963,6 +1999,7 @@ $(document).ready(function() {
     });
     // Initialize DataTable with Actions column excluded from sorting
     $('#dataTable0').DataTable({
+        autoWidth: false,
         columnDefs: [
             { 
                 orderable: false, 
@@ -2637,7 +2674,7 @@ $(document).on('click', function(e) {
     });
 });
     // Store all table instances
-    var tables = {};
+    window.tables = {};
     
     // Track which tabs have been loaded
     var loadedTabs = {
@@ -2653,6 +2690,7 @@ $(document).on('click', function(e) {
 
     // DataTable configuration
     var dtConfig = {
+        autoWidth: false,
         pageLength: 10,
         lengthChange: false,
         paging: true,
@@ -2895,6 +2933,7 @@ $(document).on('click', function(e) {
                         $(tableId + ' tbody tr td[colspan]').closest('tr').remove();
 
                         var provTable = $(tableId).DataTable({
+                            autoWidth: false,
                             pageLength: 10,
                             lengthChange: false,
                             paging: true,
@@ -2980,6 +3019,7 @@ $(document).on('click', function(e) {
                     $('#dataTableMALSU tbody tr td[colspan]').closest('tr').remove();
 
                     tables['#dataTableMALSU'] = $('#dataTableMALSU').DataTable({
+                        autoWidth: false,
                         pageLength: 10,
                         lengthChange: false,
                         paging: true,
@@ -3074,6 +3114,7 @@ $(document).on('click', function(e) {
                         $('#dataTableMALSU tbody tr td[colspan]').closest('tr').remove();
 
                         tables['#dataTableMALSU'] = $('#dataTableMALSU').DataTable({
+                        autoWidth: false,
                             pageLength: 10,
                             lengthChange: false,
                             paging: true,
@@ -3170,6 +3211,7 @@ $(document).on('click', function(e) {
                         $('#dataTableSENA tbody tr td[colspan]').closest('tr').remove();
 
                         tables['#dataTableSENA'] = $('#dataTableSENA').DataTable({
+                        autoWidth: false,
                             pageLength: 10,
                             lengthChange: false,
                             paging: true,
@@ -3308,6 +3350,7 @@ $(document).on('click', function(e) {
                             $('#' + tableId + ' tbody tr td[colspan]').closest('tr').remove();
 
                             tables['#' + tableId] = $('#' + tableId).DataTable({
+                            autoWidth: false,
                                 pageLength: 10,
                                 lengthChange: false,
                                 paging: true,
@@ -3412,6 +3455,7 @@ $(document).on('click', function(e) {
                         $('#dataTableCM tbody tr td[colspan]').closest('tr').remove();
 
                         var cmTable = $('#dataTableCM').DataTable({
+                        autoWidth: false,
                             pageLength: 10,
                             lengthChange: false,
                             paging: true,
@@ -3645,6 +3689,7 @@ function loadTab0Data() {
                 $('#tab0-table-container').show();
 
                 tables['#dataTable0'] = $('#dataTable0').DataTable({
+                    autoWidth: false,
                     pageLength: 10,
                     lengthChange: false,
                     paging: true,
@@ -5791,6 +5836,37 @@ $(document).ready(function() {
         }
     });
 });
+
+// Recalculate all visible DataTables on browser zoom / window resize
+let resizeTimer;
+function readjustAllTables() {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(function() {
+        Object.keys(tables).forEach(function(id) {
+            if (tables[id] && $.fn.DataTable.isDataTable(id)) {
+                tables[id].columns.adjust().draw(false);
+            }
+        });
+        // Run a second pass shortly after — at some zoom levels the browser's
+        // sub-pixel layout hasn't fully settled on the first pass, so the
+        // scrollBody width can still be wrong immediately after resize.
+        setTimeout(function() {
+            Object.keys(tables).forEach(function(id) {
+                if (tables[id] && $.fn.DataTable.isDataTable(id)) {
+                    tables[id].columns.adjust().draw(false);
+                }
+            });
+        }, 200);
+    }, 150);
+}
+
+$(window).on('resize', readjustAllTables);
+
+// Ctrl/Cmd + scroll or pinch zoom doesn't always fire window 'resize' in
+// every browser — visualViewport catches those cases too.
+if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', readjustAllTables);
+}
 
 // View Document History Button Handler
 $(document).on('click', '.view-history-btn', function(e) {
