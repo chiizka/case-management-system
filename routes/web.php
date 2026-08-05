@@ -90,6 +90,10 @@ Route::middleware('auth')->group(function () {
         ->name('malsu.inlineUpdate');
         Route::put('/malsu/{caseId}/send-to-sheriff', [MalsuController::class, 'sendToSheriff'])
         ->name('malsu.sendToSheriff');
+        Route::put('/malsu/{caseId}/send-to-sheriff', [MalsuController::class, 'sendToSheriff'])
+        ->name('malsu.sendToSheriff');
+        Route::post('/malsu/create-case', [MalsuController::class, 'createCase'])
+        ->name('malsu.createCase');
         Route::get('/malsu/{malsuId}/sheriff-reports', [SheriffsReportController::class, 'indexByMalsu'])
         ->name('malsu.sheriffReports.index');
         Route::get('/malsu/sheriff-overview/{role}', [MalsuController::class, 'loadSheriffOverview'])

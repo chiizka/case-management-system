@@ -8,6 +8,7 @@
     $tableId     = $tableId ?? 'dataTableMALSU';
     $searchId    = $searchId ?? 'customSearchMALSU';
     $badgeLabel  = $badgeLabel ?? (Auth::user()->isSheriff() ? Auth::user()->getSheriffProvinceName() . ' Sheriff' : 'MALSU');
+    $canAddCase  = $canAddCase ?? false;
 @endphp
 
 <div class="alert alert-success alert-dismissible fade" role="alert" id="success-alert-tab{{ $alertSuffix }}" style="display: none;">
@@ -38,6 +39,11 @@
             {{ $cases->count() }} case(s) currently with {{ $badgeLabel }}
         </span>
 
+        @if($canAddCase && (Auth::user()->isMalsu() || Auth::user()->isAdmin()))
+        <button class="btn btn-primary btn-sm" data-toggle="modal" data-target="#addMalsuCaseModal">
+            <i class="fas fa-plus"></i> Add New Case
+        </button>
+        @endif
     </div>
 </div>
 

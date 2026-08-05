@@ -1821,99 +1821,138 @@ body.sheriff-readonly .edit-row-btn-case {
     </div>
 </div>
 
-<!-- Notice of Finality Modal -->
-<div class="modal fade" id="noticeOfFinalityModal" tabindex="-1" role="dialog" aria-labelledby="noticeOfFinalityModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg" role="document">
-        <div class="modal-content">
-            <div class="modal-header bg-secondary text-white">
-                <h5 class="modal-title" id="noticeOfFinalityModalLabel">
-                    <i class="fas fa-file-signature"></i> Generate Notice of Finality
-                </h5>
-                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-            </div>
-            <div class="modal-body">
-                <p class="mb-1"><strong>Case No:</strong> <span id="nof-case-no"></span></p>
-                <p class="mb-3"><strong>Establishment:</strong> <span id="nof-establishment"></span></p>
-
-                <div id="nof-loading" class="text-center py-3">
-                    <div class="spinner-border spinner-border-sm text-secondary" role="status">
-                        <span class="sr-only">Loading...</span>
-                    </div>
-                    <small class="text-muted d-block mt-1">Loading case details...</small>
+    <!-- Notice of Finality Modal -->
+    <div class="modal fade" id="noticeOfFinalityModal" tabindex="-1" role="dialog" aria-labelledby="noticeOfFinalityModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header bg-secondary text-white">
+                    <h5 class="modal-title" id="noticeOfFinalityModalLabel">
+                        <i class="fas fa-file-signature"></i> Generate Notice of Finality
+                    </h5>
+                    <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
                 </div>
+                <div class="modal-body">
+                    <p class="mb-1"><strong>Case No:</strong> <span id="nof-case-no"></span></p>
+                    <p class="mb-3"><strong>Establishment:</strong> <span id="nof-establishment"></span></p>
 
-                <form id="noticeOfFinalityForm" style="display:none;">
-                    <div class="form-group">
-                        <label>Order Date</label>
-                        <input type="date" class="form-control form-control-sm" id="nof_order_date">
-                        <small class="form-text text-muted">Pre-filled from case record if available. Leave blank if unknown.</small>
+                    <div id="nof-loading" class="text-center py-3">
+                        <div class="spinner-border spinner-border-sm text-secondary" role="status">
+                            <span class="sr-only">Loading...</span>
+                        </div>
+                        <small class="text-muted d-block mt-1">Loading case details...</small>
                     </div>
 
-                    <div class="form-group">
-                        <label>Dispositive Paragraph (WHEREFORE clause)</label>
-                        <textarea class="form-control form-control-sm" id="nof_dispositive_paragraph" rows="6"
-                            placeholder="Paste or type the full dispositive portion of the order here..."></textarea>
-                        <small class="form-text text-muted">Pre-filled from the case's disposition field if present — review and edit as needed.</small>
-                    </div>
+                    <form id="noticeOfFinalityForm" style="display:none;">
+                        <div class="form-group">
+                            <label>Order Date</label>
+                            <input type="date" class="form-control form-control-sm" id="nof_order_date">
+                            <small class="form-text text-muted">Pre-filled from case record if available. Leave blank if unknown.</small>
+                        </div>
 
-                    <hr>
+                        <div class="form-group">
+                            <label>Dispositive Paragraph (WHEREFORE clause)</label>
+                            <textarea class="form-control form-control-sm" id="nof_dispositive_paragraph" rows="6"
+                                placeholder="Paste or type the full dispositive portion of the order here..."></textarea>
+                            <small class="form-text text-muted">Pre-filled from the case's disposition field if present — review and edit as needed.</small>
+                        </div>
 
-                    <div class="alert alert-success py-2 mb-2" id="nof_execution_notice" style="display:none; font-size: 0.8rem;">
-                        <i class="fas fa-check-circle"></i> Delivery details auto-filled from this case's execution record. Review and adjust if needed.
-                    </div>
-                    <p class="mb-2" style="font-size: 0.85rem; font-weight: 600; color: #495057;">
-                        <i class="fas fa-truck mr-1"></i> Delivery details
-                        <span class="badge badge-secondary ml-1" style="font-size: 0.7rem;">Manual entry</span>
-                    </p>
+                        <hr>
 
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="form-group mb-2">
-                                <label class="small mb-1">Courier</label>
-                                <input type="text" class="form-control form-control-sm" id="nof_courier" placeholder="e.g. LBC Express">
+                        <div class="alert alert-success py-2 mb-2" id="nof_execution_notice" style="display:none; font-size: 0.8rem;">
+                            <i class="fas fa-check-circle"></i> Delivery details auto-filled from this case's execution record. Review and adjust if needed.
+                        </div>
+                        <p class="mb-2" style="font-size: 0.85rem; font-weight: 600; color: #495057;">
+                            <i class="fas fa-truck mr-1"></i> Delivery details
+                            <span class="badge badge-secondary ml-1" style="font-size: 0.7rem;">Manual entry</span>
+                        </p>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group mb-2">
+                                    <label class="small mb-1">Courier</label>
+                                    <input type="text" class="form-control form-control-sm" id="nof_courier" placeholder="e.g. LBC Express">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group mb-2">
+                                    <label class="small mb-1">Tracking No.</label>
+                                    <input type="text" class="form-control form-control-sm" id="nof_tracking_no" placeholder="e.g. 153075215841">
+                                </div>
                             </div>
                         </div>
-                        <div class="col-md-6">
-                            <div class="form-group mb-2">
-                                <label class="small mb-1">Tracking No.</label>
-                                <input type="text" class="form-control form-control-sm" id="nof_tracking_no" placeholder="e.g. 153075215841">
-                            </div>
-                        </div>
-                    </div>
 
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="form-group mb-2">
-                                <label class="small mb-1">Date Received</label>
-                                <input type="date" class="form-control form-control-sm" id="nof_date_received">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group mb-2">
+                                    <label class="small mb-1">Date Received</label>
+                                    <input type="date" class="form-control form-control-sm" id="nof_date_received">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group mb-2">
+                                    <label class="small mb-1">Received By (representative's name)</label>
+                                    <input type="text" class="form-control form-control-sm" id="nof_received_by" placeholder="e.g. Mr. Ryan Co Say">
+                                </div>
                             </div>
                         </div>
-                        <div class="col-md-6">
-                            <div class="form-group mb-2">
-                                <label class="small mb-1">Received By (representative's name)</label>
-                                <input type="text" class="form-control form-control-sm" id="nof_received_by" placeholder="e.g. Mr. Ryan Co Say">
-                            </div>
-                        </div>
-                    </div>
 
-                    <div class="form-group mb-0">
-                        <label class="small mb-1">Finality Date</label>
-                        <input type="date" class="form-control form-control-sm" id="nof_finality_date">
-                        <small class="form-text text-muted">Auto-suggested as 10 days after date received — adjust if needed.</small>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-secondary" id="nof_generate_btn" disabled>
-                    <i class="fas fa-file-word"></i> Generate & Download
-                </button>
+                        <div class="form-group mb-0">
+                            <label class="small mb-1">Finality Date</label>
+                            <input type="date" class="form-control form-control-sm" id="nof_finality_date">
+                            <small class="form-text text-muted">Auto-suggested as 10 days after date received — adjust if needed.</small>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-secondary" id="nof_generate_btn" disabled>
+                        <i class="fas fa-file-word"></i> Generate & Download
+                    </button>
+                </div>
             </div>
         </div>
     </div>
-</div>
+
+    <!-- Add MALSU Case Modal -->
+    <div class="modal fade" id="addMalsuCaseModal" tabindex="-1" role="dialog" aria-labelledby="addMalsuCaseModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addMalsuCaseModalLabel">Add New MALSU Case</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form id="malsuCaseForm">
+                        @csrf
+
+                        <div class="form-group">
+                            <label for="malsu_case_title">Case Title / Establishment Name <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="malsu_case_title" name="case_title" placeholder="Enter case title or establishment name" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="malsu_regional_docket_number">Regional Docket No. <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="malsu_regional_docket_number" name="regional_docket_number" placeholder="Enter regional docket number" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="malsu_date_compliance_order">Date of Compliance Order / Resolution</label>
+                            <input type="date" class="form-control" id="malsu_date_compliance_order" name="date_compliance_order">
+                        </div>
+
+                        <div class="modal-footer px-0 pb-0">
+                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                            <button type="submit" class="btn btn-primary" id="malsuCaseSubmitBtn">Save Case</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
 
 @endsection
 @push('scripts')
@@ -3299,6 +3338,57 @@ $(document).on('click', function(e) {
                 $submitBtn.prop('disabled', false).html(originalBtnText);
             }
         });
+    });
+
+    // ── Add MALSU Case form submission ─────────────────────────────────
+    $('#malsuCaseForm').on('submit', function(e) {
+        e.preventDefault();
+
+        const $form = $(this);
+        const $submitBtn = $('#malsuCaseSubmitBtn');
+        const originalBtnText = $submitBtn.html();
+
+        $submitBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Saving...');
+
+        $.ajax({
+            url: '{{ route("malsu.createCase") }}',
+            method: 'POST',
+            data: $form.serialize(),
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            },
+            success: function(response) {
+                if (response.success) {
+                    $('#addMalsuCaseModal').modal('hide');
+                    $form[0].reset();
+
+                    // Force the MALSU tab to reload so the new row shows up
+                    malsuTabLoaded = false;
+                    $('a[href="#tabMALSU"]').trigger('shown.bs.tab');
+
+                    showAlert('success', response.message || 'Case added successfully!');
+                } else {
+                    showAlert('error', response.message || 'Failed to add case.');
+                }
+            },
+            error: function(xhr) {
+                let errorMessage = 'Failed to add case.';
+                if (xhr.responseJSON?.message) {
+                    errorMessage = xhr.responseJSON.message;
+                } else if (xhr.status === 422 && xhr.responseJSON?.errors) {
+                    errorMessage = Object.values(xhr.responseJSON.errors).flat().join(' ');
+                }
+                showAlert('error', errorMessage);
+            },
+            complete: function() {
+                $submitBtn.prop('disabled', false).html(originalBtnText);
+            }
+        });
+    });
+
+    // Reset the form when the modal closes
+    $('#addMalsuCaseModal').on('hidden.bs.modal', function() {
+        $('#malsuCaseForm')[0].reset();
     });
 
     // Reset the form when the modal closes

@@ -83,7 +83,8 @@ class CasesController extends Controller
 
         // case_management shouldn't see auto-created legacy-MALSU cases in Tab 0
         if ($user->isCaseManagement()) {
-            $query->where('inspection_id', 'not like', 'LEGACY-%');
+            $query->where('inspection_id', 'not like', 'LEGACY-%')
+                  ->where('inspection_id', 'not like', 'MALSU-%');
         }
 
         // Admin, MALSU see all active cases in Tab 0
@@ -1901,7 +1902,7 @@ public function loadMalsuTab(Request $request)
             })
             ->values();
 
-        $html = view('frontend.partials.malsu_tab', ['cases' => $malsus])->render();
+        $html = view('frontend.partials.malsu_tab', ['cases' => $malsus, 'canAddCase' => true])->render();
 
         return response()->json([
             'success' => true,
@@ -1972,7 +1973,8 @@ public function loadTab0()
         }
 
         if ($user->isCaseManagement()) {
-            $query->where('inspection_id', 'not like', 'LEGACY-%');
+            $query->where('inspection_id', 'not like', 'LEGACY-%')
+                  ->where('inspection_id', 'not like', 'MALSU-%');
         }
 
         $cases = $query->with('documentTracking')->get();  // ← only change

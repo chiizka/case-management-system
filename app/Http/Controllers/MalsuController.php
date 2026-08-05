@@ -179,6 +179,84 @@ class MalsuController extends Controller
     }
 
     /**
+     * MALSU manually adds a brand new case directly at MALSU.
+     * Creates a Malsu row + a linked CaseFile + initial DocumentTracking
+     * (current_role = malsu, status = Received), same pattern used for
+     * legacy-record auto-creation in sendToSheriff().
+     */
+    public function createCase(Request $request)
+    {
+        $user = Auth::user();
+        if (!$user->isMalsu() && !$user->isAdmin()) {
+            return response()->json(['success' => false, 'message' => 'Access denied.'], 403);
+        }
+
+        $validated = $request->validate([
+            'case_title'              => 'required|string|max:255',
+            'regional_docket_number'  => 'required|string|max:255',
+            'date_compliance_order'   => 'nullable|date',
+        ]);
+
+        DB::beginTransaction();
+        try {
+            $malsu = Malsu::create([
+                'case_title'              => $validated['case_title'],
+                'regional_docket_number'  => $validated['regional_docket_number'],
+                'date_compliance_order'   => $validated['date_compliance_order'] ?? null,
+            ]);
+
+            $case = CaseFile::create([
+                'inspection_id'      => 'MALSU-' . $malsu->id,
+                'establishment_name' => $validated['case_title'],
+                'current_stage'      => '7: Appeals & Resolution',
+                'overall_status'     => 'Active',
+            ]);
+
+            $case->computeFields();
+            $case->saveQuietly();
+
+            $malsu->case_id = $case->id;
+            $malsu->save();
+
+            DocumentTracking::create([
+                'case_id'             => $case->id,
+                'current_role'        => User::ROLE_MALSU,
+                'status'              => 'Received',
+                'received_by_user_id' => $user->id,
+                'received_at'         => now(),
+                'transfer_notes'      => "Case created directly by MALSU ({$user->fname} {$user->lname})",
+            ]);
+
+            ActivityLogger::logAction(
+                'CREATE',
+                'Case',
+                $case->inspection_id,
+                "Case created directly at MALSU: {$case->establishment_name}",
+                [
+                    'establishment'           => $case->establishment_name,
+                    'regional_docket_number'  => $malsu->regional_docket_number,
+                ]
+            );
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Case created successfully!',
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('MALSU create case failed: ' . $e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to create case: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
      * MALSU dashboard: province-wide sheriff report overview for one role.
      * AJAX-loaded per pill click.
      */
