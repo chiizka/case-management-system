@@ -2081,7 +2081,8 @@ $(document).ready(function() {
     });
 
 // 2. DOCUMENT CHECKLIST BUTTON CLICK HANDLER (from your first script)
-$(document).on('click', '.document-checklist-btn', function() {
+$(document).on('click', '.document-checklist-btn', function(e) {
+    e.preventDefault();
     currentCaseId = $(this).data('case-id');
     const caseNo = $(this).data('case-no');
     const establishment = $(this).data('establishment');
@@ -2395,7 +2396,8 @@ $(document).on('click', '.action-toggle-btn', function(e) {
 
 let sheriffReportsCache = [];
 
-$(document).on('click', '.upload-report-btn', function() {
+$(document).on('click', '.upload-report-btn', function(e) {
+    e.preventDefault();
     currentSheriffReportCaseId = $(this).data('case-id');
     $('#sr-case-no').text($(this).data('case-no'));
     $('#sr-establishment').text($(this).data('establishment'));
@@ -2585,14 +2587,16 @@ $(document).on('click', '.delete-sheriff-report-btn', function() {
     });
 });
 
-$(document).on('click', '.toggle-reports-grid-btn', function() {
+$(document).on('click', '.toggle-reports-grid-btn', function(e) {
+    e.preventDefault();
     const targetId = $(this).data('toggle-target');
     $('#' + targetId).slideToggle(150);
     $(this).find('i').toggleClass('fa-chevron-right fa-chevron-down');
 });
 
 
-$(document).on('click', '.view-reports-grid-btn', function() {
+$(document).on('click', '.view-reports-grid-btn', function(e) {
+    e.preventDefault();
     const caseId = $(this).data('case-id');
     const malsuId = $(this).data('malsu-id');
     $('#rg-case-no').text($(this).data('case-no'));
@@ -2730,7 +2734,7 @@ $(document).on('click', function(e) {
     // DataTable configuration
     var dtConfig = {
         autoWidth: false,
-        pageLength: 10,
+        pageLength: 50,
         lengthChange: false,
         paging: true,
         searching: true,
@@ -2794,7 +2798,8 @@ $(document).on('click', function(e) {
     }
 
         // Open add-link modal
-    $(document).on('click', '.add-link-btn', function() {
+    $(document).on('click', '.add-link-btn', function(e) {
+        e.preventDefault();
         const docId = parseInt($(this).data('doc-id'));
         $('#linkDocId').val(docId);
         $('#linkUrl').val('');
@@ -2973,7 +2978,7 @@ $(document).on('click', function(e) {
 
                         var provTable = $(tableId).DataTable({
                             autoWidth: false,
-                            pageLength: 10,
+                            pageLength: 50,
                             lengthChange: false,
                             paging: true,
                             searching: true,
@@ -3059,9 +3064,9 @@ $(document).on('click', function(e) {
 
                     tables['#dataTableMALSU'] = $('#dataTableMALSU').DataTable({
                         autoWidth: false,
-                        pageLength: 10,
-                        lengthChange: false,
                         paging: true,
+                        pageLength: 50,
+                        lengthChange: false,
                         searching: true,
                         info: true,
                         dom: 'tip',
@@ -3154,9 +3159,9 @@ $(document).on('click', function(e) {
 
                         tables['#dataTableMALSU'] = $('#dataTableMALSU').DataTable({
                         autoWidth: false,
-                            pageLength: 10,
-                            lengthChange: false,
                             paging: true,
+                            pageLength: 50,
+                            lengthChange: false,
                             searching: true,
                             info: true,
                             dom: 'tip',
@@ -3251,9 +3256,9 @@ $(document).on('click', function(e) {
 
                         tables['#dataTableSENA'] = $('#dataTableSENA').DataTable({
                         autoWidth: false,
-                            pageLength: 10,
-                            lengthChange: false,
                             paging: true,
+                            pageLength: 50,
+                            lengthChange: false,
                             searching: true,
                             info: true,
                             dom: 'tip',
@@ -3441,9 +3446,9 @@ $(document).on('click', function(e) {
 
                             tables['#' + tableId] = $('#' + tableId).DataTable({
                             autoWidth: false,
-                                pageLength: 10,
-                                lengthChange: false,
                                 paging: true,
+                                pageLength: 50,
+                                lengthChange: false,
                                 searching: true,
                                 info: true,
                                 dom: 'tip',
@@ -3546,7 +3551,7 @@ $(document).on('click', function(e) {
 
                         var cmTable = $('#dataTableCM').DataTable({
                         autoWidth: false,
-                            pageLength: 10,
+                            pageLength: 50,
                             lengthChange: false,
                             paging: true,
                             searching: true,
@@ -3780,7 +3785,7 @@ function loadTab0Data() {
 
                 tables['#dataTable0'] = $('#dataTable0').DataTable({
                     autoWidth: false,
-                    pageLength: 10,
+                    pageLength: 50,
                     lengthChange: false,
                     paging: true,
                     searching: true,
