@@ -1,9 +1,5 @@
 {{--
     Partial: sena_tab.blade.php
-    Lists all Sena records directly — there is currently NO relationship to the
-    `cases` table, so there is no establishment/case-name to display per row.
-    ⚠️ See note at top of file: you'll likely want to add an identifying field
-    before this goes live (see conversation notes).
 --}}
 
 @php
@@ -46,7 +42,7 @@
 </div>
 
 <div class="table-container">
-    <table class="table table-bordered compact-table sticky-table"
+    <table class="table table-bordered compact-table sticky-table sena-table"
         id="{{ $tableId }}"
         width="100%"
         cellspacing="0">
@@ -110,7 +106,7 @@
                         <td class="editable-cell" data-field="regional_docket_number" style="background-color: #fff3cd !important;">
                             {{ $sena->regional_docket_number ?? '-' }}
                         </td>
-                        <td class="editable-cell" data-field="sheriff_designate">
+                        <td class="editable-cell" data-field="sheriff_designate" data-type="select">
                             {{ $sena->sheriff_designate ?? '-' }}
                         </td>
                         <td class="editable-cell" data-field="date_compliance_order" data-type="date">
@@ -168,7 +164,7 @@
                 @endforeach
             @else
                 <tr>
-                    <td colspan="21" class="text-center text-muted py-4">
+                    <td colspan="22" class="text-center text-muted py-4">
                         <i class="fas fa-inbox fa-2x mb-2 d-block"></i>
                         No SENA records yet.
                     </td>

@@ -48,5 +48,9 @@ class Sena extends Model
         'total_oshs_penalty_admin_fines_collected' => 'decimal:2',
     ];
 
-    // No case()/DocumentTracking relationship yet — case_id isn't connected to anything yet.
+    public function case()
+    {
+        return $this->belongsTo(CaseFile::class, 'case_id');
+    }
+
 }

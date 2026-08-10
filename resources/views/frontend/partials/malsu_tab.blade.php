@@ -178,10 +178,11 @@
                                     $tagColors = [
                                         'For Finality'              => 'danger',
                                         'Motion for Reconsideration' => 'warning',
+                                        'SENA'                       => 'sena',
                                     ];
                                     $currentTag = $case->documentTracking->case_tag ?? '';
                                     $tagColor   = $tagColors[$currentTag] ?? 'secondary';
-                                @endphp
+                                @endphp 
 
                                 {{-- Display badge (shown in read mode) --}}
                                 <span class="case-tag-badge badge badge-{{ $tagColor }} mt-1"
@@ -200,6 +201,7 @@
                                         <option value="">— No Tag —</option>
                                         <option value="For Finality"               {{ $currentTag === 'For Finality'              ? 'selected' : '' }}>For Finality</option>
                                         <option value="Motion for Reconsideration" {{ $currentTag === 'Motion for Reconsideration' ? 'selected' : '' }}>Motion for Reconsideration</option>
+                                        <option value="SENA"                       {{ $currentTag === 'SENA'                       ? 'selected' : '' }}>SENA</option>
                                     </select>
                                 @endunless
                             @endif

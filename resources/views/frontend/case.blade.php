@@ -34,8 +34,8 @@
 /* ==================== STICKY LEFT COLUMNS ==================== */
 
 /* 1. No. Column */
-.table:not(.cm-table) th:nth-child(2),
-.table:not(.cm-table) td:nth-child(2) {
+.table:not(.cm-table):not(.sena-table) th:nth-child(2),
+.table:not(.cm-table):not(.sena-table) td:nth-child(2) {
     position: sticky;
     left: 0;
     z-index: 35;
@@ -47,8 +47,8 @@
 }
 
 /* 2. Inspection ID Column */
-.table:not(.cm-table) th:nth-child(3),
-.table:not(.cm-table) td:nth-child(3) {
+.table:not(.cm-table):not(.sena-table) th:nth-child(3),
+.table:not(.cm-table):not(.sena-table) td:nth-child(3) {
     position: sticky;
     left: 75px;
     z-index: 35;
@@ -60,8 +60,8 @@
 }
 
 /* 3. Case No. Column */
-.table:not(.cm-table) th:nth-child(4),
-.table:not(.cm-table) td:nth-child(4) {
+.table:not(.cm-table):not(.sena-table) th:nth-child(4),
+.table:not(.cm-table):not(.sena-table) td:nth-child(4) {
     position: sticky;
     left: 185px;
     z-index: 35;
@@ -73,8 +73,8 @@
 }
 
 /* 4. Establishment Name Column (UPDATED: Added explicit font-weight overrides) */
-.table:not(.cm-table) th:nth-child(5),
-.table:not(.cm-table) td:nth-child(5) {
+.table:not(.cm-table):not(.sena-table) th:nth-child(5),
+.table:not(.cm-table):not(.sena-table) td:nth-child(5) {
     position: sticky;
     left: 285px;
     z-index: 35;
@@ -626,6 +626,57 @@ td.actions-cell.expanded {
     word-break: break-word;
 }
 
+/* ==================== SENA TABLE STICKY COLUMNS ==================== */
+.sena-table th:nth-child(2),
+.sena-table td:nth-child(2) {
+    position: sticky;
+    left: 0;
+    z-index: 35;
+    background-color: #f8f9fc !important;
+    box-shadow: 3px 0 8px rgba(0,0,0,0.1);
+    width: 50px;
+    min-width: 50px;
+    max-width: 50px;
+}
+
+.sena-table th:nth-child(3),
+.sena-table td:nth-child(3) {
+    position: sticky;
+    left: 50px;
+    z-index: 35;
+    background-color: #d1ecf1 !important;
+    box-shadow: 3px 0 8px rgba(0,0,0,0.1);
+    width: 200px;
+    min-width: 200px;
+    max-width: 200px;
+    white-space: normal;
+    word-break: break-word;
+}
+
+.sena-table th:nth-child(4),
+.sena-table td:nth-child(4) {
+    position: sticky;
+    left: 250px;
+    z-index: 35;
+    background-color: #fff3cd !important;
+    box-shadow: 3px 0 8px rgba(0,0,0,0.1);
+    width: 150px;
+    width: 200px;
+    min-width: 200px;
+    max-width: 200px;
+}
+
+.sena-table th:nth-child(5),
+.sena-table td:nth-child(5) {
+    position: sticky;
+    left: 450px;
+    z-index: 35;
+    background-color: #ffffff !important;
+    box-shadow: 3px 0 8px rgba(0,0,0,0.1);
+    min-width: 150px;
+    max-width: 150px;
+}
+
 body.sheriff-readonly .edit-row-btn-case {
     display: none !important;
 }
@@ -663,6 +714,11 @@ body.sheriff-readonly .edit-row-btn-case {
    match the full (unscrolled) table width. */
 .table-container .dataTables_wrapper {
     max-width: 100% !important;
+}
+
+.badge-sena {
+    background-color: #6f42c1 !important;
+    color: #fff !important;
 }
 
 </style>
@@ -3275,6 +3331,9 @@ $(document).on('click', function(e) {
                                     'top': 0,
                                     'z-index': 12
                                 });
+                                $('#dataTableSENA thead th:nth-child(-n+5)').css({
+                                    'z-index': 13
+                                });
                             }
                         });
 
@@ -3284,6 +3343,16 @@ $(document).on('click', function(e) {
 
                         setTimeout(function() { tables['#dataTableSENA'].columns.adjust().draw(false); }, 50);
                         setTimeout(function() { tables['#dataTableSENA'].columns.adjust().draw(false); }, 300);
+                        setTimeout(function() { tables['#dataTableSENA'].columns.adjust().draw(false); }, 600);
+                        setTimeout(function() {
+                            tables['#dataTableSENA'].columns.adjust().draw(false);
+                            if (tables['#dataTable0']) {
+                                tables['#dataTable0'].draw(false);
+                            }
+                        }, 200);
+                        setTimeout(function() {
+                            $(window).trigger('resize');
+                        }, 700);
                     }, 100);
                 } else {
                     $cardBody.html(`<div class="alert alert-danger">Failed to load SENA records. Please try again.</div>`);
@@ -4769,7 +4838,7 @@ $(document).ready(function() {
         });
     }
 
-    // Function to save cell
+
     function saveCell($cell) {
         const $input = $cell.find('.inline-edit-input');
         if ($input.length === 0) return;
@@ -4780,6 +4849,24 @@ $(document).ready(function() {
         const $row = $cell.closest('tr');
         const recordId = $row.data('id');
 
+        // Get the endpoint based on table (moved up so the sheriff_designate
+        // branch below can use it too, instead of being hardcoded to /malsu/)
+        const $table = $cell.closest('table');
+        const tableId = $table.attr('id');
+        let endpoint = '/case/';
+
+        if (tableId === 'dataTable1') endpoint = '/inspection/';
+        else if (tableId === 'dataTable2') endpoint = '/docketing/';
+        else if (tableId === 'dataTable3') endpoint = '/hearing-process/';
+        else if (tableId === 'dataTable4') endpoint = '/review-and-drafting/';
+        else if (tableId === 'dataTable5') endpoint = '/orders-and-disposition/';
+        else if (tableId === 'dataTable6') endpoint = '/compliance-and-awards/';
+        else if (tableId === 'dataTable7') endpoint = '/appeals-and-resolution/';
+        else if (tableId === 'dataTableMALSU') endpoint = '/malsu/';
+        else if (tableId === 'dataTableCM') endpoint = '/case/';
+        else if (tableId && tableId.startsWith('dataTableSheriff-')) endpoint = '/malsu/';
+        else if (tableId === 'dataTableSENA') endpoint = '/sena/';
+
         // ── Special handling: Sheriff Designate → confirm + transfer ──
         if (field === 'sheriff_designate') {
             const selectedRole   = $input.find('option:selected').data('role') || '';
@@ -4789,7 +4876,7 @@ $(document).ready(function() {
             // Cleared selection → just save blank, no transfer, no confirm needed
             if (!selectedUserId) {
                 $.ajax({
-                    url: `/malsu/${recordId}/inline-update`,
+                    url: `${endpoint}${recordId}/inline-update`,
                     method: 'PUT',
                     data: { sheriff_designate: '' },
                     headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
@@ -4817,7 +4904,7 @@ $(document).ready(function() {
                 icon: 'question',
                 title: 'Send case to sheriff?',
                 html: `Send this case to <strong>${selectedName}</strong>?<br>
-                    <small class="text-muted">It will remain in your MALSU list and also appear in their queue once received.</small>`,
+                    <small class="text-muted">It will remain in your list and also appear in their queue once received.</small>`,
                 showCancelButton: true,
                 confirmButtonText: 'Yes, send it',
                 cancelButtonText: 'Cancel',
@@ -4826,7 +4913,7 @@ $(document).ready(function() {
                 if (result.isConfirmed) {
                     $cell.html('<i class="fas fa-spinner fa-spin text-primary"></i>');
                     $.ajax({
-                        url: `/malsu/${recordId}/send-to-sheriff`,
+                        url: `${endpoint}${recordId}/send-to-sheriff`,
                         method: 'PUT',
                         data: {
                             sheriff_user_id: selectedUserId
@@ -4835,7 +4922,7 @@ $(document).ready(function() {
                         success: function(response) {
                             if (response.success) {
                                 showToast('Success', response.message || 'Case sent successfully', 'success');
-                                // Case stays in MALSU's list — just update the cell to show the new designate
+                                // Case stays in the list — just update the cell to show the new designate
                                 restoreCellDisplay($cell, selectedName, fieldType);
                             } else {
                                 restoreCellDisplay($cell, originalValue, fieldType);
@@ -4856,24 +4943,6 @@ $(document).ready(function() {
             });
             return; // stop here — skip the generic save logic below for this field
         }
-        
-        // Get the endpoint based on table
-        // Get the endpoint based on table
-        const $table = $cell.closest('table');
-        const tableId = $table.attr('id');
-        let endpoint = '/case/';
-
-        if (tableId === 'dataTable1') endpoint = '/inspection/';
-        else if (tableId === 'dataTable2') endpoint = '/docketing/';
-        else if (tableId === 'dataTable3') endpoint = '/hearing-process/';
-        else if (tableId === 'dataTable4') endpoint = '/review-and-drafting/';
-        else if (tableId === 'dataTable5') endpoint = '/orders-and-disposition/';
-        else if (tableId === 'dataTable6') endpoint = '/compliance-and-awards/';
-        else if (tableId === 'dataTable7') endpoint = '/appeals-and-resolution/';
-        else if (tableId === 'dataTableMALSU') endpoint = '/malsu/';
-        else if (tableId === 'dataTableCM') endpoint = '/case/';
-        else if (tableId && tableId.startsWith('dataTableSheriff-')) endpoint = '/malsu/';
-        else if (tableId === 'dataTableSENA') endpoint = '/sena/';
         
         // If value hasn't changed, just restore original display
         if (newValue === originalValue) {
@@ -5397,7 +5466,15 @@ $(document).ready(function() {
         fields: {
             'establishment_name':                        { type: 'text' },
             'regional_docket_number':                    { type: 'text' },
-            'sheriff_designate':                         { type: 'text' },
+            'sheriff_designate': {
+                type: 'select',
+                options: [
+                    { value: '', text: 'Select Sheriff', role: '' },
+                    @foreach($sheriffUsers as $su)
+                    { value: {{ $su->id }}, text: '{{ addslashes(trim($su->fname . ' ' . $su->lname)) }}', role: '{{ $su->role }}' },
+                    @endforeach
+                ]
+            },
             'date_compliance_order':                     { type: 'date' },
             'total_gls_monetary_award':                  { type: 'number', step: '0.01' },
             'total_workers_benefited':                   { type: 'number' },
@@ -5510,6 +5587,10 @@ $(document).ready(function() {
             const cell = $(this);
             const field = cell.data('field');
 
+            if (field === 'sheriff_designate' && (config.name === 'malsu' || config.name === 'sena')) {
+                return;
+            }
+
             if (field === 'establishment_name') {
                 originalData['establishment_name'] = cell.find('span').first().text().trim();
                 originalData['establishment_address'] = cell.data('address') || '';
@@ -5523,7 +5604,7 @@ $(document).ready(function() {
         });
 
         // ── ADD THIS: show case_tag select and hide badge in edit mode ──
-        if (config.name === 'malsu') {
+        if (config.name === 'malsu' || config.name === 'sena') {
             const $badge  = row.find('.case-tag-badge');
             const $select = row.find('.case-tag-select');
             $badge.hide();
@@ -5668,7 +5749,8 @@ $(document).ready(function() {
                     if (response.case_tag !== undefined) {
                         const tagColors = {
                             'For Finality':              'danger',
-                            'Motion for Reconsideration': 'warning'
+                            'Motion for Reconsideration': 'warning',
+                            'SENA':                       'sena'
                         };
                         const tag    = response.case_tag || '';
                         const color  = tagColors[tag] || 'secondary';
@@ -5778,14 +5860,15 @@ $(document).ready(function() {
             cell.removeClass('edit-mode');
         });
 
-        if (config.name === 'malsu') {
+        if (config.name === 'malsu' || config.name === 'sena') {
             const $select = row.find('.case-tag-select');
             const $badge  = row.find('.case-tag-badge');
             const tag     = $select.val() || '';
 
             const tagColors = {
                 'For Finality':              'danger',
-                'Motion for Reconsideration': 'warning'
+                'Motion for Reconsideration': 'warning',
+                'SENA':                       'sena'
             };
 
             $select.removeClass('edit-input').hide();
