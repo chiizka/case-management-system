@@ -132,23 +132,39 @@
 
 /* ==================== ACTIONS CELL ==================== */
 .actions-cell {
-    padding: 0.4rem 0.6rem !important;
+    padding: 0.4rem !important;
     white-space: nowrap;
     vertical-align: middle;
-    min-width: 56px;
-    transition: all 0.25s ease;
+    width: 58px !important;
+    min-width: 58px !important;
+    max-width: 58px !important;
+    overflow: hidden;
+    transition: width 220ms ease, min-width 220ms ease, max-width 220ms ease, padding 220ms ease;
 }
 
-.actions-cell.collapsed {
-    width: 56px;
-    min-width: 56px;
-    max-width: 56px;
+/* Keep the Actions header as narrow as its collapsed button in every table. */
+.compact-table thead th:first-child,
+.cm-table thead th:first-child,
+.sena-table thead th:first-child {
+    width: 58px !important;
+    min-width: 58px !important;
+    max-width: 58px !important;
+    padding-left: 0.4rem !important;
+    padding-right: 0.4rem !important;
+    transition: width 220ms ease, min-width 220ms ease, max-width 220ms ease, padding 220ms ease;
 }
 
-.actions-cell.expanded {
-    width: auto !important;
-    min-width: 320px !important;
-    max-width: 380px !important;
+/* The wrapper class is applied to the DataTable and its cloned header together. */
+.dataTables_wrapper.actions-column-expanded .compact-table thead th:first-child,
+.dataTables_wrapper.actions-column-expanded .cm-table thead th:first-child,
+.dataTables_wrapper.actions-column-expanded .sena-table thead th:first-child,
+.dataTables_wrapper.actions-column-expanded .actions-cell {
+    /* DataTables' scrolling header applies this size twice. 260px renders as
+       the ~500px needed by the complete button group, without the blank tail. */
+    width: 260px !important;
+    min-width: 260px !important;
+    max-width: 260px !important;
+    padding-right: 0.6rem !important;
 }
 
 .action-buttons-container {
@@ -192,6 +208,11 @@
     gap: 6px;
     align-items: center;
     flex-wrap: nowrap;
+    max-width: 600px;
+    overflow: hidden;
+    opacity: 1;
+    transform: translateX(0);
+    transition: max-width 220ms ease, opacity 150ms ease, transform 220ms ease;
 }
 
 .action-buttons .btn {
@@ -206,7 +227,10 @@
 }
 
 .actions-cell.collapsed .action-buttons {
-    display: none;
+    max-width: 0;
+    opacity: 0;
+    transform: translateX(-6px);
+    pointer-events: none;
 }
 
 .actions-cell.edit-mode-cell {
@@ -307,42 +331,11 @@
     transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-/* ==================== FIX FOR DATATABLES OVERRIDE ==================== */
-.actions-cell.expanded.sorting_1 {
-    width: auto !important;
-    min-width: 320px !important;
-    max-width: 380px !important;
-    padding: 0.4rem 0.6rem !important;
-    white-space: nowrap !important;
-}
-
+/* ==================== ACTIONS / DATATABLES ==================== */
 .actions-cell.expanded .action-buttons-container {
     width: 100% !important;
     justify-content: flex-start !important;
     gap: 6px !important;
-}
-
-.actions-cell.expanded .action-buttons {
-    display: flex !important;
-    gap: 6px !important;
-    flex-wrap: nowrap !important;
-}
-
-td.actions-cell.expanded {
-    box-sizing: border-box !important;
-    overflow: hidden !important;
-}
-
-.actions-cell.expanded,
-.actions-cell.expanded.sorting_1 {
-    width: fit-content !important;
-    min-width: fit-content !important;
-    max-width: fit-content !important;
-    padding-right: 8px !important;
-}
-
-.action-buttons-container {
-    justify-content: flex-start !important;
 }
 
 #dataTableTabsContent .card {
@@ -2421,6 +2414,15 @@ function showToast(type, message) {
 // ACTION TOGGLE BUTTONS (from your first script)
 // ==========================================
 
+function syncActionsColumnState($table) {
+    // Do not redraw a DataTable here: a redraw resets its vertically scrolled body.
+    // The wrapper class updates both the body table and DataTables' cloned header.
+    $table.closest('.dataTables_wrapper').toggleClass(
+        'actions-column-expanded',
+        $table.find('.actions-cell.expanded').length > 0
+    );
+}
+
 $(document).on('click', '.action-toggle-btn', function(e) {
     e.preventDefault();
     e.stopPropagation();
@@ -2429,8 +2431,6 @@ $(document).on('click', '.action-toggle-btn', function(e) {
     const $cell = $btn.closest('.actions-cell');
     const $row = $cell.closest('tr');
     const $table = $row.closest('table');
-    const dt = $table.DataTable();
-
     $cell.toggleClass('collapsed expanded');
 
     const isNowExpanded = $cell.hasClass('expanded');
@@ -2438,16 +2438,7 @@ $(document).on('click', '.action-toggle-btn', function(e) {
         .removeClass('fa-chevron-right fa-chevron-left')
         .addClass(isNowExpanded ? 'fa-chevron-left' : 'fa-chevron-right');
 
-    setTimeout(() => {
-        dt.columns.adjust().draw(false);
-        $table.css('table-layout', 'auto');
-        dt.columns.adjust().draw(false);
-        $table.css('table-layout', 'fixed');
-
-        const $container = $table.closest('.table-container');
-        $container.scrollLeft($container.scrollLeft() + 1);
-        $container.scrollLeft($container.scrollLeft() - 1);
-    }, 20);
+    syncActionsColumnState($table);
 });
 
 let sheriffReportsCache = [];
@@ -2730,18 +2721,7 @@ $(document).on('click', '.edit-row-btn-case', function(e) {
             .removeClass('fa-chevron-right fa-chevron-left')
             .addClass('fa-chevron-left');
 
-        setTimeout(() => {
-            const dt = $row.closest('table').DataTable();
-            dt.columns.adjust().draw(false);
-            const $table = $row.closest('table');
-            $table.css('table-layout', 'auto');
-            dt.columns.adjust().draw(false);
-            $table.css('table-layout', 'fixed');
-
-            const $container = $table.closest('.table-container');
-            $container.scrollLeft($container.scrollLeft() + 1);
-            $container.scrollLeft($container.scrollLeft() - 1);
-        }, 30);
+        syncActionsColumnState($row.closest('table'));
     }
 });
 
@@ -2757,8 +2737,6 @@ $(document).on('click', function(e) {
     $('.actions-cell.expanded').each(function() {
         const $cell = $(this);
         const $table = $cell.closest('table');
-        const dt = $table.DataTable();
-
         $cell.removeClass('expanded').addClass('collapsed');
 
         // ✅ Explicitly set to chevron-right, don't toggle
@@ -2766,10 +2744,7 @@ $(document).on('click', function(e) {
             .removeClass('fa-chevron-right fa-chevron-left')
             .addClass('fa-chevron-right');
 
-        setTimeout(() => {
-            dt.columns.adjust();
-            dt.draw(false);
-        }, 30);
+        syncActionsColumnState($table);
     });
 });
     // Store all table instances
@@ -2851,6 +2826,15 @@ $(document).on('click', function(e) {
             console.error('✗ Failed to initialize ' + tableId + ':', error);
             return false;
         }
+    }
+
+    // A scrolling DataTable briefly builds separate header and body tables.
+    // Size them once while the tab is hidden, then reveal the finished table.
+    function revealTableWhenSized($cardBody, table) {
+        setTimeout(function() {
+            table.columns.adjust().draw(false);
+            $cardBody.css('visibility', 'visible');
+        }, 50);
     }
 
         // Open add-link modal
@@ -2954,12 +2938,15 @@ $(document).on('click', function(e) {
             success: function(response) {
                 if (response.success) {
                     $cardBody.html(response.html);
+                    $cardBody.css('visibility', 'hidden');
                     applyDateFieldPermissions('#' + tabId);
                     loadedTabs[tabId] = true;
                     
                     const tableId = '#dataTable' + tabNumber;
                     setTimeout(function() {
-                        initDataTable(tableId);
+                        if (initDataTable(tableId)) {
+                            revealTableWhenSized($cardBody, tables[tableId]);
+                        }
                     }, 100);
                     
                     console.log(`✓ Loaded ${tabId} with ${response.count} records`);
@@ -3022,6 +3009,7 @@ $(document).on('click', function(e) {
             success: function (response) {
                 if (response.success) {
                     $cardBody.html(response.html);
+                    $cardBody.css('visibility', 'hidden');
                     applyDateFieldPermissions('#tabProv-' + province);
                     provTabLoaded[province] = true;
 
@@ -3061,8 +3049,7 @@ $(document).on('click', function(e) {
                             provTable.search(this.value).draw();
                         });
 
-                        setTimeout(function () { provTable.columns.adjust().draw(false); }, 50);
-                        setTimeout(function () { provTable.columns.adjust().draw(false); }, 300);
+                        revealTableWhenSized($cardBody, provTable);
 
                     }, 100);
 
@@ -3109,6 +3096,7 @@ $(document).on('click', function(e) {
         success: function (response) {
             if (response.success) {
                 $cardBody.html(response.html);
+                $cardBody.css('visibility', 'hidden');
                 sheriffTabLoaded = true;
 
                 setTimeout(function () {
@@ -3150,15 +3138,7 @@ $(document).on('click', function(e) {
                         tables['#dataTableMALSU'].search(this.value).draw();
                     });
 
-                    setTimeout(function() { tables['#dataTableMALSU'].columns.adjust().draw(false); }, 50);
-                    setTimeout(function() { tables['#dataTableMALSU'].columns.adjust().draw(false); }, 300);
-                    setTimeout(function() { tables['#dataTableMALSU'].columns.adjust().draw(false); }, 600);
-                    setTimeout(function() {
-                        tables['#dataTableMALSU'].columns.adjust().draw(false);
-                        if (tables['#dataTable0']) {
-                            tables['#dataTable0'].draw(false);
-                        }
-                    }, 200);
+                    revealTableWhenSized($cardBody, tables['#dataTableMALSU']);
 
                 }, 100);
             } else {
@@ -3204,6 +3184,7 @@ $(document).on('click', function(e) {
             success: function (response) {
                 if (response.success) {
                     $cardBody.html(response.html);
+                    $cardBody.css('visibility', 'hidden');
                     malsuTabLoaded = true;
 
                     setTimeout(function () {
@@ -3245,15 +3226,7 @@ $(document).on('click', function(e) {
                             tables['#dataTableMALSU'].search(this.value).draw();
                         });
 
-                            setTimeout(function() { tables['#dataTableMALSU'].columns.adjust().draw(false); }, 50);
-                            setTimeout(function() { tables['#dataTableMALSU'].columns.adjust().draw(false); }, 300);
-                            setTimeout(function() { tables['#dataTableMALSU'].columns.adjust().draw(false); }, 600);
-                            setTimeout(function() {
-                                tables['#dataTableMALSU'].columns.adjust().draw(false);
-                                if (tables['#dataTable0']) {
-                                    tables['#dataTable0'].draw(false);
-                                }
-                            }, 200);
+                            revealTableWhenSized($cardBody, tables['#dataTableMALSU']);
 
                     }, 100);
                 } else {
@@ -3504,6 +3477,7 @@ $(document).on('click', function(e) {
                 success: function (response) {
                     if (response.success) {
                         $cardBody.html(response.html);
+                        $cardBody.css('visibility', 'hidden');
                         sheriffProvTabLoaded[province] = true;
 
                         setTimeout(function () {
@@ -3551,15 +3525,7 @@ $(document).on('click', function(e) {
                                 tables['#' + tableId].search(this.value).draw();
                             });
 
-                            setTimeout(function() { tables['#' + tableId].columns.adjust().draw(false); }, 50);
-                            setTimeout(function() { tables['#' + tableId].columns.adjust().draw(false); }, 300);
-                            setTimeout(function() { tables['#' + tableId].columns.adjust().draw(false); }, 600);
-                            setTimeout(function() {
-                                tables['#' + tableId].columns.adjust().draw(false);
-                                if (tables['#dataTable0']) {
-                                    tables['#dataTable0'].draw(false);
-                                }
-                            }, 200);
+                            revealTableWhenSized($cardBody, tables['#' + tableId]);
                         }, 100);
                     } else {
                         $cardBody.html(`<div class="alert alert-danger">Failed to load cases. Please try again.</div>`);
@@ -3606,6 +3572,7 @@ $(document).on('click', function(e) {
             success: function (response) {
                 if (response.success) {
                     $cardBody.html(response.html);
+                    $cardBody.css('visibility', 'hidden');
                     applyDateFieldPermissions('#tabCM');
                     cmTabLoaded = true;
 
@@ -3650,13 +3617,7 @@ $(document).on('click', function(e) {
                         });
 
                         // ── FIX: Force column recalculation after tab is fully visible ──
-                        setTimeout(function() {
-                            cmTable.columns.adjust().draw(false);
-                        }, 50);
-
-                        setTimeout(function() {
-                            cmTable.columns.adjust().draw(false);
-                        }, 300);
+                        revealTableWhenSized($cardBody, cmTable);
 
                     }, 100);
                 } else {
