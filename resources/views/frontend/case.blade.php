@@ -3274,6 +3274,7 @@ $(document).on('click', function(e) {
             success: function (response) {
                 if (response.success) {
                     $cardBody.html(response.html);
+                    $cardBody.css('visibility', 'hidden');
                     senaTabLoaded = true;
 
                     setTimeout(function () {
@@ -3284,7 +3285,7 @@ $(document).on('click', function(e) {
                         $('#dataTableSENA tbody tr td[colspan]').closest('tr').remove();
 
                         tables['#dataTableSENA'] = $('#dataTableSENA').DataTable({
-                        autoWidth: false,
+                            autoWidth: false,
                             paging: true,
                             pageLength: 50,
                             lengthChange: false,
@@ -3299,12 +3300,12 @@ $(document).on('click', function(e) {
                                 emptyTable: 'No SENA records yet.'
                             },
                             drawCallback: function () {
-                                $('#dataTableSENA thead th').css({
+                                $('#dataTableSENA thead th, .sticky-table thead th, #dataTableCM thead th').css({
                                     'position': 'sticky',
                                     'top': 0,
                                     'z-index': 12
                                 });
-                                $('#dataTableSENA thead th:nth-child(-n+5)').css({
+                                $('#dataTableSENA thead th:nth-child(-n+5), .sticky-table thead th:nth-child(-n+5), #dataTableCM thead th:nth-child(-n+5)').css({
                                     'z-index': 13
                                 });
                             }
@@ -3314,18 +3315,14 @@ $(document).on('click', function(e) {
                             tables['#dataTableSENA'].search(this.value).draw();
                         });
 
-                        setTimeout(function() { tables['#dataTableSENA'].columns.adjust().draw(false); }, 50);
-                        setTimeout(function() { tables['#dataTableSENA'].columns.adjust().draw(false); }, 300);
-                        setTimeout(function() { tables['#dataTableSENA'].columns.adjust().draw(false); }, 600);
+                        revealTableWhenSized($cardBody, tables['#dataTableSENA']);
+
                         setTimeout(function() {
                             tables['#dataTableSENA'].columns.adjust().draw(false);
                             if (tables['#dataTable0']) {
                                 tables['#dataTable0'].draw(false);
                             }
                         }, 200);
-                        setTimeout(function() {
-                            $(window).trigger('resize');
-                        }, 700);
                     }, 100);
                 } else {
                     $cardBody.html(`<div class="alert alert-danger">Failed to load SENA records. Please try again.</div>`);
