@@ -139,10 +139,12 @@
     min-width: 58px !important;
     max-width: 58px !important;
     overflow: hidden;
+}
+
+body.actions-ready .actions-cell {
     transition: width 220ms ease, min-width 220ms ease, max-width 220ms ease, padding 220ms ease;
 }
 
-/* Keep the Actions header as narrow as its collapsed button in every table. */
 .compact-table thead th:first-child,
 .cm-table thead th:first-child,
 .sena-table thead th:first-child {
@@ -151,6 +153,11 @@
     max-width: 58px !important;
     padding-left: 0.4rem !important;
     padding-right: 0.4rem !important;
+}
+
+body.actions-ready .compact-table thead th:first-child,
+body.actions-ready .cm-table thead th:first-child,
+body.actions-ready .sena-table thead th:first-child {
     transition: width 220ms ease, min-width 220ms ease, max-width 220ms ease, padding 220ms ease;
 }
 
@@ -2838,10 +2845,39 @@ $(document).on('click', function(e) {
     // A scrolling DataTable briefly builds separate header and body tables.
     // Size them once while the tab is hidden, then reveal the finished table.
     function revealTableWhenSized($cardBody, table) {
-        setTimeout(function() {
+        // Let the browser paint the newly-inserted DOM before DataTables
+        // measures column widths — measuring too early can lock the Actions
+        // column in at a near-zero width, clipping its buttons.
+        requestAnimationFrame(function() {
             table.columns.adjust().draw(false);
-            $cardBody.css('visibility', 'visible');
-        }, 50);
+
+            let lastHeight = null;
+            let stableCount = 0;
+            let attempts = 0;
+
+            function checkStable() {
+                const scrollBody = $cardBody.find('.dataTables_scrollBody')[0];
+                const currentHeight = scrollBody ? scrollBody.getBoundingClientRect().height : null;
+
+                if (currentHeight !== null && currentHeight === lastHeight) {
+                    stableCount++;
+                } else {
+                    stableCount = 0;
+                }
+                lastHeight = currentHeight;
+                attempts++;
+
+                if (stableCount >= 2 || attempts >= 20) {
+                    $('body').addClass('actions-ready');
+                    $cardBody.css('visibility', 'visible');
+                    table.columns.adjust(); // final safety re-measure now that it's visible
+                } else {
+                    setTimeout(checkStable, 30);
+                }
+            }
+
+            setTimeout(checkStable, 50);
+        });
     }
 
         // Open add-link modal
@@ -3162,6 +3198,8 @@ $(document).on('click', function(e) {
     });
 });
 
+    var malsuTabLoading = false;
+
     $('a[href="#tabMALSU"]').on('shown.bs.tab', function () {
         if (malsuTabLoaded) {
             if ($.fn.DataTable.isDataTable('#dataTableMALSU')) {
@@ -3169,6 +3207,8 @@ $(document).on('click', function(e) {
             }
             return;
         }
+        if (malsuTabLoading) return; // a load is already in flight — ignore the duplicate trigger
+        malsuTabLoading = true;
 
         const $cardBody = $('#tabMALSU .card-body');
 
@@ -3189,6 +3229,7 @@ $(document).on('click', function(e) {
                 'Accept': 'application/json'
             },
             success: function (response) {
+                malsuTabLoading = false;
                 if (response.success) {
                     $cardBody.html(response.html);
                     $cardBody.css('visibility', 'hidden');
@@ -3241,6 +3282,7 @@ $(document).on('click', function(e) {
                 }
             },
             error: function (xhr) {
+                malsuTabLoading = false;
                 $cardBody.html(`
                     <div class="alert alert-danger">
                         <strong>Error:</strong> ${xhr.responseJSON?.error || 'Failed to load data.'}
