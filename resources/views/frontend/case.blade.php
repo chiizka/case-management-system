@@ -2414,20 +2414,27 @@ function showToast(type, message) {
 // ACTION TOGGLE BUTTONS (from your first script)
 // ==========================================
 
-function syncActionsColumnState($table) {
+window.syncActionsColumnState = function($table) {
     // Do not redraw a DataTable here: a redraw resets its vertically scrolled body.
     // The wrapper class updates both the body table and DataTables' cloned header.
     $table.closest('.dataTables_wrapper').toggleClass(
         'actions-column-expanded',
         $table.find('.actions-cell.expanded').length > 0
     );
-}
+};
 
 $(document).on('click', '.action-toggle-btn', function(e) {
     e.preventDefault();
     e.stopPropagation();
 
     const $btn = $(this);
+
+    // Save/Cancel reuse this class purely for matching button styling —
+    // they have their own dedicated handlers, so skip the chevron logic.
+    if ($btn.hasClass('save-mode') || $btn.hasClass('exit-mode')) {
+        return;
+    }
+
     const $cell = $btn.closest('.actions-cell');
     const $row = $cell.closest('tr');
     const $table = $row.closest('table');
@@ -5562,11 +5569,11 @@ $(document).ready(function() {
         });
 
         // ── ADD THIS: show case_tag select and hide badge in edit mode ──
-        if (config.name === 'malsu' || config.name === 'sena') {
-            const $badge  = row.find('.case-tag-badge');
-            const $select = row.find('.case-tag-select');
-            $badge.hide();
-            $select.addClass('edit-input').show();
+        const $caseTagBadge  = row.find('.case-tag-badge');
+        const $caseTagSelect = row.find('.case-tag-select');
+        if ($caseTagSelect.length) {
+            $caseTagBadge.hide();
+            $caseTagSelect.addClass('edit-input').show();
         }
         // ── END ADD ──
 
@@ -5854,16 +5861,15 @@ $(document).ready(function() {
         const $actionsCell = row.find('.actions-cell');
         const $container = $actionsCell.find('.action-buttons-container');
 
-        // Restore original toggle + action buttons HTML
         $container.html($container.data('original-html'));
 
-        // Remove edit-mode-cell, restore to collapsed
         $actionsCell.removeClass('edit-mode-cell expanded').addClass('collapsed');
 
-        // Re-icon the toggle button back to chevron-right
         $actionsCell.find('.action-toggle-btn i')
             .removeClass('fa-chevron-left fa-check fa-times')
             .addClass('fa-chevron-right');
+
+        syncActionsColumnState(row.closest('table'));
     }
 
     function cancelEdit() {
@@ -5899,12 +5905,12 @@ $(document).ready(function() {
 
         restoreActionButtons($editingRow);
 
-        if (config && config.name === 'malsu') {
-            const $badge  = $editingRow.find('.case-tag-badge');
-            const $select = $editingRow.find('.case-tag-select');
-            $select.removeClass('edit-input').hide();
-            if ($badge.attr('data-tag')) {
-                $badge.show();
+        const $caseTagBadge  = $editingRow.find('.case-tag-badge');
+        const $caseTagSelect = $editingRow.find('.case-tag-select');
+        if ($caseTagSelect.length) {
+            $caseTagSelect.removeClass('edit-input').hide();
+            if ($caseTagBadge.attr('data-tag')) {
+                $caseTagBadge.show();
             }
         }
 
