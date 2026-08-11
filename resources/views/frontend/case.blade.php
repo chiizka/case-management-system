@@ -1858,11 +1858,6 @@ body.sheriff-readonly .edit-row-btn-case {
                     </div>
 
                     <div class="form-group">
-                        <label for="sena_sheriff_designate">Sheriff Designate</label>
-                        <input type="text" class="form-control" id="sena_sheriff_designate" name="sheriff_designate" placeholder="Enter sheriff designate (optional)">
-                    </div>
-
-                    <div class="form-group">
                         <label for="sena_date_compliance_order">Date of Compliance Order / Resolution</label>
                         <input type="date" class="form-control" id="sena_date_compliance_order" name="date_compliance_order">
                     </div>
@@ -4480,6 +4475,46 @@ $(document).on('click', '.complete-case-btn', function(e) {
         .html('<i class="fas fa-check mr-2"></i>Confirm Complete');
     
     $('#stageProgressionModal').modal('show');
+});
+
+$(document).on('click', '.archive-sena-btn', function(e) {
+    e.preventDefault();
+    const $btn = $(this);
+    const senaId = $btn.data('sena-id');
+    const establishment = $btn.data('establishment') || 'N/A';
+
+    Swal.fire({
+        icon: 'question',
+        title: 'Archive this SENA case?',
+        html: `Mark <strong>${establishment}</strong> as completed and move it to archived cases?`,
+        showCancelButton: true,
+        confirmButtonText: 'Yes, archive it',
+        cancelButtonText: 'Cancel',
+        confirmButtonColor: '#28a745'
+    }).then((result) => {
+        if (!result.isConfirmed) return;
+
+        $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i>');
+
+        $.ajax({
+            url: `/sena/${senaId}/archive`,
+            method: 'POST',
+            headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
+            success: function(response) {
+                if (response.success) {
+                    showToast('Success', response.message || 'SENA case archived.', 'success');
+                    $(`tr[data-id="${senaId}"]`).fadeOut(400, function() { $(this).remove(); });
+                } else {
+                    showToast('Error', response.message || 'Failed to archive.', 'error');
+                    $btn.prop('disabled', false).html('<i class="fas fa-check-circle"></i>');
+                }
+            },
+            error: function(xhr) {
+                showToast('Error', xhr.responseJSON?.message || 'Failed to archive.', 'error');
+                $btn.prop('disabled', false).html('<i class="fas fa-check-circle"></i>');
+            }
+        });
+    });
 });
 
 // Dispose case handler (for province users only)

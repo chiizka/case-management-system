@@ -75,8 +75,9 @@
         <tbody>
             @if($senaRecords->count() > 0)
                 @foreach($senaRecords as $sena)
+                    @php $case = $sena->case; @endphp
                     <tr data-id="{{ $sena->id }}">
-                        <td class="actions-cell collapsed">
+                            <td class="actions-cell collapsed">
                             <div class="action-buttons-container">
                                 <button class="action-toggle-btn" type="button">
                                     <i class="fas fa-chevron-right"></i>
@@ -93,6 +94,14 @@
                                             data-sena-id="{{ $sena->id }}"
                                             title="Delete">
                                         <i class="fas fa-trash"></i>
+                                    </button>
+
+                                    <button type="button"
+                                            class="btn btn-success btn-sm archive-sena-btn"
+                                            data-sena-id="{{ $sena->id }}"
+                                            data-establishment="{{ $sena->establishment_name ?? 'N/A' }}"
+                                            title="Archive">
+                                        <i class="fas fa-check-circle"></i>
                                     </button>
                                 </div>
                             </div>

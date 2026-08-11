@@ -85,6 +85,7 @@ Route::middleware('auth')->group(function () {
             Route::post('/sena', [SenaController::class, 'store'])->name('sena.store');
             Route::put('/sena/{id}/inline-update', [SenaController::class, 'inlineUpdate'])->name('sena.inlineUpdate');
             Route::delete('/sena/{id}', [SenaController::class, 'destroy'])->name('sena.destroy');
+            Route::post('/sena/{id}/archive', [SenaController::class, 'archive'])->name('sena.archive');
         });
         Route::put('/malsu/{caseId}/inline-update', [MalsuController::class, 'inlineUpdate'])
         ->name('malsu.inlineUpdate');

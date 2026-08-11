@@ -20,13 +20,19 @@ class SenaController extends Controller
      */
     public function loadTab()
     {
-        $senaRecords = Sena::where(function ($q) {
+        $senaRecords = Sena::with('case')
+            ->where(function ($q) {
                 $q->whereNull('case_id')
                 ->orWhere(function ($q2) {
-                    $q2->whereHas('case.documentTracking', function ($q3) {
-                        $q3->where('status', '!=', 'Received');
+                    $q2->whereHas('case', function ($q3) {
+                        $q3->whereNotIn('overall_status', ['Completed', 'Disposed', 'Appealed']);
                     })
-                    ->orWhereDoesntHave('case.documentTracking');
+                    ->where(function ($q3) {
+                        $q3->whereHas('case.documentTracking', function ($q4) {
+                            $q4->where('status', '!=', 'Received');
+                        })
+                        ->orWhereDoesntHave('case.documentTracking');
+                    });
                 });
             })
             ->orderBy('created_at', 'desc')
@@ -133,6 +139,72 @@ class SenaController extends Controller
             'success' => true,
             'message' => 'SENA record deleted successfully.',
         ]);
+    }
+
+    public function archive($id)
+    {
+        DB::beginTransaction();
+        try {
+            $sena = Sena::findOrFail($id);
+
+            if ($sena->case_id) {
+                $case = CaseFile::findOrFail($sena->case_id);
+            } else {
+                $case = CaseFile::create([
+                    'inspection_id'      => 'SENA-' . $sena->id,
+                    'case_no'            => $sena->regional_docket_number,
+                    'establishment_name' => $sena->establishment_name ?: ('SENA Record #' . $sena->id),
+                    'po_office'          => 'N/A',
+                    'current_stage'      => '7: Appeals & Resolution',
+                    'overall_status'     => 'Active',
+                ]);
+
+                $case->computeFields();
+                $case->saveQuietly();
+
+                $sena->case_id = $case->id;
+                $sena->save();
+
+                ActivityLogger::logAction(
+                    'CREATE',
+                    'Case',
+                    $case->inspection_id,
+                    "Auto-created from SENA record #{$sena->id} for archiving",
+                    ['establishment' => $case->establishment_name]
+                );
+            }
+
+            $oldStatus = $case->overall_status;
+            $case->update(['overall_status' => 'Completed']);
+
+            ActivityLogger::logAction(
+                'ARCHIVE',
+                'Case',
+                $case->inspection_id,
+                "SENA case {$case->inspection_id} - {$case->establishment_name} archived",
+                [
+                    'establishment'    => $case->establishment_name,
+                    'previous_status'  => $oldStatus,
+                    'new_status'       => 'Completed',
+                    'action_type'      => 'SENA Archive',
+                ]
+            );
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'SENA case archived successfully.',
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('SENA archive failed: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to archive: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
     public function sendToSheriff(Request $request, $senaId)
