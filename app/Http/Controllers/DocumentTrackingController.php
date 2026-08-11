@@ -80,6 +80,8 @@ class DocumentTrackingController extends Controller
                 'documentTracking.history.receivedBy',
             ])
             ->whereIn('id', $allMalsuCaseIds)
+            ->where('inspection_id', 'not like', 'LEGACY-%')
+            ->where('inspection_id', 'not like', 'MALSU-%')
             ->whereNotIn('overall_status', ['Completed', 'Disposed', 'Appealed'])
             ->orderBy('created_at', 'desc')
             ->get()
