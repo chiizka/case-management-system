@@ -19,7 +19,7 @@
 
     <style>
         body.bg-gradient-primary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #f8f9fc;
             min-height: 100vh;
             display: flex;
             align-items: center;
@@ -104,11 +104,11 @@
                         <div class="col-lg-5 login-left d-none d-lg-flex">
                             <div class="text-center">
                                 <div class="logo-circle mx-auto">
-                                    <img src="{{ asset('img/dole_logo.png') }}" 
-                                         alt="DOLE Logo" 
-                                         style="width: 78px; height: 78px;">
+                                    <img src="{{ asset('img/cmis_logo.png') }}" 
+                                        alt="CMIS Logo" 
+                                        style="width: 90px; height: 90px;">
                                 </div>
-                                <h1 class="h3 text-white font-weight-bold mb-1">DOLE Case Management</h1>
+                                <h1 class="h3 text-white font-weight-bold mb-1">Case Management Information System</h1>
                                 <p class="text-white-50">Labor Standards Enforcement System</p>
                             </div>
                         </div>
@@ -158,7 +158,7 @@
                 </div>
 
                 <div class="text-center mt-4">
-                    <small class="text-white-50">Department of Labor and Employment • Republic of the Philippines</small>
+                    <small class="text-muted">Department of Labor and Employment • Republic of the Philippines</small>
                 </div>
 
             </div>
