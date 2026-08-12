@@ -406,15 +406,15 @@ body.actions-ready .sena-table thead th:first-child {
     z-index: 35;
     background-color: #f8f9fc !important;
     box-shadow: 3px 0 8px rgba(0,0,0,0.1);
-    width: 75px;
-    min-width: 75px;
-    max-width: 75px;
+    width: 45px;
+    min-width: 45px;
+    max-width: 45px;
 }
 
 .cm-table th:nth-child(3),
 .cm-table td:nth-child(3) {
     position: sticky;
-    left: 75px;
+    left: 45px;
     z-index: 35;
     background-color: #f8f9fc !important;
     box-shadow: 3px 0 8px rgba(0,0,0,0.1);
@@ -426,34 +426,51 @@ body.actions-ready .sena-table thead th:first-child {
 .cm-table th:nth-child(4),
 .cm-table td:nth-child(4) {
     position: sticky;
-    left: 185px;
+    left: 155px;
     z-index: 35;
     background-color: #fff3cd !important;
     box-shadow: 3px 0 8px rgba(0,0,0,0.1);
-    width: 100px;
-    min-width: 100px;
-    max-width: 100px;
+    width: 170px;
+    min-width: 170px;
+    max-width: 170px;
 }
 
 /* 4. CM xTable Establishment Name Column (UPDATED: Added explicit font-weight overrides) */
 .cm-table th:nth-child(5),
 .cm-table td:nth-child(5) {
     position: sticky;
-    left: 285px;
+    left: 325px;
     z-index: 35;
     background-color: #d1ecf1 !important;
     box-shadow: 3px 0 8px rgba(0,0,0,0.1);
-    min-width: 200px;
-    max-width: 340px;
+    min-width: 280px;
+    max-width: 460px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
     font-weight: bold !important; /* Forces bold tracking inside Case Management context */
 }
 
+.cm-table th:nth-child(6),
+.cm-table td:nth-child(6) {
+    width: 60px;
+    min-width: 60px;
+    max-width: 60px;
+}
+
 .cm-table th:nth-child(7),
 .cm-table td:nth-child(7) {
     background-color: #d4edda !important;
+    width: 60px;
+    min-width: 60px;
+    max-width: 60px;
+}
+
+.cm-table th:nth-child(8),
+.cm-table td:nth-child(8) {
+    width: 200px;
+    min-width: 200px;
+    max-width: 200px;
 }
 
 /* ==================== MALSU TABLE STICKY COLUMNS (size-only override) ==================== */
@@ -3635,7 +3652,16 @@ $(document).on('click', function(e) {
                             searching: true,
                             info: true,
                             dom: 'tip',
-                            columnDefs: [{ orderable: false, targets: 0 }],
+                            columnDefs: [
+                                { orderable: false, targets: 0 },
+                                { width: '45px',  targets: 1 },  // No.
+                                { width: '110px', targets: 2 },  // Inspection ID
+                                { width: '170px', targets: 3 },  // Case No.
+                                { width: '230px', targets: 4 },  // Establishment Name — wider than Case No.
+                                { width: '60px',  targets: 5 },  // Mode
+                                { width: '60px',  targets: 6 },  // PO
+                                { width: '200px', targets: 7 }   // Type of Industry
+                            ],
                             scrollX: true,
                             scrollY: (window.innerHeight - 280) + 'px',
                             scrollCollapse: true,
