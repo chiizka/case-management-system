@@ -117,6 +117,7 @@
     min-width: 130px;
     white-space: normal;
     word-break: break-word;
+    color: #1a1a1a;   /* ← darker text */
 }
 
 /* ==================== WRAP COLUMNS ==================== */
@@ -297,7 +298,7 @@ body.actions-ready .sena-table thead th:first-child {
 
 .readonly-cell {
     background-color: #f8f9fa !important;
-    color: #6c757d;
+    color: #495057;   /* ← darker than #6c757d, still visually distinct as "readonly" */
     font-style: italic;
 }
 
