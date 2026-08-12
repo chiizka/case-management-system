@@ -34,6 +34,7 @@
 /* ==================== STICKY LEFT COLUMNS ==================== */
 
 /* 1. No. Column */
+/* 1. No. Column */
 .table:not(.cm-table):not(.sena-table) th:nth-child(2),
 .table:not(.cm-table):not(.sena-table) td:nth-child(2) {
     position: sticky;
@@ -41,16 +42,16 @@
     z-index: 35;
     background-color: #f8f9fc !important;
     box-shadow: 3px 0 8px rgba(0,0,0,0.1);
-    width: 75px;
-    min-width: 75px;
-    max-width: 75px;
+    width: 45px;
+    min-width: 45px;
+    max-width: 45px;
 }
 
 /* 2. Inspection ID Column */
 .table:not(.cm-table):not(.sena-table) th:nth-child(3),
 .table:not(.cm-table):not(.sena-table) td:nth-child(3) {
     position: sticky;
-    left: 75px;
+    left: 45px;
     z-index: 35;
     background-color: #f8f9fc !important;
     box-shadow: 3px 0 8px rgba(0,0,0,0.1);
@@ -63,29 +64,29 @@
 .table:not(.cm-table):not(.sena-table) th:nth-child(4),
 .table:not(.cm-table):not(.sena-table) td:nth-child(4) {
     position: sticky;
-    left: 185px;
+    left: 155px;
     z-index: 35;
     background-color: #fff3cd !important;
     box-shadow: 3px 0 8px rgba(0,0,0,0.1);
-    width: 100px;
-    min-width: 100px;
-    max-width: 100px;
+    width: 170px;
+    min-width: 170px;
+    max-width: 170px;
 }
 
 /* 4. Establishment Name Column (UPDATED: Added explicit font-weight overrides) */
 .table:not(.cm-table):not(.sena-table) th:nth-child(5),
 .table:not(.cm-table):not(.sena-table) td:nth-child(5) {
     position: sticky;
-    left: 285px;
+    left: 325px;
     z-index: 35;
     background-color: #d1ecf1 !important;
     box-shadow: 3px 0 8px rgba(0,0,0,0.1);
-    min-width: 200px;
-    max-width: 340px;
+    min-width: 230px;
+    max-width: 420px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    font-weight: bold !important; /* Forces bold tracking across headers and table bodies */
+    font-weight: bold !important;
 }
 
 /* PO column (7th column) */
@@ -3889,7 +3890,16 @@ function loadTab0Data() {
                     searching: true,
                     info: true,
                     dom: 'tip',
-                    columnDefs: [{ orderable: false, targets: 0 }],
+                    columnDefs: [
+                        { orderable: false, targets: 0 },
+                        { width: '45px',  targets: 1 },  // No.
+                        { width: '110px', targets: 2 },  // Inspection ID
+                        { width: '170px', targets: 3 },  // Case No.
+                        { width: '230px', targets: 4 },  // Establishment Name
+                        { width: '60px',  targets: 5 },  // Mode
+                        { width: '60px',  targets: 6 },  // PO
+                        { width: '200px', targets: 7 }   // Type of Industry
+                    ],
                     scrollX: true,
                     scrollY: (window.innerHeight - 280) + 'px',
                     scrollCollapse: true,
