@@ -85,6 +85,37 @@
             transform: translateY(-2px);
             box-shadow: 0 10px 25px rgba(78,115,223,0.4);
         }
+
+        .password-field-wrapper {
+            position: relative;
+        }
+
+        .password-field-wrapper .form-control-user {
+            padding-right: 50px;
+        }
+
+        .toggle-password {
+            position: absolute;
+            right: 18px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: #a0aec0;
+            cursor: pointer;
+            font-size: 16px;
+            padding: 4px;
+            line-height: 1;
+            z-index: 5;
+        }
+
+        .toggle-password:hover {
+            color: #4e73df;
+        }
+
+        .toggle-password:focus {
+            outline: none;
+        }
     </style>
 </head>
 
@@ -137,8 +168,14 @@
                                 </div>
 
                                 <div class="form-group">
-                                    <input type="password" name="password" class="form-control form-control-user" 
-                                           placeholder="Password" required>
+                                    <div class="password-field-wrapper">
+                                        <input type="password" name="password" class="form-control form-control-user" 
+                                            id="login-password-input"
+                                            placeholder="Password" required>
+                                        <button type="button" class="toggle-password" data-target="login-password-input" tabindex="-1" aria-label="Show password">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                    </div>
                                 </div>
 
                                 <button type="submit" class="btn btn-primary btn-user btn-block btn-login">
@@ -178,6 +215,20 @@
             btn.prop('disabled', true).html(`
                 <span class="spinner-border spinner-border-sm mr-2"></span> SIGNING IN...
             `);
+        });
+
+        $('.toggle-password').on('click', function() {
+            const targetId = $(this).data('target');
+            const $input = $('#' + targetId);
+            const $icon = $(this).find('i');
+
+            if ($input.attr('type') === 'password') {
+                $input.attr('type', 'text');
+                $icon.removeClass('fa-eye').addClass('fa-eye-slash');
+            } else {
+                $input.attr('type', 'password');
+                $icon.removeClass('fa-eye-slash').addClass('fa-eye');
+            }
         });
     </script>
 

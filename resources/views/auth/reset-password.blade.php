@@ -262,6 +262,36 @@
                 font-size: 24px;
             }
         }
+
+        .password-field-wrapper {
+            position: relative;
+        }
+
+        .password-field-wrapper .form-control-user {
+            padding-right: 50px; /* room for the icon */
+        }
+
+        .toggle-password {
+            position: absolute;
+            right: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: #a0aec0;
+            cursor: pointer;
+            font-size: 16px;
+            padding: 4px;
+            line-height: 1;
+        }
+
+        .toggle-password:hover {
+            color: #667eea;
+        }
+
+        .toggle-password:focus {
+            outline: none;
+        }
     </style>
 </head>
 
@@ -304,36 +334,46 @@
                     </div>
 
                     <div class="form-group">
-                        <input type="password" 
-                               name="password" 
-                               class="form-control-user @error('password') is-invalid @enderror"
-                               placeholder="New Password" 
-                               required 
-                               autocomplete="new-password"
-                               id="password-input">
-                            <small class="form-text">
-                                Must be at least 8 characters with uppercase, lowercase, number, and special character.
-                            </small>
-                            <div id="password-requirements" class="mt-2" style="display:none; font-size: 13px; text-align:left;">
-                                <div id="req-length"  style="color:#fc8181"><i class="fas fa-times-circle"></i> At least 8 characters</div>
-                                <div id="req-upper"   style="color:#fc8181"><i class="fas fa-times-circle"></i> At least one uppercase letter</div>
-                                <div id="req-lower"   style="color:#fc8181"><i class="fas fa-times-circle"></i> At least one lowercase letter</div>
-                                <div id="req-number"  style="color:#fc8181"><i class="fas fa-times-circle"></i> At least one number</div>
-                                <div id="req-symbol"  style="color:#fc8181"><i class="fas fa-times-circle"></i> At least one special character (!@#$...)</div>
-                            </div>
+                        <div class="password-field-wrapper">
+                            <input type="password" 
+                                name="password" 
+                                class="form-control-user @error('password') is-invalid @enderror"
+                                placeholder="New Password" 
+                                required 
+                                autocomplete="new-password"
+                                id="password-input">
+                            <button type="button" class="toggle-password" data-target="password-input" tabindex="-1" aria-label="Show password">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                        <small class="form-text">
+                            Must be at least 8 characters with uppercase, lowercase, number, and special character.
+                        </small>
+                        <div id="password-requirements" class="mt-2" style="display:none; font-size: 13px; text-align:left;">
+                            <div id="req-length"  style="color:#fc8181"><i class="fas fa-times-circle"></i> At least 8 characters</div>
+                            <div id="req-upper"   style="color:#fc8181"><i class="fas fa-times-circle"></i> At least one uppercase letter</div>
+                            <div id="req-lower"   style="color:#fc8181"><i class="fas fa-times-circle"></i> At least one lowercase letter</div>
+                            <div id="req-number"  style="color:#fc8181"><i class="fas fa-times-circle"></i> At least one number</div>
+                            <div id="req-symbol"  style="color:#fc8181"><i class="fas fa-times-circle"></i> At least one special character (!@#$...)</div>
+                        </div>
                         <div class="password-strength" id="password-strength">
                             <div class="password-strength-bar" id="strength-bar"></div>
                         </div>
                     </div>
 
                     <div class="form-group">
-                        <input type="password" 
-                               name="password_confirmation" 
-                               class="form-control-user"
-                               placeholder="Confirm New Password" 
-                               required 
-                               autocomplete="new-password"
-                               id="confirm-password-input">
+                        <div class="password-field-wrapper">
+                            <input type="password" 
+                                name="password_confirmation" 
+                                class="form-control-user"
+                                placeholder="Confirm New Password" 
+                                required 
+                                autocomplete="new-password"
+                                id="confirm-password-input">
+                            <button type="button" class="toggle-password" data-target="confirm-password-input" tabindex="-1" aria-label="Show password">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
                     </div>
 
                     <button type="submit" class="btn-primary btn-user">
@@ -396,6 +436,23 @@
             setTimeout(function() {
                 $('.alert').fadeOut();
             }, 5000);
+        });
+
+
+        $('.toggle-password').on('click', function() {
+            const targetId = $(this).data('target');
+            const $input = $('#' + targetId);
+            const $icon = $(this).find('i');
+
+            if ($input.attr('type') === 'password') {
+                $input.attr('type', 'text');
+                $icon.removeClass('fa-eye').addClass('fa-eye-slash');
+                $(this).attr('aria-label', 'Hide password');
+            } else {
+                $input.attr('type', 'password');
+                $icon.removeClass('fa-eye-slash').addClass('fa-eye');
+                $(this).attr('aria-label', 'Show password');
+            }
         });
     </script>
 
