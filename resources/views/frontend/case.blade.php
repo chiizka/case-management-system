@@ -847,12 +847,14 @@ body.sheriff-readonly .edit-row-btn-case {
                         <i class="fas fa-gavel mr-1"></i> SENA
                     </a>
                 </li>
+                @if(false)
                 <li class="nav-item">
                     <a class="nav-link" id="tabResolution-tab" data-toggle="tab" href="#tabResolution"
                     role="tab" aria-controls="tabResolution" aria-selected="false">
                         <i class="fas fa-check-circle mr-1"></i>For Resolution
                     </a>
                 </li>
+                @endif
                 <li class="nav-item">
                     <a class="nav-link" id="tabAppealed-tab" data-toggle="tab" href="#tabAppealed"
                     role="tab" aria-controls="tabAppealed" aria-selected="false">
@@ -1211,6 +1213,7 @@ body.sheriff-readonly .edit-row-btn-case {
                     </div>
                 </div>
 
+                @if(false)
                 <div class="tab-pane fade" id="tabResolution" role="tabpanel" aria-labelledby="tabResolution-tab">
                     <div class="card shadow mb-4">
                         <div class="card-body">
@@ -1222,6 +1225,7 @@ body.sheriff-readonly .edit-row-btn-case {
                         </div>
                     </div>
                 </div>
+                @endif
 
                 <div class="tab-pane fade" id="tabAppealed" role="tabpanel" aria-labelledby="tabAppealed-tab">
                     <div class="card shadow mb-4">

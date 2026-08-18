@@ -99,14 +99,16 @@
                                     </button>
 
                                     @if($case)
-                                        <button type="button"
-                                                class="btn btn-danger btn-sm delete-btn"
-                                                data-case-id="{{ $case->id }}"
-                                                data-case-no="{{ $case->case_no ?? 'N/A' }}"
-                                                data-establishment="{{ $case->establishment_name ?? 'N/A' }}"
-                                                title="Delete">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
+                                        @unless(Auth::user()->isSheriff())
+                                            <button type="button"
+                                                    class="btn btn-danger btn-sm delete-btn"
+                                                    data-case-id="{{ $case->id }}"
+                                                    data-case-no="{{ $case->case_no ?? 'N/A' }}"
+                                                    data-establishment="{{ $case->establishment_name ?? 'N/A' }}"
+                                                    title="Delete">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        @endunless
 
                                         <button class="btn btn-info btn-sm view-history-btn"
                                                 data-case-id="{{ $case->id }}"
