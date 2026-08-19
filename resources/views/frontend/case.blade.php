@@ -6292,7 +6292,7 @@ $(document).on('click', '.view-history-btn', function(e) {
                                     <span class="badge badge-${statusClass}" style="font-size: 0.85rem; padding: 0.5rem 1rem;">
                                         ${item.role}
                                     </span>
-                                    ${!isLikelyCreation && item.from_role ? '<small class="text-muted ml-2">from ' + item.from_role + '</small>' : ''}
+                                    ${!isLikelyCreation && item.to_role ? '<small class="text-muted ml-2">&rarr; sent to ' + item.to_role + '</small>' : ''}
                                 </div>
                                 <div class="text-right">
                                     <small class="text-muted"><i class="fas fa-clock"></i> ${item.time_ago}</small>

@@ -1087,9 +1087,9 @@ public function destroy($id)
             // Add historical records (oldest first for timeline display)
             foreach ($documentTracking->history()->orderBy('created_at', 'asc')->get() as $history) {
                 $historyData[] = [
-                    'role' => DocumentTracking::ROLE_NAMES[$history->to_role] ?? $history->to_role,
-                    'from_role' => $history->from_role 
-                        ? (DocumentTracking::ROLE_NAMES[$history->from_role] ?? $history->from_role)
+                    'role' => DocumentTracking::ROLE_NAMES[$history->from_role] ?? $history->from_role,
+                    'to_role' => $history->to_role 
+                        ? (DocumentTracking::ROLE_NAMES[$history->to_role] ?? $history->to_role)
                         : null,
                     'transferred_by' => $history->transferredBy 
                         ? $history->transferredBy->fname . ' ' . $history->transferredBy->lname 

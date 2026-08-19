@@ -322,7 +322,9 @@
                                 <tbody>
                                     @forelse($pendingDocuments as $doc)
                                     <tr>
-                                        <td class="font-weight-bold text-primary">{{ $doc->case->case_no ?? 'N/A' }}</td>
+                                        <td class="font-weight-bold text-primary">
+                                            {{ $doc->case->case_no ?? optional($doc->case->malsu)->regional_docket_number ?? $doc->case->inspection_id ?? 'N/A' }}
+                                        </td>
                                             <td>
                                                 <div class="text-truncate" style="max-width: 200px;" 
                                                     title="{{ $doc->case->establishment_name ?? 'N/A' }}">
@@ -409,7 +411,9 @@
                                 <tbody>
                                     @forelse($myDocuments as $doc)
                                     <tr>
-                                        <td class="font-weight-bold text-primary">{{ $doc->case->case_no ?? 'N/A' }}</td>
+                                        <td class="font-weight-bold text-primary">
+                                            {{ $doc->case->case_no ?? optional($doc->case->malsu)->regional_docket_number ?? $doc->case->inspection_id ?? 'N/A' }}
+                                        </td>
                                             <td>
                                                 <div class="text-truncate" style="max-width: 200px;" 
                                                     title="{{ $doc->case->establishment_name ?? 'N/A' }}">
@@ -717,7 +721,9 @@
                                 <tbody>
                                     @forelse($allDocuments as $doc)
                                     <tr>
-                                        <td class="font-weight-bold text-primary">{{ $doc->case->case_no ?? 'N/A' }}</td>
+                                        <td class="font-weight-bold text-primary">
+                                            {{ $doc->case->case_no ?? optional($doc->case->malsu)->regional_docket_number ?? $doc->case->inspection_id ?? 'N/A' }}
+                                        </td>
                                         <td>
                                             <div class="text-truncate" style="max-width: 180px;" title="{{ $doc->case->establishment_name ?? 'N/A' }}">
                                                 {{ $doc->case->establishment_name ?? 'N/A' }}

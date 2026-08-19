@@ -19,15 +19,17 @@ class DocumentTrackingController extends Controller
     {
         $user = Auth::user();
         
-        $myDocumentsQuery = DocumentTracking::with(['case', 'transferredBy', 'receivedBy'])
+        $myDocumentsQuery = DocumentTracking::with(['case.malsu', 'transferredBy', 'receivedBy'])
             ->active()
             ->where('current_role', $user->role)
-            ->where('status', 'Received');
+            ->where('status', 'Received')
+            ->orderByDesc('received_at');
 
-        $pendingDocumentsQuery = DocumentTracking::with(['case', 'transferredBy'])
+        $pendingDocumentsQuery = DocumentTracking::with(['case.malsu', 'transferredBy'])
             ->active()
             ->where('current_role', $user->role)
-            ->where('status', 'Pending Receipt');
+            ->where('status', 'Pending Receipt')
+            ->orderByDesc('transferred_at');
 
         // Sheriffs only see documents assigned specifically to them,
         // not everyone sharing the same province sheriff role.
@@ -44,8 +46,9 @@ class DocumentTrackingController extends Controller
         $pendingDocuments = $pendingDocumentsQuery->get();
         
         // All documents (for admin overview) - ONLY ACTIVE CASES
-        $allDocuments = DocumentTracking::with(['case', 'transferredBy', 'receivedBy'])
+        $allDocuments = DocumentTracking::with(['case.malsu', 'transferredBy', 'receivedBy'])
             ->active()
+            ->orderByDesc('updated_at')
             ->get();
         
         $cases = CaseFile::where('overall_status', 'Active')->get();
@@ -357,13 +360,13 @@ class DocumentTrackingController extends Controller
 
     public function history($id)
     {
-        $document = DocumentTracking::with([
-            'case',
-            'history.transferredBy',
-            'history.receivedBy',
-            'transferredBy',
-            'receivedBy'
-        ])->findOrFail($id);
+    $document = DocumentTracking::with([
+        'case.malsu',
+        'history.transferredBy',
+        'history.receivedBy',
+        'transferredBy',
+        'receivedBy'
+    ])->findOrFail($id);
         
         $historyData = [];
         
@@ -391,7 +394,10 @@ class DocumentTrackingController extends Controller
 
         foreach ($document->history as $history) {
             $historyData[] = [
-                'role'           => DocumentTracking::ROLE_NAMES[$history->to_role],
+                'role'           => DocumentTracking::ROLE_NAMES[$history->from_role] ?? $history->from_role,
+                'to_role'        => $history->to_role
+                    ? (DocumentTracking::ROLE_NAMES[$history->to_role] ?? $history->to_role)
+                    : null,
                 'status'         => 'Completed',
                 'transferred_by' => $history->transferredBy
                     ? $history->transferredBy->fname . ' ' . $history->transferredBy->lname
@@ -415,7 +421,10 @@ class DocumentTrackingController extends Controller
 
         return response()->json([
             'success'       => true,
-            'case_no'       => $document->case->case_no ?? 'N/A',
+            'case_no'       => $document->case->case_no
+                ?? optional($document->case->malsu)->regional_docket_number
+                ?? $document->case->inspection_id
+                ?? 'N/A',
             'establishment' => $document->case->establishment_name ?? 'N/A',
             'history'       => $historyData
         ]);
