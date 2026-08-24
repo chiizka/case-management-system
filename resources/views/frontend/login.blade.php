@@ -116,6 +116,11 @@
         .toggle-password:focus {
             outline: none;
         }
+        
+        input[type="password"]::-ms-reveal,
+        input[type="password"]::-ms-clear {
+            display: none;
+        }
     </style>
 </head>
 
