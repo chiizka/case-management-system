@@ -82,16 +82,19 @@ class NoticeOfFinalityController extends Controller
 
         $orderDate = $this->formatDate($data['order_date'] ?? null);
         $section->addText(
-            'This Office issued an Order dated ' . $orderDate . ', the dispositive portion of which is here quoted as follows:',
+            "\tThis Office issued an Order dated " . $orderDate . ', the dispositive portion of which is here quoted as follows:',
             [],
-            array_merge($body, ['spaceAfter' => 300]) // was 130, now leaves a gap before the quote
+            array_merge($body, ['spaceAfter' => 300])
         );
 
         $dispositive = $this->clean($data['dispositive_paragraph'] ?? '');
         if ($dispositive !== '') {
+            $isFirstLine = true;
             foreach (preg_split('/\R/u', $dispositive) as $paragraph) {
                 if (trim($paragraph) !== '') {
-                    $section->addText($paragraph, $bold, $indented);
+                    $text = $isFirstLine ? "\t" . $paragraph : $paragraph;
+                    $section->addText($text, $bold, $indented);
+                    $isFirstLine = false;
                 }
             }
         }
@@ -107,14 +110,15 @@ class NoticeOfFinalityController extends Controller
         $receivedDate = $this->formatDate($data['date_received'] ?? null);
         $receivedBy = $this->clean($data['received_by'] ?? '');
         $trackingNo = $this->clean($data['tracking_no'] ?? '');
-        $section->addText(
-            'A copy of the Order was delivered through courier' . $this->withComma($courier)
-            . ', to respondent ' . $recipient
-            . ' on ' . $receivedDate
+        $deliveryRun = $section->addTextRun(['spaceBefore' => 400, 'spaceAfter' => 190, 'lineHeight' => 1.5, 'alignment' => Jc::BOTH]);
+        $deliveryRun->addText(
+            "\tA copy of the Order was delivered through courier" . $this->withComma($courier) . ', to respondent '
+        );
+        $deliveryRun->addText($recipient, $bold);
+        $deliveryRun->addText(
+            ' on ' . $receivedDate
             . ' and was duly received by ' . $receivedBy
-            . ' as evidenced by Tracking Number: ' . $trackingNo . '.',
-            [],
-            ['spaceBefore' => 400, 'spaceAfter' => 190, 'lineHeight' => 1.5, 'alignment' => Jc::BOTH]  // wider spacing + justified
+            . ' as evidenced by Tracking Number: ' . $trackingNo . '.'
         );
 
          $finalitySpacing = ['indentation' => ['left' => 720], 'spaceBefore' => 240, 'spaceAfter' => 240];
