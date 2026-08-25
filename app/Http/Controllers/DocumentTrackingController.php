@@ -372,7 +372,8 @@ class DocumentTrackingController extends Controller
         
         $historyData[] = [
             'role'           => DocumentTracking::ROLE_NAMES[$document->current_role],
-            'status'         => $document->status,
+            'role_key'       => $document->current_role,
+            'status'         => $document->status, 
             'transferred_by' => $document->transferredBy
                 ? $document->transferredBy->fname . ' ' . $document->transferredBy->lname
                 : 'System',
@@ -395,6 +396,7 @@ class DocumentTrackingController extends Controller
         foreach ($document->history as $history) {
             $historyData[] = [
                 'role'           => DocumentTracking::ROLE_NAMES[$history->from_role] ?? $history->from_role,
+                'role_key'       => $history->from_role,
                 'to_role'        => $history->to_role
                     ? (DocumentTracking::ROLE_NAMES[$history->to_role] ?? $history->to_role)
                     : null,

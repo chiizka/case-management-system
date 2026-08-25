@@ -1100,7 +1100,9 @@ $(document).ready(function() {
                 let html = '';
                 
                 response.history.forEach(function(item) {
-                    const roleClass = (item.role || '').toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+                    const roleClass = item.role_key
+                        ? item.role_key.toLowerCase()
+                        : (item.role || '').toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
 
                     const isLikelyCreation =
                         item.transferred_by === item.received_by &&
