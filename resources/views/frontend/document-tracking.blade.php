@@ -23,6 +23,13 @@
 .role-province_catanduanes { background: linear-gradient(135deg, #89f7fe 0%, #66a6ff 100%); color: white; }
 .role-province_masbate { background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%); color: #333; }
 .role-province_sorsogon { background: linear-gradient(135deg, #30cfd0 0%, #330867 100%); color: white; }
+.role-sheriff_ro { background: linear-gradient(135deg, #f83600 0%, #f9d423 100%); color: white; }
+.role-sheriff_albay { background: linear-gradient(135deg, #ff9a56 0%, #ff6a88 100%); color: white; }
+.role-sheriff_camarines_sur { background: linear-gradient(135deg, #f7971e 0%, #ffd200 100%); color: #333; }
+.role-sheriff_camarines_norte { background: linear-gradient(135deg, #f77062 0%, #fe5196 100%); color: white; }
+.role-sheriff_catanduanes { background: linear-gradient(135deg, #ff5f6d 0%, #ffc371 100%); color: white; }
+.role-sheriff_masbate { background: linear-gradient(135deg, #ee9ca7 0%, #ffdde1 100%); color: #333; }
+.role-sheriff_sorsogon { background: linear-gradient(135deg, #eb3349 0%, #f45c43 100%); color: white; }
 
 /* Status badges */
 .status-badge {
@@ -1093,7 +1100,7 @@ $(document).ready(function() {
                 let html = '';
                 
                 response.history.forEach(function(item) {
-                    const roleClass = (item.role || '').toLowerCase().replace(/ /g, '_');
+                    const roleClass = (item.role || '').toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
 
                     const isLikelyCreation =
                         item.transferred_by === item.received_by &&
