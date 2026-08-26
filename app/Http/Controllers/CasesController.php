@@ -84,7 +84,8 @@ class CasesController extends Controller
         // case_management shouldn't see auto-created legacy-MALSU cases in Tab 0
         if ($user->isCaseManagement()) {
             $query->where('inspection_id', 'not like', 'LEGACY-%')
-                  ->where('inspection_id', 'not like', 'MALSU-%');
+                ->where('inspection_id', 'not like', 'MALSU-%')
+                ->where('inspection_id', 'not like', 'SENA-%');
         }
 
         // Admin, MALSU see all active cases in Tab 0
@@ -1863,6 +1864,7 @@ public function loadCaseManagementTab(Request $request)
 
     try {
         $cases = CaseFile::whereNotIn('overall_status', ['Completed', 'Disposed', 'Appealed'])
+            ->where('inspection_id', 'not like', 'SENA-%')
             ->whereHas('documentTracking', function ($q) {
                 $q->where('current_role', User::ROLE_CASE_MANAGEMENT)
                 ->where('status', 'Received');
@@ -1997,7 +1999,8 @@ public function loadTab0()
 
         if ($user->isCaseManagement()) {
             $query->where('inspection_id', 'not like', 'LEGACY-%')
-                  ->where('inspection_id', 'not like', 'MALSU-%');
+                ->where('inspection_id', 'not like', 'MALSU-%')
+                ->where('inspection_id', 'not like', 'SENA-%');
         }
 
         $cases = $query->with('documentTracking')->get();  // ← only change
@@ -2183,20 +2186,21 @@ public function loadProvinceTab(Request $request, $province)
         $provinceLabel = $provinceLabelMap[$province];
 
         $cases = CaseFile::whereNotIn('overall_status', ['Completed', 'Disposed', 'Appealed'])
+            ->where('inspection_id', 'not like', 'SENA-%')
             ->where(function ($q) use ($role, $provinceLabel) {
                 // Still physically at this province office — unchanged, existing behavior
                 $q->whereHas('documentTracking', function ($q2) use ($role) {
                         $q2->where('current_role', $role)
-                           ->where('status', 'Received');
+                        ->where('status', 'Received');
                     })
                     // Forwarded on to Case Management (Regional) — keep it on this
                     // province's tab even if Regional CM hasn't "Received" it yet,
                     // as long as the case originated from this province.
                     ->orWhere(function ($q2) use ($provinceLabel) {
                         $q2->where('po_office', $provinceLabel)
-                           ->whereHas('documentTracking', function ($q3) {
-                               $q3->where('current_role', User::ROLE_CASE_MANAGEMENT);
-                           });
+                        ->whereHas('documentTracking', function ($q3) {
+                            $q3->where('current_role', User::ROLE_CASE_MANAGEMENT);
+                        });
                     });
             })
             ->with('documentTracking')
