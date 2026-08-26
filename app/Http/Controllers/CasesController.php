@@ -1022,19 +1022,42 @@ public function destroy($id)
     private function getChanges($oldData, $newData)
     {
         $changes = [];
-        
-        foreach ($newData as $key => $value) {
-            if (!isset($oldData[$key]) || $oldData[$key] != $value) {
-                $fieldName = ucfirst(str_replace('_', ' ', $key));
-                $oldValue = $oldData[$key] ?? '(empty)';
-                $newValue = $value ?? '(empty)';
-                
-                if ($key === 'current_stage') {
-                    $oldValue = explode(': ', $oldValue)[1] ?? $oldValue;
-                    $newValue = explode(': ', $newValue)[1] ?? $newValue;
+
+        // Treat null/empty as equal, and compare dates by their local calendar
+        // day only — toArray() serializes casted dates as UTC ISO timestamps
+        // while inline/row-edit submits plain 'Y-m-d' strings for the same value.
+        $normalize = function ($value) {
+            if ($value === null) return '';
+            $value = trim((string) $value);
+            if ($value === '') return '';
+            if (preg_match('/^\d{4}-\d{2}-\d{2}/', $value)) {
+                try {
+                    return \Carbon\Carbon::parse($value)
+                        ->timezone(config('app.timezone'))
+                        ->format('Y-m-d');
+                } catch (\Exception $e) {
+                    return substr($value, 0, 10);
                 }
-                
-                $changes[] = "$fieldName: '$oldValue' -> '$newValue'";
+            }
+            return $value;
+        };
+
+        foreach ($newData as $key => $value) {
+            $oldValue = $oldData[$key] ?? null;
+
+            $normalizedOld = $normalize($oldValue);
+            $normalizedNew = $normalize($value);
+
+            if ($key === 'current_stage') {
+                $normalizedOld = explode(': ', $normalizedOld)[1] ?? $normalizedOld;
+                $normalizedNew = explode(': ', $normalizedNew)[1] ?? $normalizedNew;
+            }
+
+            if ($normalizedOld !== $normalizedNew) {
+                $fieldName = ucfirst(str_replace('_', ' ', $key));
+                $oldDisplay = $normalizedOld === '' ? '(empty)' : $normalizedOld;
+                $newDisplay = $normalizedNew === '' ? '(empty)' : $normalizedNew;
+                $changes[] = "$fieldName: '$oldDisplay' -> '$newDisplay'";
             }
         }
 
