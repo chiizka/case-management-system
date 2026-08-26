@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
 use App\Services\DocumentTransferService;
 use App\Models\Malsu;
+use App\Helpers\ActivityLogger;
 
 class DocumentTrackingController extends Controller
 {
@@ -277,12 +278,22 @@ class DocumentTrackingController extends Controller
         DB::beginTransaction();
         try {
             $user = Auth::user();
+            $case = CaseFile::findOrFail($request->case_id);
+            $targetRoleLabel = DocumentTracking::ROLE_NAMES[$request->target_role] ?? $request->target_role;
 
             app(DocumentTransferService::class)->transferTo(
                 $request->case_id,
                 $request->target_role,
                 $user->id,
                 $request->transfer_notes
+            );
+
+            ActivityLogger::logAction(
+                'TRANSFER',
+                'Case',
+                $case->inspection_id ?? ('Case #' . $case->id),
+                "Document transferred to {$targetRoleLabel}" . ($request->transfer_notes ? " — {$request->transfer_notes}" : ''),
+                ['establishment' => $case->establishment_name, 'target_role' => $request->target_role]
             );
 
             DB::commit();
@@ -303,7 +314,7 @@ class DocumentTrackingController extends Controller
     public function receive(Request $request, $id)
     {
         $user     = Auth::user();
-        $document = DocumentTracking::findOrFail($id);
+        $document = DocumentTracking::with('case')->findOrFail($id);
 
         if ($document->current_role !== $user->role) {
             return response()->json([
@@ -342,6 +353,16 @@ class DocumentTrackingController extends Controller
                     ['regional_docket_number' => $document->case?->case_no]
                 );
             }
+
+            $roleLabel = DocumentTracking::ROLE_NAMES[$document->current_role] ?? $document->current_role;
+
+            ActivityLogger::logAction(
+                'RECEIVE',
+                'Case',
+                $document->case?->inspection_id ?? ('Case #' . $document->case_id),
+                "Document received at {$roleLabel}",
+                ['establishment' => $document->case?->establishment_name]
+            );
 
             DB::commit();
             return response()->json([
