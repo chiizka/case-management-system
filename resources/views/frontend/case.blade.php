@@ -2123,6 +2123,10 @@ $(document).ready(function() {
 
     // Block double-click editing on readonly cells
     $(document).on('dblclick', '.readonly-cell', function(e) {
+        if ($(e.target).is('select, option, input, textarea, button') ||
+            $(e.target).closest('select, textarea, button').length) {
+            return;
+        }
         e.preventDefault();
         e.stopPropagation();
         // Optional: visual feedback
@@ -2137,8 +2141,13 @@ $(document).ready(function() {
     // Prevent editing of computed fields
 // Prevent editing of computed fields
     $(document).on('click', '.readonly-cell', function(e) {
-        // Let real links (e.g. Sheriff Reports) work normally
-        if ($(e.target).is('a') || $(e.target).closest('a').length) {
+        // Let real links (e.g. Sheriff Reports) work normally, and let
+        // interactive form controls nested inside a readonly cell (like the
+        // case-tag select) behave normally instead of getting blocked.
+        if (
+            $(e.target).is('a, select, option, input, textarea, button') ||
+            $(e.target).closest('a, select, textarea, button').length
+        ) {
             return;
         }
 

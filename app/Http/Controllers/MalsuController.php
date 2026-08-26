@@ -302,17 +302,41 @@ class MalsuController extends Controller
         }
     }
 
+    // NEW
     private function getChanges($oldData, $newData)
     {
         $changes = [];
+
+        $normalize = function ($value) {
+            if ($value === null) return '';
+            $value = trim((string) $value);
+            if ($value === '') return '';
+            if (preg_match('/^\d{4}-\d{2}-\d{2}/', $value)) {
+                try {
+                    return \Carbon\Carbon::parse($value)
+                        ->timezone(config('app.timezone'))
+                        ->format('Y-m-d');
+                } catch (\Exception $e) {
+                    return substr($value, 0, 10);
+                }
+            }
+            return $value;
+        };
+
         foreach ($newData as $key => $value) {
-            if (!isset($oldData[$key]) || $oldData[$key] != $value) {
+            $oldValue = $oldData[$key] ?? null;
+
+            $normalizedOld = $normalize($oldValue);
+            $normalizedNew = $normalize($value);
+
+            if ($normalizedOld !== $normalizedNew) {
                 $fieldName = ucfirst(str_replace('_', ' ', $key));
-                $oldValue = $oldData[$key] ?? '(empty)';
-                $newValue = $value ?? '(empty)';
-                $changes[] = "$fieldName: '$oldValue' -> '$newValue'";
+                $oldDisplay = $normalizedOld === '' ? '(empty)' : $normalizedOld;
+                $newDisplay = $normalizedNew === '' ? '(empty)' : $normalizedNew;
+                $changes[] = "$fieldName: '$oldDisplay' -> '$newDisplay'";
             }
         }
+
         return !empty($changes) ? implode(', ', $changes) : '';
     }
 }
