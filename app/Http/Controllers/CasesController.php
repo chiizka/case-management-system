@@ -707,7 +707,7 @@ public function destroy($id)
                 'UPDATE',
                 'Case',
                 $case->inspection_id,
-                "Stage progression: {$currentStage} Ã¢â€ â€™ {$nextStage}",
+                "Stage progression: {$currentStage} -> {$nextStage}",
                 [
                     'establishment' => $case->establishment_name,
                     'previous_stage' => $currentStage,
@@ -1034,7 +1034,7 @@ public function destroy($id)
                     $newValue = explode(': ', $newValue)[1] ?? $newValue;
                 }
                 
-                $changes[] = "$fieldName: '$oldValue' Ã¢â€ â€™ '$newValue'";
+                $changes[] = "$fieldName: '$oldValue' -> '$newValue'";
             }
         }
 

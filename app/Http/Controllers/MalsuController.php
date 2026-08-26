@@ -20,6 +20,7 @@ class MalsuController extends Controller
         DB::beginTransaction();
         try {
             $malsu = Malsu::findOrFail($malsuId);
+            $oldData = $malsu->toArray();
 
             $updateData = $request->except(['_token', '_method', 'id', 'case_tag']);
 
@@ -32,11 +33,20 @@ class MalsuController extends Controller
                 $malsu->update($updateData);
             }
 
+            $changes = $this->getChanges($oldData, $updateData);
+
             // case_tag lives on document_tracking — only reachable when a real case exists
             if ($request->has('case_tag') && $malsu->case_id) {
                 $tracking = $malsu->case?->documentTracking;
                 if ($tracking) {
-                    $tracking->update(['case_tag' => $request->input('case_tag') ?: null]);
+                    $oldTag = $tracking->case_tag;
+                    $newTag = $request->input('case_tag') ?: null;
+                    $tracking->update(['case_tag' => $newTag]);
+
+                    if ($oldTag != $newTag) {
+                        $tagChange = "Case tag: '" . ($oldTag ?? '(empty)') . "' -> '" . ($newTag ?? '(empty)') . "'";
+                        $changes = $changes ? "$changes, $tagChange" : $tagChange;
+                    }
                 }
             }
 
@@ -44,7 +54,7 @@ class MalsuController extends Controller
                 'UPDATE',
                 'Malsu',
                 $malsu->case?->inspection_id ?? ('Legacy MALSU #' . $malsu->id),
-                "MALSU inline updated",
+                "MALSU inline updated: " . ($changes ?: 'No changes detected'),
                 ['establishment' => $malsu->case?->establishment_name ?? $malsu->case_title]
             );
 
@@ -290,5 +300,19 @@ class MalsuController extends Controller
             Log::error('loadSheriffOverview error: ' . $e->getMessage());
             return response()->json(['success' => false, 'error' => 'Failed to load data.'], 500);
         }
+    }
+
+    private function getChanges($oldData, $newData)
+    {
+        $changes = [];
+        foreach ($newData as $key => $value) {
+            if (!isset($oldData[$key]) || $oldData[$key] != $value) {
+                $fieldName = ucfirst(str_replace('_', ' ', $key));
+                $oldValue = $oldData[$key] ?? '(empty)';
+                $newValue = $value ?? '(empty)';
+                $changes[] = "$fieldName: '$oldValue' -> '$newValue'";
+            }
+        }
+        return !empty($changes) ? implode(', ', $changes) : '';
     }
 }

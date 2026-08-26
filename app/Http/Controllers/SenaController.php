@@ -57,6 +57,7 @@ class SenaController extends Controller
         DB::beginTransaction();
         try {
             $sena = Sena::findOrFail($id);
+            $oldData = $sena->toArray();
 
             $allowedFields = [
                 'establishment_name',
@@ -81,19 +82,29 @@ class SenaController extends Controller
                 'ro_received_sheriffs_return',
             ];
 
-            $data = $request->only($allowedFields);
-            $data = array_filter($data, fn($key) => $request->has($key), ARRAY_FILTER_USE_KEY);
+        $data = $request->only($allowedFields);
+        $data = array_filter($data, fn($key) => $request->has($key), ARRAY_FILTER_USE_KEY);
 
-            if (!empty($data)) {
-                $sena->update($data);
-            }
+        if (!empty($data)) {
+            $sena->update($data);
+        }
 
-            DB::commit();
+        $changes = $this->getChanges($oldData, $data);
 
-            return response()->json([
-                'success' => true,
-                'data'    => $sena->fresh(),
-            ]);
+        ActivityLogger::logAction(
+            'UPDATE',
+            'Sena',
+            $sena->establishment_name ?? ('SENA #' . $sena->id),
+            "SENA inline updated: " . ($changes ?: 'No changes detected'),
+            ['establishment' => $sena->establishment_name]
+        );
+
+        DB::commit();
+
+        return response()->json([
+            'success' => true,
+            'data'    => $sena->fresh(),
+        ]);
 
         } catch (\Exception $e) {
             DB::rollBack();
@@ -318,5 +329,19 @@ class SenaController extends Controller
             Log::error('SENA send to sheriff failed: ' . $e->getMessage());
             return response()->json(['success' => false, 'message' => 'Failed to send: ' . $e->getMessage()], 500);
         }
+    }
+
+    private function getChanges($oldData, $newData)
+    {
+        $changes = [];
+        foreach ($newData as $key => $value) {
+            if (!isset($oldData[$key]) || $oldData[$key] != $value) {
+                $fieldName = ucfirst(str_replace('_', ' ', $key));
+                $oldValue = $oldData[$key] ?? '(empty)';
+                $newValue = $value ?? '(empty)';
+                $changes[] = "$fieldName: '$oldValue' -> '$newValue'";
+            }
+        }
+        return !empty($changes) ? implode(', ', $changes) : '';
     }
 }
