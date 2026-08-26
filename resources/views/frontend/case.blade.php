@@ -5283,7 +5283,19 @@ $(document).ready(function() {
                 'establishment_address': { type: 'text' }, 
                 'mode': { type: 'text' },                  
                 'po_office': { type: 'text' },
-                'type_of_industry': { type: 'text' },
+                'type_of_industry': {
+                    type: 'select',
+                    options: [
+                        { value: '', text: '-- Select Type of Industry --' },
+                        { value: 'Retail Establishments', text: '1. Retail Establishments' },
+                        { value: 'Food Service Establishments', text: '2. Food Service Establishments' },
+                        { value: 'Professional Service Establishments', text: '3. Professional Service Establishments' },
+                        { value: 'Healthcare Industry', text: '4. Healthcare Industry' },
+                        { value: 'Non-Agricultural Establishment', text: '5. Non-Agricultural Establishment' },
+                        { value: 'Agriculture Establishment', text: '6. Agriculture Establishment' },
+                        { value: 'Other - Please specify in remarks', text: '7. Other' }
+                    ]
+                },
                 'current_stage': { 
                     type: 'select',
                     options: [
