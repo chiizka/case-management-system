@@ -287,6 +287,35 @@
             </div>
             @endif
 
+            @if($isCaseManagement)
+            <div class="col-xl col-md-6 mb-4">
+                <div class="card shadow h-100 py-2 clickable-card"
+                    style="border-left:4px solid #f6c23e;cursor:pointer;"
+                    data-toggle="modal" data-target="#myPendingDocsModal">
+                    <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs font-weight-bold text-uppercase mb-1" style="color:#d4a017;">Pending Documents</div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800">{{ $myPendingCount }}</div>
+                                <div class="mt-1">
+                                    @if($myPendingCount > 0)
+                                        <small style="color:#856404;font-size:0.75rem;">
+                                            <i class="fas fa-inbox mr-1"></i>Awaiting acknowledgment
+                                        </small>
+                                    @else
+                                        <small class="text-muted" style="font-size:0.75rem;">
+                                            <i class="fas fa-check-circle mr-1 text-success"></i>All received
+                                        </small>
+                                    @endif
+                                </div>
+                            </div>
+                            <div class="col-auto"><i class="fas fa-inbox fa-2x" style="color:#f6c23e;opacity:0.6;"></i></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            @endif
+
             <div class="{{ $hasCMCard ? 'col-xl' : 'col-xl-3' }} col-md-6 mb-4">
                 <div class="card border-left-primary shadow h-100 py-2">
                     <div class="card-body">
@@ -668,7 +697,7 @@
     </div>
 </div>
 
-@if($isMalsu || $isSheriff)
+@if($isMalsu || $isSheriff || $isCaseManagement)
 <div class="modal fade" id="myPendingDocsModal" tabindex="-1" role="dialog" aria-hidden="true">
     <div class="modal-dialog modal-md" role="document">
         <div class="modal-content" style="border-top:4px solid #f6c23e;">
@@ -677,10 +706,10 @@
                 <div>
                     <h5 class="modal-title mb-0" style="color:#856404;font-size:0.95rem;">
                         <i class="fas fa-inbox mr-2"></i>
-                        Pending Documents — MALSU
+                        Pending Documents — {{ $isMalsu ? 'MALSU' : ($isCaseManagement ? 'Case Management' : 'Sheriff') }}
                     </h5>
                     <small style="color:#a07000;font-size:0.72rem;">
-                        Cases transferred to MALSU awaiting acknowledgment
+                        Cases transferred to {{ $isMalsu ? 'MALSU' : ($isCaseManagement ? 'Case Management' : 'you') }} awaiting acknowledgment
                     </small>
                 </div>
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close" style="color:#856404;">

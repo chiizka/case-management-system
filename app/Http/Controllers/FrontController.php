@@ -20,6 +20,7 @@ class FrontController extends Controller
         $userRole   = $user->role;
         $isMalsu              = false;
         $isSheriff            = false;
+        $isCaseManagement     = false;
         $malsuActiveCases     = 0;
         $malsuDisposedCases   = 0;
         $sheriffCaseHistory   = collect();
@@ -243,6 +244,7 @@ class FrontController extends Controller
         } else {
             // ── Regional roles: system-wide counts ───────────────────────────
             $isMalsu             = false;
+            $isCaseManagement    = $user->isCaseManagement();
             $malsuActiveCases    = 0;
             $malsuDisposedCases  = 0;
             $activeCases         = CaseFile::where('overall_status', 'Active')->count();
@@ -321,8 +323,19 @@ class FrontController extends Controller
             }
 
             // ── Regional users have no personal pending docs card ─────────────
-            $myPendingDocs  = collect();
-            $myPendingCount = 0;
+            if ($isCaseManagement) {
+                $myPendingDocs = \App\Models\DocumentTracking::with(['case', 'transferredBy'])
+                    ->active()
+                    ->where('current_role', 'case_management')
+                    ->where('status', 'Pending Receipt')
+                    ->orderBy('transferred_at', 'desc')
+                    ->get();
+                $myPendingCount = $myPendingDocs->count();
+            } else {
+                // Admin/records have no personal pending docs card
+                $myPendingDocs  = collect();
+                $myPendingCount = 0;
+            }
         }
 
         // ── Pending Documents for THIS user's role (navbar bell) ─────────────
@@ -479,7 +492,8 @@ class FrontController extends Controller
             'isMalsu',
             'malsuActiveCases',
             'malsuDisposedCases',
-            'isSheriff',             
+            'isCaseManagement',
+            'isSheriff',            
             'sheriffCaseHistory', 
             'sheriffOverviewRoles',
         ));
