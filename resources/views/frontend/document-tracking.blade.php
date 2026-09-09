@@ -250,10 +250,9 @@
         <!-- Page Header -->
         <div class="d-flex justify-content-between align-items-center mb-4">
             <div>
-                <h1 class="h3 mb-0 text-gray-800">
+                <h1 class="h5 mb-0 text-gray-800">
                     <i class="fas fa-map-marker-alt text-primary"></i> Document Location Tracking
                 </h1>
-                <p class="text-muted small mb-0">Track physical case documents across departments</p>
             </div>
             @if(Auth::user()->isAdmin())
                 <button class="btn btn-primary" data-toggle="modal" data-target="#transferModal">
@@ -346,6 +345,13 @@
                         <span class="badge badge-warning badge-pill">{{ $pendingDocuments->count() }} Pending</span>
                     </div>
                     <div class="card-body">
+                        <div class="mb-3">
+                            <input type="search"
+                                   id="pendingSearch"
+                                   class="form-control form-control-sm"
+                                   placeholder="Search by case no. or establishment..."
+                                   style="max-width: 320px;">
+                        </div>
                         <div class="table-responsive">
                             <table class="table table-hover tracking-table" id="pendingTable">
                                 <thead>
@@ -443,6 +449,13 @@
                         <span class="badge badge-info badge-pill">{{ $sentPendingDocuments->count() }} Pending</span>
                     </div>
                     <div class="card-body">
+                        <div class="mb-3">
+                            <input type="search"
+                                   id="sentPendingSearch"
+                                   class="form-control form-control-sm"
+                                   placeholder="Search by case no. or establishment..."
+                                   style="max-width: 320px;">
+                        </div>
                         <div class="table-responsive">
                             <table class="table table-hover tracking-table" id="sentPendingTable">
                                 <thead>
@@ -520,11 +533,18 @@
             <!-- My Documents Tab -->
             <div class="tab-pane fade show active" id="myDocs" role="tabpanel">
                 <div class="card shadow mb-4">
-                    <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                   <div class="card-header py-3 d-flex justify-content-between align-items-center">
                         <h6 class="m-0 font-weight-bold text-primary">My Received Documents</h6>
                         <span class="badge badge-primary badge-pill">{{ $myDocuments->count() }} Documents</span>
                     </div>
                     <div class="card-body">
+                        <div class="mb-3">
+                            <input type="search"
+                                   id="myDocsSearch"
+                                   class="form-control form-control-sm"
+                                   placeholder="Search by case no. or establishment..."
+                                   style="max-width: 320px;">
+                        </div>
                         <div class="table-responsive">
                             <table class="table table-hover tracking-table" id="myDocsTable">
                                 <thead>
@@ -1093,60 +1113,100 @@
 
 @endsection
 @push('scripts')
+<!-- DataTables plugins -->
+<script src="{{ asset('vendor/datatables/jquery.dataTables.min.js') }}"></script>
+<script src="{{ asset('vendor/datatables/dataTables.bootstrap4.min.js') }}"></script>
+
 <script>
 $(document).ready(function() {
-    
+
+    // ── Pagination (DataTables) for the document tracking tables ─────
+    var docTrackingTables = {};
+
+    function initDocTable(tableSelector, actionsColIndex) {
+        var $table = $(tableSelector);
+        if ($table.length === 0) return null;
+
+        // Strip the Blade "no records found" placeholder row (it has a
+        // colspan cell) before DataTables gets a look at it — otherwise
+        // it gets treated as a real data row.
+        $table.find('tbody tr td[colspan]').closest('tr').remove();
+
+        if ($.fn.DataTable.isDataTable(tableSelector)) {
+            $table.DataTable().destroy();
+        }
+
+        var dt = $table.DataTable({
+            autoWidth: false,
+            paging: true,
+            pageLength: 50,
+            lengthChange: false,
+            searching: true,
+            info: true,
+            dom: 'tip',
+            columnDefs: [
+                { orderable: false, targets: actionsColIndex }
+            ],
+            language: {
+                emptyTable: 'No records found.'
+            }
+        });
+
+        docTrackingTables[tableSelector] = dt;
+        return dt;
+    }
+
+    var myDocsDT      = initDocTable('#myDocsTable', 6);
+    var pendingDT      = initDocTable('#pendingTable', 6);
+    var sentPendingDT  = initDocTable('#sentPendingTable', 6);
+    initDocTable('#allDocsTable', 6);
+
+    if (myDocsDT) {
+        $('#myDocsSearch').on('input', function () {
+            myDocsDT.search($(this).val()).draw();
+        });
+    }
+    if (pendingDT) {
+        $('#pendingSearch').on('input', function () {
+            pendingDT.search($(this).val()).draw();
+        });
+    }
+    if (sentPendingDT) {
+        $('#sentPendingSearch').on('input', function () {
+            sentPendingDT.search($(this).val()).draw();
+        });
+    }
+
+    // Re-measure column widths the first time a lazily-shown tab is
+    // actually displayed — DataTables can miscalculate widths while a
+    // Bootstrap tab-pane is still display:none.
+    $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
+        var target = $(e.target).attr('href');
+        $(target).find('table.dataTable').each(function () {
+            if ($.fn.DataTable.isDataTable(this)) {
+                $(this).DataTable().columns.adjust().draw(false);
+            }
+        });
+    });
+
     let docToReceive = null;
     let isTransferLocked = false;
 
-    // ── Live search for Cases Forwarded to Case Management tab ───────
-    $('#cmForwardedSearch').on('input', function () {
-        const q = $(this).val().toLowerCase().trim();
-        let visibleCount = 0;
-
-        $('#cmForwardedBody .cm-row').each(function () {
-            const caseNo        = $(this).data('case-no') || '';
-            const establishment = $(this).data('establishment') || '';
-            const match = !q || caseNo.includes(q) || establishment.includes(q);
-            $(this).toggle(match);
-            if (match) visibleCount++;
+    // ── Cases Forwarded to Case Management: DataTable + search box ───
+    var cmForwardedDT = initDocTable('#cmForwardedTable', 6);
+    if (cmForwardedDT) {
+        $('#cmForwardedSearch').on('input', function () {
+            cmForwardedDT.search($(this).val()).draw();
         });
+    }
 
-        const $empty = $('#cmForwardedBody #cmEmptyRow');
-        if (visibleCount === 0 && $empty.length === 0) {
-            $('#cmForwardedBody').append(
-                '<tr id="cmNoResults"><td colspan="7" class="text-center text-muted py-4">' +
-                '<i class="fas fa-search fa-2x mb-2 d-block"></i>No matching cases found.</td></tr>'
-            );
-        } else if (visibleCount > 0) {
-            $('#cmNoResults').remove();
-        }
-    });
-
-    // ── Live search for Cases Forwarded to MALSU tab ──────────────────
-    $('#malsuForwardedSearch').on('input', function () {
-        const q = $(this).val().toLowerCase().trim();
-        let visibleCount = 0;
-
-        $('#malsuForwardedBody .malsu-row').each(function () {
-            const caseNo       = $(this).data('case-no') || '';
-            const establishment = $(this).data('establishment') || '';
-            const match = !q || caseNo.includes(q) || establishment.includes(q);
-            $(this).toggle(match);
-            if (match) visibleCount++;
+    // ── Cases Forwarded to MALSU: DataTable + search box ──────────────
+    var malsuForwardedDT = initDocTable('#malsuForwardedTable', 6);
+    if (malsuForwardedDT) {
+        $('#malsuForwardedSearch').on('input', function () {
+            malsuForwardedDT.search($(this).val()).draw();
         });
-
-        // Show/hide the "no results" empty row
-        const $empty = $('#malsuForwardedBody #malsuEmptyRow');
-        if (visibleCount === 0 && $empty.length === 0) {
-            $('#malsuForwardedBody').append(
-                '<tr id="malsuNoResults"><td colspan="7" class="text-center text-muted py-4">' +
-                '<i class="fas fa-search fa-2x mb-2 d-block"></i>No matching cases found.</td></tr>'
-            );
-        } else if (visibleCount > 0) {
-            $('#malsuNoResults').remove();
-        }
-    });
+    }
 
     // Transfer form submission
     $('#transferForm').on('submit', function(e) {
