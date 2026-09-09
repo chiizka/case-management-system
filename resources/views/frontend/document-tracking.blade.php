@@ -122,6 +122,31 @@
     vertical-align: middle;
 }
 
+/* Fixed layout for the plain tables (My Documents / Pending / Sent /
+   All Documents) so no single column — case no. in particular — can
+   soak up leftover row width when table-layout defaults to auto. */
+#myDocsTable,
+#pendingTable,
+#sentPendingTable,
+#allDocsTable {
+    table-layout: fixed;
+}
+
+#myDocsTable td:first-child,
+#pendingTable td:first-child,
+#sentPendingTable td:first-child,
+#allDocsTable td:first-child {
+    overflow-wrap: break-word;
+    word-break: break-word;
+}
+
+#myDocsTable th:nth-child(1),  #pendingTable th:nth-child(1),  #sentPendingTable th:nth-child(1),  #allDocsTable th:nth-child(1)  { width: 15%; }
+#myDocsTable th:nth-child(2),  #pendingTable th:nth-child(2),  #sentPendingTable th:nth-child(2),  #allDocsTable th:nth-child(2)  { width: 26%; }
+#myDocsTable th:nth-child(3),  #pendingTable th:nth-child(3),  #sentPendingTable th:nth-child(3),  #allDocsTable th:nth-child(3)  { width: 12%; }
+#myDocsTable th:nth-child(4),  #pendingTable th:nth-child(4),  #sentPendingTable th:nth-child(4),  #allDocsTable th:nth-child(4)  { width: 15%; }
+#myDocsTable th:nth-child(5),  #pendingTable th:nth-child(5),  #sentPendingTable th:nth-child(5),  #allDocsTable th:nth-child(5)  { width: 8%; }
+#myDocsTable th:nth-child(6),  #pendingTable th:nth-child(6),  #sentPendingTable th:nth-child(6),  #allDocsTable th:nth-child(6)  { width: 9%; }
+#myDocsTable th:nth-child(7),  #pendingTable th:nth-child(7),  #sentPendingTable th:nth-child(7),  #allDocsTable th:nth-child(7)  { width: 15%; }
 /* Modal */
 .modal-header {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -267,6 +292,14 @@
                     @endif
                 </a>
             </li>
+            <li class="nav-item">
+                <a class="nav-link" id="sent-pending-tab" data-toggle="tab" href="#sentPending" role="tab">
+                    <i class="fas fa-paper-plane"></i> Sent &mdash; Awaiting Receipt
+                    @if($sentPendingDocuments->count() > 0)
+                        <span class="badge badge-info ml-2">{{ $sentPendingDocuments->count() }}</span>
+                    @endif
+                </a>
+            </li>
 
             {{-- ── NEW TAB: Cases Forwarded to Case Management (admin + malsu only) ── --}}
             @if(Auth::user()->isAdmin() || Auth::user()->isMalsu())
@@ -333,7 +366,7 @@
                                             {{ $doc->case->case_no ?? optional($doc->case->malsu)->regional_docket_number ?? $doc->case->inspection_id ?? 'N/A' }}
                                         </td>
                                             <td>
-                                                <div class="text-truncate" style="max-width: 200px;" 
+                                                <div class="text-truncate" style="max-width: 100%;" 
                                                     title="{{ $doc->case->establishment_name ?? 'N/A' }}">
                                                     {{ $doc->case->establishment_name ?? 'N/A' }}
                                                 </div>
@@ -362,15 +395,21 @@
                                                 -
                                             @endif
                                         </td>
-                                        <td>
-                                            <span class="status-badge status-pending">{{ $doc->status }}</span>
+<td>
+                                            <span class="status-badge status-pending">{{ $doc->status === 'Pending Receipt' ? 'Pending' : $doc->status }}</span>
                                         </td>
                                         <td>
-                                            <button class="btn btn-sm btn-receive receive-btn" 
+                                            <button class="btn btn-sm btn-receive receive-btn"
                                                     data-doc-id="{{ $doc->id }}"
                                                     data-case-no="{{ $doc->case->case_no ?? 'N/A' }}"
                                                     title="Receive Document">
                                                 <i class="fas fa-check"></i> Receive
+                                            </button>
+                                            <button class="btn btn-outline-danger btn-sm decline-btn"
+                                                    data-doc-id="{{ $doc->id }}"
+                                                    data-case-no="{{ $doc->case->case_no ?? 'N/A' }}"
+                                                    title="Decline Receipt">
+                                                <i class="fas fa-times"></i> Decline
                                             </button>
                                             <button class="btn btn-info btn-sm view-history-btn" 
                                                     data-doc-id="{{ $doc->id }}"
@@ -384,6 +423,90 @@
                                         <td colspan="7" class="text-center text-muted py-4">
                                             <i class="fas fa-check-circle fa-3x mb-3 d-block text-success"></i>
                                             No pending documents. All caught up!
+                                        </td>
+                                    </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sent - Awaiting Receipt Tab -->
+            <div class="tab-pane fade" id="sentPending" role="tabpanel">
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                        <h6 class="m-0 font-weight-bold text-info">
+                            <i class="fas fa-paper-plane"></i> Transfers You Sent &mdash; Awaiting Receipt
+                        </h6>
+                        <span class="badge badge-info badge-pill">{{ $sentPendingDocuments->count() }} Pending</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover tracking-table" id="sentPendingTable">
+                                <thead>
+                                    <tr>
+                                        <th>Case No.</th>
+                                        <th>Establishment</th>
+                                        <th>Sent To</th>
+                                        <th>Sent At</th>
+                                        <th>Days Waiting</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @forelse($sentPendingDocuments as $doc)
+                                    <tr>
+                                        <td class="font-weight-bold text-primary">
+                                            {{ $doc->case->case_no ?? optional($doc->case->malsu)->regional_docket_number ?? $doc->case->inspection_id ?? 'N/A' }}
+                                        </td>
+                                        <td>
+                                            <div class="text-truncate" style="max-width: 100%;"
+                                                title="{{ $doc->case->establishment_name ?? 'N/A' }}">
+                                                {{ $doc->case->establishment_name ?? 'N/A' }}
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span class="role-badge role-{{ $doc->current_role }}">
+                                                {{ $doc->getRoleDisplayName() }}
+                                            </span>
+                                        </td>
+                                        <td>{{ $doc->transferred_at ? $doc->transferred_at->format('M d, Y h:i A') : 'N/A' }}</td>
+                                        <td>
+                                            @if($doc->transferred_at)
+                                                @php
+                                                    $days = floor($doc->transferred_at->diffInDays(now()));
+                                                    $badgeClass = $days > 7 ? 'danger' : ($days > 3 ? 'warning' : 'success');
+                                                @endphp
+                                                <span class="badge badge-{{ $badgeClass }} pending-pulse">{{ $days }} days</span>
+                                            @else
+                                                -
+                                            @endif
+                                        </td>
+<td>
+                                            <span class="status-badge status-pending">{{ $doc->status === 'Pending Receipt' ? 'Pending' : $doc->status }}</span>
+                                        </td>
+                                        <td>
+                                            <button class="btn btn-danger btn-sm cancel-transfer-btn"
+                                                    data-doc-id="{{ $doc->id }}"
+                                                    data-case-no="{{ $doc->case->case_no ?? 'N/A' }}"
+                                                    title="Cancel Transfer">
+                                                <i class="fas fa-undo"></i> Cancel
+                                            </button>
+                                            <button class="btn btn-info btn-sm view-history-btn"
+                                                    data-doc-id="{{ $doc->id }}"
+                                                    title="View History">
+                                                <i class="fas fa-history"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    @empty
+                                    <tr>
+                                        <td colspan="7" class="text-center text-muted py-4">
+                                            <i class="fas fa-check-circle fa-3x mb-3 d-block text-success"></i>
+                                            Nothing sent is currently awaiting receipt.
                                         </td>
                                     </tr>
                                     @endforelse
@@ -422,7 +545,7 @@
                                             {{ $doc->case->case_no ?? optional($doc->case->malsu)->regional_docket_number ?? $doc->case->inspection_id ?? 'N/A' }}
                                         </td>
                                             <td>
-                                                <div class="text-truncate" style="max-width: 200px;" 
+                                                <div class="text-truncate" style="max-width: 100%;" 
                                                     title="{{ $doc->case->establishment_name ?? 'N/A' }}">
                                                     {{ $doc->case->establishment_name ?? 'N/A' }}
                                                 </div>
@@ -538,6 +661,7 @@
                                         $statusClass = $docStatus === 'Received'
                                             ? 'status-received'
                                             : 'status-pendingreceipt';
+                                        $docStatusLabel = $docStatus === 'Pending Receipt' ? 'Pending' : $docStatus;
 
                                         $dateForwarded = $case->_cm_date_first_forwarded
                                             ? \Carbon\Carbon::parse($case->_cm_date_first_forwarded)->format('M d, Y')
@@ -566,7 +690,7 @@
                                         <td class="notes-cell">{{ $case->_cm_all_notes ?: '—' }}</td>
                                         <td>
                                             <span class="status-badge {{ $statusClass }}">
-                                                {{ $docStatus }}
+                                                {{ $docStatusLabel }}
                                             </span>
                                         </td>
                                         <td>
@@ -646,6 +770,7 @@
 
                                         $docStatus   = $case->_malsu_current_status ?? '-';
                                         $statusClass = $docStatus === 'Received' ? 'status-received' : 'status-pendingreceipt';
+                                        $docStatusLabel = $docStatus === 'Pending Receipt' ? 'Pending' : $docStatus;
 
                                         $dateForwarded = $case->_malsu_date_first_forwarded
                                             ? \Carbon\Carbon::parse($case->_malsu_date_first_forwarded)->format('M d, Y')
@@ -674,7 +799,7 @@
                                         <td class="notes-cell">{{ $case->_malsu_all_notes ?: '—' }}</td>
                                         <td>
                                             <span class="status-badge {{ $statusClass }}">
-                                                {{ $docStatus }}
+                                                {{ $docStatusLabel }}
                                             </span>
                                         </td>
                                         <td>
@@ -732,7 +857,7 @@
                                             {{ $doc->case->case_no ?? optional($doc->case->malsu)->regional_docket_number ?? $doc->case->inspection_id ?? 'N/A' }}
                                         </td>
                                         <td>
-                                            <div class="text-truncate" style="max-width: 180px;" title="{{ $doc->case->establishment_name ?? 'N/A' }}">
+                                            <div class="text-truncate" style="max-width: 100%;" title="{{ $doc->case->establishment_name ?? 'N/A' }}">
                                                 {{ $doc->case->establishment_name ?? 'N/A' }}
                                             </div>
                                         </td>
@@ -741,9 +866,9 @@
                                                 {{ $doc->getRoleDisplayName() }}
                                             </span>
                                         </td>
-                                        <td>
+                                         <td>
                                             <span class="status-badge status-{{ strtolower(str_replace(' ', '', $doc->status)) }}">
-                                                {{ $doc->status }}
+                                                {{ $doc->status === 'Pending Receipt' ? 'Pending' : $doc->status }}
                                             </span>
                                         </td>
                                         <td>
@@ -935,6 +1060,37 @@
     </div>
 </div>
 
+<!-- Cancel / Decline Transfer Modal (shared — content swaps per action) -->
+<div class="modal fade" id="transferActionModal" tabindex="-1" role="dialog" aria-labelledby="transferActionModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header" id="transferActionModalHeader">
+                <h5 class="modal-title" id="transferActionModalLabel">
+                    <i class="mr-2" id="transferActionModalIcon"></i>
+                    <span id="transferActionModalTitle">Cancel Transfer</span>
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-warning" role="alert">
+                    <i class="fas fa-exclamation-triangle mr-2"></i>
+                    <span id="transferActionModalWarning">This will revert the transfer back to where it was before.</span>
+                </div>
+                <p class="mb-1"><strong>Case No:</strong> <span id="transferActionCaseNo"></span></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                <button type="button" class="btn" id="confirmTransferActionBtn">
+                    <i class="fas fa-check mr-2"></i>Confirm
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
 @endsection
 @push('scripts')
 <script>
@@ -1059,6 +1215,81 @@ $(document).ready(function() {
         $('#receiveModal').modal('show');
     });
 
+    // Shared state for the Cancel/Decline modal
+    let transferActionData = null;
+
+    // Cancel a pending transfer you sent → open modal
+    $(document).on('click', '.cancel-transfer-btn', function() {
+        transferActionData = {
+            docId: $(this).data('doc-id'),
+            caseNo: $(this).data('case-no'),
+            action: 'cancel',
+            endpoint: '/documents/' + $(this).data('doc-id') + '/cancel',
+            button: $(this)
+        };
+
+        $('#transferActionModalHeader').removeClass('bg-warning').addClass('bg-danger text-white');
+        $('#transferActionModalIcon').removeClass('fa-times').addClass('fas fa-undo');
+        $('#transferActionModalTitle').text('Cancel Transfer');
+        $('#transferActionModalWarning').text('This will revert the transfer back to where it was before you sent it.');
+        $('#transferActionCaseNo').text(transferActionData.caseNo);
+        $('#confirmTransferActionBtn').removeClass('btn-warning').addClass('btn-danger')
+            .html('<i class="fas fa-check mr-2"></i>Confirm Cancel');
+
+        $('#transferActionModal').modal('show');
+    });
+
+    // Decline a transfer pending receipt at your role → open modal
+    $(document).on('click', '.decline-btn', function() {
+        transferActionData = {
+            docId: $(this).data('doc-id'),
+            caseNo: $(this).data('case-no'),
+            action: 'decline',
+            endpoint: '/documents/' + $(this).data('doc-id') + '/decline',
+            button: $(this)
+        };
+
+        $('#transferActionModalHeader').removeClass('bg-danger').addClass('bg-warning text-white');
+        $('#transferActionModalIcon').removeClass('fa-undo').addClass('fas fa-times');
+        $('#transferActionModalTitle').text('Decline Transfer');
+        $('#transferActionModalWarning').text('This will send the case back to where it came from.');
+        $('#transferActionCaseNo').text(transferActionData.caseNo);
+        $('#confirmTransferActionBtn').removeClass('btn-danger').addClass('btn-warning')
+            .html('<i class="fas fa-check mr-2"></i>Confirm Decline');
+
+        $('#transferActionModal').modal('show');
+    });
+
+    // Confirm button inside the shared modal — fires the actual AJAX call
+    $('#confirmTransferActionBtn').on('click', function() {
+        if (!transferActionData) return;
+
+        const btn = $(this);
+        const originalHtml = btn.html();
+        btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Processing...');
+
+        $.ajax({
+            url: transferActionData.endpoint,
+            method: 'POST',
+            headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
+            success: function(response) {
+                $('#transferActionModal').modal('hide');
+                showAlert(response.message || 'Transfer updated successfully!', 'success');
+                setTimeout(() => location.reload(), 1200);
+            },
+            error: function(xhr) {
+                btn.prop('disabled', false).html(originalHtml);
+                showAlert(xhr.responseJSON?.message || 'Failed to process transfer.', 'danger');
+            }
+        });
+    });
+
+    // Reset modal state when closed
+    $('#transferActionModal').on('hidden.bs.modal', function() {
+        transferActionData = null;
+        $('#confirmTransferActionBtn').prop('disabled', false);
+    });
+
     // Confirm receive
     $('#confirmReceiveBtn').on('click', function() {
         if (!docToReceive) return;
@@ -1109,6 +1340,8 @@ $(document).ready(function() {
                         Math.abs(new Date(item.transferred_at) - new Date(item.received_at)) < 10000 &&
                         (item.notes || '').toLowerCase().includes('case created by');
 
+                    const isRevertAction = /^(Cancelled by|Declined by)/.test(item.received_by);
+
                     let contentHtml = '';
 
                     if (isLikelyCreation) {
@@ -1117,6 +1350,22 @@ $(document).ready(function() {
                                 <div class="col-md-12">
                                     <small class="text-muted">Created & Initially Received By:</small><br>
                                     <strong class="text-success">${item.received_by}</strong><br>
+                                    <small class="text-muted">${item.received_at}</small>
+                                </div>
+                            </div>`;
+                    } else if (/^(Cancelled by|Declined by)/.test(item.received_by)) {
+                        // Cancel/decline entries aren't a real receipt — drop
+                        // the "Received By:" label and show the action itself
+                        // in red instead.
+                        contentHtml = `
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <small class="text-muted">Transferred By:</small><br>
+                                    <strong>${item.transferred_by}</strong><br>
+                                    <small class="text-muted">${item.transferred_at}</small>
+                                </div>
+                                <div class="col-md-6">
+                                    <strong class="text-danger">${item.received_by}</strong><br>
                                     <small class="text-muted">${item.received_at}</small>
                                 </div>
                             </div>`;
@@ -1145,7 +1394,7 @@ $(document).ready(function() {
                                     <div class="d-flex justify-content-between mb-2">
                                         <div>
                                             <span class="role-badge role-${roleClass}">${item.role}</span>
-                                            ${item.from_role ? '<small class="text-muted ml-2">from ' + item.from_role + '</small>' : ''}
+                                            ${isRevertAction && item.to_role ? '<small class="text-muted ml-2">&#8617; returned to ' + item.to_role + '</small>' : ''}
                                         </div>
                                         <small class="text-muted">${item.time_ago}</small>
                                     </div>
@@ -1153,7 +1402,7 @@ $(document).ready(function() {
                                     ${item.notes ? '<hr class="my-2"><small class="text-muted">Notes: ' + item.notes + '</small>' : ''}
                                 </div>
                             </div>
-                        </div>`;
+                        </div>`; 
                 });
                 
                 $('#historyTimeline').html(html || '<div class="alert alert-info">No history available</div>');

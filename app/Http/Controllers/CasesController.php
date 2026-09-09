@@ -1085,31 +1085,53 @@ public function destroy($id)
             }
             
             $historyData = [];
-            
-            // Add current state
-            $historyData[] = [
-                'role' => DocumentTracking::ROLE_NAMES[$documentTracking->current_role] ?? $documentTracking->current_role,
-                'status' => $documentTracking->status,
-                'transferred_by' => $documentTracking->transferredBy 
-                    ? $documentTracking->transferredBy->fname . ' ' . $documentTracking->transferredBy->lname 
-                    : 'System',
-                'transferred_at' => $documentTracking->transferred_at 
-                    ? $documentTracking->transferred_at->format('M d, Y h:i A') 
-                    : 'N/A',
-                'received_by' => $documentTracking->receivedBy 
-                    ? $documentTracking->receivedBy->fname . ' ' . $documentTracking->receivedBy->lname 
-                    : ($documentTracking->status === 'Received' ? 'System' : 'Pending'),
-                'received_at' => $documentTracking->received_at 
-                    ? $documentTracking->received_at->format('M d, Y h:i A') 
-                    : 'Pending',
-                'notes' => $documentTracking->transfer_notes,
-                'time_ago' => $documentTracking->transferred_at 
-                    ? $documentTracking->transferred_at->diffForHumans() 
-                    : 'N/A'
-            ];
+
+            // After a cancel/decline, the live tracking row is just a
+            // restatement of the history entry revertPendingTransfer()
+            // already wrote — skip the synthetic "current state" card in
+            // that case, same as DocumentTrackingController::history().
+            $isJustReverted = is_null($documentTracking->transferred_by_user_id)
+                && $documentTracking->transfer_notes
+                && str_starts_with($documentTracking->transfer_notes, 'Reverted to');
+
+            if (!$isJustReverted) {
+                // Add current state
+                $historyData[] = [
+                    'role' => DocumentTracking::ROLE_NAMES[$documentTracking->current_role] ?? $documentTracking->current_role,
+                    'status' => $documentTracking->status,
+                    'transferred_by' => $documentTracking->transferredBy 
+                        ? $documentTracking->transferredBy->fname . ' ' . $documentTracking->transferredBy->lname 
+                        : 'System',
+                    'transferred_at' => $documentTracking->transferred_at 
+                        ? $documentTracking->transferred_at->format('M d, Y h:i A') 
+                        : 'N/A',
+                    'received_by' => $documentTracking->receivedBy 
+                        ? $documentTracking->receivedBy->fname . ' ' . $documentTracking->receivedBy->lname 
+                        : ($documentTracking->status === 'Received' ? 'System' : 'Pending'),
+                    'received_at' => $documentTracking->received_at 
+                        ? $documentTracking->received_at->format('M d, Y h:i A') 
+                        : 'Pending',
+                    'notes' => $documentTracking->transfer_notes,
+                    'time_ago' => $documentTracking->transferred_at 
+                        ? $documentTracking->transferred_at->diffForHumans() 
+                        : 'N/A'
+                ];
+            }
             
             // Add historical records (oldest first for timeline display)
             foreach ($documentTracking->history()->orderBy('created_at', 'asc')->get() as $history) {
+                // Relabel "Received By" for cancel/decline entries — same
+                // marker text pattern written by revertPendingTransfer().
+                $isRevertEntry = $history->notes && str_contains($history->notes, '— reverted to');
+                $receivedByName = $history->receivedBy
+                    ? $history->receivedBy->fname . ' ' . $history->receivedBy->lname
+                    : (!$history->transferredBy ? 'System' : 'Not Received');
+
+                if ($isRevertEntry && $history->receivedBy) {
+                    $actionWord = str_contains($history->notes, 'declined by') ? 'Declined' : 'Cancelled';
+                    $receivedByName = "{$actionWord} by {$receivedByName}";
+                }
+
                 $historyData[] = [
                     'role' => DocumentTracking::ROLE_NAMES[$history->from_role] ?? $history->from_role,
                     'to_role' => $history->to_role 
@@ -1121,9 +1143,7 @@ public function destroy($id)
                     'transferred_at' => $history->transferred_at 
                         ? $history->transferred_at->format('M d, Y h:i A') 
                         : 'N/A',
-                    'received_by'    => $history->receivedBy 
-                        ? $history->receivedBy->fname . ' ' . $history->receivedBy->lname 
-                        : (!$history->transferredBy ? 'System' : 'Not Received'),
+                    'received_by'    => $receivedByName,
                     'received_at' => $history->received_at 
                         ? $history->received_at->format('M d, Y h:i A') 
                         : 'N/A',
@@ -2024,7 +2044,7 @@ public function loadTab0()
     }
 }
 
- public function executeCase(Request $request, $id)
+public function executeCase(Request $request, $id)
 {
     $request->validate([
         'exec_received_by'   => 'required|string|max:255',
@@ -2038,43 +2058,19 @@ public function loadTab0()
         $case = CaseFile::findOrFail($id);
         $user = Auth::user();
 
-        $tracking = DocumentTracking::where('case_id', $case->id)->first();
+        $notes = "Forwarded for execution via {$request->exec_courier} (Tracking: {$request->exec_tracking_no}). Received by: {$request->exec_received_by} on {$request->exec_date_received}.";
 
-        $oldRole = $tracking->current_role; // capture BEFORE update
+        // Route through the shared service so previous_* snapshot fields get
+        // written (needed for cancel/decline), and history stays consistent
+        // with every other transfer path.
+        $tracking = app(\App\Services\DocumentTransferService::class)->transferTo(
+            $case->id,
+            'malsu',
+            $user->id,
+            $notes
+        );
 
-        if ($tracking) {
-            \App\Models\DocumentTrackingHistory::create([
-                'document_tracking_id'   => $tracking->id,
-                'from_role'              => $oldRole,
-                'to_role'                => 'malsu',   // ← the NEW destination role
-                'transferred_by_user_id' => $tracking->transferred_by_user_id,
-                'transferred_at'         => $tracking->transferred_at,
-                'received_by_user_id'    => $tracking->received_by_user_id,
-                'received_at'            => $tracking->received_at,
-                'notes'                  => $tracking->transfer_notes,
-            ]);
-
-            $tracking->update([
-                'current_role'           => 'malsu',
-                'status'                 => 'Pending Receipt',
-                'transferred_by_user_id' => $user->id,
-                'transferred_at'         => now(),
-                'received_by_user_id'    => null,
-                'received_at'            => null,
-                'transfer_notes'         => "Forwarded for execution via {$request->exec_courier} (Tracking: {$request->exec_tracking_no}). Received by: {$request->exec_received_by} on {$request->exec_date_received}.",
-                'case_tag'               => 'For Finality',
-            ]);
-        } else {
-            DocumentTracking::create([
-                'case_id'                => $case->id,
-                'current_role'           => 'malsu',
-                'status'                 => 'Pending Receipt',
-                'transferred_by_user_id' => $user->id,
-                'transferred_at'         => now(),
-                'transfer_notes'         => "Forwarded for execution via {$request->exec_courier} (Tracking: {$request->exec_tracking_no}). Received by: {$request->exec_received_by} on {$request->exec_date_received}.",
-                'case_tag'                => 'For Finality',
-            ]);
-        }
+        $tracking->update(['case_tag' => 'For Finality']);
 
         // ── NEW: persist structured execution data, with logging ──
         Log::info('Attempting to save CaseExecution', [

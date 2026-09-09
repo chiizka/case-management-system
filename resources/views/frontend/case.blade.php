@@ -6270,6 +6270,8 @@ $(document).on('click', '.view-history-btn', function(e) {
                 Math.abs(new Date(item.transferred_at) - new Date(item.received_at)) < 10000 &&
                 (item.notes || '').toLowerCase().includes('case created by');
 
+        const isRevertAction = /^(Cancelled by|Declined by)/.test(item.received_by);
+
             let transferContent = '';
 
             if (isLikelyCreation) {
@@ -6284,23 +6286,39 @@ $(document).on('click', '.view-history-btn', function(e) {
                     </div>
                 `;
             } else {
-                // Normal transfer layout
-                transferContent = `
-                    <div class="row">
-                        <div class="col-md-6">
-                            <small class="text-muted d-block">Transferred By:</small>
-                            <strong>${item.transferred_by}</strong><br>
-                            <small class="text-muted">${item.transferred_at}</small>
+                if (isRevertAction) {
+                    transferContent = `
+                        <div class="row">
+                            <div class="col-md-6">
+                                <small class="text-muted d-block">Transferred By:</small>
+                                <strong>${item.transferred_by}</strong><br>
+                                <small class="text-muted">${item.transferred_at}</small>
+                            </div>
+                            <div class="col-md-6">
+                                <strong class="text-danger">${item.received_by}</strong><br>
+                                <small class="text-muted">${item.received_at}</small>
+                            </div>
                         </div>
-                        <div class="col-md-6">
-                            <small class="text-muted d-block">Received By:</small>
-                            <strong class="${item.received_by === 'Pending' || item.received_by === 'Awaiting Receipt' || item.received_by === 'Not Yet Received' ? 'text-warning' : 'text-success'}">
-                                ${item.received_by === 'Pending' ? 'Awaiting Receipt' : item.received_by}
-                            </strong><br>
-                            <small class="text-muted">${item.received_at}</small>
+                    `;
+                } else {
+                    // Normal transfer layout
+                    transferContent = `
+                        <div class="row">
+                            <div class="col-md-6">
+                                <small class="text-muted d-block">Transferred By:</small>
+                                <strong>${item.transferred_by}</strong><br>
+                                <small class="text-muted">${item.transferred_at}</small>
+                            </div>
+                            <div class="col-md-6">
+                                <small class="text-muted d-block">Received By:</small>
+                                <strong class="${item.received_by === 'Pending' || item.received_by === 'Awaiting Receipt' || item.received_by === 'Not Yet Received' ? 'text-warning' : 'text-success'}">
+                                    ${item.received_by === 'Pending' ? 'Awaiting Receipt' : item.received_by}
+                                </strong><br>
+                                <small class="text-muted">${item.received_at}</small>
+                            </div>
                         </div>
-                    </div>
-                `;
+                    `;
+                }
             }
 
             timelineHtml += `
@@ -6313,7 +6331,9 @@ $(document).on('click', '.view-history-btn', function(e) {
                                     <span class="badge badge-${statusClass}" style="font-size: 0.85rem; padding: 0.5rem 1rem;">
                                         ${item.role}
                                     </span>
-                                    ${!isLikelyCreation && item.to_role ? '<small class="text-muted ml-2">&rarr; sent to ' + item.to_role + '</small>' : ''}
+                                    ${!isLikelyCreation && isRevertAction && item.to_role
+                                        ? '<small class="text-muted ml-2">&#8617; returned to ' + item.to_role + '</small>'
+                                        : ''}
                                 </div>
                                 <div class="text-right">
                                     <small class="text-muted"><i class="fas fa-clock"></i> ${item.time_ago}</small>

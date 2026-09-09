@@ -20,12 +20,19 @@ class DocumentTracking extends Model
         'received_by_user_id',
         'received_at',
         'transfer_notes',
-        'case_tag'
+        'case_tag',
+        'previous_role',
+        'previous_status',
+        'previous_received_by_user_id',
+        'previous_received_at',
+        'previous_transfer_notes',
+        'previous_case_tag'
     ];
 
     protected $casts = [
         'transferred_at' => 'datetime',
-        'received_at' => 'datetime'
+        'received_at' => 'datetime',
+        'previous_received_at' => 'datetime'
     ];
 
     const ROLE_NAMES = [

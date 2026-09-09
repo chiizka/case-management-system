@@ -45,6 +45,21 @@ class DocumentTrackingController extends Controller
 
         $myDocuments = $myDocumentsQuery->get();
         $pendingDocuments = $pendingDocumentsQuery->get();
+
+        // Transfers this user's role sent that are still awaiting receipt —
+        // powers the "Sent — Awaiting Receipt" tab and its Cancel button.
+        // Admin sees every outstanding sent transfer, regardless of role.
+        $sentPendingDocumentsQuery = DocumentTracking::with(['case.malsu'])
+            ->active()
+            ->where('status', 'Pending Receipt')
+            ->where(function ($q) use ($user) {
+                $q->where('previous_role', $user->role);
+                if ($user->isAdmin()) {
+                    $q->orWhereNotNull('previous_role');
+                }
+            });
+
+        $sentPendingDocuments = $sentPendingDocumentsQuery->get();
         
         // All documents (for admin overview) - ONLY ACTIVE CASES
         $allDocuments = DocumentTracking::with(['case.malsu', 'transferredBy', 'receivedBy'])
@@ -259,6 +274,7 @@ class DocumentTrackingController extends Controller
         return view('frontend.document-tracking', compact(
             'myDocuments',
             'pendingDocuments',
+            'sentPendingDocuments',
             'allDocuments',
             'cases',
             'roleCounts',
@@ -379,6 +395,157 @@ class DocumentTrackingController extends Controller
         }
     }
 
+    /**
+     * Cancel a pending transfer — undoes it back to where it was before
+     * this transfer. Only the role that sent it (previous_role) or Admin
+     * may do this, and only while it hasn't been received yet.
+     */
+    public function cancel($id)
+    {
+        $user     = Auth::user();
+        $document = DocumentTracking::with('case')->findOrFail($id);
+
+        if ($document->status !== 'Pending Receipt') {
+            return response()->json([
+                'success' => false,
+                'message' => 'This transfer is no longer pending — it may have already been received.'
+            ], 400);
+        }
+
+        if ($document->previous_role !== $user->role && !$user->isAdmin()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You do not have permission to cancel this transfer.'
+            ], 403);
+        }
+
+        return $this->revertPendingTransfer($document, $user, 'cancelled');
+    }
+
+    /**
+     * Decline a transfer that's pending receipt at your role — sends it
+     * back to where it came from. Only the receiving role (current_role)
+     * or Admin may do this, and only while it hasn't been received yet.
+     */
+    public function decline($id)
+    {
+        $user     = Auth::user();
+        $document = DocumentTracking::with('case')->findOrFail($id);
+
+        if ($document->status !== 'Pending Receipt') {
+            return response()->json([
+                'success' => false,
+                'message' => 'This transfer is no longer pending — it may have already been received.'
+            ], 400);
+        }
+
+        if ($document->current_role !== $user->role && !$user->isAdmin()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You do not have permission to decline this transfer.'
+            ], 403);
+        }
+
+        return $this->revertPendingTransfer($document, $user, 'declined');
+    }
+
+    /**
+     * Shared revert logic for cancel/decline — restores the tracking row
+     * from its previous_* snapshot, logs a history entry, and clears the
+     * snapshot fields.
+     */
+    private function revertPendingTransfer(DocumentTracking $document, $user, string $actionLabel)
+    {
+        if (!$document->previous_role) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No prior state recorded for this document — cannot revert automatically.'
+            ], 422);
+        }
+
+        DB::beginTransaction();
+        try {
+            $fromRole = $document->current_role;
+            $toRole   = $document->previous_role;
+
+            // Capture who actually sent this leg, and when, before the
+            // update() below overwrites transferred_by_user_id/transferred_at.
+            // "Transferred By" on this card should credit the real sender
+            // (e.g. Albay Province), not the person cancelling/declining it.
+            $originalSenderId = $document->transferred_by_user_id;
+            $originalSentAt   = $document->transferred_at;
+
+            DocumentTrackingHistory::create([
+                'document_tracking_id'   => $document->id,
+                'from_role'              => $fromRole,
+                'to_role'                => $toRole,
+                'transferred_by_user_id' => $originalSenderId,
+                'transferred_at'         => $originalSentAt,
+                // Not a genuine receipt — but recording the actor here (with
+                // the real cancel/decline timestamp) lets history() label it
+                // clearly as "Declined by X" / "Cancelled by X" instead of a
+                // bare, misleading "Not Received".
+                'received_by_user_id'    => $user->id,
+                'received_at'            => now(),
+                'notes'                  => "Transfer to " . (DocumentTracking::ROLE_NAMES[$fromRole] ?? $fromRole)
+                    . " {$actionLabel} by {$user->fname} {$user->lname} — reverted to "
+                    . (DocumentTracking::ROLE_NAMES[$toRole] ?? $toRole) . ".",
+            ]);
+
+            if ($document->isSheriffRole() && $document->case?->malsu) {
+                $document->case->malsu->update(['sheriff_designate' => null]);
+            }
+
+            $document->update([
+                'current_role'           => $document->previous_role,
+                'status'                 => $document->previous_status,
+                'received_by_user_id'    => $document->previous_received_by_user_id,
+                'received_at'            => $document->previous_received_at,
+                'case_tag'               => $document->previous_case_tag,
+
+                // Deliberately NOT restoring transfer_notes from the snapshot:
+                // for a case's first-ever transfer, previous_transfer_notes is
+                // literally the original "Case created by..." text, and with
+                // received_by restored to the creator too, the live row would
+                // satisfy the blade isLikelyCreation heuristic again — showing
+                // a second "Created" card that duplicates the real one already
+                // in document_tracking_history. Describe the revert instead.
+                'transfer_notes'         => "Reverted to " . (DocumentTracking::ROLE_NAMES[$toRole] ?? $toRole)
+                    . " — transfer {$actionLabel} by {$user->fname} {$user->lname}.",
+                'transferred_by_user_id' => null,
+                'transferred_at'         => now(),
+
+                'previous_role'                => null,
+                'previous_status'               => null,
+                'previous_received_by_user_id'  => null,
+                'previous_received_at'          => null,
+                'previous_transfer_notes'        => null,
+                'previous_case_tag'              => null,
+            ]);
+
+            ActivityLogger::logAction(
+                'TRANSFER',
+                'Case',
+                $document->case?->inspection_id ?? ('Case #' . $document->case_id),
+                "Pending transfer to " . (DocumentTracking::ROLE_NAMES[$fromRole] ?? $fromRole) . " {$actionLabel}",
+                ['establishment' => $document->case?->establishment_name]
+            );
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => "Transfer {$actionLabel} successfully."
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to revert transfer: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
     public function history($id)
     {
     $document = DocumentTracking::with([
@@ -390,7 +557,18 @@ class DocumentTrackingController extends Controller
     ])->findOrFail($id);
         
         $historyData = [];
-        
+
+        // After a cancel/decline, the live tracking row's "current state" is
+        // just a restatement of the history entry revertPendingTransfer()
+        // already wrote (same event, same timestamp) — showing both is
+        // redundant. Detect that state via the markers set there and skip
+        // the synthetic card in that case; the real history row below still
+        // covers it.
+        $isJustReverted = is_null($document->transferred_by_user_id)
+            && $document->transfer_notes
+            && str_starts_with($document->transfer_notes, 'Reverted to');
+
+        if (!$isJustReverted) {
         $historyData[] = [
             'role'           => DocumentTracking::ROLE_NAMES[$document->current_role],
             'role_key'       => $document->current_role,
@@ -413,8 +591,23 @@ class DocumentTrackingController extends Controller
                 : 'N/A',
             'is_current'     => true
         ];
+        }
 
         foreach ($document->history as $history) {
+            // revertPendingTransfer() writes a distinctive "— reverted to"
+            // marker into its notes — use it to relabel "Received By" as
+            // "Declined by X" / "Cancelled by X" rather than implying a
+            // genuine receipt happened.
+            $isRevertEntry = $history->notes && str_contains($history->notes, '— reverted to');
+            $receivedByName = $history->receivedBy
+                ? $history->receivedBy->fname . ' ' . $history->receivedBy->lname
+                : 'Not Received';
+
+            if ($isRevertEntry && $history->receivedBy) {
+                $actionWord = str_contains($history->notes, 'declined by') ? 'Declined' : 'Cancelled';
+                $receivedByName = "{$actionWord} by {$receivedByName}";
+            }
+
             $historyData[] = [
                 'role'           => DocumentTracking::ROLE_NAMES[$history->from_role] ?? $history->from_role,
                 'role_key'       => $history->from_role,
@@ -428,9 +621,7 @@ class DocumentTrackingController extends Controller
                 'transferred_at' => $history->transferred_at
                     ? $history->transferred_at->format('M d, Y h:i A')
                     : 'N/A',
-                'received_by'    => $history->receivedBy
-                    ? $history->receivedBy->fname . ' ' . $history->receivedBy->lname
-                    : 'Not Received',
+                'received_by'    => $receivedByName,
                 'received_at'    => $history->received_at
                     ? $history->received_at->format('M d, Y h:i A')
                     : 'N/A',
