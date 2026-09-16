@@ -278,14 +278,16 @@
 
         <!-- Tabs -->
         <ul class="nav nav-tabs mb-3" id="documentTabs" role="tablist">
+            @unless(Auth::user()->isAdmin())
             <li class="nav-item">
                 <a class="nav-link active" id="my-docs-tab" data-toggle="tab" href="#myDocs" role="tab">
                     <i class="fas fa-folder"></i> My Documents
                 </a>
             </li>
+            @endunless
             <li class="nav-item">
                 <a class="nav-link" id="pending-tab" data-toggle="tab" href="#pending" role="tab">
-                    <i class="fas fa-clock"></i> Pending Receipts
+                    <i class="fas fa-clock"></i> {{ Auth::user()->isAdmin() ? 'All Pending Receipts' : 'Pending Receipts' }}
                     @if($pendingDocuments->count() > 0)
                         <span class="badge badge-warning ml-2">{{ $pendingDocuments->count() }}</span>
                     @endif
@@ -293,7 +295,7 @@
             </li>
             <li class="nav-item">
                 <a class="nav-link" id="sent-pending-tab" data-toggle="tab" href="#sentPending" role="tab">
-                    <i class="fas fa-paper-plane"></i> Sent &mdash; Awaiting Receipt
+                    <i class="fas fa-paper-plane"></i> {{ Auth::user()->isAdmin() ? 'All Awaiting Receipt' : 'Sent — Awaiting Receipt' }}
                     @if($sentPendingDocuments->count() > 0)
                         <span class="badge badge-info ml-2">{{ $sentPendingDocuments->count() }}</span>
                     @endif
@@ -326,7 +328,7 @@
 
             @if(Auth::user()->isAdmin())
             <li class="nav-item">
-                <a class="nav-link" id="all-docs-tab" data-toggle="tab" href="#allDocs" role="tab">
+                <a class="nav-link active" id="all-docs-tab" data-toggle="tab" href="#allDocs" role="tab">
                     <i class="fas fa-list"></i> All Documents
                 </a>
             </li>
@@ -340,7 +342,12 @@
                 <div class="card shadow mb-4">
                     <div class="card-header py-3 d-flex justify-content-between align-items-center">
                         <h6 class="m-0 font-weight-bold text-warning">
-                            <i class="fas fa-clock"></i> Pending Receipts for {{ App\Helpers\RoleHelper::getRoleDisplayName() }}
+                            <i class="fas fa-clock"></i>
+                            @if(Auth::user()->isAdmin())
+                                All Pending Receipts
+                            @else
+                                Pending Receipts for {{ App\Helpers\RoleHelper::getRoleDisplayName() }}
+                            @endif
                         </h6>
                         <span class="badge badge-warning badge-pill">{{ $pendingDocuments->count() }} Pending</span>
                     </div>
@@ -401,7 +408,7 @@
                                                 -
                                             @endif
                                         </td>
-<td>
+                                        <td>
                                             <span class="status-badge status-pending">{{ $doc->status === 'Pending Receipt' ? 'Pending' : $doc->status }}</span>
                                         </td>
                                         <td>
@@ -417,7 +424,7 @@
                                                     title="Decline Receipt">
                                                 <i class="fas fa-times"></i> Decline
                                             </button>
-                                            <button class="btn btn-info btn-sm view-history-btn" 
+                                            <button class="btn btn-info btn-sm view-history-btn"
                                                     data-doc-id="{{ $doc->id }}"
                                                     title="View History">
                                                 <i class="fas fa-history"></i>
@@ -444,7 +451,12 @@
                 <div class="card shadow mb-4">
                     <div class="card-header py-3 d-flex justify-content-between align-items-center">
                         <h6 class="m-0 font-weight-bold text-info">
-                            <i class="fas fa-paper-plane"></i> Transfers You Sent &mdash; Awaiting Receipt
+                            <i class="fas fa-paper-plane"></i>
+                            @if(Auth::user()->isAdmin())
+                                All Transfers Awaiting Receipt
+                            @else
+                                Transfers You Sent &mdash; Awaiting Receipt
+                            @endif
                         </h6>
                         <span class="badge badge-info badge-pill">{{ $sentPendingDocuments->count() }} Pending</span>
                     </div>
@@ -531,6 +543,7 @@
             </div>
 
             <!-- My Documents Tab -->
+            @unless(Auth::user()->isAdmin())
             <div class="tab-pane fade show active" id="myDocs" role="tabpanel">
                 <div class="card shadow mb-4">
                    <div class="card-header py-3 d-flex justify-content-between align-items-center">
@@ -603,7 +616,7 @@
                                                     title="Transfer">
                                                 <i class="fas fa-exchange-alt"></i>
                                             </button>
-                                            <button class="btn btn-info btn-sm view-history-btn" 
+                                            <button class="btn btn-info btn-sm view-history-btn"
                                                     data-doc-id="{{ $doc->id }}"
                                                     title="View History">
                                                 <i class="fas fa-history"></i>
@@ -624,6 +637,7 @@
                     </div>
                 </div>
             </div>
+            @endunless
 
             {{-- ══════════════════════════════════════════════════════════════════
                  NEW TAB: Cases Forwarded to Case Management
@@ -850,7 +864,7 @@
 
             <!-- All Documents Tab (Admin Only) -->
             @if(Auth::user()->isAdmin())
-            <div class="tab-pane fade" id="allDocs" role="tabpanel">
+            <div class="tab-pane fade show active" id="allDocs" role="tabpanel">
                 <div class="card shadow mb-4">
                     <div class="card-header py-3 d-flex justify-content-between align-items-center">
                         <h6 class="m-0 font-weight-bold text-primary">All Documents (Admin View)</h6>
@@ -906,6 +920,13 @@
                                             @endif
                                         </td>
                                         <td>
+                                            <button class="btn btn-warning btn-sm transfer-from-my-docs-btn"
+                                                    data-doc-id="{{ $doc->id }}"
+                                                    data-case-id="{{ $doc->case_id }}"
+                                                    data-case-no="{{ $doc->case->case_no ?? 'N/A' }}"
+                                                    title="Transfer this case">
+                                                <i class="fas fa-exchange-alt"></i>
+                                            </button>
                                             <button class="btn btn-info btn-sm view-history-btn" 
                                                     data-doc-id="{{ $doc->id }}"
                                                     title="View History">

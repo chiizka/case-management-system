@@ -28,9 +28,12 @@ class DocumentTrackingController extends Controller
 
         $pendingDocumentsQuery = DocumentTracking::with(['case.malsu', 'transferredBy'])
             ->active()
-            ->where('current_role', $user->role)
             ->where('status', 'Pending Receipt')
             ->orderByDesc('transferred_at');
+
+        if (!$user->isAdmin()) {
+            $pendingDocumentsQuery->where('current_role', $user->role);
+        }
 
         // Sheriffs only see documents assigned specifically to them,
         // not everyone sharing the same province sheriff role.
@@ -128,23 +131,31 @@ class DocumentTrackingController extends Controller
                     $latestNote = $tracking->history->first()->notes ?? $latestNote;
                 }
 
-                // All transfer notes concatenated for the wide notes column
+                // All transfer notes, sorted strictly newest-first by actual timestamp
+                // (not push order — history()'s ordering can't be trusted here)
                 $allNotes = collect();
-                // Add historical notes (newest to oldest — history() is ordered desc)
                 foreach ($tracking->history as $h) {
                     if ($h->notes) {
-                        $allNotes->push('[' . ($h->transferred_at ? $h->transferred_at->format('M d, Y') : 'N/A') . '] ' . $h->notes);
+                        $allNotes->push([
+                            'at'   => $h->transferred_at,
+                            'text' => '[' . ($h->transferred_at ? $h->transferred_at->format('M d, Y') : 'N/A') . '] ' . $h->notes,
+                        ]);
                     }
                 }
-                // Add current tracking note
                 if ($tracking->transfer_notes) {
-                    $allNotes->push('[' . ($tracking->transferred_at ? $tracking->transferred_at->format('M d, Y') : 'N/A') . '] ' . $tracking->transfer_notes);
+                    $allNotes->push([
+                        'at'   => $tracking->transferred_at,
+                        'text' => '[' . ($tracking->transferred_at ? $tracking->transferred_at->format('M d, Y') : 'N/A') . '] ' . $tracking->transfer_notes,
+                    ]);
                 }
 
                 $case->_malsu_date_first_forwarded = $dateFirstForwarded;
                 $case->_malsu_current_location     = $tracking->current_role;
                 $case->_malsu_current_status       = $tracking->status;
-                $case->_malsu_all_notes            = $allNotes->reverse()->implode("\n");
+                $case->_malsu_all_notes            = $allNotes
+                    ->sortByDesc(fn($n) => $n['at'] ? $n['at']->timestamp : 0)
+                    ->pluck('text')
+                    ->implode("\n");
 
                 return $case;
             })
@@ -229,27 +240,31 @@ class DocumentTrackingController extends Controller
                     $dateFirstForwarded = $tracking->transferred_at;
                 }
 
-                // Build concatenated notes from all transfers in history + current
+                // Build concatenated notes from all transfers in history + current,
+                // sorted strictly newest-first by actual timestamp
                 $allNotes = collect();
                 foreach ($tracking->history as $h) {
                     if ($h->notes) {
-                        $allNotes->push(
-                            '[' . ($h->transferred_at ? $h->transferred_at->format('M d, Y') : 'N/A') . '] '
-                            . $h->notes
-                        );
+                        $allNotes->push([
+                            'at'   => $h->transferred_at,
+                            'text' => '[' . ($h->transferred_at ? $h->transferred_at->format('M d, Y') : 'N/A') . '] ' . $h->notes,
+                        ]);
                     }
                 }
                 if ($tracking->transfer_notes) {
-                    $allNotes->push(
-                        '[' . ($tracking->transferred_at ? $tracking->transferred_at->format('M d, Y') : 'N/A') . '] '
-                        . $tracking->transfer_notes
-                    );
+                    $allNotes->push([
+                        'at'   => $tracking->transferred_at,
+                        'text' => '[' . ($tracking->transferred_at ? $tracking->transferred_at->format('M d, Y') : 'N/A') . '] ' . $tracking->transfer_notes,
+                    ]);
                 }
 
                 $case->_cm_date_first_forwarded = $dateFirstForwarded;
                 $case->_cm_current_location     = $tracking->current_role;
                 $case->_cm_current_status       = $tracking->status;
-                $case->_cm_all_notes            = $allNotes->reverse()->implode("\n");
+                $case->_cm_all_notes            = $allNotes
+                    ->sortByDesc(fn($n) => $n['at'] ? $n['at']->timestamp : 0)
+                    ->pluck('text')
+                    ->implode("\n");
 
                 return $case;
             })
@@ -332,7 +347,7 @@ class DocumentTrackingController extends Controller
         $user     = Auth::user();
         $document = DocumentTracking::with('case')->findOrFail($id);
 
-        if ($document->current_role !== $user->role) {
+        if ($document->current_role !== $user->role && !$user->isAdmin()) {
             return response()->json([
                 'success' => false,
                 'message' => 'You do not have permission to receive this document.'
