@@ -2063,8 +2063,6 @@ const PROVINCE_ONLY_DATE_FIELDS = ['date_scheduled_docketed'];
 const REGIONAL_CM_ONLY_DATE_FIELDS = [
     'date_of_inspection',
     'date_of_nr',
-    'date_1st_mc_actual',
-    'date_2nd_last_mc',
     'case_folder_forwarded_to_ro',
     'date_signed_mis'
 ];
