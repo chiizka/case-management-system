@@ -193,9 +193,24 @@
             // Auto-focus and format OTP input
             $('#otpCode').on('input', function() {
                 this.value = this.value.replace(/[^0-9]/g, '');
-                if (this.value.length === 6) {
-                    $(this).closest('form').submit();
+
+                if (this.value.length === 6 && !$(this).data('submitting')) {
+                    $(this).data('submitting', true);
+
+                    const $form = $(this).closest('form');
+                    $form.find('button[type="submit"]')
+                        .prop('disabled', true)
+                        .html('<span class="spinner-border spinner-border-sm mr-2"></span> Verifying...');
+
+                    $form.trigger('submit');
                 }
+            });
+
+            // Guard against double-submit if the user also clicks "Verify Code"
+            // manually before the auto-submit above fires (e.g. typed the last
+            // digit and clicked at nearly the same moment).
+            $('form.user').on('submit', function() {
+                $(this).find('button[type="submit"]').prop('disabled', true);
             });
 
             // Auto-dismiss alerts after 5 seconds
