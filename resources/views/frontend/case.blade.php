@@ -1606,7 +1606,7 @@ body.sheriff-readonly .edit-row-btn-case {
                             <div class="col-md-6">
                                 <div class="form-group mb-2">
                                     <label class="small mb-1">
-                                        Tracking number <span class="text-danger">*</span>
+                                        Tracking number <span class="text-muted">(optional)</span>
                                     </label>
                                     <input type="text"
                                         class="form-control form-control-sm"
@@ -4189,8 +4189,8 @@ if ($('#tab0').hasClass('active')) {
             const trackingNo   = $('#execTrackingNo').val().trim();
             const courier      = $('#execCourier').val().trim();
 
-            if (!receivedBy || !dateReceived || !trackingNo || !courier) {
-                showAlert('error', 'Please fill in all delivery receipt fields before confirming.');
+            if (!receivedBy || !dateReceived || !courier) {
+                showAlert('error', 'Please fill in the required delivery receipt fields before confirming.');
                 return;
             }
 
@@ -4634,7 +4634,7 @@ $(document).on('click', '.execute-case-btn', function(e) {
 
     // Style modal for Execute
     $('#modalHeader').removeClass('bg-success bg-warning').addClass('bg-primary text-white');
-    $('#modalTitleText').text('Forward for Execution');
+    $('#modalTitleText').text('Forward for Finality');
     $('#modalAlertBox').removeClass('alert-success alert-warning').addClass('alert-info');
 
     $('#stageProgressionMessage').html(`

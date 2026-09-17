@@ -2057,7 +2057,7 @@ public function executeCase(Request $request, $id)
     $request->validate([
         'exec_received_by'   => 'required|string|max:255',
         'exec_date_received' => 'required|date',
-        'exec_tracking_no'   => 'required|string|max:255',
+        'exec_tracking_no'   => 'nullable|string|max:255',
         'exec_courier'       => 'required|string|max:255',
     ]);
 
@@ -2066,7 +2066,11 @@ public function executeCase(Request $request, $id)
         $case = CaseFile::findOrFail($id);
         $user = Auth::user();
 
-        $notes = "Forwarded for execution via {$request->exec_courier} (Tracking: {$request->exec_tracking_no}). Received by: {$request->exec_received_by} on {$request->exec_date_received}.";
+        $trackingPart = $request->filled('exec_tracking_no')
+            ? " (Tracking: {$request->exec_tracking_no})"
+            : '';
+
+        $notes = "Forwarded for execution via {$request->exec_courier}{$trackingPart}. Received by: {$request->exec_received_by} on {$request->exec_date_received}.";
 
         // Route through the shared service so previous_* snapshot fields get
         // written (needed for cancel/decline), and history stays consistent
