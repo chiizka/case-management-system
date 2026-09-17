@@ -896,10 +896,12 @@ body.sheriff-readonly .edit-row-btn-case {
                             <input type="search" class="form-control form-control-sm" id="customSearch0" placeholder="Search all active cases..." style="width: 200px;">
                         </div>
                         <div>
+                            @unless(Auth::user()->isProvince())
                             <!-- NEW: Add this Upload CSV button -->
                             <button class="btn btn-success btn-sm mr-2" data-toggle="modal" data-target="#uploadCsvModal">
                                 <i class="fas fa-upload"></i> Upload CSV
                             </button>
+                            @endunless
 
                             <button class="btn btn-info btn-sm mr-2" id="exportActiveCasesXlsx">
                                 <i class="fas fa-file-excel"></i> Export Active Cases (XLSX)

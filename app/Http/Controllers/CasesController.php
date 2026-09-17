@@ -1171,6 +1171,14 @@ public function destroy($id)
     
 public function importCsv(Request $request)
 {
+    // Ã¢Å“Â¨ Province offices cannot bulk-import cases
+    if (Auth::user()->isProvince()) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Province offices are not permitted to bulk import cases.',
+        ], 403);
+    }
+
     // Validate the uploaded file - now accepts both CSV and Excel
     $validator = Validator::make($request->all(), [
         'csv_file' => 'required|file|mimes:csv,txt,xlsx,xls|max:10240', // 10MB max
