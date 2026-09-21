@@ -798,13 +798,17 @@ public function destroy($id)
                 'aging_po_pct' => 'nullable|integer',
                 'status_po_pct' => 'nullable|string|max:255',
                 'date_received_from_po' => 'nullable|date',
+                'mis_status_forwarded_rd' => 'nullable|string|max:255',
                 'reviewer_drafter' => 'nullable|string|max:255',
                 'date_received_by_reviewer' => 'nullable|date',
                 'date_returned_from_drafter' => 'nullable|date',
                 'aging_10_days_tssd' => 'nullable|integer',
                 'status_reviewer_drafter' => 'nullable|string|max:255',
                 'draft_order_tssd_reviewer' => 'nullable|string|max:255',
-                'final_review_date_received' => 'nullable|date',
+                'final_review_focal1_date' => 'nullable|date',
+                'final_review_focal2_date' => 'nullable|date',
+                'final_review_focal3_date' => 'nullable|date',
+                'final_review_focal4_date' => 'nullable|date',
                 'date_received_drafter_finalization' => 'nullable|date',
                 'date_returned_case_mgmt_signature' => 'nullable|date',
                 'aging_2_days_finalization' => 'nullable|integer',
@@ -834,17 +838,25 @@ public function destroy($id)
                 'amount_deposited' => 'nullable|numeric|min:0',
                 'with_order_payment_notice' => 'nullable|boolean',
                 'status_all_employees_received' => 'nullable|string|max:255',
+                'status_all_employees_received_note' => 'nullable|string',
+                'date_received_by_respondent' => 'nullable|date',
+                'date_received_by_affected_employees' => 'nullable|date',
                 'status_case_after_first_order' => 'nullable|string|max:255',
                 'date_notice_finality_dismissed' => 'nullable|date',
                 'released_date_notice_finality' => 'nullable|date',
                 'scanned_notice_finality' => 'nullable|string|max:255',
                 'updated_ticked_in_mis' => 'nullable|boolean',
+                'date_evaluated' => 'nullable|date',
+                'name_of_evaluator' => 'nullable|string|max:255',
                 
                 // Appeals & Resolution Stage (2nd Order)
                 'second_order_drafter' => 'nullable|string|max:255',
                 'date_received_by_drafter_ct_cnpc' => 'nullable|date',
                 'date_returned_case_mgmt_ct_cnpc' => 'nullable|date',
-                'review_ct_cnpc' => 'nullable|string|max:255',
+                'review_ctcnpc_focal1_date' => 'nullable|date',
+                'review_ctcnpc_focal2_date' => 'nullable|date',
+                'review_ctcnpc_focal3_date' => 'nullable|date',
+                'review_ctcnpc_focal4_date' => 'nullable|date',
                 'date_received_drafter_finalization_2nd' => 'nullable|date',
                 'date_returned_case_mgmt_signature_2nd' => 'nullable|date',
                 'date_order_2nd_cnpc' => 'nullable|date',
@@ -861,6 +873,8 @@ public function destroy($id)
                 'scanned_resolution_mr' => 'nullable|string|max:255',
                 'date_appeal_received_records' => 'nullable|date',
                 'date_indorsed_office_secretary' => 'nullable|date',
+                'date_indorsed_to_records' => 'nullable|date',
+                'scanned_copy_indorsement' => 'nullable|string|max:255',
                 
                 // Additional Information
                 'logbook_page_number' => 'nullable|string|max:255',
@@ -938,7 +952,11 @@ public function destroy($id)
             
             foreach ($booleanFields as $field) {
                 if (array_key_exists($field, $updateData)) {
-                    $updateData[$field] = filter_var($updateData[$field], FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+                    if ($updateData[$field] === '' || $updateData[$field] === null) {
+                        $updateData[$field] = null;
+                    } else {
+                        $updateData[$field] = filter_var($updateData[$field], FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+                    }
                 }
             }
             

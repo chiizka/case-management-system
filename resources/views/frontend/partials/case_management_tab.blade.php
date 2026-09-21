@@ -45,10 +45,11 @@
                 <th>Inspection ID</th>
                 <th style="background-color: #fff3cd !important;">Case No.</th>
                 <th style="background-color: #d1ecf1 !important;">Establishment Name</th>
-                <th>Mode</th>
                 <th style="background-color: #d4edda !important;">PO</th>
                 <th>Type of Industry</th>
+
                 <th>Date of Inspection</th>
+                <th>Mode</th>
                 <th>Name of Inspector</th>
                 <th>Authority No.</th>
                 <th>Date of NR</th>
@@ -65,12 +66,86 @@
                 <th>2nd/Last MC PCT</th>
                 <th>Status (2nd MC)</th>
                 <th>Case Folder Forwarded to RO</th>
+                <th>Draft Order from PO (Type)</th>
+                <th>Applicable Draft Order? (Y/N)</th>
+                <th>Complete Case Folder? (Y/N)</th>
                 <th>PO PCT</th>
                 <th>Aging (PO PCT)</th>
                 <th>Status (PO PCT)</th>
+                <th>TWG</th>
+                <th>Date Received from PO</th>
+                <th>MIS Status (Forwarded to RD's Account)</th>
+                <th>Reviewer/Drafter</th>
+                <th>Date Received by Reviewer/Drafter</th>
+                <th>Date Returned from Drafter (Initial Review)</th>
+                <th>Aging (10 Days TSSD)</th>
+                <th>Status (Reviewer/Drafter)</th>
+                <th>Draft Order of TSSD Reviewer/Drafter</th>
+                <th>Final Review<br><small class="text-muted font-weight-normal">Engr. R.L. Aranas</small></th>
+                <th>Final Review<br><small class="text-muted font-weight-normal">Chief Ching B. Banania </small></th>
+                <th>Final Review<br><small class="text-muted font-weight-normal">V. Capayas </small></th>
+                <th>Final Review<br><small class="text-muted font-weight-normal"> Atty. N. Leaño II/ Atty. A.</small></th>
+                <th>Date Received by Drafter for Finalization</th>
+                <th>Date Returned to Case Mngt for Signature</th>
+                <th>Aging (2 Days)</th>
+                <th>Status (Finalization)</th>
                 <th>PCT (96 days from NR)</th>
-                <th>Status (PCT)</th>
                 <th>Date Signed (MIS)</th>
+                <th>Status (PCT)</th>
+                <th>Reference Date (PCT)</th>
+                <th>Aging (PCT)</th>
+                <th>Disposition (MIS)</th>
+                <th>Disposition (Actual)</th>
+                <th>Findings to be Complied in the Order</th>
+                <th>Compliance Order Monetary Award</th>
+                <th>OSH Penalty</th>
+                <th>Affected Male</th>
+                <th>Affected Female</th>
+                <th>Date of Order (Actual)</th>
+                <th>Released Date (Actual)</th>
+                <th>1st Order Dismissal - CNPC</th>
+                <th>TAVable? (&lt;10 Workers)</th>
+                <th>Scanned Order (1st Order)</th>
+                <th>With Deposited Monetary Claims?</th>
+                <th>Amount Deposited</th>
+                <th>With Order of Payment/Notice?</th>
+                <th>Status (Claims Received)</th>
+                <th>Note</th>
+                <th>Date Received by Respondent/Employer</th>
+                <th>Date Received by Affected Employee/s</th>
+                <th>Status of Case after 1st Order</th>
+                <th>Date of Notice of Finality (Dismissed)</th>
+                <th>Released Date of Notice of Finality</th>
+                <th>Scanned Notice of Finality</th>
+                <th>Updated/Ticked in MIS?</th>
+                <th>Date Evaluated</th>
+                <th>Name of Evaluator</th>
+                <th>2nd Order Drafter</th>
+                <th>Date Received by Drafter (C&amp;T/CNPC)</th>
+                <th>Date Returned to Case Mngt (C&amp;T/CNPC)</th>
+                <th>Review (C&amp;T/CNPC)<br><small class="text-muted font-weight-normal">Engr. R. Aranas</small></th>
+                <th>Review (C&amp;T/CNPC)<br><small class="text-muted font-weight-normal">TSSD Chief</small></th>
+                <th>Review (C&amp;T/CNPC)<br><small class="text-muted font-weight-normal">Med-Arb</small></th>
+                <th>Review (C&amp;T/CNPC)<br><small class="text-muted font-weight-normal">ARD</small></th>
+                <th>Date Received by Drafter for Finalization (2nd Order)</th>
+                <th>Date Returned to Case Mngt for Signature (2nd Order)</th>
+                <th>Date of Order (2nd Order/CNPC)</th>
+                <th>Released Date (2nd Order/CNPC)</th>
+                <th>Scanned Order (2nd Order/CNPC)</th>
+                <th>Date Received by MALSU (Execution/MR/Appeal)</th>
+                <th>Scanned Indorsement to MALSU</th>
+                <th>Motion for Reconsideration</th>
+                <th>Date Received by MALSU (Finality/MR/Appeal)</th>
+                <th>Date of Resolution (MR)</th>
+                <th>Released Date of Resolution (MR)</th>
+                <th>Scanned Resolution (MR)</th>
+                <th>Date of Appeal</th>
+                <th>Date Indorsed to Office of Secretary</th>
+                <th>Logbook Page Number</th>
+                <th>Date Indorsed to Records (For Archive)</th>
+                <th>Scanned Copy of Indorsement</th>
+                <th>Remarks/Notes</th>
+
                 <th>Created At</th>
             </tr>
         </thead>
@@ -89,7 +164,6 @@
                                             title="Edit Row">
                                         <i class="fas fa-edit"></i>
                                     </button>
-
                                     <button type="button"
                                             class="btn btn-danger btn-sm delete-btn"
                                             data-case-id="{{ $case->id }}"
@@ -98,7 +172,6 @@
                                             title="Delete">
                                         <i class="fas fa-trash"></i>
                                     </button>
-
                                     <button class="btn btn-info btn-sm view-history-btn"
                                             data-case-id="{{ $case->id }}"
                                             data-case-no="{{ $case->case_no ?? 'N/A' }}"
@@ -106,7 +179,6 @@
                                             title="View Document History">
                                         <i class="fas fa-history"></i>
                                     </button>
-
                                     <button type="button"
                                             class="btn btn-primary btn-sm document-checklist-btn"
                                             data-case-id="{{ $case->id }}"
@@ -115,7 +187,6 @@
                                             title="Document Checklist">
                                         <i class="fas fa-file-alt"></i>
                                     </button>
-
                                     <button type="button"
                                             class="btn btn-success btn-sm complete-case-btn"
                                             data-case-id="{{ $case->id }}"
@@ -125,7 +196,6 @@
                                             title="Mark as Complete">
                                         <i class="fas fa-check-circle"></i>
                                     </button>
-
                                     <button type="button"
                                             class="btn btn-dark btn-sm execute-case-btn"
                                             data-case-id="{{ $case->id }}"
@@ -167,14 +237,13 @@
                                 </span>
                             @endif
                         </td>
-                        <td class="editable-cell" data-field="mode">{{ $case->mode ?? '-' }}</td>
                         <td class="readonly-cell" data-field="po_office" style="background-color: #d4edda !important;" title="{{ $case->po_office ?? '' }}">{{ $case->po_office_short ?? '-' }}</td>
                         <td class="editable-cell" data-field="type_of_industry">{{ $case->type_of_industry ?? '-' }}</td>
 
-                        {{-- Inspection Stage --}}
                         <td class="editable-cell" data-field="date_of_inspection" data-type="date">
                             {{ $case->date_of_inspection ? \Carbon\Carbon::parse($case->date_of_inspection)->format('Y-m-d') : '-' }}
                         </td>
+                        <td class="editable-cell" data-field="mode">{{ $case->mode ?? '-' }}</td>
                         <td class="editable-cell" data-field="inspector_name" title="{{ $case->inspector_name ?? '' }}">
                             {{ $case->inspector_name ? Str::limit($case->inspector_name, 20) : '-' }}
                         </td>
@@ -186,7 +255,6 @@
                             {{ $case->lapse_20_day_period ? \Carbon\Carbon::parse($case->lapse_20_day_period)->format('Y-m-d') : '-' }}
                         </td>
 
-                        {{-- Docketing Stage --}}
                         <td class="readonly-cell" data-field="pct_for_docketing">
                             {{ $case->pct_for_docketing ? \Carbon\Carbon::parse($case->pct_for_docketing)->format('Y-m-d') : '-' }}
                         </td>
@@ -199,7 +267,6 @@
                             {{ $case->hearing_officer_mis ? Str::limit($case->hearing_officer_mis, 20) : '-' }}
                         </td>
 
-                        {{-- Hearing Process Stage --}}
                         <td class="editable-cell" data-field="date_1st_mc_actual" data-type="date">
                             {{ $case->date_1st_mc_actual ? \Carbon\Carbon::parse($case->date_1st_mc_actual)->format('Y-m-d') : '-' }}
                         </td>
@@ -213,21 +280,192 @@
                         <td class="editable-cell" data-field="case_folder_forwarded_to_ro" data-type="date">
                             {{ $case->case_folder_forwarded_to_ro ? \Carbon\Carbon::parse($case->case_folder_forwarded_to_ro)->format('Y-m-d') : '-' }}
                         </td>
+                        <td class="editable-cell" data-field="draft_order_from_po_type">{{ $case->draft_order_from_po_type ?? '-' }}</td>
+                        <td class="editable-cell" data-field="applicable_draft_order">{{ $case->applicable_draft_order ?? '-' }}</td>
+                        <td class="editable-cell" data-field="complete_case_folder">{{ $case->complete_case_folder ?? '-' }}</td>
 
-                        {{-- Review & Drafting --}}
                         <td class="readonly-cell" data-field="po_pct">
                             {{ $case->po_pct ? \Carbon\Carbon::parse($case->po_pct)->format('Y-m-d') : '-' }}
                         </td>
                         <td class="readonly-cell" data-field="aging_po_pct">{{ $case->aging_po_pct ?? '-' }}</td>
                         <td class="readonly-cell" data-field="status_po_pct">{{ $case->status_po_pct ?? '-' }}</td>
+                        <td class="editable-cell" data-field="twg_ali">{{ $case->twg_ali ?? '-' }}</td>
+                        <td class="editable-cell" data-field="date_received_from_po" data-type="date">
+                            {{ $case->date_received_from_po ? \Carbon\Carbon::parse($case->date_received_from_po)->format('Y-m-d') : '-' }}
+                        </td>
+                        <td class="editable-cell" data-field="mis_status_forwarded_rd">{{ $case->mis_status_forwarded_rd ?? '-' }}</td>
+                        <td class="editable-cell" data-field="reviewer_drafter" title="{{ $case->reviewer_drafter ?? '' }}">
+                            {{ $case->reviewer_drafter ? Str::limit($case->reviewer_drafter, 20) : '-' }}
+                        </td>
+                        <td class="editable-cell" data-field="date_received_by_reviewer" data-type="date">
+                            {{ $case->date_received_by_reviewer ? \Carbon\Carbon::parse($case->date_received_by_reviewer)->format('Y-m-d') : '-' }}
+                        </td>
+                        <td class="editable-cell" data-field="date_returned_from_drafter" data-type="date">
+                            {{ $case->date_returned_from_drafter ? \Carbon\Carbon::parse($case->date_returned_from_drafter)->format('Y-m-d') : '-' }}
+                        </td>
+                        <td class="editable-cell" data-field="aging_10_days_tssd">{{ $case->aging_10_days_tssd ?? '-' }}</td>
+                        <td class="editable-cell" data-field="status_reviewer_drafter">{{ $case->status_reviewer_drafter ?? '-' }}</td>
+                        <td class="editable-cell" data-field="draft_order_tssd_reviewer">{{ $case->draft_order_tssd_reviewer ?? '-' }}</td>
+                        <td class="editable-cell" data-field="final_review_focal1_date" data-type="date">
+                            {{ $case->final_review_focal1_date ? \Carbon\Carbon::parse($case->final_review_focal1_date)->format('Y-m-d') : '-' }}
+                        </td>
+                        <td class="editable-cell" data-field="final_review_focal2_date" data-type="date">
+                            {{ $case->final_review_focal2_date ? \Carbon\Carbon::parse($case->final_review_focal2_date)->format('Y-m-d') : '-' }}
+                        </td>
+                        <td class="editable-cell" data-field="final_review_focal3_date" data-type="date">
+                            {{ $case->final_review_focal3_date ? \Carbon\Carbon::parse($case->final_review_focal3_date)->format('Y-m-d') : '-' }}
+                        </td>
+                        <td class="editable-cell" data-field="final_review_focal4_date" data-type="date">
+                            {{ $case->final_review_focal4_date ? \Carbon\Carbon::parse($case->final_review_focal4_date)->format('Y-m-d') : '-' }}
+                        </td>
+                        <td class="editable-cell" data-field="date_received_drafter_finalization" data-type="date">
+                            {{ $case->date_received_drafter_finalization ? \Carbon\Carbon::parse($case->date_received_drafter_finalization)->format('Y-m-d') : '-' }}
+                        </td>
+                        <td class="editable-cell" data-field="date_returned_case_mgmt_signature" data-type="date">
+                            {{ $case->date_returned_case_mgmt_signature ? \Carbon\Carbon::parse($case->date_returned_case_mgmt_signature)->format('Y-m-d') : '-' }}
+                        </td>
+                        <td class="editable-cell" data-field="aging_2_days_finalization">{{ $case->aging_2_days_finalization ?? '-' }}</td>
+                        <td class="editable-cell" data-field="status_finalization">{{ $case->status_finalization ?? '-' }}</td>
 
-                        {{-- Orders & Disposition --}}
                         <td class="readonly-cell" data-field="pct_96_days">
                             {{ $case->pct_96_days ? \Carbon\Carbon::parse($case->pct_96_days)->format('Y-m-d') : '-' }}
                         </td>
-                        <td class="editable-cell" data-field="status_pct">{{ $case->status_pct ?? '-' }}</td>
                         <td class="editable-cell" data-field="date_signed_mis" data-type="date">
                             {{ $case->date_signed_mis ? \Carbon\Carbon::parse($case->date_signed_mis)->format('Y-m-d') : '-' }}
+                        </td>
+                        <td class="editable-cell" data-field="status_pct">{{ $case->status_pct ?? '-' }}</td>
+                        <td class="editable-cell" data-field="reference_date_pct" data-type="date">
+                            {{ $case->reference_date_pct ? \Carbon\Carbon::parse($case->reference_date_pct)->format('Y-m-d') : '-' }}
+                        </td>
+                        <td class="editable-cell" data-field="aging_pct">{{ $case->aging_pct ?? '-' }}</td>
+                        <td class="editable-cell" data-field="disposition_mis">{{ $case->disposition_mis ?? '-' }}</td>
+                        <td class="editable-cell" data-field="disposition_actual">{{ $case->disposition_actual ?? '-' }}</td>
+                        <td class="editable-cell" data-field="findings_to_comply" title="{{ $case->findings_to_comply ?? '' }}">
+                            {{ $case->findings_to_comply ? Str::limit($case->findings_to_comply, 20) : '-' }}
+                        </td>
+                        <td class="editable-cell" data-field="compliance_order_monetary_award">
+                            {{ $case->compliance_order_monetary_award ? number_format($case->compliance_order_monetary_award, 2) : '-' }}
+                        </td>
+                        <td class="editable-cell" data-field="osh_penalty">
+                            {{ $case->osh_penalty ? number_format($case->osh_penalty, 2) : '-' }}
+                        </td>
+                        <td class="editable-cell" data-field="affected_male">{{ $case->affected_male ?? '-' }}</td>
+                        <td class="editable-cell" data-field="affected_female">{{ $case->affected_female ?? '-' }}</td>
+                        <td class="editable-cell" data-field="date_of_order_actual" data-type="date">
+                            {{ $case->date_of_order_actual ? \Carbon\Carbon::parse($case->date_of_order_actual)->format('Y-m-d') : '-' }}
+                        </td>
+                        <td class="editable-cell" data-field="released_date_actual" data-type="date">
+                            {{ $case->released_date_actual ? \Carbon\Carbon::parse($case->released_date_actual)->format('Y-m-d') : '-' }}
+                        </td>
+
+                        <td class="editable-cell" data-field="first_order_dismissal_cnpc" data-type="boolean">
+                            {{ $case->first_order_dismissal_cnpc ? 'Yes' : 'No' }}
+                        </td>
+                        <td class="editable-cell" data-field="tavable_less_than_10_workers" data-type="boolean">
+                            {{ $case->tavable_less_than_10_workers ? 'Yes' : 'No' }}
+                        </td>
+                        <td class="editable-cell" data-field="scanned_order_first">{{ $case->scanned_order_first ?? '-' }}</td>
+                        <td class="editable-cell" data-field="with_deposited_monetary_claims" data-type="boolean">
+                            {{ $case->with_deposited_monetary_claims ? 'Yes' : 'No' }}
+                        </td>
+                        <td class="editable-cell" data-field="amount_deposited">
+                            {{ $case->amount_deposited ? number_format($case->amount_deposited, 2) : '-' }}
+                        </td>
+                        <td class="editable-cell" data-field="with_order_payment_notice" data-type="boolean">
+                            {{ $case->with_order_payment_notice ? 'Yes' : 'No' }}
+                        </td>
+                        <td class="editable-cell" data-field="status_all_employees_received">{{ $case->status_all_employees_received ?? '-' }}</td>
+                        <td class="editable-cell" data-field="status_all_employees_received_note" title="{{ $case->status_all_employees_received_note ?? '' }}">
+                            {{ $case->status_all_employees_received_note ? Str::limit($case->status_all_employees_received_note, 20) : '-' }}
+                        </td>
+                        <td class="editable-cell" data-field="date_received_by_respondent" data-type="date">
+                            {{ $case->date_received_by_respondent ? \Carbon\Carbon::parse($case->date_received_by_respondent)->format('Y-m-d') : '-' }}
+                        </td>
+                        <td class="editable-cell" data-field="date_received_by_affected_employees" data-type="date">
+                            {{ $case->date_received_by_affected_employees ? \Carbon\Carbon::parse($case->date_received_by_affected_employees)->format('Y-m-d') : '-' }}
+                        </td>
+                        <td class="editable-cell" data-field="status_case_after_first_order">{{ $case->status_case_after_first_order ?? '-' }}</td>
+                        <td class="editable-cell" data-field="date_notice_finality_dismissed" data-type="date">
+                            {{ $case->date_notice_finality_dismissed ? \Carbon\Carbon::parse($case->date_notice_finality_dismissed)->format('Y-m-d') : '-' }}
+                        </td>
+                        <td class="editable-cell" data-field="released_date_notice_finality" data-type="date">
+                            {{ $case->released_date_notice_finality ? \Carbon\Carbon::parse($case->released_date_notice_finality)->format('Y-m-d') : '-' }}
+                        </td>
+                        <td class="editable-cell" data-field="scanned_notice_finality">{{ $case->scanned_notice_finality ?? '-' }}</td>
+                        <td class="editable-cell" data-field="updated_ticked_in_mis" data-type="boolean">
+                            {{ $case->updated_ticked_in_mis ? 'Yes' : 'No' }}
+                        </td>
+                        <td class="editable-cell" data-field="date_evaluated" data-type="date">
+                            {{ $case->date_evaluated ? \Carbon\Carbon::parse($case->date_evaluated)->format('Y-m-d') : '-' }}
+                        </td>
+                        <td class="editable-cell" data-field="name_of_evaluator">{{ $case->name_of_evaluator ?? '-' }}</td>
+
+                        <td class="editable-cell" data-field="second_order_drafter" title="{{ $case->second_order_drafter ?? '' }}">
+                            {{ $case->second_order_drafter ? Str::limit($case->second_order_drafter, 20) : '-' }}
+                        </td>
+                        <td class="editable-cell" data-field="date_received_by_drafter_ct_cnpc" data-type="date">
+                            {{ $case->date_received_by_drafter_ct_cnpc ? \Carbon\Carbon::parse($case->date_received_by_drafter_ct_cnpc)->format('Y-m-d') : '-' }}
+                        </td>
+                        <td class="editable-cell" data-field="date_returned_case_mgmt_ct_cnpc" data-type="date">
+                            {{ $case->date_returned_case_mgmt_ct_cnpc ? \Carbon\Carbon::parse($case->date_returned_case_mgmt_ct_cnpc)->format('Y-m-d') : '-' }}
+                        </td>
+                        <td class="editable-cell" data-field="review_ctcnpc_focal1_date" data-type="date">
+                            {{ $case->review_ctcnpc_focal1_date ? \Carbon\Carbon::parse($case->review_ctcnpc_focal1_date)->format('Y-m-d') : '-' }}
+                        </td>
+                        <td class="editable-cell" data-field="review_ctcnpc_focal2_date" data-type="date">
+                            {{ $case->review_ctcnpc_focal2_date ? \Carbon\Carbon::parse($case->review_ctcnpc_focal2_date)->format('Y-m-d') : '-' }}
+                        </td>
+                        <td class="editable-cell" data-field="review_ctcnpc_focal3_date" data-type="date">
+                            {{ $case->review_ctcnpc_focal3_date ? \Carbon\Carbon::parse($case->review_ctcnpc_focal3_date)->format('Y-m-d') : '-' }}
+                        </td>
+                        <td class="editable-cell" data-field="review_ctcnpc_focal4_date" data-type="date">
+                            {{ $case->review_ctcnpc_focal4_date ? \Carbon\Carbon::parse($case->review_ctcnpc_focal4_date)->format('Y-m-d') : '-' }}
+                        </td>
+                        <td class="editable-cell" data-field="date_received_drafter_finalization_2nd" data-type="date">
+                            {{ $case->date_received_drafter_finalization_2nd ? \Carbon\Carbon::parse($case->date_received_drafter_finalization_2nd)->format('Y-m-d') : '-' }}
+                        </td>
+                        <td class="editable-cell" data-field="date_returned_case_mgmt_signature_2nd" data-type="date">
+                            {{ $case->date_returned_case_mgmt_signature_2nd ? \Carbon\Carbon::parse($case->date_returned_case_mgmt_signature_2nd)->format('Y-m-d') : '-' }}
+                        </td>
+                        <td class="editable-cell" data-field="date_order_2nd_cnpc" data-type="date">
+                            {{ $case->date_order_2nd_cnpc ? \Carbon\Carbon::parse($case->date_order_2nd_cnpc)->format('Y-m-d') : '-' }}
+                        </td>
+                        <td class="editable-cell" data-field="released_date_2nd_cnpc" data-type="date">
+                            {{ $case->released_date_2nd_cnpc ? \Carbon\Carbon::parse($case->released_date_2nd_cnpc)->format('Y-m-d') : '-' }}
+                        </td>
+                        <td class="editable-cell" data-field="scanned_order_2nd_cnpc">{{ $case->scanned_order_2nd_cnpc ?? '-' }}</td>
+
+                        <td class="editable-cell" data-field="date_forwarded_malsu" data-type="date">
+                            {{ $case->date_forwarded_malsu ? \Carbon\Carbon::parse($case->date_forwarded_malsu)->format('Y-m-d') : '-' }}
+                        </td>
+                        <td class="editable-cell" data-field="scanned_indorsement_malsu">{{ $case->scanned_indorsement_malsu ?? '-' }}</td>
+                        <td class="editable-cell" data-field="motion_reconsideration_date" data-type="date">
+                            {{ $case->motion_reconsideration_date ? \Carbon\Carbon::parse($case->motion_reconsideration_date)->format('Y-m-d') : '-' }}
+                        </td>
+                        <td class="editable-cell" data-field="date_received_malsu" data-type="date">
+                            {{ $case->date_received_malsu ? \Carbon\Carbon::parse($case->date_received_malsu)->format('Y-m-d') : '-' }}
+                        </td>
+                        <td class="editable-cell" data-field="date_resolution_mr" data-type="date">
+                            {{ $case->date_resolution_mr ? \Carbon\Carbon::parse($case->date_resolution_mr)->format('Y-m-d') : '-' }}
+                        </td>
+                        <td class="editable-cell" data-field="released_date_resolution_mr" data-type="date">
+                            {{ $case->released_date_resolution_mr ? \Carbon\Carbon::parse($case->released_date_resolution_mr)->format('Y-m-d') : '-' }}
+                        </td>
+                        <td class="editable-cell" data-field="scanned_resolution_mr">{{ $case->scanned_resolution_mr ?? '-' }}</td>
+                        <td class="editable-cell" data-field="date_appeal_received_records" data-type="date">
+                            {{ $case->date_appeal_received_records ? \Carbon\Carbon::parse($case->date_appeal_received_records)->format('Y-m-d') : '-' }}
+                        </td>
+                        <td class="editable-cell" data-field="date_indorsed_office_secretary" data-type="date">
+                            {{ $case->date_indorsed_office_secretary ? \Carbon\Carbon::parse($case->date_indorsed_office_secretary)->format('Y-m-d') : '-' }}
+                        </td>
+
+                        <td class="editable-cell" data-field="logbook_page_number">{{ $case->logbook_page_number ?? '-' }}</td>
+                        <td class="editable-cell" data-field="date_indorsed_to_records" data-type="date">
+                            {{ $case->date_indorsed_to_records ? \Carbon\Carbon::parse($case->date_indorsed_to_records)->format('Y-m-d') : '-' }}
+                        </td>
+                        <td class="editable-cell" data-field="scanned_copy_indorsement">{{ $case->scanned_copy_indorsement ?? '-' }}</td>
+                        <td class="editable-cell" data-field="remarks_notes" title="{{ $case->remarks_notes ?? '' }}">
+                            {{ $case->remarks_notes ? Str::limit($case->remarks_notes, 30) : '-' }}
                         </td>
 
                         <td class="non-editable">
@@ -237,7 +475,7 @@
                 @endforeach
             @else
                 <tr>
-                    <td colspan="32" class="text-center text-muted py-4">
+                    <td colspan="105" class="text-center text-muted py-4">
                         <i class="fas fa-inbox fa-2x mb-2 d-block"></i>
                         No cases are currently assigned to Case Management.
                     </td>

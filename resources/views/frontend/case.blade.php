@@ -90,8 +90,8 @@
 }
 
 /* PO column (7th column) */
-.table:not(.cm-table) th:nth-child(7),
-.table:not(.cm-table) td:nth-child(7) {
+.table:not(.cm-table) th:nth-child(6),
+.table:not(.cm-table) td:nth-child(6) {
     background-color: #d4edda !important; /* green for PO */
 }
 
@@ -454,6 +454,7 @@ body.actions-ready .sena-table thead th:first-child {
 
 .cm-table th:nth-child(6),
 .cm-table td:nth-child(6) {
+    background-color: #d4edda !important;
     width: 60px;
     min-width: 60px;
     max-width: 60px;
@@ -461,14 +462,6 @@ body.actions-ready .sena-table thead th:first-child {
 
 .cm-table th:nth-child(7),
 .cm-table td:nth-child(7) {
-    background-color: #d4edda !important;
-    width: 60px;
-    min-width: 60px;
-    max-width: 60px;
-}
-
-.cm-table th:nth-child(8),
-.cm-table td:nth-child(8) {
     width: 200px;
     min-width: 200px;
     max-width: 200px;
@@ -927,30 +920,24 @@ body.sheriff-readonly .edit-row-btn-case {
                             <thead>
                                 <tr>
                                     <th>Actions</th>
-                                    {{-- Core Information --}}
                                     <th>No.</th>
                                     <th>Inspection ID</th>
                                     <th>Case No.</th>
                                     <th>Establishment Name</th>
-                                    <th>Mode</th>
                                     <th>PO</th>
                                     <th>Type of Industry</th>
-                            
-                                    {{-- Inspection Stage --}}
+
                                     <th>Date of Inspection</th>
+                                    <th>Mode</th>
                                     <th>Name of Inspector</th>
                                     <th>Authority No.</th>
                                     <th>Date of NR</th>
                                     <th>Lapse 20 Day Correction Period</th>
-                            
-                                    {{-- Docketing Stage --}}
                                     <th>PCT for Docketing</th>
                                     <th>Date Scheduled/Docketed</th>
                                     <th>Aging (Docket)</th>
                                     <th>Status (Docket)</th>
                                     <th>Hearing Officer (MIS)</th>
-                            
-                                    {{-- Hearing Process Stage --}}
                                     <th>Date of 1st MC (Actual)</th>
                                     <th>1st MC PCT</th>
                                     <th>Status (1st MC)</th>
@@ -958,17 +945,86 @@ body.sheriff-readonly .edit-row-btn-case {
                                     <th>2nd/Last MC PCT</th>
                                     <th>Status (2nd MC)</th>
                                     <th>Case Folder Forwarded to RO</th>
-                            
-                                    {{-- Review & Drafting --}}
+                                    <th>Draft Order from PO (Type)</th>
+                                    <th>Applicable Draft Order? (Y/N)</th>
+                                    <th>Complete Case Folder? (Y/N)</th>
                                     <th>PO PCT</th>
                                     <th>Aging (PO PCT)</th>
                                     <th>Status (PO PCT)</th>
-                            
-                                    {{-- Orders & Disposition --}}
+                                    <th>TWG</th>
+                                    <th>Date Received from PO</th>
+                                    <th>MIS Status (Forwarded to RD's Account)</th>
+                                    <th>Reviewer/Drafter</th>
+                                    <th>Date Received by Reviewer/Drafter</th>
+                                    <th>Date Returned from Drafter (Initial Review)</th>
+                                    <th>Aging (10 Days TSSD)</th>
+                                    <th>Status (Reviewer/Drafter)</th>
+                                    <th>Draft Order of TSSD Reviewer/Drafter</th>
+                                    <th>Final Review<br><small class="text-muted font-weight-normal">Engr. R.L. Aranas</small></th>
+                                    <th>Final Review<br><small class="text-muted font-weight-normal">Chief Ching B. Banania </small></th>
+                                    <th>Final Review<br><small class="text-muted font-weight-normal">V. Capayas </small></th>
+                                    <th>Final Review<br><small class="text-muted font-weight-normal"> Atty. N. Leaño II/ Atty. A.</small></th>
+                                    <th>Date Received by Drafter for Finalization</th>
+                                    <th>Date Returned to Case Mngt for Signature</th>
+                                    <th>Aging (2 Days)</th>
+                                    <th>Status (Finalization)</th>
                                     <th>PCT (96 days from NR)</th>
-                                    <th>Status (PCT)</th>
                                     <th>Date Signed (MIS)</th>
-                            
+                                    <th>Status (PCT)</th>
+                                    <th>Reference Date (PCT)</th>
+                                    <th>Aging (PCT)</th>
+                                    <th>Disposition (MIS)</th>
+                                    <th>Disposition (Actual)</th>
+                                    <th>Findings to be Complied in the Order</th>
+                                    <th>Compliance Order Monetary Award</th>
+                                    <th>OSH Penalty</th>
+                                    <th>Affected Male</th>
+                                    <th>Affected Female</th>
+                                    <th>Date of Order (Actual)</th>
+                                    <th>Released Date (Actual)</th>
+                                    <th>1st Order Dismissal - CNPC</th>
+                                    <th>TAVable? (&lt;10 Workers)</th>
+                                    <th>Scanned Order (1st Order)</th>
+                                    <th>With Deposited Monetary Claims?</th>
+                                    <th>Amount Deposited</th>
+                                    <th>With Order of Payment/Notice?</th>
+                                    <th>Status (Claims Received)</th>
+                                    <th>Note</th>
+                                    <th>Date Received by Respondent/Employer</th>
+                                    <th>Date Received by Affected Employee/s</th>
+                                    <th>Status of Case after 1st Order</th>
+                                    <th>Date of Notice of Finality (Dismissed)</th>
+                                    <th>Released Date of Notice of Finality</th>
+                                    <th>Scanned Notice of Finality</th>
+                                    <th>Updated/Ticked in MIS?</th>
+                                    <th>Date Evaluated</th>
+                                    <th>Name of Evaluator</th>
+                                    <th>2nd Order Drafter</th>
+                                    <th>Date Received by Drafter (C&amp;T/CNPC)</th>
+                                    <th>Date Returned to Case Mngt (C&amp;T/CNPC)</th>
+                                    <th>Review (C&amp;T/CNPC)<br><small class="text-muted font-weight-normal">Engr. R. Aranas</small></th>
+                                    <th>Review (C&amp;T/CNPC)<br><small class="text-muted font-weight-normal">TSSD Chief</small></th>
+                                    <th>Review (C&amp;T/CNPC)<br><small class="text-muted font-weight-normal">Med-Arb</small></th>
+                                    <th>Review (C&amp;T/CNPC)<br><small class="text-muted font-weight-normal">ARD</small></th>
+                                    <th>Date Received by Drafter for Finalization (2nd Order)</th>
+                                    <th>Date Returned to Case Mngt for Signature (2nd Order)</th>
+                                    <th>Date of Order (2nd Order/CNPC)</th>
+                                    <th>Released Date (2nd Order/CNPC)</th>
+                                    <th>Scanned Order (2nd Order/CNPC)</th>
+                                    <th>Date Received by MALSU (Execution/MR/Appeal)</th>
+                                    <th>Scanned Indorsement to MALSU</th>
+                                    <th>Motion for Reconsideration</th>
+                                    <th>Date Received by MALSU (Finality/MR/Appeal)</th>
+                                    <th>Date of Resolution (MR)</th>
+                                    <th>Released Date of Resolution (MR)</th>
+                                    <th>Scanned Resolution (MR)</th>
+                                    <th>Date of Appeal</th>
+                                    <th>Date Indorsed to Office of Secretary</th>
+                                    <th>Logbook Page Number</th>
+                                    <th>Date Indorsed to Records (For Archive)</th>
+                                    <th>Scanned Copy of Indorsement</th>
+                                    <th>Remarks/Notes</th>
+
                                     <th>Created At</th>
                                 </tr>
                             </thead>
@@ -3671,10 +3727,9 @@ $(document).on('click', function(e) {
                                 { width: '45px',  targets: 1 },  // No.
                                 { width: '110px', targets: 2 },  // Inspection ID
                                 { width: '170px', targets: 3 },  // Case No.
-                                { width: '230px', targets: 4 },  // Establishment Name — wider than Case No.
-                                { width: '60px',  targets: 5 },  // Mode
-                                { width: '60px',  targets: 6 },  // PO
-                                { width: '200px', targets: 7 }   // Type of Industry
+                                { width: '230px', targets: 4 },  // Establishment Name
+                                { width: '60px',  targets: 5 },  // PO
+                                { width: '200px', targets: 6 }   // Type of Industry
                             ],
                             scrollX: true,
                             scrollY: (window.innerHeight - 280) + 'px',
@@ -3909,9 +3964,8 @@ function loadTab0Data() {
                         { width: '110px', targets: 2 },  // Inspection ID
                         { width: '170px', targets: 3 },  // Case No.
                         { width: '230px', targets: 4 },  // Establishment Name
-                        { width: '60px',  targets: 5 },  // Mode
-                        { width: '60px',  targets: 6 },  // PO
-                        { width: '200px', targets: 7 }   // Type of Industry
+                        { width: '60px',  targets: 5 },  // PO
+                        { width: '200px', targets: 6 }   // Type of Industry
                     ],
                     scrollX: true,
                     scrollY: (window.innerHeight - 280) + 'px',
@@ -4873,7 +4927,7 @@ $(document).ready(function() {
         } else if (fieldType === 'boolean') {
             // Create select for boolean (Yes/No)
             $input = $('<select class="form-control form-control-sm inline-edit-input"></select>');
-            $input.append('<option value="">Select</option>');
+            $input.append('<option value="">— Clear / Not Set —</option>');
             $input.append(`<option value="1" ${originalValue === 'Yes' || originalValue === '1' ? 'selected' : ''}>Yes</option>`);
             $input.append(`<option value="0" ${originalValue === 'No' || originalValue === '0' ? 'selected' : ''}>No</option>`);
         } else if (fieldConfig?.type === 'number') {
@@ -5346,7 +5400,7 @@ $(document).ready(function() {
                 'applicable_draft_order': {
                     type: 'select',
                     options: [
-                        { value: '', text: 'Select' },
+                        { value: '', text: '— Clear / Not Set —' },
                         { value: 'Y', text: 'Yes' },
                         { value: 'N', text: 'No' }
                     ]
@@ -5354,7 +5408,7 @@ $(document).ready(function() {
                 'complete_case_folder': {
                     type: 'select',
                     options: [
-                        { value: '', text: 'Select' },
+                        { value: '', text: '— Clear / Not Set —' },
                         { value: 'Y', text: 'Yes' },
                         { value: 'N', text: 'No' }
                     ]
@@ -5365,6 +5419,7 @@ $(document).ready(function() {
                 'po_pct': { type: 'date', readonly: true }, // ✅ COMPUTED
                 'aging_po_pct': { type: 'number', readonly: true }, // ✅ COMPUTED
                 'date_received_from_po': { type: 'date' },
+                'mis_status_forwarded_rd': { type: 'text' },
                 'reviewer_drafter': { type: 'text' },
                 'date_received_by_reviewer': { type: 'date' },
                 'date_returned_from_drafter': { type: 'date' },
@@ -5381,7 +5436,10 @@ $(document).ready(function() {
                     ]
                 },
                 'draft_order_tssd_reviewer': { type: 'text' },
-                'final_review_date_received': { type: 'date' },
+                'final_review_focal1_date': { type: 'date' },
+                'final_review_focal2_date': { type: 'date' },
+                'final_review_focal3_date': { type: 'date' },
+                'final_review_focal4_date': { type: 'date' },
                 'date_received_drafter_finalization': { type: 'date' },
                 'date_returned_case_mgmt_signature': { type: 'date' },
                 'aging_2_days_finalization': { type: 'number' },
@@ -5402,7 +5460,7 @@ $(document).ready(function() {
                 'status_po_pct': {
                     type: 'select',
                     options: [
-                        { value: '', text: 'Select' },
+                        { value: '', text: '— Clear / Not Set —' },
                         { value: 'Within', text: 'Within' },
                         { value: 'Beyond', text: 'Beyond' }
                     ]
@@ -5410,7 +5468,7 @@ $(document).ready(function() {
                 'status_pct': {
                     type: 'select',
                     options: [
-                        { value: '', text: 'Select' },
+                        { value: '', text: '— Clear / Not Set —' },
                         { value: 'Within', text: 'Within' },
                         { value: 'Beyond', text: 'Beyond' }
                     ]
@@ -5431,7 +5489,7 @@ $(document).ready(function() {
                 'first_order_dismissal_cnpc': {
                     type: 'select',
                     options: [
-                        { value: '', text: 'Select' },
+                        { value: '', text: '— Clear / Not Set —' },
                         { value: '0', text: 'No' },
                         { value: '1', text: 'Yes' }
                     ]
@@ -5439,7 +5497,7 @@ $(document).ready(function() {
                 'tavable_less_than_10_workers': {
                     type: 'select',
                     options: [
-                        { value: '', text: 'Select' },
+                        { value: '', text: '— Clear / Not Set —' },
                         { value: '0', text: 'No' },
                         { value: '1', text: 'Yes' }
                     ]
@@ -5448,7 +5506,7 @@ $(document).ready(function() {
                 'with_deposited_monetary_claims': {
                     type: 'select',
                     options: [
-                        { value: '', text: 'Select' },
+                        { value: '', text: '— Clear / Not Set —' },
                         { value: '0', text: 'No' },
                         { value: '1', text: 'Yes' }
                     ]
@@ -5457,7 +5515,7 @@ $(document).ready(function() {
                 'with_order_payment_notice': {
                     type: 'select',
                     options: [
-                        { value: '', text: 'Select' },
+                        { value: '', text: '— Clear / Not Set —' },
                         { value: '0', text: 'No' },
                         { value: '1', text: 'Yes' }
                     ]
@@ -5472,6 +5530,9 @@ $(document).ready(function() {
                         { value: 'Partial', text: 'Partial' }
                     ]
                 },
+                'status_all_employees_received_note': { type: 'text' },
+                'date_received_by_respondent': { type: 'date' },
+                'date_received_by_affected_employees': { type: 'date' },
                 'status_case_after_first_order': { type: 'text' },
                 'date_notice_finality_dismissed': { type: 'date' },
                 'released_date_notice_finality': { type: 'date' },
@@ -5479,17 +5540,22 @@ $(document).ready(function() {
                 'updated_ticked_in_mis': {
                     type: 'select',
                     options: [
-                        { value: '', text: 'Select' },
+                        { value: '', text: '— Clear / Not Set —' },
                         { value: '0', text: 'No' },
                         { value: '1', text: 'Yes' }
                     ]
                 },
+                'date_evaluated': { type: 'date' },
+                'name_of_evaluator': { type: 'text' },
                 
                 // Appeals & Resolution Stage (2nd Order)
                 'second_order_drafter': { type: 'text' },
                 'date_received_by_drafter_ct_cnpc': { type: 'date' },
                 'date_returned_case_mgmt_ct_cnpc': { type: 'date' },
-                'review_ct_cnpc': { type: 'text' },
+                'review_ctcnpc_focal1_date': { type: 'date' },
+                'review_ctcnpc_focal2_date': { type: 'date' },
+                'review_ctcnpc_focal3_date': { type: 'date' },
+                'review_ctcnpc_focal4_date': { type: 'date' },
                 'date_received_drafter_finalization_2nd': { type: 'date' },
                 'date_returned_case_mgmt_signature_2nd': { type: 'date' },
                 'date_order_2nd_cnpc': { type: 'date' },
@@ -5506,6 +5572,8 @@ $(document).ready(function() {
                 'scanned_resolution_mr': { type: 'text' },
                 'date_appeal_received_records': { type: 'date' },
                 'date_indorsed_office_secretary': { type: 'date' },
+                'date_indorsed_to_records': { type: 'date' },
+                'scanned_copy_indorsement': { type: 'text' },
                 
                 // Additional Information
                 'logbook_page_number': { type: 'text' },
