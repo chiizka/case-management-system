@@ -43,9 +43,9 @@
                 <th>Actions</th>
                 <th>No.</th>
                 <th>Inspection ID</th>
-                <th style="background-color: #fff3cd !important;">Case No.</th>
-                <th style="background-color: #d1ecf1 !important;">Establishment Name</th>
-                <th style="background-color: #d4edda !important;">PO</th>
+                <th>Case No.</th>
+                <th>Establishment Name</th>
+                <th>PO</th>
                 <th>Type of Industry</th>
 
                 <th>Date of Inspection</th>
@@ -211,10 +211,9 @@
 
                         <td class="readonly-cell">{{ $loop->iteration }}</td>
                         <td class="editable-cell" data-field="inspection_id">{{ $case->inspection_id ?? '-' }}</td>
-                        <td class="editable-cell" data-field="case_no" style="background-color: #fff3cd !important;">{{ $case->case_no ?? '-' }}</td>
+                        <td class="editable-cell" data-field="case_no">{{ $case->case_no ?? '-' }}</td>
                         <td class="editable-cell wrap-cell" data-field="establishment_name" 
-                            data-address="{{ $case->establishment_address ?? '' }}"
-                            style="background-color: #d1ecf1 !important;">
+                            data-address="{{ $case->establishment_address ?? '' }}">
                             <span>{{ $case->establishment_name ?? '-' }}</span>
                             @if($case->establishment_address)
                                 <br><small class="text-muted address-subtext" 
@@ -237,7 +236,7 @@
                                 </span>
                             @endif
                         </td>
-                        <td class="readonly-cell" data-field="po_office" style="background-color: #d4edda !important;" title="{{ $case->po_office ?? '' }}">{{ $case->po_office_short ?? '-' }}</td>
+                        <td class="readonly-cell" data-field="po_office" title="{{ $case->po_office ?? '' }}">{{ $case->po_office_short ?? '-' }}</td>
                         <td class="editable-cell" data-field="type_of_industry">{{ $case->type_of_industry ?? '-' }}</td>
 
                         <td class="editable-cell" data-field="date_of_inspection" data-type="date">

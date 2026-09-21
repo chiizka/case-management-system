@@ -733,6 +733,79 @@ body.sheriff-readonly .edit-row-btn-case {
     color: #fff !important;
 }
 
+#dataTableTabsContent.cm-header-theme .table thead th {
+    background-color: #FFD966 !important;
+}
+
+#dataTableTabsContent.cm-header-theme .table thead th:nth-child(n+32):nth-child(-n+37),  /* TWG → Date Returned from Drafter */
+#dataTableTabsContent.cm-header-theme .table thead th:nth-child(n+40):nth-child(-n+46),  /* Draft Order TSSD → Date Returned for Signature */
+#dataTableTabsContent.cm-header-theme .table thead th:nth-child(n+55) {                  /* Disposition (Actual) → Created At */
+    background-color: #EAD1DC !important;
+}
+
+#dataTableTabsContent.cm-header-theme .table thead th small.text-muted {
+    color: #4a4a4a !important;
+}
+
+/* Header only: clear the old column colors from body cells.
+   Sticky columns must stay opaque, so they go solid white. */
+#dataTableTabsContent.cm-header-theme .table tbody td:nth-child(n+2):nth-child(-n+6):not(.edit-mode) {
+    background-color: #fff !important;
+}
+
+/* ==================== CM TABLE BORDERS (lighter + sticky-safe) ==================== */
+#dataTableTabsContent.cm-header-theme {
+    --cm-border: #adb5bd;   /* one value to tune: lighter #ced4da / darker #868e96 */
+}
+
+/* No frame around the table + "Showing…" + pagination */
+#dataTableTabsContent.cm-header-theme .table-container {
+    border: 0;
+    box-shadow: none;
+    border-radius: 0;
+}
+
+/* Borders live on the cells, not the table grid */
+#dataTableTabsContent.cm-header-theme .table.compact-table {
+    border-collapse: separate;
+    border-spacing: 0;
+    border: 0;
+}
+
+#dataTableTabsContent.cm-header-theme .table th,
+#dataTableTabsContent.cm-header-theme .table td {
+    border: 0;
+    border-right: 1px solid var(--cm-border);
+    border-bottom: 1px solid var(--cm-border);
+}
+
+#dataTableTabsContent.cm-header-theme .table thead th {
+    border-top: 1px solid var(--cm-border);
+}
+
+/* Col 1 (Actions): outer left edge only; col 2's left line draws the divider after it */
+#dataTableTabsContent.cm-header-theme .table th:first-child,
+#dataTableTabsContent.cm-header-theme .table td:first-child {
+    border-left: 1px solid var(--cm-border);
+    border-right: 0;
+}
+
+/* Sticky cols 2-4: divider is an inset line on the cell's own left edge,
+   so the neighboring sticky cell can't paint over it */
+#dataTableTabsContent.cm-header-theme .table th:nth-child(n+2):nth-child(-n+4),
+#dataTableTabsContent.cm-header-theme .table td:nth-child(n+2):nth-child(-n+4) {
+    border-right: 0;
+    box-shadow: inset 1px 0 0 var(--cm-border);
+}
+
+/* Sticky col 5 (Establishment Name): left + right lines and one soft shadow */
+#dataTableTabsContent.cm-header-theme .table th:nth-child(5),
+#dataTableTabsContent.cm-header-theme .table td:nth-child(5) {
+    border-right: 0;
+    box-shadow: inset 1px 0 0 var(--cm-border),
+                inset -1px 0 0 var(--cm-border),
+                3px 0 6px rgba(0, 0, 0, 0.08);
+}
 </style>
 
 <!-- Main Content -->
@@ -860,7 +933,7 @@ body.sheriff-readonly .edit-row-btn-case {
         @endif
 
             <!-- Tabs Content -->
-            <div class="tab-content mt-1" id="dataTableTabsContent">
+            <div class="tab-content mt-1 {{ Auth::user()->isCaseManagement() ? 'cm-header-theme' : '' }}" id="dataTableTabsContent">
         
         <!-- Tab 0: All Active Cases (Enhanced with corrected columns) -->
         @if(!Auth::user()->isMalsu() && !Auth::user()->isSheriff() && !$isProvincialCM)
