@@ -56,8 +56,8 @@
             <tr>
                 <th>Actions</th>
                 <th>No.</th>
-                <th style="background-color: #d1ecf1 !important;">Case Title / Establishment Name</th>
-                <th style="background-color: #fff3cd !important;">Regional Docket No.</th>
+                <th>Case Title / Establishment Name</th>
+                <th>Regional Docket No.</th>
                 <th>Sheriff Designate</th>
                 <th>Date of Compliance Order / Resolution</th>
                 <th>Total GLS Monetary Award</th>
@@ -161,9 +161,9 @@
                         </td>
 
                         {{-- From cases table --}}
-                        <td class="readonly-cell">{{ $loop->iteration }}</td>
-                        <td class="readonly-cell wrap-cell" style="background-color: #d1ecf1 !important;">
-                            <span>{{ $case->establishment_name ?? $malsu->case_title ?? '-' }}</span>
+                            <td class="readonly-cell">{{ $loop->iteration }}</td>
+                            <td class="readonly-cell wrap-cell">
+                                <span>{{ $case->establishment_name ?? $malsu->case_title ?? '-' }}</span>
                             @if(!$case)
                                 <span class="badge badge-secondary ml-1" style="font-size:0.65rem;">Legacy Record</span>
                             @endif
@@ -211,11 +211,11 @@
 
                         {{-- From malsu table --}}
                         @if(Auth::user()->isSheriff())
-                            <td class="readonly-cell" data-field="regional_docket_number" style="background-color: #fff3cd !important;">
+                            <td class="readonly-cell" data-field="regional_docket_number">
                                 {{ $malsu->regional_docket_number ?? '-' }}
                             </td>
                         @else
-                            <td class="editable-cell" data-field="regional_docket_number" style="background-color: #fff3cd !important;">
+                            <td class="editable-cell" data-field="regional_docket_number">
                                 {{ $malsu->regional_docket_number ?? '-' }}
                             </td>
                         @endif

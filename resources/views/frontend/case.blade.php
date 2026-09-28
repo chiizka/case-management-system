@@ -66,7 +66,7 @@
     position: sticky;
     left: 155px;
     z-index: 35;
-    background-color: #fff3cd !important;
+    background-color: #f8f9fc !important;
     box-shadow: 3px 0 8px rgba(0,0,0,0.1);
     width: 170px;
     min-width: 170px;
@@ -79,7 +79,7 @@
     position: sticky;
     left: 325px;
     z-index: 35;
-    background-color: #d1ecf1 !important;
+    background-color: #f8f9fc !important;
     box-shadow: 3px 0 8px rgba(0,0,0,0.1);
     min-width: 230px;
     max-width: 420px;
@@ -92,7 +92,7 @@
 /* PO column (7th column) */
 .table:not(.cm-table) th:nth-child(6),
 .table:not(.cm-table) td:nth-child(6) {
-    background-color: #d4edda !important; /* green for PO */
+    background-color: #f8f9fc !important;
 }
 
 /* ==================== COMPACT TABLE - SHORTER ROWS ==================== */
@@ -429,7 +429,7 @@ body.actions-ready .sena-table thead th:first-child {
     position: sticky;
     left: 155px;
     z-index: 35;
-    background-color: #fff3cd !important;
+    background-color: #f8f9fc !important;
     box-shadow: 3px 0 8px rgba(0,0,0,0.1);
     width: 170px;
     min-width: 170px;
@@ -442,7 +442,7 @@ body.actions-ready .sena-table thead th:first-child {
     position: sticky;
     left: 325px;
     z-index: 35;
-    background-color: #d1ecf1 !important;
+    background-color: #f8f9fc !important;
     box-shadow: 3px 0 8px rgba(0,0,0,0.1);
     min-width: 280px;
     max-width: 460px;
@@ -454,7 +454,7 @@ body.actions-ready .sena-table thead th:first-child {
 
 .cm-table th:nth-child(6),
 .cm-table td:nth-child(6) {
-    background-color: #d4edda !important;
+    background-color: #f8f9fc !important;
     width: 60px;
     min-width: 60px;
     max-width: 60px;
@@ -656,7 +656,7 @@ body.actions-ready .sena-table thead th:first-child {
     position: sticky;
     left: 50px;
     z-index: 35;
-    background-color: #d1ecf1 !important;
+    background-color: #f8f9fc !important;
     box-shadow: 3px 0 8px rgba(0,0,0,0.1);
     width: 200px;
     min-width: 200px;
@@ -670,7 +670,7 @@ body.actions-ready .sena-table thead th:first-child {
     position: sticky;
     left: 250px;
     z-index: 35;
-    background-color: #fff3cd !important;
+    background-color: #f8f9fc !important;
     box-shadow: 3px 0 8px rgba(0,0,0,0.1);
     width: 150px;
     width: 200px;
@@ -753,58 +753,117 @@ body.sheriff-readonly .edit-row-btn-case {
     background-color: #fff !important;
 }
 
-/* ==================== CM TABLE BORDERS (lighter + sticky-safe) ==================== */
-#dataTableTabsContent.cm-header-theme {
+/* ==================== TABLE BORDERS (all roles) ==================== */
+#dataTableTabsContent {
     --cm-border: #adb5bd;   /* one value to tune: lighter #ced4da / darker #868e96 */
 }
 
 /* No frame around the table + "Showing…" + pagination */
-#dataTableTabsContent.cm-header-theme .table-container {
+#dataTableTabsContent .table-container {
     border: 0;
     box-shadow: none;
     border-radius: 0;
 }
 
 /* Borders live on the cells, not the table grid */
-#dataTableTabsContent.cm-header-theme .table.compact-table {
+#dataTableTabsContent .table {
     border-collapse: separate;
     border-spacing: 0;
     border: 0;
 }
 
-#dataTableTabsContent.cm-header-theme .table th,
-#dataTableTabsContent.cm-header-theme .table td {
+#dataTableTabsContent .table th,
+#dataTableTabsContent .table td {
     border: 0;
     border-right: 1px solid var(--cm-border);
     border-bottom: 1px solid var(--cm-border);
 }
 
-#dataTableTabsContent.cm-header-theme .table thead th {
+#dataTableTabsContent .table thead th {
     border-top: 1px solid var(--cm-border);
 }
 
 /* Col 1 (Actions): outer left edge only; col 2's left line draws the divider after it */
-#dataTableTabsContent.cm-header-theme .table th:first-child,
-#dataTableTabsContent.cm-header-theme .table td:first-child {
+#dataTableTabsContent .table th:first-child,
+#dataTableTabsContent .table td:first-child {
     border-left: 1px solid var(--cm-border);
     border-right: 0;
 }
 
 /* Sticky cols 2-4: divider is an inset line on the cell's own left edge,
    so the neighboring sticky cell can't paint over it */
-#dataTableTabsContent.cm-header-theme .table th:nth-child(n+2):nth-child(-n+4),
-#dataTableTabsContent.cm-header-theme .table td:nth-child(n+2):nth-child(-n+4) {
+#dataTableTabsContent .table th:nth-child(n+2):nth-child(-n+4),
+#dataTableTabsContent .table td:nth-child(n+2):nth-child(-n+4) {
     border-right: 0;
     box-shadow: inset 1px 0 0 var(--cm-border);
 }
 
-/* Sticky col 5 (Establishment Name): left + right lines and one soft shadow */
-#dataTableTabsContent.cm-header-theme .table th:nth-child(5),
-#dataTableTabsContent.cm-header-theme .table td:nth-child(5) {
+/* Sticky col 5: left + right lines and one soft shadow */
+#dataTableTabsContent .table th:nth-child(5),
+#dataTableTabsContent .table td:nth-child(5) {
     border-right: 0;
     box-shadow: inset 1px 0 0 var(--cm-border),
                 inset -1px 0 0 var(--cm-border),
                 3px 0 6px rgba(0, 0, 0, 0.08);
+}
+
+#dataTableTabsContent.cm-header-theme .table th:nth-child(4),
+#dataTableTabsContent.cm-header-theme .table td:nth-child(4) {
+    width: 220px;
+    min-width: 220px;
+    max-width: 220px;
+}
+
+#dataTableTabsContent.cm-header-theme .table th:nth-child(5),
+#dataTableTabsContent.cm-header-theme .table td:nth-child(5) {
+    left: 375px;
+}
+
+/* ==================== MALSU / SHERIFF: wider sticky columns + no colors ==================== */
+
+/* 1. Remove the blue/yellow/green: solid neutral color (sticky cells must stay opaque) */
+#dataTableTabsContent #tabMALSU .table th:nth-child(n+2):nth-child(-n+6),
+#dataTableTabsContent #tabSheriff .table th:nth-child(n+2):nth-child(-n+6),
+#dataTableTabsContent [id^="tabSheriffProv-"] .table th:nth-child(n+2):nth-child(-n+6),
+#dataTableTabsContent #tabMALSU .table td:nth-child(n+2):nth-child(-n+6):not(.edit-mode),
+#dataTableTabsContent #tabSheriff .table td:nth-child(n+2):nth-child(-n+6):not(.edit-mode),
+#dataTableTabsContent [id^="tabSheriffProv-"] .table td:nth-child(n+2):nth-child(-n+6):not(.edit-mode) {
+    background-color: #f8f9fc !important;
+}
+
+/* Case Title / Establishment Name */
+#dataTableTabsContent #tabMALSU .table th:nth-child(3),
+#dataTableTabsContent #tabMALSU .table td:nth-child(3),
+#dataTableTabsContent #tabSheriff .table th:nth-child(3),
+#dataTableTabsContent #tabSheriff .table td:nth-child(3),
+#dataTableTabsContent [id^="tabSheriffProv-"] .table th:nth-child(3),
+#dataTableTabsContent [id^="tabSheriffProv-"] .table td:nth-child(3) {
+    width: 240px !important;
+    min-width: 240px !important;
+    max-width: 240px !important;
+}
+
+/* Regional Docket No. */
+#dataTableTabsContent #tabMALSU .table th:nth-child(4),
+#dataTableTabsContent #tabMALSU .table td:nth-child(4),
+#dataTableTabsContent #tabSheriff .table th:nth-child(4),
+#dataTableTabsContent #tabSheriff .table td:nth-child(4),
+#dataTableTabsContent [id^="tabSheriffProv-"] .table th:nth-child(4),
+#dataTableTabsContent [id^="tabSheriffProv-"] .table td:nth-child(4) {
+    left: 315px;
+    width: 200px !important;
+    min-width: 200px !important;
+    max-width: 200px !important;
+}
+
+/* Sheriff Designate (sticky) */
+#dataTableTabsContent #tabMALSU .table th:nth-child(5),
+#dataTableTabsContent #tabMALSU .table td:nth-child(5),
+#dataTableTabsContent #tabSheriff .table th:nth-child(5),
+#dataTableTabsContent #tabSheriff .table td:nth-child(5),
+#dataTableTabsContent [id^="tabSheriffProv-"] .table th:nth-child(5),
+#dataTableTabsContent [id^="tabSheriffProv-"] .table td:nth-child(5) {
+    left: 535px;
 }
 </style>
 
@@ -3799,7 +3858,7 @@ $(document).on('click', function(e) {
                                 { orderable: false, targets: 0 },
                                 { width: '45px',  targets: 1 },  // No.
                                 { width: '110px', targets: 2 },  // Inspection ID
-                                { width: '170px', targets: 3 },  // Case No.
+                                { width: '{{ Auth::user()->isCaseManagement() ? "220px" : "170px" }}', targets: 3 },  // Case No.  // Case No.
                                 { width: '230px', targets: 4 },  // Establishment Name
                                 { width: '60px',  targets: 5 },  // PO
                                 { width: '200px', targets: 6 }   // Type of Industry
@@ -4035,7 +4094,7 @@ function loadTab0Data() {
                         { orderable: false, targets: 0 },
                         { width: '45px',  targets: 1 },  // No.
                         { width: '110px', targets: 2 },  // Inspection ID
-                        { width: '170px', targets: 3 },  // Case No.
+                        { width: '{{ Auth::user()->isCaseManagement() ? "220px" : "170px" }}', targets: 3 },  // Case No.  // Case No.
                         { width: '230px', targets: 4 },  // Establishment Name
                         { width: '60px',  targets: 5 },  // PO
                         { width: '200px', targets: 6 }   // Type of Industry
