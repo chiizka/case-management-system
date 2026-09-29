@@ -3858,7 +3858,7 @@ $(document).on('click', function(e) {
                                 { orderable: false, targets: 0 },
                                 { width: '45px',  targets: 1 },  // No.
                                 { width: '110px', targets: 2 },  // Inspection ID
-                                { width: '{{ Auth::user()->isCaseManagement() ? "220px" : "170px" }}', targets: 3 },  // Case No.  // Case No.
+                                { width: '{{ Auth::user()->isCaseManagement() ? "190px" : "170px" }}', targets: 3 },  // Case No.
                                 { width: '230px', targets: 4 },  // Establishment Name
                                 { width: '60px',  targets: 5 },  // PO
                                 { width: '200px', targets: 6 }   // Type of Industry
@@ -4094,7 +4094,7 @@ function loadTab0Data() {
                         { orderable: false, targets: 0 },
                         { width: '45px',  targets: 1 },  // No.
                         { width: '110px', targets: 2 },  // Inspection ID
-                        { width: '{{ Auth::user()->isCaseManagement() ? "220px" : "170px" }}', targets: 3 },  // Case No.  // Case No.
+                        { width: '{{ Auth::user()->isCaseManagement() ? "190px" : "170px" }}', targets: 3 },  // Case No.
                         { width: '230px', targets: 4 },  // Establishment Name
                         { width: '60px',  targets: 5 },  // PO
                         { width: '200px', targets: 6 }   // Type of Industry
