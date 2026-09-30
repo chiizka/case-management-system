@@ -2408,31 +2408,32 @@ $(document).on('change', '.document-checkbox', function() {
     }
 });
 
-// 5. REMOVE DOCUMENT BUTTON
+
 $(document).on('click', '.remove-document-btn', function() {
     const docId = parseInt($(this).data('doc-id'));
-    
+
     const doc = documents.find(d => d.id == docId);
-    const hasLink = doc && doc.link;
-    
-    // Different confirmation messages based on whether file exists
-    let confirmMessage = hasFile 
-        ? 'This document has an uploaded file. Remove document and delete the file?' 
-        : 'Remove this document from checklist?';
-    
-    if (!confirm(confirmMessage)) {
-        return;
-    }
-    
-    console.log('Removing document:', docId);
-    
-    // Remove document from array
-    documents = documents.filter(d => d.id != docId);
-    console.log('Documents after removal:', documents);
-    
-    // Save and re-render
-    saveDocuments();
-    renderDocuments();
+    if (!doc) return;
+    const hasLink = doc.link && doc.link.trim() !== '';
+
+    Swal.fire({
+        icon: 'warning',
+        title: 'Remove this document?',
+        html: hasLink
+            ? `<strong>${doc.title}</strong> and its attached link will be removed from this case's checklist.`
+            : `<strong>${doc.title}</strong> will be removed from this case's checklist.`,
+        showCancelButton: true,
+        confirmButtonText: 'Yes, remove it',
+        cancelButtonText: 'Cancel',
+        confirmButtonColor: '#dc3545'
+    }).then((result) => {
+        if (!result.isConfirmed) return;
+
+        documents = documents.filter(d => d.id != docId);
+        saveDocuments();
+        renderDocuments();
+        showToast('success', 'Document removed.');
+    });
 });
 
 
@@ -3135,22 +3136,31 @@ $(document).on('click', function(e) {
         showToast('success', 'Link saved successfully.');
     });
 
-    // Delete the link
     $(document).on('click', '.delete-link-btn', function() {
-        if (!confirm('Remove this link from the document?')) return;
-
         const docId = parseInt($(this).data('doc-id'));
         const doc = documents.find(d => d.id == docId);
-        if (doc) {
+        if (!doc) return;
+
+        Swal.fire({
+            icon: 'warning',
+            title: 'Remove this link?',
+            html: `The link on <strong>${doc.title}</strong> will be removed. The document stays in the checklist.`,
+            showCancelButton: true,
+            confirmButtonText: 'Yes, remove link',
+            cancelButtonText: 'Cancel',
+            confirmButtonColor: '#dc3545'
+        }).then((result) => {
+            if (!result.isConfirmed) return;
+
             delete doc.link;
             delete doc.link_label;
-            delete doc.uploaded_at;
-            delete doc.uploaded_by;
-        }
+            delete doc.link_added_at;
+            delete doc.link_added_by;
 
-        saveDocuments();
-        renderDocuments();
-        showToast('success', 'Link removed.');
+            saveDocuments();
+            renderDocuments();
+            showToast('success', 'Link removed.');
+        });
     });
 
     // NEW: Function to bind search to a specific table
