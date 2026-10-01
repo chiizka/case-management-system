@@ -22,9 +22,6 @@ use App\Http\Controllers\SenaController;
 use App\Http\Controllers\NoticeOfFinalityController;
 
 
-
-Route::get('/', [FrontController::class, 'index'])->name('home');
-
 Route::get('/login', [FrontController::class, 'login'])->name('login');
 Route::post('/login', [LoginController::class, 'login'])->name('login.post');
 
@@ -91,8 +88,6 @@ Route::middleware('auth')->group(function () {
         ->name('malsu.inlineUpdate');
         Route::put('/malsu/{caseId}/send-to-sheriff', [MalsuController::class, 'sendToSheriff'])
         ->name('malsu.sendToSheriff');
-        Route::put('/malsu/{caseId}/send-to-sheriff', [MalsuController::class, 'sendToSheriff'])
-        ->name('malsu.sendToSheriff');
         Route::post('/malsu/create-case', [MalsuController::class, 'createCase'])
         ->name('malsu.createCase');
         Route::get('/malsu/{malsuId}/sheriff-reports', [SheriffsReportController::class, 'indexByMalsu'])
@@ -116,13 +111,12 @@ Route::middleware('auth')->group(function () {
         Route::get('/case/{id}/sheriff-reports', [SheriffsReportController::class, 'index'])->name('sheriffReports.index');
         Route::post('/case/{id}/sheriff-reports', [SheriffsReportController::class, 'store'])->name('sheriffReports.store');
         Route::delete('/sheriff-reports/{id}', [SheriffsReportController::class, 'destroy'])->name('sheriffReports.destroy');
-        Route::post('/case/{id}/execute', [CasesController::class, 'executeCase'])->name('case.execute');
         // Resource route LAST
         Route::resource('case', CasesController::class);
 
         Route::get('/archive', [ArchivedController::class, 'index'])->name('archive.index');
 
-        Route::post('/archive/{cxaseId}/appeal', [ArchivedController::class, 'storeAppeal'])
+        Route::post('/archive/{caseId}/appeal', [ArchivedController::class, 'storeAppeal'])
             ->name('archive.appeal')
             ->middleware('role:admin,malsu,case_management');
 

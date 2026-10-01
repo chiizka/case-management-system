@@ -476,6 +476,13 @@ public function update(Request $request, $id)
  */
 public function destroy($id)
 {
+    if (Auth::user()->isSheriff()) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Sheriffs are not permitted to delete cases.',
+        ], 403);
+    }
+
     DB::beginTransaction();
     try {
         $case = CaseFile::lockForUpdate()->findOrFail($id);
@@ -561,6 +568,13 @@ public function destroy($id)
 
     public function moveToNextStage(Request $request, $id)
     {
+        if (Auth::user()->isSheriff()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Sheriffs are not permitted to archive or complete cases.',
+            ], 403);
+        }
+
         DB::beginTransaction();
         try {
             $case = CaseFile::findOrFail($id);
@@ -1187,6 +1201,12 @@ public function destroy($id)
     
 public function importCsv(Request $request)
 {
+    if (Auth::user()->isSheriff()) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Sheriffs are not permitted to bulk import cases.',
+        ], 403);
+    }
     // Ã¢Å“Â¨ Province offices cannot bulk-import cases
     if (Auth::user()->isProvince()) {
         return response()->json([
@@ -2028,6 +2048,10 @@ public function loadSheriffTab(Request $request)
 
 public function loadTab0()
 {
+    if (Auth::user()->isSheriff()) {
+        return response()->json(['success' => false, 'error' => 'Access denied.'], 403);
+    }
+
     try {
         $user = Auth::user();
 
@@ -2070,6 +2094,13 @@ public function loadTab0()
 
 public function executeCase(Request $request, $id)
 {
+    if (!Auth::user()->isCaseManagement() && !Auth::user()->isAdmin()) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Only Case Management can forward cases for finality.',
+        ], 403);
+    }
+
     $request->validate([
         'exec_received_by'   => 'required|string|max:255',
         'exec_date_received' => 'required|date',

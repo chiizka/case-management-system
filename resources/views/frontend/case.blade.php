@@ -2798,7 +2798,7 @@ $('#sheriffReportForm').on('submit', function(e) {
     const reportLink = $('#sr_report_link').val().trim();
 
     if (!reportMonth || !reportContent) {
-        showToast('Error', 'Please fill in the report month and content.', 'error');
+        showToast('error', 'Please fill in the report month and content.');
         return;
     }
 
@@ -2828,17 +2828,17 @@ $('#sheriffReportForm').on('submit', function(e) {
                 $('#sr_report_month').val(currentMonthStr);
 
                 loadSheriffReports();
-                showToast('Success', response.message || 'Report saved.', 'success');
+                showToast('success', response.message || 'Report saved.');
             } else {
-                showToast('Error', response.message || 'Failed to save report.', 'error');
+                showToast('error', response.message || 'Failed to save report.');
             }
         },
         error: function(xhr) {
             if (xhr.status === 409) {
-                showToast('Error', 'A report for this month already exists. Reloading...', 'error');
+                showToast('error', 'A report for this month already exists. Reloading...');
                 loadSheriffReports();
             } else {
-                showToast('Error', xhr.responseJSON?.message || 'Failed to save report.', 'error');
+                showToast('error', xhr.responseJSON?.message || 'Failed to save report.');
             }
         },
         complete: function() {
@@ -2856,10 +2856,10 @@ $(document).on('click', '.delete-sheriff-report-btn', function() {
         method: 'DELETE',
         data: { _token: $('meta[name="csrf-token"]').attr('content') },
         success: function(response) {
-            if (response.success) { loadSheriffReports(); showToast('Success', 'Report removed.', 'success'); }
+            if (response.success) { loadSheriffReports(); showToast('success', 'Report removed.'); }
         },
         error: function(xhr) {
-            showToast('Error', xhr.responseJSON?.message || 'Failed to remove report.', 'error');
+            showToast('error', xhr.responseJSON?.message || 'Failed to remove report.');
         }
     });
 });
@@ -4666,11 +4666,11 @@ $('#nof_generate_btn').on('click', function() {
         window.URL.revokeObjectURL(url);
 
         $('#noticeOfFinalityModal').modal('hide');
-        showToast('Success', 'Notice of Finality generated.', 'success');
+        showToast('success', 'Notice of Finality generated.');
     })
     .catch(err => {
         console.error(err);
-        showToast('Error', 'Failed to generate the notice. Please try again.', 'error');
+        showToast('error', 'Failed to generate the notice. Please try again.');
     })
     .finally(() => {
         $btn.prop('disabled', false).html(originalHtml);
@@ -4748,15 +4748,15 @@ $(document).on('click', '.archive-sena-btn', function(e) {
             headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
             success: function(response) {
                 if (response.success) {
-                    showToast('Success', response.message || 'SENA case archived.', 'success');
+                    showToast('success', response.message || 'SENA case archived.');
                     $(`tr[data-id="${senaId}"]`).fadeOut(400, function() { $(this).remove(); });
                 } else {
-                    showToast('Error', response.message || 'Failed to archive.', 'error');
+                    showToast('error', response.message || 'Failed to archive.');
                     $btn.prop('disabled', false).html('<i class="fas fa-check-circle"></i>');
                 }
             },
             error: function(xhr) {
-                showToast('Error', xhr.responseJSON?.message || 'Failed to archive.', 'error');
+                showToast('error', xhr.responseJSON?.message || 'Failed to archive.');
                 $btn.prop('disabled', false).html('<i class="fas fa-check-circle"></i>');
             }
         });
